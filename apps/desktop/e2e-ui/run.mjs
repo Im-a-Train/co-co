@@ -57,7 +57,7 @@ function record(ok, name, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' - ' + detail : ''}`)
 }
 
-const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata|nds)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
+const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata|nds|selfCheck).[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
 
 async function shot(page, name) {
   const file = join(SHOTS, `${name}.png`)
@@ -124,6 +124,9 @@ async function main() {
   // ---- Flows -------------------------------------------------------------------------------
   const go = async (tab, name) => {
     currentLabel = name
+    // A hash change is a popstate navigation, and Vuetify's back-button guard aborts it while an overlay
+    // (e.g. a snackbar left open by the previous flow) is active. Wait for overlays to close first.
+    await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 8000 }).catch(() => {})
     await page.goto(`${BASE}#/lager/${CAMP}/${tab}`)
     await page.waitForSelector('.v-application')
     await page.waitForTimeout(1500)

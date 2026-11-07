@@ -38,6 +38,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `zones/` | Data zones, redaction, **aiGateway** (only AI path), AI features | `redact`, `aiGateway.send`, features |
 | `cockpit/` | Pure helpers for KPIs and the week grid | `buildGrid`, `jsDayBars`, … |
 | `midata/` | Event link resolution, `midata` table store, rule facts from the aggregate | `resolveEventLink`, `getMidataRecord`, `saveMidataAggregate` |
+| `selfCheck/` | Leader self-check («Entwurfsrunde»): runs, progress vs. last run, plain-text report; store writes the run + a snapshot (`selfcheck:<id>`) | `planSelfCheckRun`, `compareWithRun`, `renderSelfCheckReport` |
 | `storage/` | Dexie database `coco` and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
 
 ## Composables (`src/composables/`)
@@ -60,7 +61,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 
 Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleState`), `coachInputs`,
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
-`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates). Schema changes: add a new Dexie version with an upgrade,
+`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`.
 
 ## Key flows
@@ -128,3 +129,23 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 - **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table).
 - **Storage:** Dexie v3 table `nds` (key `campIri`), tagged `red-derived`. `CoachInputs.ndsFields`
   records which fields the coach accepted from NDS. `AppSettings.nds = { enabled }`.
+
+## M10: feedback loop + transparency
+
+- **Comment sync** (`domain/feedback/commentSync.ts`): matches `CampFacts.comments` against posted
+  feedback items (`postedCommentIris`) → `FeedbackItem.commentSync` (resolvedAt, replies with
+  `inferred`, missing). Runs in `FeedbackView` whenever facts load; «Kommentare abgleichen» forces a
+  reload. No extra API calls, no schema change. An empty comment list counts as «not loaded».
+- **Explainability** (`domain/rules/explain.ts`): the engine attaches `Finding.explain` (pack/rule
+  version, validity date, severity reasoning, inputs used/missing, facts from `RuleHit.inputs` + params).
+  Hits with `redKeys` get the tags `midata` / `nds-quelle`. Findings that go to the AI must pass
+  `zones/features.ts` `findingsForAi()` (strips `explain`, drops red findings). UI:
+  `components/cockpit/FindingExplainPanel.vue` in `FindingCard`.
+- **Leader self-check** (`domain/selfCheck/`, `useSelfCheck`, tab «Selbstcheck»): Dexie v4 table
+  `selfChecks`, deliberately separate from review rounds. Backup with `omitRedDerived` strips red
+  findings from the runs.
+- **Deadline radar** (`domain/rules/milestones.ts` + `milestones/pbs.yaml`, `domain/rules/ics.ts`): PBS
+  milestones (confidence `unverified`) merged into Fristen, done flags in `CoachInputs.milestonesDone`,
+  ICS export through `save_text_file` (dialog filter now follows the extension: json, ics, md, txt;
+  `coco-core::savefile`).
+- **Documents v2**: plan only, see `docs/plans/documents-v2.md`.
