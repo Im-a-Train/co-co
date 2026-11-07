@@ -251,6 +251,7 @@ table.cmp td:first-child{font-weight:600;white-space:nowrap}
 .feat .tags{display:flex;gap:5px;flex-wrap:wrap}
 .t-mvp{background:var(--ok-bg);color:var(--ok)} .t-p2{background:var(--hint-bg);color:var(--hint)} .t-p3{background:var(--warn-bg);color:var(--warn)}
 .t-ai{background:var(--surface-2);color:var(--ink)}
+.t-draft{background:transparent;color:var(--muted);border:1px dashed var(--line)}
 .t-done{background:var(--ok);color:var(--surface)} .t-wip{background:var(--warn);color:var(--surface)}
 .feat.is-done{border-color:var(--ok)} .feat.is-done h4::before{content:"✓ ";color:var(--ok)}
 
@@ -664,6 +665,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
 <section id="features"><div class="wrap">
   <span class="eyebrow">Scope</span>
   <h2>Feature list</h2>
+  <p class="lede">Everything we planned, built or still want. Ideas from the first draft (three approaches, innovation research) are tagged «first draft», so nothing from the original brainstorm is lost.</p>
   <div class="filters" role="group" aria-label="Filter features by milestone">
     <button type="button" data-f="all" aria-pressed="true">All</button>
     <button type="button" data-f="v1" aria-pressed="false">v1</button>
@@ -672,6 +674,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <button type="button" data-f="ai" aria-pressed="false">Optional AI</button>
     <button type="button" data-f="done" aria-pressed="false">✓ Done</button>
     <button type="button" data-f="open" aria-pressed="false">Open / in progress</button>
+    <button type="button" data-f="draft" aria-pressed="false">From first draft</button>
   </div>
   <div class="feat-groups" id="featgroups"></div>
 </div></section>
@@ -865,6 +868,25 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['Rounds + diff','Snapshot per round; shows what changed since you last looked.','next'],
       ['Deadline overview','NDS T−30/T+30, Leihmaterial, Landeskarten, Lagerbewilligung, across all your camps.','next'],
       ['Lagerbewilligung A/B/C','Digital PBS checklists, pre-filled by the rules.','later'],
+      ['Versioned rule packs','YAML + TS predicates with valid-from/to dates; each camp is checked against the rules valid at its start.','v1',0,'d'],
+      ['Confidence badges','verified / conflict / unverified / best practice / heuristic; only verified rules may be «Muss».','v1',0,'d'],
+      ['Explainability panel','Show the input facts and the rule version behind each verdict, not only the rule, source and evidence.','next',0,'d'],
+      ['Rulebook time machine','When J+S publishes new rules (e.g. Bewegungszeit 2027), show side by side what changes for each of your camps.','next',0,'d'],
+      ['Golden test set','20–30 anonymised past camps with real coach verdicts; measure false positives per rule before a rule may block.','next',0,'d'],
+      ['Rule-pack governance','A named owner at PBS signs off each pack version («approved by PBS on …»), so co-co does not become an unofficial rulebook.','next',0,'d'],
+      ['Category mapping memory','Reuse the confirmed LS/LA/LP/ES mapping across the camps of the same Abteilung.','next',0,'d'],
+      ['Hering deadline radar','Pull the PBS milestones (Grobprogramm, Lagerdossier, Lagerbewilligung …) from Hering into the deadline overview; ICS export.','next',0,'d'],
+      ['No-code rule authoring','Decision-table editor for PBS and cantonal training teams, with a preview against sample camps.','later',0,'d'],
+    ]],
+    ['Safety','',[
+      ['Safety-activity detector','Keyword rules flag water, mountain, rope, night and fire activities hidden in storyboards; an AI pass for less obvious cases could follow.','v1',0,'d'],
+      ['Soft safety review (AI)','AI reads an activity\'s safety considerations and returns «KI-Einschätzung» hints, never «Muss».','later','ai','d'],
+      ['Qualification matrix','Leaders × required qualifications (Lagerleiter, LS/T, Wasser/Berg/Winter) valid on the camp dates, matched to the responsibles. Planned with MiData (M7).','next',0,'d'],
+      ['Water qualification matcher','Map the setting (pool, lake, river) to the qualification it requires.','next',0,'d'],
+      ['Expert package','One-click PDF of each safety-area activity for the J+S-Experte LS/T, with a scoped link and approval status.','next',0,'d'],
+      ['Route check on the map','swisstopo profile and T-scale per segment, turn-back points, exits, nearest hospital and Rega landing site.','later',0,'d'],
+      ['Weather-aware re-checks','MeteoSwiss forecast at T−2 and on the day, linked to the activity\'s bad-weather variant.','later',0,'d'],
+      ['Heat, ticks and forest-fire lens','Federal hazard information for the camp dates and location.','later',0,'d'],
     ]],
     ['Feedback','',[
       ['Camp or activity feedback','Kinds: Lob, Muss, Anregung, Frage. Drafts can be created from findings.','v1'],
@@ -873,6 +895,10 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['Templates per review moment','Grobprogramm, Programmbesprechung, Auflagen, Lagerbesuch, Abschluss.','v1'],
       ['Auflagen tracking','A Muss item becomes an Auflage; the rule re-runs after the leader edits; you confirm.','next'],
       ['Rephrase with AI','Polishes tone and length after names are redacted, with a preview.','later','ai'],
+      ['Comment sync','Read resolved and answered eCamp comments back into the feedback items.','next',0,'d'],
+      ['Leader self-check','The same rules run for the Lagerleitung before they submit, as a «draft round», so fewer review rounds are needed.','next',0,'d'],
+      ['Suggested changes','The coach proposes an exact edit to a storyboard row; the leader accepts it with one click.','later',0,'d'],
+      ['Expert / AL collaboration','Scoped links for the AL and the J+S expert, with an audit trail of their approvals.','later',0,'d'],
     ]],
     ['Documents','',[
       ['Drag & drop','PDF, DOCX, GPX, TXT and images onto a camp or activity.','v1'],
@@ -893,18 +919,42 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['NDS status','Manual status flags at first (there is no public API); later an export in the NDS program template.','later'],
       ['Upstream to eCamp','Rule engine as a package; a coach view or leader self-check inside eCamp.','later'],
     ]],
+    ['Smart reviews (AI + MCP)','',[
+      ['ecamp-review MCP server','Tools such as get_camp, get_round_diff, run_checks and draft_comment, usable in co-co, Claude Desktop and Claude Code.','later','ai','d'],
+      ['J+S rules MCP (RAG)','Search the Leitfaden, Merkblätter and Hering by year, with page-level citations.','later','ai','d'],
+      ['Soft pedagogical review','Warm-up, goals, Pfadiprofil, the 5 Beziehungen, variety of methods – as hints with evidence, never a verdict.','later','ai','d'],
+      ['Ask-anything Co-Coach','«Welche Lager haben noch kein Sicherheitskonzept für Wasser?», with the tool plan visible.','later','ai','d'],
+      ['Voice notes → structured feedback','Dictate during the Lagerbesuch; sorted into Lob / Anregung / Muss and attached to activities.','later','ai','d'],
+      ['Cross-language review','A French- or Italian-speaking coach reviews a German camp; originals stay next to the translation.','later','ai','d'],
+      ['Bring your own Claude','The same MCP servers let leaders run a self-check in their own Claude.','later','ai','d'],
+    ]],
+    ['On site & after the camp','',[
+      ['Offline Lagerbesuch','Cached snapshot, rules offline, 3x3 on-site checklist, photo notes and a crisis card.','next',0,'d'],
+      ['Lagerabschluss assistant','Recompute the J+S days from what happened, NDS programme export (Vorlage Lagerprogramm XLSX), AWK reminder.','next',0,'d'],
+      ['Coachjournal + 5-year archive','Dates, verdicts, signatures and evidence snapshots, exportable for cantonal spot checks.','next',0,'d'],
+      ['Plan vs. reality','The approved plan next to what actually happened, including bad-weather swaps.','later',0,'d'],
+    ]],
+    ['Motivation & insight','',[
+      ['J+S subsidy estimator','«Tag 4 kostet euch CHF X Beitrag», recomputed live – the strongest nudge to fix a short day.','next',0,'d'],
+      ['Leader workload & rest','Hours of responsibility per leader, a night shift followed by an early morning, a sober-duty rota.','next',0,'d'],
+      ['Program balance radar','Coverage of LS themes, Pfadiprofil and the 5 Beziehungen, the share of LS vs. LA, age fit per Stufe.','next',0,'d'],
+      ['Abteilung memory','Recurring weak points across years and a handover for new coaches.','later',0,'d'],
+      ['Accessibility & inclusion hints','Allergies and diet in the menu plan, mixed-age suitability, prevention checklist items.','later',0,'d'],
+      ['Coach training mode','Prototype camps with planted issues, for J+S coach courses.','later',0,'d'],
+      ['Coach quality metrics','Time to approval, rounds per camp, findings caught automatically vs. by the coach.','later',0,'d'],
+    ]],
   ];
   const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
   const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status']);
-  ['Befunde-Triage','Ignorieren with a reason','Rule disabling'].forEach(n=>DONE.add(n));
+  ['Befunde-Triage','Ignorieren with a reason','Rule disabling','Versioned rule packs','Confidence badges','Safety-activity detector','Soft safety review (AI)'].forEach(n=>DONE.add(n));
   const WIP=new Set([]);
   const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';
   const root=document.getElementById('featgroups'); if(!root) return;
-  root.innerHTML=G.map(([t,s,items])=>`<div class="fg"><h3>${t} <small>${items.filter(([n])=>st(n)==='done').length} of ${items.length} done</small></h3><div class="feats">${items.map(([n,d,p,ai])=>`<article class="feat ${st(n)==='done'?'is-done':''}" data-p="${p}" data-ai="${ai?1:0}" data-st="${st(n)}"><h4>${n}</h4><p>${d}</p><div class="tags">${st(n)==='done'?'<span class="pill t-done">Done</span>':st(n)==='wip'?'<span class="pill t-wip">In progress</span>':''}<span class="pill ${lab[p][0]}">${lab[p][1]}</span>${ai?'<span class="pill t-ai">AI</span>':''}</div></article>`).join('')}</div></div>`).join('');
+  root.innerHTML=G.map(([t,s,items])=>`<div class="fg"><h3>${t} <small>${items.filter(([n])=>st(n)==='done').length} of ${items.length} done</small></h3><div class="feats">${items.map(([n,d,p,ai,src])=>`<article class="feat ${st(n)==='done'?'is-done':''}" data-p="${p}" data-ai="${ai?1:0}" data-st="${st(n)}" data-draft="${src==='d'?1:0}"><h4>${n}</h4><p>${d}</p><div class="tags">${st(n)==='done'?'<span class="pill t-done">Done</span>':st(n)==='wip'?'<span class="pill t-wip">In progress</span>':''}<span class="pill ${lab[p][0]}">${lab[p][1]}</span>${ai?'<span class="pill t-ai">AI</span>':''}${src==='d'?'<span class="pill t-draft">first draft</span>':''}</div></article>`).join('')}</div></div>`).join('');
   const btns=document.querySelectorAll('#features .filters button');
   btns.forEach(b=>b.addEventListener('click',()=>{ btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
     const f=b.dataset.f;
-    document.querySelectorAll('.feat').forEach(el=>{ el.hidden=!(f==='all'||(f==='ai'?el.dataset.ai==='1':f==='done'?el.dataset.st==='done':f==='open'?el.dataset.st!=='done':el.dataset.p===f)); });
+    document.querySelectorAll('.feat').forEach(el=>{ el.hidden=!(f==='all'||(f==='ai'?el.dataset.ai==='1':f==='done'?el.dataset.st==='done':f==='open'?el.dataset.st!=='done':f==='draft'?el.dataset.draft==='1':el.dataset.p===f)); });
     document.querySelectorAll('.fg').forEach(g=>{ g.hidden=!g.querySelector('.feat:not([hidden])'); });
   }));
 })();
