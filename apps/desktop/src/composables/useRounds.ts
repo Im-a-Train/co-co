@@ -1,6 +1,6 @@
 /**
  * Review status + rounds of one camp, and the diff of the live facts against the last round.
- * OWNER: rounds builder. Used by the cockpit KPI "Änderungen seit letzter Runde" and Meine Lager.
+ * Used by the cockpit KPI "Änderungen seit letzter Runde" and Meine Lager.
  */
 import { computed, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import { refreshBackupState } from '@/components/backup/useBackup'

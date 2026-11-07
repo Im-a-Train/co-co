@@ -1,6 +1,6 @@
 /**
- * Loads + caches CampFacts per camp (in memory, keyed by campIri). OWNER: data builder.
- * Used by CampLayout (frozen) and every camp view. Contract: the returned shape below.
+ * Loads + caches CampFacts per camp (in memory, keyed by campIri).
+ * Used by CampLayout and every camp view. Contract: the returned shape below.
  *
  * The cache is cleared on logout (watch useSession().isLoggedIn).
  */

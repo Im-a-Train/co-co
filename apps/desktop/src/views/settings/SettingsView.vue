@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * /einstellungen: composes the section components owned by builders. FROZEN (architect).
+ * /einstellungen: composes the section components. Shared by all modules; change with care.
  * Instanzen + Diagnose -> data, KI -> ai, Backup -> rounds.
  */
 import { useI18n } from 'vue-i18n'

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > Instanzen: eCamp instance management (M0 InstanceCard). OWNER: data builder. */
+/** Settings > Instanzen: eCamp instance management (M0 InstanceCard). */
 import InstanceCard from '@/components/InstanceCard.vue'
 import { isTauri } from '@/lib/tauri'
 

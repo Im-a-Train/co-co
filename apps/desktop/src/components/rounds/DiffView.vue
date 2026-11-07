@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Human-readable diff grouped by general entries and by activity. OWNER: rounds builder. */
+/** Human-readable diff grouped by general entries and by activity. */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { groupDiff } from '@/domain/rounds'

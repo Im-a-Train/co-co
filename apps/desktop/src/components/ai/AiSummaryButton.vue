@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Summarise a document (only if doc.aiAllowed). Embedded by the documents builder.
- * OWNER: ai builder. CONTRACT: props + emits below are frozen. Renders nothing while AI is disabled;
+ * Summarise a document (only if doc.aiAllowed).
+ * Props/emits are used by feedback, documents and cockpit views. Renders nothing while AI is disabled;
  * always shows the redaction preview dialog before sending.
  */
 import { useI18n } from 'vue-i18n'

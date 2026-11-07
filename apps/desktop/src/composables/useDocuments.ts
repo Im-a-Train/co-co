@@ -1,6 +1,6 @@
 /**
  * Documents of one camp: ingest (picker, drag and drop, watched folders), links, search.
- * OWNER: documents builder. Originals stay on disk; only extracted text + metadata go to IndexedDB.
+ * Originals stay on disk; only extracted text + metadata go to IndexedDB.
  */
 import { computed, onBeforeUnmount, onMounted, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import { base64ToBytes, commands, onDocsChanged, onDocsDropped, type DocsChangedEvent } from '@/lib/tauri'

@@ -1,5 +1,5 @@
 /**
- * AI settings state + the shared preview/confirm flow used by the AI buttons. OWNER: ai builder.
+ * AI settings state + the shared preview/confirm flow used by the AI buttons.
  * The key itself is never read back: only `hasKey` (boolean) is known to the UI.
  */
 import { computed, ref, readonly } from 'vue'

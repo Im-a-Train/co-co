@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** App shell: app bar + navigation drawer + router view. FROZEN (architect). */
+/** App shell: app bar + navigation drawer + router view. Shared by all modules; change with care. */
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

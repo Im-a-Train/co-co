@@ -1,4 +1,4 @@
-/** Contract checks for shared infrastructure. FROZEN (architect). */
+/** Contract checks for shared infrastructure. */
 import { describe, expect, it } from 'vitest'
 import { deepMerge, feedbackTemplates, messages } from '@/locales/messages'
 import { CocoDb, TABLE_NAMES } from '@/domain/storage/db'

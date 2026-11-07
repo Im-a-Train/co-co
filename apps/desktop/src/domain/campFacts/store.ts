@@ -1,4 +1,4 @@
-/** Persistence of category mappings + coach inputs (tables `mappings`, `coachInputs`). OWNER: data builder. */
+/** Persistence of category mappings + coach inputs (tables `mappings`, `coachInputs`). */
 import { getDb, nowIso } from '../storage/db'
 import type { CategoryMapping, CoachInputs, Iri } from '../types'
 

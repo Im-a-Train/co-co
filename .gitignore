@@ -28,6 +28,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 
-# Claude Code local state (worktrees, local settings)
-.claude/
+# Claude Code: share commands/settings, keep local state out
+.claude/worktrees/
+.claude/settings.local.json
 e2e-ui/shots/

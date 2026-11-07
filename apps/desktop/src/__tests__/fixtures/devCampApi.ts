@@ -1,6 +1,6 @@
 /**
  * Fake ApiGet over the JSON dump of the dev.ecamp3.ch camp "Auf in die Berge" (./dev-camp/*.json).
- * FROZEN (architect); shared by all builders' tests. Unknown paths reject with an HTTP-404-like Error.
+ * Shared by all tests. Unknown paths reject with an HTTP-404-like Error.
  * Note: the dump has no /api/users or /api/profiles responses (collaborator names fall back).
  */
 import type { ApiGet } from '@/domain/types'

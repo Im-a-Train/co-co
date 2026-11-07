@@ -1,5 +1,5 @@
 /**
- * CampFacts loader + category guessing. OWNER: data builder.
+ * CampFacts loader + category guessing.
  *
  * Pure module (no Vue / Tauri / Dexie): the HTTP GET is injected so it runs in vitest against the
  * JSON dump fixtures. Persistence of mappings / coach inputs lives in ./store.ts.

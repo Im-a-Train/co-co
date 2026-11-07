@@ -1,221 +1,105 @@
 # co-co – Coach Cockpit
 
-**co-co** is a standalone desktop app for J+S camp coaches (J+S-Coach / Lagercoach). It reads camps from
-[eCamp v3](https://github.com/ecamp/ecamp3) with the coach's existing eCamp account and helps them
-review camp programmes. It has no backend of its own: the app talks directly to the eCamp API and
-keeps all of its own data on the local machine.
+**co-co** is a desktop app for J+S camp coaches (J+S-Coach / Lagercoach). It reads camps planned in
+[eCamp v3](https://github.com/ecamp/ecamp3) with the coach's own eCamp login, checks them against
+J+S and PBS rules, and helps the coach give structured feedback to the camp leaders. It has no backend
+of its own: the app talks directly to the eCamp API and keeps its data on the local machine.
 
-> Status: **M0 – login spike.** This is a prototype. It does not yet do anything useful for coaching.
+Status: **M0–M6 built** (login, cockpit + rules, feedback, documents, rounds + backup, optional AI,
+findings triage). Next: **M7 MiData** (designed). Spec and live status: [`docs/spec/co-co-spec.html`](docs/spec/co-co-spec.html).
 
-## M0 scope: login spike
+## Features
 
-M0 answers one question: can a Tauri 2 desktop app log in to eCamp with the user's normal eCamp
-account, **including PBS MiData OAuth**, and then make authenticated API calls, all without a custom
-backend?
+- **Login** with any eCamp instance (prod, dev, self-hosted), including PBS MiData / Cevi.DB / Jubla /
+  Google OAuth via the real eCamp login page in a sandboxed window.
+- **Meine Lager** – your camps with role, review status, finding counts and the next deadline.
+- **Cockpit** – KPIs, Lagertag-Rechner (week grid with J+S time per day and Sozialzeit gaps), activity
+  details, Lager-Angaben and category mapping (LS / LA / LP / ES).
+- **Rule engine** – rule pack «co-co Basis 2026.1» (J+S core, completeness, safety heuristics, PBS best
+  practice); each finding has a source, severity and confidence. Rules can be ignored per finding or
+  disabled per camp / globally.
+- **Befunde durchgehen** – step through findings with the activity shown inline, write feedback or
+  ignore with one key, auto-advance to the next open finding.
+- **Feedback** – Lob / Auflage / Anregung / Frage for the whole camp or one activity; templates per
+  review moment; WhatsApp / e-mail / text via clipboard; activity items can be posted as eCamp comments.
+- **Documents** – drag & drop, file picker and watched folders (e.g. synced Dropbox); PDF / DOCX / GPX /
+  text extraction, safety-concept checklist, GPX Leistungskilometer, linking to activities, full-text search.
+- **Rounds** – review status workflow, snapshots and «what changed since the last round», JSON backup.
+- **Optional AI** (off by default) – own Anthropic API key in the OS keychain, data zones, redaction
+  preview before every request; personal data from MiData/NDS never goes to AI.
 
-What M0 contains:
+## Quick start
 
-- **Instance picker:** eCamp production `https://app.ecamp3.ch`, eCamp dev `https://dev.ecamp3.ch`,
-  or a custom URL. "Prüfen" auto-discovers the instance from `{instance}/environment.js` and the API
-  root links.
-- **Webview login (primary):** "Mit eCamp anmelden (inkl. MiData)" opens the real eCamp login page in
-  a separate, sandboxed window (`ecamp-login`, no IPC access). After the login, the Rust side reads the
-  eCamp session cookies (`*jwt_hp`, `*jwt_s`, `*refresh_token`) from the webview cookie store, copies
-  them into its own HTTP cookie jar and closes the window. See [ADR 0003](docs/adr/0003-login-via-webview-cookies.md).
-- **Password login (fallback):** `POST /api/authentication_token`, done in Rust.
-- **Session card:** user, token expiry, auto-refresh (at half the remaining lifetime, clamped to
-  2–30 min), manual refresh, logout.
-- **Camps card:** lists your camps (`/api/camps`). Clicking a camp loads its activities, which proves
-  that deeper reads work.
-- **Spike protocol card:** live auth log, a results checklist and "Ergebnis kopieren", which copies a
-  Markdown report for the spike issue/ADR.
-
-Out of scope for M0: any coaching features, offline storage of camp data, AI features, signing and
-auto-update.
-
-## Features (M1 - M5)
-
-- **M1 Cockpit + Regeln**: "Meine Lager", normalisierter Lager-Graph (CampFacts), Kategorie-Zuordnung (LS/LA/LP/ES/NONE, vom Coach einmal bestätigt; bis dahin laufen die Tagesregeln nicht), Regelwerk "co-co Basis 2026.1" (Severity must/should/hint, Confidence verified/conflict/unverified/best-practice/heuristic), Cockpit-KPIs, Lagertag-Rechner, Befunde mit Begründung (Overrides), Regelkatalog, Fristen.
-- **M2 Feedback**: Feedback-Punkte (Kudos, Auflage, Vorschlag, Frage), Vorlagen pro Besprechungszeitpunkt, Export als WhatsApp/E-Mail/Text, Posten als eCamp-Kommentar (wiederaufnehmbar bei Teilfehlern).
-- **M3 Dokumente**: Drag&Drop, Dateiauswahl, beobachtete Ordner; Extraktion (PDF, DOCX, GPX, TXT/MD), Sicherheitskonzept-Checkliste, GPX-Analyse (Leistungskilometer), Volltextsuche. Dokumente sind standardmässig gelb und `aiAllowed=false`. Per Drag&Drop abgelegte Ordner gelten nur für die Sitzung.
-- **M4 Runden + Backup**: Review-Status, Runden mit Snapshot und Diff, JSON-Export/-Import aller Daten (Import aktiviert nie die KI und stuft Dokumente nie herab).
-- **M5 Optionale KI** (standardmässig aus): Datenzonen, Anonymisierung mit Vorschau, `aiGateway.send()` als einziger Weg zum KI-Befehl, API-Key im OS-Schlüsselbund. Die Anonymisierung entfernt nur eCamp-Mitarbeitende, E-Mail, Telefon, AHV und Adressmuster; Namen von Teilnehmenden werden nicht erkannt. Vorschau immer prüfen.
-
-## Run, test, build
+Prerequisites: Node.js 22 (npm workspaces), Rust stable via rustup, and the
+[Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS. On Windows that means
+Visual Studio Build Tools with the C++ workload + Windows SDK and the `stable-msvc` toolchain.
 
 ```bash
 npm install
-npm run dev                                   # Vite + Tauri (npx tauri dev in apps/desktop)
-npm run typecheck && npm run test && npm run build:vite -w apps/desktop
-cd apps/desktop/src-tauri && cargo test --workspace && cargo clippy --workspace --all-targets -- -D warnings
-npx tauri build --debug --no-bundle -w apps/desktop   # run in apps/desktop
+npm run dev          # Vite dev server on :1420 + the desktop window
 ```
 
-### Live test against an eCamp instance
+Then: *Verbindung* → choose an instance → log in → *Meine Lager*.
 
-Credentials are never stored in the repo; pass them via environment variables:
+## Development
 
-```bash
-ECAMP_E2E_URL=https://<your-ecamp> ECAMP_E2E_USER=<email> ECAMP_E2E_PASSWORD=<password> npm run test:live -w apps/desktop
-```
+| Command | What it does |
+| --- | --- |
+| `npm run typecheck` | `vue-tsc` type check |
+| `npm test` | Vitest unit tests |
+| `npm run build:vite -w apps/desktop` | Frontend production build |
+| `npm run test:ui -w apps/desktop` | UI harness: drives the installed Edge (playwright-core) with mocked Tauri IPC (`?mock=1`, dev only), checks every route and the main flows, writes screenshots to `apps/desktop/e2e-ui/shots/` |
+| `npm run test:live -w apps/desktop` | Live test against an eCamp instance; needs `ECAMP_E2E_URL`, `ECAMP_E2E_USER`, `ECAMP_E2E_PASSWORD` in the environment (never commit credentials) |
+| `cargo test --workspace` (in `apps/desktop/src-tauri`) | Rust tests; `cargo clippy --workspace --all-targets -- -D warnings` must be clean |
+| `npm run build` | Installer for the current OS (`tauri build`) |
 
-### UI QA without Tauri
-
-`npm run test:ui -w apps/desktop` starts (or reuses) the vite dev server and drives the installed Microsoft Edge
-through `playwright-core` (no browser download). The page is loaded with `?mock=1`, which installs a Tauri IPC
-mock (`src/dev/mockTauri.ts`, dev mode only, never part of production builds) serving the dev-camp fixture.
-The script visits every route, collects console errors, raw i18n keys and horizontal overflow, exercises the main
-flows (mapping, drawer, feedback, documents, rounds, backup) and writes screenshots to `apps/desktop/e2e-ui/shots/`
-(override with `UI_SHOTS_DIR`). It exits non-zero on any problem.
+Contributor and agent guides: [CLAUDE.md](CLAUDE.md) (rules + commands), [CONTRIBUTING.md](CONTRIBUTING.md)
+(recipes), [docs/](docs/README.md) (architecture, ADRs, contracts).
 
 ## Repository layout
 
 ```
-package.json               npm workspaces root (scripts proxy to apps/desktop)
-apps/desktop/              Vue 3 + Vuetify 3 + vue-i18n (German UI) + TypeScript, built with Vite
-apps/desktop/src-tauri/    Tauri 2 app (Rust): login window, cookie jar, eCamp API calls
-  crates/coco-core/        pure Rust logic (parsing, JWT payload decode, URL checks), testable everywhere
-docs/adr/                  architecture decision records
-docs/m0-spike-protocol.md  manual test plan for the login spike
-.github/workflows/ci.yml   CI: typecheck, vitest, cargo test, Windows installer (macOS/Linux opt-in)
+apps/desktop/                 Vue 3 + Vuetify 3 + vue-i18n (German UI) + TypeScript
+  src/domain/                 framework-free logic (campFacts, rules, feedback, documents, rounds, zones, …)
+  src/composables/ views/ components/
+  src/locales/de/             UI strings and feedback templates
+  src-tauri/                  Tauri 2 (Rust): eCamp session, HTTP, files, keychain, AI call
+    crates/coco-core/         pure Rust logic, testable without Tauri
+  e2e-ui/                     browser UI harness
+docs/                         architecture, ADRs, contracts, spec page
+.github/workflows/ci.yml      CI (self-hosted runner)
 ```
 
 ## CI
 
-CI runs on the **self-hosted runner** (`self-hosted, Linux, X64`, currently `isengard`). It builds **Windows only** by default:
+CI runs on the **self-hosted runner** (`self-hosted, Linux, X64`) and builds **Windows only** by default:
 
 | Job | Runner | When |
-|---|---|---|
+| --- | --- | --- |
 | `check`: typecheck, vitest, vite build, cargo test | self-hosted Linux | every push and PR |
-| `windows-cross`: NSIS installer cross-compiled with `cargo-xwin` | self-hosted Linux | every push and PR (default) |
-| `windows-native`: NSIS + MSI, native build | self-hosted Windows | when the repo variable `WINDOWS_BUILD` = `native` |
+| `windows-cross`: NSIS installer cross-compiled with `cargo-xwin` | self-hosted Linux | every push and PR |
+| `windows-native`: NSIS + MSI | self-hosted Windows | repo variable `WINDOWS_BUILD=native` |
 | `linux`: deb + AppImage | self-hosted Linux | manual run, input `linux` |
 | `macos`: dmg | GitHub-hosted `macos-latest` | manual run, input `macos` |
 
-Runner host requirements:
+The Linux runner needs the packages in `APT_PACKAGES` (`ci.yml`); CI installs missing ones if the runner
+user has passwordless sudo. Installers are unsigned, so Windows SmartScreen warns on first run.
+Download the latest installer as the artifact `co-co-windows-x64` of a green run.
 
-- **Linux runner:** the apt packages listed in `APT_PACKAGES` in `ci.yml`. These are the Tauri deps plus `nsis lld llvm clang` for the cross build. CI installs any missing ones itself if the runner user has passwordless sudo; otherwise it fails with an install command for you to run on the host.
-- **Windows runner (optional):** register it with the labels `self-hosted, Windows, X64`. Install VS Build Tools (C++ workload), the Windows SDK, Node 22 and rustup. Then set `WINDOWS_BUILD=native`.
-- **Cross build:** cargo-xwin downloads the MSVC CRT and the Windows SDK, under Microsoft's licence terms, and caches them on the runner. The installer is unsigned, so Windows SmartScreen will warn when it runs.
+## Security and privacy
 
-## Prerequisites
+- The eCamp login page runs in its own window without any IPC access.
+- Session cookies, passwords and the API key stay in Rust / the OS keychain; the UI only sees cookie names.
+- The UI has no direct network access (strict CSP); API calls are limited to the logged-in instance.
+- eCamp is only written to for comments.
+- AI is opt-in; requests go through one gateway with redaction and a preview. MiData/NDS data (planned)
+  never reaches AI.
 
-All platforms:
-
-- **Node.js 22** (≥ 22.12) with npm 10. The repo uses npm workspaces, not pnpm or yarn.
-- **Rust stable** via [rustup](https://rustup.rs).
-- The Tauri 2 system prerequisites for your OS: <https://v2.tauri.app/start/prerequisites/>.
-
-### Windows
-
-- **Microsoft C++ Build Tools** ("Desktop development with C++") **and the Windows 10/11 SDK**, with
-  the default Rust toolchain `stable-x86_64-pc-windows-msvc`. You need these for any real build
-  (`npm run tauri dev`, `npm run tauri build`) and for release builds. CI does not need them: it cross-compiles on Linux, or builds natively on an optional self-hosted Windows runner.
-- **WebView2 runtime** (preinstalled on Windows 11).
-
-> **Note on the M0 development machine.** M0 was written on a Windows 11 machine without MSVC Build
-> Tools or the Windows SDK, using the `stable-x86_64-pc-windows-gnu` toolchain. On that setup, only the
-> pure-Rust core crate (`coco-core`) and the frontend (typecheck, vitest, vite build) can be built and
-> tested. The Tauri crate itself does **not** build with the self-contained GNU toolchain:
-> - Current `windows-sys` / `windows-link` crates use `raw-dylib`, which needs a real `dlltool` + `as`.
-> - `tauri-build` needs a resource compiler.
-> - `reqwest`'s TLS stack needs a C compiler.
->
-> To run the app locally on Windows, either install MSVC Build Tools + the Windows SDK (recommended), or
-> install a complete MinGW-w64 toolchain (e.g. MSYS2/WinLibs with `dlltool`, `as`, `windres`, `gcc`).
-> Until then, the full app is compiled and bundled only in CI. Download the `co-co-windows-x64` artifact
-> from the latest green run.
-
-### macOS
-
-- Xcode Command Line Tools: `xcode-select --install`.
-
-### Linux (Debian/Ubuntu 22.04+/24.04)
-
-```sh
-sudo apt-get update
-sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-```
-
-## Getting started
-
-```sh
-npm install
-npm run tauri dev -w apps/desktop      # or from the root: npm run dev
-```
-
-Other scripts (run from the repo root):
-
-| Command | What it does |
-| --- | --- |
-| `npm run typecheck` | `vue-tsc` type check of the frontend |
-| `npm test` | Vitest unit tests (pure helpers) |
-| `npm run dev` | Same as `tauri dev` (Vite dev server on port 1420 + desktop window) |
-| `npm run build` | Full `tauri build`: installers/bundles for the current OS |
-| `npm run vite:build -w apps/desktop` | Frontend production build only (`vue-tsc` + Vite) |
-| `cargo test --workspace` in `apps/desktop/src-tauri` | Rust unit tests |
-
-On the GNU-toolchain Windows setup described above, only the Rust core tests run locally:
-
-```sh
-cd apps/desktop/src-tauri
-cargo test -p coco-core
-```
-
-Live smoke tests against the real eCamp instance (no credentials; network required; `#[ignore]`d by
-default; set `COCO_LIVE_INSTANCE=https://dev.ecamp3.ch` to target another instance):
-
-```sh
-cd apps/desktop/src-tauri
-# curl-based, runs everywhere (also on the GNU toolchain): discovery + invalid login -> 401
-cargo test -p coco-core --test live_ecamp -- --ignored
-# same checks through reqwest and the real command code (needs a machine that can build Tauri)
-cargo test -p co-co live_ -- --ignored
-```
-
-If you open the frontend in a plain browser (`vite` dev server only), the app shows
-"Nur in der Desktop-App verfügbar". All eCamp access goes through Rust commands, so the frontend
-only works inside the Tauri window.
-
-## Running the login spike
-
-1. Start the app (`npm run tauri dev -w apps/desktop`) or install a CI bundle (GitHub Actions →
-   workflow run → artifact `co-co-<platform>`).
-2. Follow the step-by-step plan in **[docs/m0-spike-protocol.md](docs/m0-spike-protocol.md)**:
-   MiData login, password login, token refresh, camp read, logout, re-login.
-3. Click **"Ergebnis kopieren"** in the spike protocol card and paste the Markdown report into the M0
-   spike GitHub issue, one comment per OS. The report contains only cookie *names* and decoded token
-   metadata (expiry, user IRI, roles), never cookie values or passwords.
-
-## Security and privacy in short
-
-- The eCamp login page runs in its own window. That window has **no** Tauri capabilities and no IPC
-  access.
-- Session cookies stay inside the Rust process. Cookie values are never sent to the UI or written to
-  logs.
-- Passwords are never stored or logged.
-- The main window has a strict CSP and does not talk to the network directly.
-- API calls are allowed only to the origin of the instance you logged in to.
-
-See also the ADRs:
-
-- [0001 Tauri desktop app](docs/adr/0001-tauri-desktop.md)
-- [0002 Vue 3 + Vuetify 3 stack](docs/adr/0002-vue-vuetify-stack.md)
-- [0003 Login via webview cookies](docs/adr/0003-login-via-webview-cookies.md)
-- [0004 No backend, local storage only](docs/adr/0004-no-backend-local-storage.md)
-- [0005 Data zones and AI](docs/adr/0005-data-zones-and-ai.md)
+Details: [ADRs](docs/adr/) – 0001 Tauri, 0002 Vue/Vuetify, 0003 login via webview cookies, 0004 no
+backend, 0005 data zones and AI.
 
 ## Licence
 
-**Not decided yet.** For now the repository has no licence file, so all rights are reserved.
-
-Open question: eCamp v3 is licensed under **AGPL-3.0**. co-co is meant to be a separate program that
-only uses eCamp's public HTTP API and copies no eCamp code, so we expect AGPL copyleft does not apply
-to it. However:
-
-- If we ever copy eCamp code (e.g. helpers, translations, components) into co-co, co-co would have to
-  be AGPL-3.0-compatible.
-- J+S/PBS stakeholders may prefer an open licence anyway.
-
-Decide this before the first public release.
+**Not decided yet** – no licence file, so all rights are reserved for now. eCamp v3 is AGPL-3.0; co-co
+only uses its public HTTP API and copies no eCamp code. Decide before the first public release
+(and before copying any eCamp code).

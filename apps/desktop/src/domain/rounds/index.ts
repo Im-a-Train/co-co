@@ -1,5 +1,5 @@
 /**
- * Review status, rounds, snapshots and diffs (M4). OWNER: rounds builder. Pure (store in ./store.ts).
+ * Review status, rounds, snapshots and diffs (M4). Pure (store in ./store.ts).
  * Entity hash: SHA-256 (crypto.subtle) over stable JSON (sorted keys). Per-field hashes use a fast
  * non-crypto 106-bit hash so a diff can name the changed fields without keeping full facts around.
  */

@@ -1,5 +1,5 @@
 /**
- * Feedback items of one camp (Dexie CRUD, post as eCamp comment, mark sent). OWNER: feedback builder.
+ * Feedback items of one camp (Dexie CRUD, post as eCamp comment, mark sent).
  */
 import { computed, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter, type Ref } from 'vue'
 import { commands } from '@/lib/tauri'

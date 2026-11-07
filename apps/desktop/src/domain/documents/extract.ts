@@ -1,5 +1,5 @@
 /**
- * Text extraction (browser/webview only). OWNER: documents builder.
+ * Text extraction (browser/webview only).
  * Heavy libraries are loaded lazily; keep them dynamic.
  */
 import type { DocumentKind } from '../types'

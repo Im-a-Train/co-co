@@ -108,7 +108,7 @@ describe('end to end', () => {
   })
 })
 
-// Smoke test over the dev camp facts written by the data builder.
+// Smoke test over the dev-camp CampFacts fixture.
 const FIXTURE = fileURLToPath(new URL('../../../__tests__/fixtures/camps/auf-in-die-berge.facts.json', import.meta.url))
 describe.skipIf(!existsSync(FIXTURE))('smoke: Auf in die Berge', () => {
   const facts = JSON.parse(readFileSync(FIXTURE, 'utf-8')) as CampFacts

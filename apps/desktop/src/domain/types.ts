@@ -1,7 +1,7 @@
 /**
- * Shared domain types of co-co (M1-M5). FROZEN (architect).
+ * Shared domain types of co-co (M1-M5). Shared by all modules; change with care.
  *
- * Framework-free: no Vue, no Tauri, no Dexie imports here. A builder that needs an extra type
+ * Framework-free: no Vue, no Tauri, no Dexie imports here. A module that needs an extra type
  * defines and exports it inside its own module folder instead of editing this file.
  *
  * Conventions

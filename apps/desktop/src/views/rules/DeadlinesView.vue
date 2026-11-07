@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** /fristen: deadlines across camps (NDS, Leihmaterial, Landeskarten, Lagerbewilligung). OWNER: rules builder. */
+/** /fristen: deadlines across camps (NDS, Leihmaterial, Landeskarten, Lagerbewilligung). */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'

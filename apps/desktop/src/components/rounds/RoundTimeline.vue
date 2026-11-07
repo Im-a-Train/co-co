@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Timeline of rounds (newest first) with per-round change toggle. OWNER: rounds builder. */
+/** Timeline of rounds (newest first) with per-round change toggle. */
 import { useI18n } from 'vue-i18n'
 import type { Round } from '@/domain/types'
 

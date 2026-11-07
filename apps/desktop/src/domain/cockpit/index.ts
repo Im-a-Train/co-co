@@ -1,6 +1,6 @@
 /**
  * Cockpit helpers (pure, no Vue): week grid layout, finding grouping/filtering, KPI helpers.
- * OWNER: cockpit builder. eCamp times are camp-local wall clock, so we slice the ISO strings
+ * eCamp times are camp-local wall clock, so we slice the ISO strings
  * instead of using Date getters (see domain/types.ts).
  */
 import type { JsDayReport } from '../rules/jsDays'

@@ -1,5 +1,5 @@
 /**
- * AI completion command wrapper. FROZEN (architect).
+ * AI completion command wrapper.
  *
  * ONLY src/domain/zones/aiGateway.ts may import this module
  * (enforced by src/__tests__/contracts/aiGuard.test.ts). Everything else goes through aiGateway.send().

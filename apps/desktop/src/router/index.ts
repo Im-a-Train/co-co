@@ -1,6 +1,6 @@
 /**
- * App routes (hash history). FROZEN (architect). Each view file is owned by one builder
- * (docs/contracts/ownership.md); views are lazy-loaded so heavy deps (pdfjs, mammoth) stay split.
+ * App routes (hash history). Shared by all modules; change with care.
+ * Views are lazy-loaded so heavy deps (pdfjs, mammoth) stay split.
  */
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import { useSession } from '@/composables/useSession'

@@ -1,5 +1,5 @@
 /**
- * Documents domain (M3). OWNER: documents builder.
+ * Documents domain (M3).
  *
  * Pure helpers (testable in Node). Extraction with pdfjs-dist / mammoth lives in ./extract.ts.
  * Every new DocumentRecord: zone 'yellow', aiAllowed false (see ./ingest.ts).

@@ -1,5 +1,5 @@
 /**
- * JSON export/import of ALL co-co data (M4). OWNER: rounds builder.
+ * JSON export/import of ALL co-co data (M4).
  * File I/O goes through commands.saveTextFile / commands.openTextFile (Rust dialogs, see components/backup).
  * Uses TABLE_NAMES from storage/db.ts so new tables are included automatically.
  *

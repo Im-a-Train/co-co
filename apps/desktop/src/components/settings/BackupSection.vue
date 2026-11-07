@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > Backup: JSON export/import of all co-co data. OWNER: rounds builder. */
+/** Settings > Backup: JSON export/import of all co-co data. */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBackup } from '@/components/backup/useBackup'

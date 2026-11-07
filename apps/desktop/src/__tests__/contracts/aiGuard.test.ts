@@ -1,6 +1,6 @@
 /**
  * Guard (ADR 0005): only src/domain/zones/aiGateway.ts may use the AI command wrapper.
- * FROZEN (architect). Test files (__tests__) are exempt so the gateway can be tested with mocks.
+ * Test files (__tests__) are exempt so the gateway can be tested with mocks.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'

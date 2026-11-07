@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > KI: enable AI, API key (OS keychain), model, data zones, AI log. OWNER: ai builder. */
+/** Settings > KI: enable AI, API key (OS keychain), model, data zones, AI log. */
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAi } from '@/composables/useAi'

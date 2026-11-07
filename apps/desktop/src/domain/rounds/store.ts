@@ -1,4 +1,4 @@
-/** Persistence of reviews, rounds, snapshots (tables `reviews`, `rounds`, `snapshots`). OWNER: rounds builder. */
+/** Persistence of reviews, rounds, snapshots (tables `reviews`, `rounds`, `snapshots`). */
 import { getDb, newId } from '../storage/db'
 import type { CampFacts, Iri, ReviewState, ReviewStatus, Round, Snapshot } from '../types'
 import { RoundsError, applyStatusChange, createSnapshot, planNewRound } from './index'

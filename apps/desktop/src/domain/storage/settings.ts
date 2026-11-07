@@ -1,7 +1,7 @@
 /**
- * App settings persistence (db.settings key 'app'). FROZEN (architect), usable by every builder.
- * Sections: `ai` (ai builder), `gpx` (documents builder), `backup` (rounds builder), `rulePacks` (rules).
- * Each builder only writes its own section via updateAppSettings({ <section>: ... }).
+ * App settings persistence (db.settings key 'app'). Shared by all modules.
+ * Sections: `ai` (AI settings), `gpx` (documents), `backup` (rounds/backup), `rulePacks` (rules).
+ * Each feature only writes its own section via updateAppSettings({ <section>: ... }).
  */
 import { DEFAULT_APP_SETTINGS, type AppSettings } from '../types'
 import { getDb } from './db'

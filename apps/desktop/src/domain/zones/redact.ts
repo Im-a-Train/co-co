@@ -1,5 +1,5 @@
 /**
- * Redaction (pseudonymisation) of yellow text before AI use. OWNER: ai builder. Pure.
+ * Redaction (pseudonymisation) of yellow text before AI use. Pure.
  * Replaces collaborator names/nicknames with 'Leiter A', 'Leiter B', ... (stable per camp), removes
  * e-mails, Swiss phone numbers, AHV numbers (756.xxxx.xxxx.xx) and street addresses (heuristics).
  * A mapping table (label -> display name) lets results be de-redacted for display on this device.

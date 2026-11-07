@@ -175,7 +175,7 @@ describe('loadCampFacts (dev camp dump)', () => {
     expect(guest[0].role).toBe('guest')
   })
 
-  it('writes / matches the CampFacts fixture for the rules builder', async () => {
+  it('writes / matches the CampFacts fixture for the rules tests', async () => {
     const { facts } = await load()
     const stable: CampFacts = { ...facts, loadedAt: FIXED_NOW }
     const json = JSON.stringify(stable, null, 2) + '\n'
