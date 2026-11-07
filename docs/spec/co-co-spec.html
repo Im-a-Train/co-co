@@ -328,7 +328,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
 <header class="hero">
   <canvas id="topo" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M8 built (M7-0 spike pending)</span>
+    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M9 built (M7-0 spike pending)</span>
     <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
     <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
     <div class="badges">
@@ -337,7 +337,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
       <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
       <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
       <span class="badge">Language: <b>German</b>, ready for more</span>
-      <span class="badge">Status: <b>M0–M8 built (M7-0 spike pending)</b></span>
+      <span class="badge">Status: <b>M0–M9 built (M7-0 spike pending)</b></span>
     </div>
   </div>
 </header>
@@ -483,6 +483,7 @@ danke fürs Dossier, Runde 2 ist ein grosser Schritt!
 *Muss vor der Bewilligung* ❗
 • *Di 14.07.:* nur 3 h 15 J+S-Zeit, es braucht mind. 4 h
 • *Baden im Sihlsee:* Wasseraufsicht mit Qualifikation eintragen
+   https://app.ecamp3.ch/camps/…/program/activity/…
 
 *Anregungen* 💡
 • Seiltechnik: Endbremse vor dem Bach
@@ -500,6 +501,7 @@ Details stehen als Kommentare in eCamp. Gruess, Falk</div>
     <div class="card"><h3>eCamp comment caveats</h3><p>Posting uses <span class="mono">POST /comments</span> with the camp and activity IRIs. It works whenever you are an established guest on the camp. Whether leaders <i>see</i> comments depends on the instance's <span class="mono">FEATURE_COMMENTS</span> flag, so co-co always offers the clipboard message as well. Comments are limited to 1024 characters; longer items are split or shortened.</p></div>
     <div class="card"><h3>Templates (German, i18n)</h3><p>«Grobprogramm», «Programmbesprechung», «Auflagen», «Nach dem Lagerbesuch», «Abschluss». Each has a WhatsApp variant (*bold*, emoji bullets) and an e-mail variant with a subject line. They live in <span class="mono">locales/de/feedback/*.md</span>.</p></div>
     <div class="card"><h3>Feedback-Kultur built in</h3><p>Lob always comes first, «Muss» items cite a rule, and a lint step warns when a «Muss» item contains no question or no next step.</p></div>
+    <div class="card"><h3>Link to the activity in eCamp ✓</h3><p>Every activity item in the WhatsApp, e-mail and text message carries the eCamp link of that activity (<span class="mono">/camps/{id}/{slug}/program/activity/{activityId}/{scheduleEntryId}/{slug}</span>, eCamp route <span class="mono">camp/activity</span>; only the ids matter). The preview has a switch «eCamp-Links einfügen». Each item card has «In eCamp öffnen», which opens the system browser through the Rust command <span class="mono">open_ecamp_url</span> (same origin as the session, path below <span class="mono">/camps/</span> only). eCamp comments stay without the link, because they already sit on that activity.</p></div>
   </div>
 </div></section>
 
@@ -798,6 +800,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><span class="eyebrow">M6 · ✓ done</span><h3>Triage + coach feedback</h3><ul><li>«Befunde durchgehen»: finding, activity and feedback editor side by side</li><li>Keys J/K, F, I; auto-advance to the next open finding</li><li>Fix «Feedback erstellen» in the Übersicht</li><li>«Übersteuern» renamed to «Ignorieren»; offer to disable a rule after repeated ignoring</li></ul></div>
     <div class="card"><span class="eyebrow">M7 · ✓ built</span><h3>MiData (read-only)</h3><ul><li>M7-0: spike tooling built, live run pending (auth session vs. token, PBS camp fields, filter syntax)</li><li>M7-1: Rust MiData module returning aggregates only</li><li>M7-2: «Aus MiData übernehmen» in Lager-Angaben</li><li>M7-3: qualification matrix + rules</li><li>Also: event search ±14 days across organisations, «Aktivitäten» tab, «Zurück zum Befund»</li></ul></div>
     <div class="card"><span class="eyebrow">M8 · ✓ built (live check pending)</span><h3>NDS (read-only)</h3><ul><li>NDS web API spec from redacted captures</li><li>Rust NDS module: AGOV login, aggregates only</li><li>«Aus NDS übernehmen» + NDS card in Lager-Angaben</li><li>JS-DL-01/02 with «Quelle: NDS»; CMP-NDS-01/02/03</li><li>Pending: live run with a real camp (attendance state code, paging, login detection)</li></ul></div>
+    <div class="card"><span class="eyebrow">M9 · ✓ built</span><h3>eCamp links + cross-source checks</h3><ul><li>eCamp activity link in every activity feedback item (WhatsApp, e-mail, text) and «In eCamp öffnen»</li><li><span class="mono">open_ecamp_url</span>: validated in Rust, system browser via tauri-plugin-opener</li><li>Consistency rules eCamp ↔ MiData ↔ NDS (CMP-CON-*): dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participants</li><li>SAFE-MTN-03: mountain activities without a responsible with a Berg qualification (MiData)</li></ul></div>
   </div>
 </div></section>
 
@@ -809,6 +812,9 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><h3>Login spike ✓</h3><p>Resolved 07.11.2026 on Windows 11 with Plan A: PBS MiData login in the Tauri window works and the HttpOnly cookies are readable. macOS and Linux are still to be tried; Plan B and Plan C stay as fallbacks there.</p></div>
     <div class="card"><h3>Comments visible ✓</h3><p>Yes: app.ecamp3.ch has <span class="mono">FEATURE_COMMENTS</span> enabled. Posting and deleting a comment was verified on dev.ecamp3.ch.</p></div>
     <div class="card"><h3>MiData query syntax ✓</h3><p>Checked 07.11.2026 against <span class="mono">db.scout.ch/api/openapi.json</span>: filters need the operator (<span class="mono">filter[after_or_on][eq]</span>), events only allow <span class="mono">include=dates|kind|contact|…</span> (organisation names via <span class="mono">/api/groups</span>), participations link people via <span class="mono">participant</span>. Unknown names return HTTP 400; a unit test now pins every query to the spec. See <span class="mono">docs/contracts/midata-api.md</span>.</p></div>
+    <div class="card"><h3>eCamp links: live check</h3><p>The activity link and «In eCamp öffnen» (tauri-plugin-opener) are tested with mocks only. Try them once in the release exe against app.ecamp3.ch. The slug segments only approximate eCamp's own shorteners (shortTitle or the first 16 characters of the title), which is harmless because eCamp resolves the ids only.</p></div>
+    <div class="card"><h3>Cross-source rules: tuning</h3><p>CMP-CON-* are new and run as «Hinweis» or «Soll» only. Open: which eCamp collaborators count as «Leitende» (CON-02 counts established members and managers), name matching by nickname (CON-03, can give false hits), and whether NDS «planned» counts are the right basis. Check them against 2–3 real camps.</p></div>
+    <div class="card"><h3>More checks, more data</h3><p>Not built yet, because the meaning or the data is missing:</p><ul><li>NDS children/adolescents vs. MiData age bands: which age limits NDS uses</li><li>NDS <span class="mono">campAgendaUploaded</span> and <span class="mono">coachAuthorizedForContribution</span>: deadline and meaning unclear</li><li>A winter check like SAFE-MTN-03: needs a winter keyword list in the rule pack</li><li>NDS activity location/time, NDS coach, J+S numbers: not fetched (red zone); possible later as Rust-side yes/no facts</li></ul></div>
     <div class="card"><h3>Rule confirmation</h3><p>The leader ratio, the training-free days and the 2027 Bewegungszeit stay «Soll / Quelle unsicher» until PBS or BASPO confirms them.</p></div>
     <div class="card"><h3>IndexedDB durability</h3><p>The webview's storage can be wiped by an uninstall or a profile reset. co-co reminds you to export a backup after each review round.</p></div>
     <div class="card"><h3>OAuth callback</h3><p>eCamp does not validate the callback URL (a possible open redirect). Report it to the eCamp team; co-co doesn't rely on it.</p></div>
@@ -888,10 +894,21 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ['CMP-NDS-01','eCamp camp dates differ from the linked NDS camp','NDS camp','hint','NDS · best practice'],
     ['CMP-NDS-02','After camp end: NDS activities with an open attendance check (AWK reminder)','NDS activities','hint','J+S Lager · NDS'],
     ['CMP-NDS-03','NDS participant count differs from MiData / coach input by more than 20 %','NDS statistics','hint','NDS · best practice'],
+    ['CMP-CON-01','MiData event dates differ from the NDS camp dates','MiData + NDS','hint','MiData ↔ NDS · conflict'],
+    ['CMP-CON-02','Leader counts differ between eCamp (active members/managers), MiData and NDS (planned instructors)','eCamp + MiData + NDS','hint','Cross-source · conflict'],
+    ['CMP-CON-03','eCamp collaborators not found among MiData leaders and vice versa (name matching, only if at least one name matches)','eCamp + MiData','hint','Cross-source · heuristic'],
+    ['CMP-CON-04','NDS plans more J+S leaders than MiData has leaders with an LS/T or Lagerleiter recognition valid over the whole camp','NDS + MiData qualifications','should','Cross-source · conflict'],
+    ['CMP-CON-05','MiData recognitions (LS/T, Lagerleiter, water, mountain, winter, SLRG) that are not valid for the whole camp period','MiData qualifications','should','MiData · conflict'],
+    ['CMP-CON-06','No main leader (Hauptleitung) in the MiData event','MiData roles','hint','MiData · conflict'],
+    ['CMP-CON-07','NDS planned camp days differ from the eCamp camp days','NDS + eCamp days','hint','NDS ↔ eCamp · conflict'],
+    ['CMP-CON-08','More MiData participants than the maximum of the event','MiData event','hint','MiData · conflict'],
+    ['CMP-CON-09','MiData participants without a birthday: J+S age 5–20 cannot be verified','MiData people','hint','MiData · conflict'],
+    ['CMP-CON-10','NDS participant list differs from the MiData participants by more than 20 %','NDS + MiData','hint','NDS ↔ MiData · conflict'],
     ['CMP-PROG-01','Activities not labelled «fertig geplant» from T−21','ActivityProgressLabel','hint','Completeness'],
     ['SAFE-WATER-01','Water keywords (baden, See, Fluss, Kanu…) → water qualification assigned and safety considerations present','Text + responsibles','should','Merkblatt LS/T · heuristic'],
     ['SAFE-MTN-01','Hike or mountain keywords → time calculation, alternative route and map (document or GPX)','Text + documents','should','Merkblatt LS/T · heuristic'],
     ['SAFE-MTN-02','GPX: estimated time fits the eCamp time slot','GPX + ScheduleEntry','should','J+S Zeitberechnung'],
+    ['SAFE-MTN-03','Mountain/hike activity: no responsible (matched to MiData) holds a Berg recognition','Text + responsibles + MiData','should','Merkblatt LS/T · heuristic'],
     ['SAFE-ROPE-01','Seiltechnik/Pioniertechnik → safety considerations of at least minimum length that mention anchoring and the brake','Text','should','J+S Seiltechnik · heuristic'],
     ['SAFE-NIGHT-01','Night activity → safety considerations and a late start next morning','ScheduleEntry + text','hint','PBS · heuristic'],
     ['SAFE-WX-01','Outdoor day without a bad-weather variant','Text','should','PBS best practice'],
@@ -950,6 +967,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['Camp or activity feedback','Kinds: Lob, Muss, Anregung, Frage. Drafts can be created from findings.','v1'],
       ['Post as eCamp comment','Activity items go straight to the activity (POST /comments), and the posted status is tracked.','v1'],
       ['WhatsApp / e-mail / text message','Structured template, copied to the clipboard.','v1'],
+      ['eCamp links in feedback','Each activity item carries the link to the activity in eCamp; switch «eCamp-Links einfügen» in the preview; «In eCamp öffnen» on the item card.','v1'],
       ['Templates per review moment','Grobprogramm, Programmbesprechung, Auflagen, Lagerbesuch, Abschluss.','v1'],
       ['Auflagen tracking','A Muss item becomes an Auflage; the rule re-runs after the leader edits; you confirm.','next'],
       ['Rephrase with AI','Polishes tone and length after names are redacted, with a preview.','later','ai'],
@@ -974,6 +992,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['Data zones','Green/yellow/red labels and an AI gateway with redaction; MiData-backed findings and feedback are refused.','v1'],
       ['Auto-update + signing','When other coaches start using it.','later'],
       ['MiData (read-only, red zone)','Fills Lager-Angaben from MiData: participant counts, age band, leader qualifications, coach match. Only aggregates; see the MiData section.','v1'],
+      ['Cross-source consistency checks','eCamp, MiData and NDS compared with each other: dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participant counts. Findings are red-derived and never reach the AI.','v1'],
       ['NDS status','Reads registration/approval, closing state, planned vs. actual counts, attendance checks and rental orders from the NDS web API (read-only, red zone, aggregates only); manual flags stay as a fallback. See the NDS section.','v1'],
       ['Upstream to eCamp','Rule engine as a package; a coach view or leader self-check inside eCamp.','later'],
     ]],
@@ -1003,7 +1022,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ]],
   ];
   const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
-  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list']);
+  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list','eCamp links in feedback','Cross-source consistency checks']);
   ['Befunde-Triage','Ignorieren with a reason','Rule disabling','Versioned rule packs','Confidence badges','Safety-activity detector','Soft safety review (AI)'].forEach(n=>DONE.add(n));
   const WIP=new Set([]);
   const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';
