@@ -114,3 +114,17 @@ fetches raw JSON:API, reduces, drops raw data) → `MidataAggregate` → `midata
 builds `RuleContext.midata` → rules. «Aus MiData übernehmen» shows MiData value next to the current
 value; each accepted field is written to coach inputs and badged «MiData». Never refreshed in the
 background.
+
+## NDS (M8, red zone, read-only)
+
+Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered web API
+(`docs/contracts/nds-api/`).
+
+- **Rust:** `src-tauri/src/nds.rs` has its own reqwest client, cookie jar, login window (`nds-login`,
+  no capability) and keychain session store (service `co-co-nds`), separate from eCamp and MiData.
+  Six `nds_*` commands ([contract](contracts/commands.md)). Event `nds://status`.
+- **Pure logic:** `coco-core::nds` (GraphQL body/response handling, query-only guard, chunk paging,
+  `reduce_aggregate`). Raw person data is dropped there; only counts cross to the UI.
+- **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table).
+- **Storage:** Dexie v3 table `nds` (key `campIri`), tagged `red-derived`. `CoachInputs.ndsFields`
+  records which fields the coach accepted from NDS. `AppSettings.nds = { enabled }`.

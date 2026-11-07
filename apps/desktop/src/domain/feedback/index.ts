@@ -239,7 +239,9 @@ export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new 
     updatedAt: iso,
   }
   if (activityIri) item.activityIri = activityIri
-  if ((finding.tags ?? []).includes('midata') || /Quelle:\s*MiData/.test(finding.message)) item.redDerived = true
+  if ((finding.tags ?? []).includes('midata') ||
+    (finding.tags ?? []).includes('nds-quelle') ||
+    /Quelle:\s*(MiData|NDS)/.test(finding.message)) item.redDerived = true
   return item
 }
 

@@ -144,6 +144,35 @@ describe('JS-DL-01', () => {
   })
 })
 
+describe('JS-DL-01/02 NDS source', () => {
+  const b = new FactsBuilder({ start: '2031-07-12', days: 5 })
+  const at = (now: string, inputs = makeCoachInputs()) => makeCtx(b.facts, { now: new Date(now), coachInputs: inputs })
+  it('JS-DL-01 does not conclude lateness from an NDS approval date (bewilligt am)', () => {
+    const inputs = makeCoachInputs({ ndsRegistered: true, ndsRegisteredOn: '2031-06-13', ndsFields: { ndsRegistered: '2031-06-14T10:00:00.000Z', ndsRegisteredOn: '2031-06-14T10:00:00.000Z' } })
+    expect(p['JS-DL-01'](at('2031-06-20T00:00:00Z', inputs))).toEqual([])
+  })
+  it('JS-DL-01 cites Quelle: NDS when the NDS-derived input is overdue, and the engine tags it', () => {
+    const inputs = makeCoachInputs({ ndsRegistered: false, ndsFields: { ndsRegistered: '2031-06-14T10:00:00.000Z' } })
+    const hits = p['JS-DL-01'](at('2031-06-20T00:00:00Z', inputs))
+    expect(hits).toHaveLength(1)
+    expect(String(hits[0].params?.detail)).toContain('Quelle: NDS, Stand 14.06.2031')
+    expect(hits[0].evidence?.[0].label).toBe('Quelle: NDS, Stand 14.06.2031')
+    const found = evaluate(loadBundledPacks(), at('2031-06-20T00:00:00Z', inputs)).find((f) => f.ruleId === 'JS-DL-01')
+    expect(found?.tags).toContain('nds-quelle')
+  })
+  it('JS-DL-01 without NDS badge has no NDS source and no nds-quelle tag', () => {
+    const hits = p['JS-DL-01'](at('2031-06-13T00:00:00Z'))
+    expect(String(hits[0].params?.detail)).not.toContain('NDS')
+    const found = evaluate(loadBundledPacks(), at('2031-06-13T00:00:00Z')).find((f) => f.ruleId === 'JS-DL-01')
+    expect(found?.tags).not.toContain('nds-quelle')
+  })
+  it('JS-DL-02 cites Quelle: NDS for an adopted closed flag closed late', () => {
+    const inputs = makeCoachInputs({ ndsClosed: true, ndsClosedOn: '2031-08-16', ndsFields: { ndsClosed: '2031-09-01T10:00:00.000Z' } })
+    const hits = p['JS-DL-02'](at('2031-09-02T00:00:00Z', inputs))
+    expect(String(hits[0].params?.detail)).toContain('Quelle: NDS, Stand 01.09.2031')
+  })
+})
+
 describe('JS-DL-02', () => {
   const b = new FactsBuilder({ start: '2031-07-12', days: 5 })
   // last day 2031-07-16 (no J+S entries -> camp end) -> due 2031-08-15

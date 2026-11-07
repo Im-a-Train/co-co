@@ -63,8 +63,8 @@ async function run(preview: AiPreview): Promise<string> {
 
 /** Rephrase in Feedback-Kultur tone. Returns the preview; call runRephrase(preview) after confirmation. */
 export function rephraseFeedback(item: FeedbackItem, facts: CampFacts): AiPreview {
-  if (item.redDerived || /Quelle:\s*MiData/.test(item.text))
-    throw new Error('Dieser Text enthält MiData-Angaben (rote Zone) und darf nicht an die KI gesendet werden.')
+  if (item.redDerived || /Quelle:\s*(MiData|NDS)/.test(item.text))
+    throw new Error('Dieser Text enthält MiData-/NDS-Angaben (rote Zone) und darf nicht an die KI gesendet werden.')
   const activity = item.activityIri ? facts.activities.find((a) => a.iri === item.activityIri) : undefined
   const parts = [
     { label: `Art: ${KIND_LABEL[item.kind]}`, text: '', zone: 'green' as const },

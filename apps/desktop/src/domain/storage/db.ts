@@ -17,6 +17,7 @@ import type {
   DocumentRecord,
   FeedbackItem,
   MidataRecord,
+  NdsRecord,
   Override,
   ReviewState,
   Round,
@@ -58,6 +59,8 @@ export class CocoDb extends Dexie {
   aiLog!: EntityTable<AiLogEntry, 'id'>
   /** Owner: midata (M7). Aggregates only, tagged red-derived. */
   midata!: EntityTable<MidataRecord, 'campIri'>
+  /** Owner: nds (M8). Aggregates only, tagged red-derived. */
+  nds!: EntityTable<NdsRecord, 'campIri'>
 
   constructor(name = DB_NAME) {
     super(name)
@@ -79,6 +82,10 @@ export class CocoDb extends Dexie {
     this.version(2).stores({
       midata: 'campIri',
     })
+    // v3 (M8): NDS aggregates per camp (red-derived). New table only, no data migration.
+    this.version(3).stores({
+      nds: 'campIri',
+    })
   }
 }
 
@@ -97,6 +104,7 @@ export const TABLE_NAMES = [
   'watchedFolders',
   'aiLog',
   'midata',
+  'nds',
 ] as const
 
 export type TableName = (typeof TABLE_NAMES)[number]

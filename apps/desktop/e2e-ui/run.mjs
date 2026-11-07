@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { midataFlows } from './midata-flows.mjs'
+import { ndsFlows } from './nds-flows.mjs'
 import { triageFlows } from './triage-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -52,7 +53,7 @@ function record(ok, name, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' - ' + detail : ''}`)
 }
 
-const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
+const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata|nds)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
 
 async function shot(page, name) {
   const file = join(SHOTS, `${name}.png`)
@@ -169,6 +170,7 @@ async function main() {
 
   await triageFlows({ page, step, go, shot, BASE })
   await midataFlows({ page, step, go, shot, BASE })
+  await ndsFlows({ page, step, go, shot, BASE })
 
   await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')

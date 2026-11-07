@@ -5,8 +5,8 @@
 J+S and PBS rules, and helps the coach give structured feedback to the camp leaders. It has no backend
 of its own: the app talks directly to the eCamp API and keeps its data on the local machine.
 
-Status: **M0–M6 built** (login, cockpit + rules, feedback, documents, rounds + backup, optional AI,
-findings triage). **M7 MiData** built (live spike M7-0 pending, see `docs/m7-spike-protocol.md`). Spec and live status: [`docs/spec/co-co-spec.html`](docs/spec/co-co-spec.html).
+Status: **M0–M8 built** (login, cockpit + rules, feedback, documents, rounds + backup, optional AI,
+findings triage). **M7 MiData** built (live spike M7-0 pending, see `docs/m7-spike-protocol.md`). **M8 NDS** built (unofficial, read-only, red zone, see `docs/adr/0007-nds-red-zone.md`). Spec and live status: [`docs/spec/co-co-spec.html`](docs/spec/co-co-spec.html).
 
 ## Features
 
@@ -24,6 +24,7 @@ findings triage). **M7 MiData** built (live spike M7-0 pending, see `docs/m7-spi
   review moment; WhatsApp / e-mail / text via clipboard; activity items can be posted as eCamp comments.
 - **Documents** – drag & drop, file picker and watched folders (e.g. synced Dropbox); PDF / DOCX / GPX /
   text extraction, safety-concept checklist, GPX Leistungskilometer, linking to activities, full-text search.
+- **Integrations (read-only, red zone)** – MiData (participants, leaders) and NDS (registration, approval, activities, AWK) via the coach's own login; only aggregates reach the UI, personal data never leaves Rust and never goes to AI.
 - **Rounds** – review status workflow, snapshots and «what changed since the last round», JSON backup.
 - **Optional AI** (off by default) – own Anthropic API key in the OS keychain, data zones, redaction
   preview before every request; personal data from MiData/NDS never goes to AI.

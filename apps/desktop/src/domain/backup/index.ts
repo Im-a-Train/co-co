@@ -8,6 +8,7 @@
  */
 import { TABLE_NAMES, type CocoDb } from '../storage/db'
 import { MIDATA_FIELDS } from '../midata'
+import { NDS_FIELDS } from '../nds'
 import { EXPORT_FORMAT, EXPORT_VERSION, type CocoExport } from '../types'
 
 export type ImportMode = 'replace' | 'merge'
@@ -73,15 +74,16 @@ const PRIMARY_KEY: Record<string, string> = {
   watchedFolders: 'id',
   aiLog: 'id',
   midata: 'campIri',
+  nds: 'campIri',
 }
 
 export interface ExportOptions {
-  /** Leave out red-derived data (the `midata` table). */
+  /** Leave out red-derived data (the `midata` and `nds` tables). */
   omitRedDerived?: boolean
 }
 
 /** Tables holding red-derived data (omitted with `omitRedDerived`). */
-export const RED_DERIVED_TABLES: readonly string[] = ['midata']
+export const RED_DERIVED_TABLES: readonly string[] = ['midata', 'nds']
 
 /** Removes values adopted from MiData (red-derived) from a coachInputs row, plus the badge map. */
 function stripMidataFields(row: unknown): unknown {
@@ -94,12 +96,29 @@ function stripMidataFields(row: unknown): unknown {
   return out
 }
 
+/** Reset values (false/null) of NDS-adopted fields. */
+const NDS_EMPTY: Record<string, unknown> = { ndsRegistered: false, ndsRegisteredOn: null, ndsClosed: false }
+
+/** Removes values adopted from NDS (red-derived) from a coachInputs row, plus the badge map. */
+function stripNdsFields(row: unknown): unknown {
+  const r = row as Record<string, unknown>
+  const badges = r.ndsFields
+  if (!badges || typeof badges !== 'object') return row
+  const out: Record<string, unknown> = { ...r }
+  for (const f of NDS_FIELDS) if (f in badges) out[f] = NDS_EMPTY[f]
+  delete out.ndsFields
+  return out
+}
+
+/** Both strippers for a coachInputs row. */
+const stripRedFields = (row: unknown): unknown => stripNdsFields(stripMidataFields(row))
+
 export async function exportFromStore(store: BackupStore, now: Date = new Date(), options: ExportOptions = {}): Promise<CocoExport> {
   const tables: Record<string, unknown[]> = {}
   for (const name of TABLE_NAMES) {
     if (options.omitRedDerived && RED_DERIVED_TABLES.includes(name)) continue
     const rows = (await store[name]?.toArray()) ?? []
-    tables[name] = options.omitRedDerived && name === 'coachInputs' ? rows.map(stripMidataFields) : rows
+    tables[name] = options.omitRedDerived && name === 'coachInputs' ? rows.map(stripRedFields) : rows
   }
   return {
     format: EXPORT_FORMAT,

@@ -103,3 +103,29 @@ logout. The frontend also reads `midata_status` at start-up.
 
 Filter syntax (Graphiti style, e.g. `filter[event_id]`, `filter[type][eq]`) is **unverified** until
 the spike M7-0 ran against a real MiData account. It lives in one place in the Rust module.
+
+## M8: NDS (read-only, red zone, unofficial web API)
+
+Own module `src-tauri/src/nds.rs` with its own reqwest client and cookie jar (never shared with eCamp
+or MiData). The API is reverse-engineered, see `docs/contracts/nds-api/` and
+[ADR 0007](../adr/0007-nds-red-zone.md). Only `GET` and GraphQL queries are sent (documents starting
+with `mutation` are rejected in code). Requests send `Accept: application/json` and header
+`default-language: de`; GraphQL goes to `POST /<service>/graphql/admin` with
+`{operationName, variables, query}` and list `chunk {size, page, sort: []}`; errors arrive in
+`errors` with HTTP 200. Raw responses are reduced in `coco_core::nds`; only aggregates, camp summaries,
+probe results (field names and status codes) and connection status cross to the UI. Names, birth
+dates, AHV numbers, addresses, e-mails and IBANs never leave Rust and are never logged. Cookie values
+are never logged, returned or put into error messages. All commands accept calls from the `main`
+window only. Nothing runs in the background. Unknown state codes are kept as raw strings.
+
+| Command | Args | Returns | Notes |
+| --- | --- | --- | --- |
+| `nds_status` | – | `NdsStatus { connected, cookieNames }` | Lazily restores the stored session from the keychain (service `co-co-nds`). Cookie names only, never values. |
+| `nds_open_login` | – | `void` | Opens the separate login window `nds-login` (no capability, no IPC) on `https://www.nds.baspo.admin.ch/perorgfin/oauth2/authorization/keycloak` (AGOV -> Keycloak). Rust polls the jar for the `SESSION` cookie, stores the session in the NDS jar and the keychain, closes the window and emits `nds://status`. |
+| `nds_logout` | – | `void` | Clears the jar, the in-memory connection and the keychain entry. Idempotent. Emits `nds://status`. |
+| `nds_find_camps` | `from: string`, `to: string` (YYYY-MM-DD) | `NdsCampSummary[]` (`offerBusinessId, campBusinessId, offerNumber, offerItemNumber, groupName, start, end, offerState, offerItemState`) | youthtraining `OfferList` (all pages), offers overlapping the dates, then `CampList($offerBusinessId)` per offer, camps overlapping the dates. Used for the one-time camp pick per camp. |
+| `nds_fetch_aggregate` | `offerBusinessId: string`, `campBusinessId: string` | `NdsAggregate` | Fetches `/youthtraining/offer/offer/{offerId}/details`, `/offer/camp/{campId}/details` and `/statistics`, `ActivityListForCamp`, `SupervisorsListForCamp`, `ParticipantsListForCamp` and `rentalMaterialOrderListForCamp`; reduces in Rust. Returns state codes, `approvedOn` (date of `approvalTimestamp` or null), planned/actual counts, supervisor counts by `involvementType`, participant count (and by `targetAudienceGroup`), activities `{total, byState, byType, lastActivityDate, attendanceOpenCount}` (attendanceOpenCount counts only the inferred code `ATTENDANCE_OPEN`), `campAgendaUploaded`, rental orders `{orderState, dispatchmentDate, returnDate}`, `fetchedAt`. Rejects with a German message when not connected or on HTTP errors (401/403 -> «Anmeldung abgelaufen»). |
+| `nds_probe` | `campBusinessId: string` | `NdsProbe { connected, endpoints: [{name, status, fieldsPresent, fieldsMissing}] }` | Diagnosis. HTTP status per endpoint used and which expected fields were present. **Field names only**, never values. |
+
+Event: `nds://status` payload `NdsStatus`, emitted to `main` after login and logout. The frontend also
+reads `nds_status` at start-up.

@@ -34,3 +34,7 @@ Thumbs.db
 e2e-ui/shots/
 apps/desktop/e2e-ui/shots/
 apps/desktop/src-tauri/target-*/
+
+# NDS network captures may contain personal data
+*.har
+captures/

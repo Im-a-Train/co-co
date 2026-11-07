@@ -32,6 +32,12 @@
     "allow-midata-logout",
     "allow-midata-find-events",
     "allow-midata-fetch-aggregate",
-    "allow-midata-probe"
+    "allow-midata-probe",
+    "allow-nds-status",
+    "allow-nds-open-login",
+    "allow-nds-logout",
+    "allow-nds-find-camps",
+    "allow-nds-fetch-aggregate",
+    "allow-nds-probe"
   ]
 }

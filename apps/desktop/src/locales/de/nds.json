@@ -1,0 +1,112 @@
+{
+  "nds": {
+    "badge": {
+      "label": "NDS",
+      "tooltip": "Aus der NDS übernommen, Stand {date}"
+    },
+    "redZone": "Rote Zone · nur Zahlen",
+    "settings": {
+      "title": "NDS (Nationale Datenbank Sport)",
+      "intro": "Die NDS des Bundesamts für Sport wird nur lesend angefragt, nur auf deinen Wunsch und nur über die App, nie über den Browser.",
+      "redZoneText": "Rote Zone: Die Daten aus der NDS bleiben auf diesem Gerät. Nur Zahlen, Daten und Status gelangen in co-co, nie an die KI. Namen, Geburtsdaten, AHV-Nummern und Adressen verlassen die App-Schicht nicht.",
+      "unofficial": "Die NDS hat keine öffentliche Schnittstelle. co-co nutzt dieselbe Web-Schnittstelle wie die NDS-Webseite. Sie kann sich ohne Vorankündigung ändern; dann zeigt die Diagnose, welche Felder fehlen.",
+      "enable": "NDS-Anbindung verwenden",
+      "status": {
+        "title": "Verbindung",
+        "connected": "verbunden",
+        "none": "nicht verbunden",
+        "cookies": "Cookies: {names}"
+      },
+      "login": "Bei der NDS anmelden",
+      "loginHint": "Öffnet ein Anmeldefenster (AGOV). Das Passwort sieht nur AGOV.",
+      "logout": "Abmelden",
+      "notInApp": "Nur in der Desktop-App verfügbar.",
+      "diag": {
+        "title": "Diagnose",
+        "intro": "Prüft, was die NDS für ein Lager preisgibt. Es werden nur Statuscodes und Feldnamen angezeigt.",
+        "campId": "NDS-Lager-ID",
+        "run": "Prüfen",
+        "endpoint": "Abfrage",
+        "status": "Status",
+        "present": "Felder vorhanden",
+        "missing": "Felder fehlen",
+        "none": "keine"
+      }
+    },
+    "card": {
+      "title": "NDS",
+      "disabled": "Die NDS-Anbindung ist ausgeschaltet.",
+      "notConnected": "Die NDS ist nicht verbunden.",
+      "toSettings": "Zu den Einstellungen",
+      "noFacts": "Lager wird noch geladen …",
+      "link": {
+        "set": "Verknüpft mit NDS-Lager {id}",
+        "none": "Noch kein NDS-Lager gewählt."
+      },
+      "pick": "Lager wählen",
+      "changeCamp": "Lager ändern",
+      "refresh": "Aus NDS laden",
+      "refreshHint": "Wird nur auf Knopfdruck geladen, nie im Hintergrund.",
+      "stand": "Stand NDS: {date}",
+      "noData": "Noch keine Daten geladen.",
+      "adopt": "Aus NDS übernehmen",
+      "unlink": "Verknüpfung und NDS-Daten löschen",
+      "noDates": "Das Lager hat in eCamp keine Zeiträume; ohne Daten kann die NDS nicht abgefragt werden.",
+      "loadFailed": "Die NDS konnte nicht geladen werden"
+    },
+    "picker": {
+      "title": "NDS-Lager wählen",
+      "intro": "Lager der NDS, die sich mit dem Zeitraum des eCamp-Lagers überschneiden.",
+      "loading": "NDS wird abgefragt …",
+      "failed": "Abfrage fehlgeschlagen",
+      "empty": "Keine passenden Lager gefunden.",
+      "noDates": "ohne Datum"
+    },
+    "summary": {
+      "offerState": "Angebot",
+      "campState": "Lager",
+      "approvedOn": "bewilligt am {date}",
+      "approvedHint": "Die Anmeldung erfolgte am oder vor diesem Datum.",
+      "agendaYes": "Lagerprogramm hochgeladen",
+      "agendaNo": "Lagerprogramm fehlt",
+      "contributionYes": "Coach beitragsberechtigt",
+      "contributionNo": "Coach nicht beitragsberechtigt",
+      "dates": "Zeitraum in der NDS",
+      "offerNumber": "Angebot",
+      "counts": "Zahlen",
+      "planned": "Geplant",
+      "actual": "Effektiv",
+      "count": {
+        "totalParticipants": "Teilnehmende gesamt",
+        "children": "Kinder",
+        "adolescents": "Jugendliche",
+        "totalInstructors": "Leitende gesamt",
+        "jsInstructors": "J+S-Leitende",
+        "campDays": "Lagertage",
+        "totalActivities": "Aktivitäten"
+      },
+      "participants": "Teilnehmende",
+      "supervisors": "Leitende",
+      "activities": "Aktivitäten",
+      "lastActivity": "Letzte am {date}",
+      "awkOpen": "{n} Aktivität(en) mit offener Anwesenheitskontrolle (AWK). Nach dem Lager in der NDS abschliessen.",
+      "awkOk": "Alle Anwesenheitskontrollen sind erledigt.",
+      "rentals": "Leihmaterial",
+      "dispatch": "Versand {date}",
+      "return": "Rückgabe {date}"
+    },
+    "adopt": {
+      "title": "Aus NDS übernehmen",
+      "intro": "Wähle, welche Angaben aus der NDS in die Lager-Angaben übernommen werden. Das Datum ist das Bewilligungsdatum; die Anmeldung war am oder vor diesem Tag.",
+      "field": "Angabe",
+      "current": "Jetzt",
+      "nds": "NDS",
+      "accept": "Übernehmen",
+      "empty": "leer",
+      "same": "gleich",
+      "registeredOnHint": "bewilligt am",
+      "apply": "{n} übernehmen",
+      "values": { "yes": "Ja", "no": "Nein" }
+    }
+  }
+}
