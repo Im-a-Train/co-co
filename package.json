@@ -1,0 +1,19 @@
+{
+  "name": "co-co",
+  "private": true,
+  "version": "0.1.0",
+  "description": "co-co (Coach Cockpit) – Desktop-App für J+S-Coaches auf Basis von eCamp v3",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "npm run dev -w apps/desktop",
+    "build": "npm run build -w apps/desktop",
+    "typecheck": "npm run typecheck -w apps/desktop",
+    "test": "npm run test -w apps/desktop",
+    "tauri": "npm run tauri -w apps/desktop --"
+  }
+}

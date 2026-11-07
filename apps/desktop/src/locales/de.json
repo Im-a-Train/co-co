@@ -1,0 +1,148 @@
+{
+  "app": {
+    "name": "co-co",
+    "subtitle": "Coach Cockpit",
+    "milestone": "M0 · Login-Spike",
+    "status": {
+      "loggedIn": "Angemeldet",
+      "loggedOut": "Nicht angemeldet"
+    }
+  },
+  "common": {
+    "yes": "ja",
+    "no": "nein",
+    "none": "keine",
+    "unknown": "unbekannt",
+    "retry": "Erneut versuchen"
+  },
+  "notTauri": {
+    "title": "Nur in der Desktop-App verfügbar",
+    "text": "Diese Oberfläche läuft gerade in einem normalen Browser. Anmeldung und eCamp-Zugriff funktionieren nur in der co-co Desktop-App (npm run dev)."
+  },
+  "instance": {
+    "title": "eCamp-Instanz",
+    "subtitle": "Mit welchem eCamp soll co-co sprechen?",
+    "select": "Instanz",
+    "check": "Prüfen",
+    "addCustom": "Eigene URL",
+    "remove": "Entfernen",
+    "customUrl": "URL der eCamp-Instanz",
+    "customLabel": "Bezeichnung (optional)",
+    "add": "Hinzufügen",
+    "discoverFailed": "Instanz konnte nicht geprüft werden",
+    "lockedWhileLoggedIn": "Zum Wechseln der Instanz zuerst abmelden.",
+    "builtIn": {
+      "prod": "eCamp (Produktion)",
+      "dev": "eCamp Dev"
+    },
+    "error": {
+      "invalid": "Ungültige URL.",
+      "insecure": "Nur https-Adressen sind erlaubt (http nur für localhost)."
+    },
+    "info": {
+      "apiRoot": "API-Root",
+      "cookiePrefix": "Cookie-Präfix",
+      "version": "Version",
+      "comments": "Kommentare aktiv",
+      "oauthProviders": "OAuth-Anbieter"
+    }
+  },
+  "login": {
+    "title": "Anmeldung",
+    "subtitle": "bei {url}",
+    "explanation": "Melde dich mit deinem bestehenden eCamp-Konto an. Es öffnet sich ein separates Fenster mit der originalen eCamp-Anmeldeseite – dort funktionieren auch MiData (PBS), Google und weitere Anbieter.",
+    "webview": "Mit eCamp anmelden (inkl. MiData)",
+    "webviewHint": "Das Anmeldefenster schliesst sich automatisch, sobald die Anmeldung erkannt wurde.",
+    "password": {
+      "title": "Passwort-Login (Fallback)",
+      "hint": "Nur für Konten mit eCamp-Passwort. Das Passwort wird direkt an eCamp gesendet und weder gespeichert noch protokolliert.",
+      "identifier": "E-Mail",
+      "password": "Passwort",
+      "submit": "Anmelden"
+    }
+  },
+  "session": {
+    "title": "Sitzung",
+    "none": "Keine aktive Sitzung",
+    "emptyTitle": "Nicht angemeldet",
+    "emptyText": "Nach der Anmeldung erscheinen hier Benutzer, Token-Ablauf und Cookie-Namen.",
+    "active": "aktiv",
+    "expired": "abgelaufen",
+    "methodLabel": "Anmeldemethode",
+    "method": {
+      "webview": "eCamp-Anmeldefenster",
+      "password": "Passwort-Login"
+    },
+    "user": "Benutzer",
+    "userFailed": "Benutzer konnte nicht geladen werden",
+    "expiresIn": "Token läuft ab in",
+    "nextRefresh": "Automatische Erneuerung in",
+    "cookieNames": "Cookie-Namen (ohne Werte)",
+    "roles": "Rollen",
+    "obtainedAt": "Angemeldet seit",
+    "refresh": "Token erneuern",
+    "logout": "Abmelden"
+  },
+  "camps": {
+    "title": "Lager",
+    "subtitle": "Deine Lager aus eCamp",
+    "count": "kein Lager | ein Lager | {n} Lager",
+    "reload": "Neu laden",
+    "loginFirst": "Melde dich an, um deine Lager zu sehen.",
+    "failed": "Lager konnten nicht geladen werden",
+    "empty": "Keine Lager gefunden.",
+    "motto": "Motto",
+    "coach": "Coach",
+    "activities": {
+      "title": "Aktivitäten",
+      "count": "keine Aktivitäten | 1 Aktivität | {n} Aktivitäten",
+      "failed": "Aktivitäten konnten nicht geladen werden"
+    }
+  },
+  "protocol": {
+    "title": "Spike-Protokoll",
+    "subtitle": "Diagnose der Anmeldung – zum Einfügen ins GitHub-Issue / ADR",
+    "copy": "Ergebnis kopieren",
+    "copied": "Ergebnis in die Zwischenablage kopiert.",
+    "copyFailed": "Kopieren fehlgeschlagen – bitte den Bericht unten manuell kopieren.",
+    "results": "Ergebnisse",
+    "log": "Ereignisse",
+    "noLog": "Noch keine Ereignisse.",
+    "showReport": "Bericht anzeigen",
+    "hideReport": "Bericht ausblenden"
+  },
+  "results": {
+    "loginWindowOpened": "Anmeldefenster geöffnet",
+    "cookiesFound": "Cookies gefunden",
+    "apiCallOk": "API-Aufruf erfolgreich",
+    "refreshOk": "Token-Erneuerung erfolgreich",
+    "campsLoaded": "Lager geladen",
+    "status": {
+      "pending": "offen",
+      "ok": "erfolgreich",
+      "failed": "fehlgeschlagen"
+    }
+  },
+  "report": {
+    "title": "co-co M0 Login-Spike – Ergebnis",
+    "generatedAt": "Erstellt",
+    "appVersion": "App-Version",
+    "os": "Betriebssystem",
+    "userAgent": "User-Agent",
+    "instance": "Instanz",
+    "apiRoot": "API-Root",
+    "ecampVersion": "eCamp-Version",
+    "method": "Methode",
+    "cookieNames": "Cookie-Namen",
+    "roles": "Rollen",
+    "tokenExp": "Token-Ablauf",
+    "campsCount": "Anzahl Lager",
+    "results": "Ergebnisse",
+    "check": "Prüfpunkt",
+    "status": "Status",
+    "time": "Zeit",
+    "detail": "Detail",
+    "log": "Ereignisprotokoll",
+    "noLog": "Keine Ereignisse aufgezeichnet."
+  }
+}

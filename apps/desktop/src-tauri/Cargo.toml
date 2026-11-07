@@ -1,0 +1,50 @@
+[workspace]
+members = [".", "crates/coco-core"]
+resolver = "2"
+
+[package]
+name = "co-co"
+version = "0.1.0"
+description = "co-co (Coach Cockpit) – desktop app for J+S camp coaches on top of eCamp v3"
+authors = ["co-co contributors"]
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[lib]
+# The `_lib` suffix avoids a name clash with the binary on Windows (cargo#8519).
+name = "coco_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "co-co"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+coco-core = { path = "crates/coco-core" }
+# Pinned to 2.12 (>= 2.4 has Webview::cookies_for_url); avoids 3.0 alphas.
+tauri = { version = "2.12", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# reqwest 0.12 keeps the `rustls-tls` feature name of the architecture contract
+# (0.13 renamed it to `rustls` and switched to aws-lc-rs). All eCamp HTTP goes
+# through this client so the auth cookies never leave Rust.
+reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls", "cookies", "json"] }
+url = "2"
+base64 = "0.22"
+thiserror = "2"
+tokio = { version = "1", features = ["sync", "time"] }
+
+[dev-dependencies]
+# Mock runtime for the ignored live tests in src/live_tests.rs.
+tauri = { version = "2.12", features = ["test"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

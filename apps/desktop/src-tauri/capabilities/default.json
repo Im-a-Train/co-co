@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Local app UI only (window 'main'). The remote 'ecamp-login' window intentionally gets NO capability and therefore no IPC access. The app commands are declared in an app ACL manifest (build.rs), so they are only callable with these grants.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "allow-discover-instance",
+    "allow-open-login-window",
+    "allow-password-login",
+    "allow-session-status",
+    "allow-refresh-session",
+    "allow-api-get",
+    "allow-logout"
+  ]
+}

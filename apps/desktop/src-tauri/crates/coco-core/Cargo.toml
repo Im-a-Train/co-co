@@ -1,0 +1,14 @@
+[package]
+name = "coco-core"
+version = "0.1.0"
+edition = "2021"
+description = "Pure, platform-independent logic of co-co (no Tauri, no HTTP): eCamp instance discovery parsing, JWT cookie handling, URL/origin validation."
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+base64 = "0.22"
+thiserror = "2"
+regex = "1"
