@@ -75,6 +75,7 @@ const PRIMARY_KEY: Record<string, string> = {
   aiLog: 'id',
   midata: 'campIri',
   nds: 'campIri',
+  selfChecks: 'id',
 }
 
 export interface ExportOptions {
@@ -110,6 +111,13 @@ function stripNdsFields(row: unknown): unknown {
   return out
 }
 
+/** Drops red-derived findings (quoting MiData/NDS) from a selfChecks row. */
+function stripSelfCheckRed(row: unknown): unknown {
+  const r = row as Record<string, unknown>
+  if (!Array.isArray(r.findings)) return row
+  return { ...r, findings: r.findings.filter((f) => !(f as { redDerived?: boolean } | null)?.redDerived) }
+}
+
 /** Both strippers for a coachInputs row. */
 const stripRedFields = (row: unknown): unknown => stripNdsFields(stripMidataFields(row))
 
@@ -118,7 +126,12 @@ export async function exportFromStore(store: BackupStore, now: Date = new Date()
   for (const name of TABLE_NAMES) {
     if (options.omitRedDerived && RED_DERIVED_TABLES.includes(name)) continue
     const rows = (await store[name]?.toArray()) ?? []
-    tables[name] = options.omitRedDerived && name === 'coachInputs' ? rows.map(stripRedFields) : rows
+    tables[name] =
+      options.omitRedDerived && name === 'coachInputs'
+        ? rows.map(stripRedFields)
+        : options.omitRedDerived && name === 'selfChecks'
+          ? rows.map(stripSelfCheckRed)
+          : rows
   }
   return {
     format: EXPORT_FORMAT,

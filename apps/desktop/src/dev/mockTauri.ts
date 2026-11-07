@@ -22,6 +22,49 @@ const files: Record<string, { name: string; text: string }> = {
   'C:/mock/sicherheitskonzept.txt': { name: 'sicherheitskonzept.txt', text: TXT },
 }
 
+// ---- Comment sync mock: comments posted through the mock come back from GET /api/comments with an
+// invented answer (1st posted: direct reply + later unrelated comment; 2nd posted: resolved). ----------
+interface PostedComment { id: string; activityIri: string; textHtml: string; createTime: string }
+const postedComments: PostedComment[] = []
+
+function withPostedComments(res: unknown): unknown {
+  const body = res as { _embedded?: { items?: unknown[] }; totalItems?: number }
+  const items = (body._embedded?.items ?? (body._embedded = { items: [] }).items) as unknown[]
+  const iso = (offsetSec: number, base: string) => new Date(new Date(base).getTime() + offsetSec * 1000).toISOString()
+  postedComments.forEach((c, i) => {
+    const iri = `/api/comments/${c.id}`
+    const camp = { href: DEV_CAMP_IRI }
+    items.push({
+      _links: { self: { href: iri }, camp, activity: { href: c.activityIri }, parent: null, author: { href: USER_IRI }, resolvedBy: i === 1 ? { href: USER_IRI } : null },
+      authorDisplayName: 'Test Coach',
+      textHtml: c.textHtml,
+      resolvedAt: i === 1 ? iso(3600, c.createTime) : null,
+      id: c.id,
+      createTime: c.createTime,
+    })
+    if (i === 0) {
+      items.push({
+        _links: { self: { href: `/api/comments/${c.id}-reply` }, camp, activity: { href: c.activityIri }, parent: { href: iri }, author: { href: '/api/camp_collaborations/mockanna' } },
+        authorDisplayName: 'Anna Beispiel',
+        textHtml: '<p>Danke für den Hinweis! Wir ergänzen das bis morgen.</p>',
+        resolvedAt: null,
+        id: `${c.id}-reply`,
+        createTime: iso(1800, c.createTime),
+      })
+      items.push({
+        _links: { self: { href: `/api/comments/${c.id}-later` }, camp, activity: { href: c.activityIri }, parent: null, author: { href: '/api/camp_collaborations/mockben' } },
+        authorDisplayName: 'Ben Muster',
+        textHtml: '<p>Ist erledigt, bitte nochmals anschauen.</p>',
+        resolvedAt: null,
+        id: `${c.id}-later`,
+        createTime: iso(7200, c.createTime),
+      })
+    }
+  })
+  body.totalItems = items.length
+  return body
+}
+
 function session() {
   const now = Math.floor(Date.now() / 1000)
   return {
@@ -217,18 +260,22 @@ export function installMockTauri(): void {
           if (clean.startsWith('/api/profiles'))
             return { nickname: 'Coach', firstname: 'Test', surname: 'Coach', email: 'coach@example.invalid', _links: {} }
           if (clean.startsWith('/api/users')) return { _embedded: { items: [] }, totalItems: 0, _links: {} }
+          if (clean.startsWith('/api/comments?')) return withPostedComments(await api.apiGet(path))
           return await api.apiGet(path)
         }
-        case 'api_post_comment':
+        case 'api_post_comment': {
+          const n = postedComments.length + 1
+          postedComments.push({ id: `mockcomment${n}`, activityIri: a.activityIri as string, textHtml: String(a.textHtml ?? ''), createTime: new Date(Date.now() - 60_000).toISOString() })
           return {
-            id: 'mockcomment1',
+            id: `mockcomment${n}`,
             _links: {
-              self: { href: '/api/comments/mockcomment1' },
+              self: { href: `/api/comments/mockcomment${n}` },
               activity: { href: a.activityIri as string },
               camp: { href: (a.campIri as string) ?? DEV_CAMP_IRI },
             },
             textHtml: a.textHtml,
           }
+        }
         case 'api_patch_comment':
           return { id: 'mockcomment1', _links: {}, ...(a.patch as object) }
         case 'open_ecamp_url':

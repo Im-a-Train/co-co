@@ -21,6 +21,7 @@ import type {
   Override,
   ReviewState,
   Round,
+  SelfCheckRun,
   Snapshot,
   WatchedFolder,
 } from '../types'
@@ -61,6 +62,8 @@ export class CocoDb extends Dexie {
   midata!: EntityTable<MidataRecord, 'campIri'>
   /** Owner: nds (M8). Aggregates only, tagged red-derived. */
   nds!: EntityTable<NdsRecord, 'campIri'>
+  /** Owner: selfCheck. Leader self-check runs («Entwurfsrunden»), separate from review rounds. */
+  selfChecks!: EntityTable<SelfCheckRun, 'id'>
 
   constructor(name = DB_NAME) {
     super(name)
@@ -86,6 +89,10 @@ export class CocoDb extends Dexie {
     this.version(3).stores({
       nds: 'campIri',
     })
+    // v4: leader self-check runs per camp. New table only, no data migration.
+    this.version(4).stores({
+      selfChecks: 'id, campIri, createdAt',
+    })
   }
 }
 
@@ -105,6 +112,7 @@ export const TABLE_NAMES = [
   'aiLog',
   'midata',
   'nds',
+  'selfChecks',
 ] as const
 
 export type TableName = (typeof TABLE_NAMES)[number]

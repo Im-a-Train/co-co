@@ -16,6 +16,7 @@ pub mod midata;
 pub mod nds;
 pub mod origin;
 pub mod refresh;
+pub mod savefile;
 pub mod scope;
 pub mod types;
 

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { safeExternalUrl, severityColor } from '@/domain/cockpit'
 import type { Finding } from '@/domain/types'
+import FindingExplainPanel from './FindingExplainPanel.vue'
 
 const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean }>()
 const emit = defineEmits<{
@@ -63,6 +64,8 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           :title="e.snippet"
         />
       </div>
+
+      <FindingExplainPanel v-if="!compact && finding.explain" :finding="finding" />
 
       <div class="d-flex align-center flex-wrap ga-2 mt-2">
         <a v-if="url" :href="url" target="_blank" rel="noopener noreferrer" class="text-body-2">

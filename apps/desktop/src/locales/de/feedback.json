@@ -58,6 +58,21 @@
     "copy": "Kopieren",
     "copied": "In die Zwischenablage kopiert",
     "copyFailed": "Kopieren fehlgeschlagen",
+    "sync": {
+      "button": "Kommentare abgleichen",
+      "running": "Wird abgeglichen …",
+      "failed": "Kommentare konnten nicht abgeglichen werden",
+      "summary": "Abgleich fertig: {resolved} erledigt, {replies} neue Antworten, {missing} fehlen in eCamp.",
+      "nothing": "Abgleich fertig: nichts Neues.",
+      "resolved": "In eCamp erledigt",
+      "resolvedOn": "In eCamp erledigt am {date}",
+      "replies": "{n} Antwort | {n} Antworten",
+      "newBadge": "neu",
+      "likelyReply": "vermutlich Antwort",
+      "missing": "In eCamp nicht mehr vorhanden",
+      "unknownAuthor": "Unbekannt",
+      "filterNew": "Mit neuen Antworten"
+    },
     "loadFailed": "Feedback konnte nicht geladen werden",
     "noFacts": "Lagerdaten sind noch nicht geladen. Aktivitätstitel fehlen deshalb."
   }

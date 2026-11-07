@@ -170,7 +170,10 @@ export const commands = {
   unwatchFolder: (path: string) => call<void>('unwatch_folder', { path }),
 
   // M4: backup files
-  /** Save dialog (JSON filter); returns the saved path or null when cancelled. */
+  /**
+   * Save dialog; the filter follows the extension of `defaultName` (json, ics, md, txt; others are rejected).
+   * Returns the saved path or null when cancelled.
+   */
   saveTextFile: (defaultName: string, content: string) =>
     call<string | null>('save_text_file', { defaultName, content }),
   /** Open dialog (JSON filter); returns null when cancelled. */

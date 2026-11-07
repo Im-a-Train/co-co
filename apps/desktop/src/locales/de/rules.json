@@ -71,7 +71,32 @@
         "nds-closing": "NDS-Abschluss (30 Tage nach der letzten J+S-Aktivität)",
         "leihmaterial": "Leihmaterial bestellen (5 Wochen vorher)",
         "landeskarten": "Landeskarten bestellen (3 Wochen vorher, Juni bis August 5 Wochen)",
-        "lagerbewilligung": "Lagerbewilligung (21 Tage vorher)"
+        "lagerbewilligung": "Lagerbewilligung (21 Tage vorher)",
+        "pbs-milestone": "PBS-Meilenstein"
+      },
+      "showMilestones": "PBS-Meilensteine anzeigen",
+      "unconfirmed": "unbestätigt",
+      "unconfirmedHint": "Richtwert aus Hering (hering.scout.ch), von der PBS noch nicht bestätigt.",
+      "sourceLink": "Quelle: {title}",
+      "markDone": "Erledigt",
+      "markUndone": "Zurücksetzen",
+      "saveFailed": "Stand konnte nicht gespeichert werden",
+      "exportIcs": "Als Kalender exportieren (.ics)",
+      "exportSaved": "Kalender gespeichert: {path}",
+      "exportCancelled": "Export abgebrochen.",
+      "exportFailed": "Export fehlgeschlagen",
+      "exportCalendarName": "co-co Fristen",
+      "radar": {
+        "title": "Radar",
+        "filterHint": "Klick auf eine Spalte filtert die Tabelle, Klick auf eine Frist springt zur Zeile.",
+        "clearFilter": "Filter aufheben",
+        "empty": "nichts fällig",
+        "bucket": {
+          "overdue": "Überfällig",
+          "week": "Diese Woche",
+          "month": "Nächste 4 Wochen",
+          "later": "Später"
+        }
       },
       "status": {
         "done": "Erledigt",

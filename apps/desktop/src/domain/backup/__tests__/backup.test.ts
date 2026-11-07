@@ -47,6 +47,7 @@ const PK: Record<string, string> = {
   aiLog: 'id',
   midata: 'campIri',
   nds: 'campIri',
+  selfChecks: 'id',
 }
 function makeStore(): BackupStore {
   return Object.fromEntries(TABLE_NAMES.map((n) => [n, memTable(PK[n]!)]))
@@ -188,6 +189,18 @@ describe('backup', () => {
     expect(row.ndsRegisteredOn).toBeNull()
     expect(row.ndsClosed).toBe(true)
     expect('ndsFields' in row).toBe(false)
+  })
+
+  it('omitRedDerived strips red-derived findings from selfChecks, default keeps them', async () => {
+    const s = makeStore()
+    const f = (id: string, redDerived: boolean) => ({ id, ruleId: 'r', severity: 'must', title: 't', message: 'm', targets: [], redDerived })
+    await s.selfChecks!.bulkPut([{ id: 'sc1', campIri: '/c/1', createdAt: 'x', findings: [f('a', false), f('b', true)] }])
+    const all = await exportFromStore(s)
+    expect((all.tables.selfChecks![0] as { findings: unknown[] }).findings).toHaveLength(2)
+    const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
+    const row = lean.tables.selfChecks![0] as { id: string; findings: Array<{ id: string }> }
+    expect(row.id).toBe('sc1')
+    expect(row.findings.map((x) => x.id)).toEqual(['a'])
   })
 
   it('imports an export that contains midata', async () => {
