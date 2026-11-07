@@ -33,3 +33,15 @@ unknown ones return HTTP 400.** Query builders live in `apps/desktop/src-tauri/s
   without birthday, never as leaders, and their ids never go into the qualifications query.
 - HTTP 400 errors name the path and the parameter names (never values), e.g.
   `MiData antwortete mit HTTP 400 (/api/events: filter[type][eq], include)`.
+- **Coach**: PBS camps store the coach as a participation whose role type is
+  `Event::Camp::Role::Coach` (hitobito_pbs restricted role; similar: `AdvisorMountainSecurity`,
+  `AdvisorSnowSecurity`, `AdvisorWaterSecurity`). Coach/Advisor roles are neither leaders nor
+  participants. `coachMatch` compares the coach participant's person id with the configured coach
+  person id; without a coach participation it falls back to `advisor_id`. `coachNickname` is nickname,
+  else first name (never last name). No extra endpoint needed (roles come with `include=roles`).
+- **Qualifications**: valid over the whole camp: start (`start_at`, else `qualified_at` when
+  `start_at` is null) empty or `<= campStart`, and `finish_at` empty or `>= campEnd`. A 401/403 or
+  failed qualifications request does not fail the aggregate: `qualificationsReadable=false`.
+- **Session reuse**: after an eCamp login via MiData OAuth, the `_session_id` cookie of the MiData
+  origin is read from the same login webview and adopted (only when nothing, or a session for the
+  same base URL, is connected). The signed-in person id is detected from `/people/<id>` URLs.

@@ -61,7 +61,55 @@ function midataEvents(campStart: string, campEnd: string) {
   ]
 }
 
-function midataAggregate(eventId: string, campStart: string, campEnd: string, coachPersonId: string | null) {
+/** Built-in label mapping of the mock (the real one lives in Rust). */
+const MOCK_BUILTIN: Record<string, string[]> = {
+  Lagerleiter: ['lagerleiter'],
+  'J+S Leiter LS/T': ['leiterLsT'],
+  Wassersicherheit: ['wasser'],
+  'SLRG Brevet': ['slrg'],
+  Bergsicherheit: ['berg'],
+  Winterlager: ['winter'],
+  'J+S-Coach': [],
+}
+/** Invented qualifications per leader: label + whether it is expired. */
+const MOCK_HELD: Record<string, { label: string; expired?: boolean }[]> = {
+  Falk: [{ label: 'Lagerleiter' }, { label: 'J+S Leiter LS/T' }, { label: 'SLRG Brevet' }],
+  Otter: [{ label: 'J+S Leiter LS/T' }, { label: 'Wassersicherheit' }, { label: 'SLRG Brevet' }],
+  Mungo: [{ label: 'J+S Leiter LS/T' }, { label: 'Bergsicherheit' }, { label: 'Winterlager' }],
+  Kiwi: [{ label: 'Wassersicherheit', expired: true }],
+  Pixel: [{ label: 'J+S-Coach' }],
+}
+
+function midataAggregate(
+  eventId: string,
+  campStart: string,
+  campEnd: string,
+  coachPersonId: string | null,
+  qualMapping: Record<string, string[]> | null,
+) {
+  const keysOf = (label: string): string[] =>
+    qualMapping && Object.prototype.hasOwnProperty.call(qualMapping, label) ? qualMapping[label] : (MOCK_BUILTIN[label] ?? [])
+  const quals = (nick: string) => {
+    const out = Q(false, false, false, false, false, false) as Record<string, boolean>
+    for (const h of MOCK_HELD[nick] ?? []) if (!h.expired) for (const k of keysOf(h.label)) out[k] = true
+    return out
+  }
+  const roles: Record<string, { roleLabel: string; mainLeader?: boolean }> = {
+    Falk: { roleLabel: 'Lagerleiter', mainLeader: true },
+    Otter: { roleLabel: 'Leiter' },
+    Mungo: { roleLabel: 'Leiter' },
+    Kiwi: { roleLabel: 'Leiterin' },
+    Pixel: { roleLabel: 'Hilfsleitung' },
+  }
+  const kinds = Object.keys(MOCK_BUILTIN).map((label) => {
+    const held = Object.values(MOCK_HELD).flat().filter((h) => h.label === label)
+    return {
+      label,
+      keys: keysOf(label),
+      validLeaders: held.filter((h) => !h.expired).length,
+      expiredLeaders: held.filter((h) => h.expired).length,
+    }
+  })
   return {
     zone: 'red-derived' as const,
     baseUrl: 'https://db.scout.ch',
@@ -81,14 +129,11 @@ function midataAggregate(eventId: string, campStart: string, campEnd: string, co
       { from: 13, to: 14, count: 6 },
     ],
     leadersCount: 5,
-    leaders: [
-      { nickname: 'Falk', roleLabel: 'Lagerleiter', mainLeader: true, qualifications: Q(true, true, false, true, false, false) },
-      { nickname: 'Otter', roleLabel: 'Leiter', qualifications: Q(false, true, true, false, false, true) },
-      { nickname: 'Mungo', roleLabel: 'Leiter', qualifications: Q(false, true, false, true, true, false) },
-      { nickname: 'Kiwi', roleLabel: 'Leiterin', qualifications: Q(false, false, false, false, false, false) },
-      { nickname: 'Pixel', roleLabel: 'Hilfsleitung', qualifications: Q(false, false, false, false, false, false) },
-    ],
+    leaders: Object.keys(roles).map((nickname) => ({ nickname, ...roles[nickname], qualifications: quals(nickname) })),
     coachMatch: coachPersonId ? coachPersonId === '4711' : null,
+    coachNickname: 'Falk',
+    qualificationsReadable: true,
+    qualificationKinds: kinds,
     fetchedAt: new Date().toISOString(),
   }
 }
@@ -207,6 +252,7 @@ export function installMockTauri(): void {
             baseUrl: midataConnected ? 'https://db.scout.ch' : null,
             method: midataConnected ? midataMethod : null,
             cookieNames: midataConnected && midataMethod === 'session' ? ['_session_id'] : [],
+            personId: midataConnected ? '4711' : null,
           }
         case 'midata_open_login':
           midataConnected = true
@@ -222,7 +268,7 @@ export function installMockTauri(): void {
         case 'midata_find_events':
           return midataEvents(String(a.campStart ?? a.from), String(a.campEnd ?? a.to))
         case 'midata_fetch_aggregate':
-          return midataAggregate(String(a.eventId), String(a.campStart), String(a.campEnd), (a.coachPersonId as string | null) ?? null)
+          return midataAggregate(String(a.eventId), String(a.campStart), String(a.campEnd), (a.coachPersonId as string | null) ?? null, (a.qualMapping as Record<string, string[]> | null) ?? null)
         case 'midata_probe':
           return {
             authMethod: midataMethod,

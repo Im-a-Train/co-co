@@ -6,7 +6,7 @@ import { computed, ref, shallowRef, toValue, type ComputedRef, type MaybeRefOrGe
 import { resolveEventLink } from '@/domain/midata'
 import { clearMidata, getMidataRecord, saveMidataAggregate, saveMidataLink } from '@/domain/midata/store'
 import { getAppSettings, updateAppSettings } from '@/domain/storage/settings'
-import type { CampFacts, Iri, MidataEventSummary, MidataProbe, MidataRecord, MidataStatus } from '@/domain/types'
+import type { CampFacts, Iri, MidataEventSummary, MidataProbe, MidataQualKey, MidataRecord, MidataStatus } from '@/domain/types'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import { commands, errorMessage, isTauri, onMidataStatus } from '@/lib/tauri'
 import i18n from '@/plugins/i18n'
@@ -40,15 +40,34 @@ const NO_STATUS: MidataStatus = { connected: false, baseUrl: null, method: null,
 
 const baseUrl = ref(DEFAULT_APP_SETTINGS.midata.baseUrl)
 const personId = ref<string | null>(DEFAULT_APP_SETTINGS.midata.personId)
+const qualMapping = ref<Record<string, MidataQualKey[]>>({ ...DEFAULT_APP_SETTINGS.midata.qualMapping })
+/** The MiData session was adopted from the eCamp OAuth login (event without a login window opened here). Not persisted. */
+const viaEcamp = ref(false)
+let loginRequested = false
 const status = ref<MidataStatus>({ ...NO_STATUS })
 const busy = ref(false)
 const error = ref<string | null>(null)
 let started: Promise<void> | null = null
 
+/** Adopts a status; a detected MiData person id is stored once when the coach has not entered one. */
+async function applyStatus(s: MidataStatus): Promise<void> {
+  status.value = s
+  const detected = s.personId?.trim()
+  if (!detected) return
+  if (!personId.value) {
+    try {
+      await updateAppSettings({ midata: { personId: detected } })
+      personId.value = detected
+    } catch (e) {
+      error.value = errorMessage(e)
+    }
+  }
+}
+
 async function refreshStatus(): Promise<void> {
   if (!isTauri()) return
   try {
-    status.value = await commands.midataStatus()
+    await applyStatus(await commands.midataStatus())
   } catch (e) {
     error.value = errorMessage(e)
   }
@@ -61,6 +80,7 @@ function start(): Promise<void> {
       const s = await getAppSettings()
       baseUrl.value = s.midata.baseUrl || DEFAULT_APP_SETTINGS.midata.baseUrl
       personId.value = s.midata.personId
+      qualMapping.value = s.midata.qualMapping ?? {}
     } catch (e) {
       error.value = errorMessage(e)
     }
@@ -68,7 +88,10 @@ function start(): Promise<void> {
     if (isTauri()) {
       try {
         await onMidataStatus((s) => {
-          status.value = s
+          if (s.connected && s.method === 'session' && !loginRequested) viaEcamp.value = true
+          if (!s.connected) viaEcamp.value = false
+          loginRequested = false
+          void applyStatus(s)
         })
       } catch {
         // Event subscription is a nicety; status is also read on demand.
@@ -94,12 +117,15 @@ async function guard<T>(fn: () => Promise<T>): Promise<T | undefined> {
 export interface MidataHandle {
   baseUrl: typeof baseUrl
   personId: typeof personId
+  qualMapping: typeof qualMapping
+  viaEcamp: typeof viaEcamp
   status: typeof status
   busy: typeof busy
   error: typeof error
   connected: ComputedRef<boolean>
   init(): Promise<void>
   saveSettings(next: { baseUrl: string; personId: string | null }): Promise<void>
+  saveQualMapping(next: Record<string, MidataQualKey[]>): Promise<void>
   connectWithLogin(): Promise<void>
   connectWithToken(token: string): Promise<boolean>
   logout(): Promise<void>
@@ -110,6 +136,8 @@ export function useMidata(): MidataHandle {
   return {
     baseUrl,
     personId,
+    qualMapping,
+    viaEcamp,
     status,
     busy,
     error,
@@ -124,18 +152,26 @@ export function useMidata(): MidataHandle {
         personId.value = pid
       })
     },
+    async saveQualMapping(next) {
+      await guard(async () => {
+        await updateAppSettings({ midata: { qualMapping: next } })
+        qualMapping.value = next
+      })
+    },
     async connectWithLogin() {
+      loginRequested = true
       await guard(() => commands.midataOpenLogin(baseUrl.value))
     },
     async connectWithToken(token) {
       const s = await guard(() => commands.midataSetToken(baseUrl.value, token.trim()))
-      if (s) status.value = s
+      if (s) await applyStatus(s)
       return !!s?.connected
     },
     async logout() {
       await guard(async () => {
         await commands.midataLogout()
         status.value = { ...NO_STATUS }
+        viaEcamp.value = false
       })
     },
     async probe(eventId, groupId) {
@@ -254,7 +290,7 @@ export function useCampMidata(campIri: MaybeRefOrGetter<Iri>, facts: MaybeRefOrG
     patch(loadingMap, iri, true)
     patch(errorMap, iri, null)
     try {
-      const agg = await commands.midataFetchAggregate(l.eventId, f.camp.start, f.camp.end, personId.value)
+      const agg = await commands.midataFetchAggregate(l.eventId, f.camp.start, f.camp.end, personId.value, JSON.parse(JSON.stringify(qualMapping.value)) as Record<string, MidataQualKey[]>)
       patch(records, iri, await saveMidataAggregate(iri, agg))
       midataVersion.value += 1
       return true

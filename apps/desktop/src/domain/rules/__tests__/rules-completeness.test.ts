@@ -113,6 +113,13 @@ describe('CMP-CAMP-01 with MiData', () => {
     expect(hits).toHaveLength(1)
     expect(hits[0].params?.detail).toContain('Quelle: MiData, Stand 01.01.2031')
   })
+  it('names the MiData coach in the hint when known', () => {
+    const f = new FactsBuilder().facts
+    const withName = p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: false, coachNickname: 'Falk' }) }))
+    expect(withName[0].params?.detail).toContain('«Falk»')
+    const without = p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: false, coachNickname: null }) }))
+    expect(without[0].params?.detail).toContain('eine andere Person')
+  })
   it('stays quiet for match true / unknown', () => {
     const f = new FactsBuilder().facts
     expect(p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: true }) }))).toEqual([])

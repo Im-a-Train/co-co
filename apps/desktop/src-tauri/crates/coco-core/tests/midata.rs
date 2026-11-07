@@ -25,6 +25,8 @@ fn aggregate(coach: Option<&str>) -> MidataAggregate {
         camp_end: "2026-07-25",
         coach_person_id: coach,
         fetched_at: "2026-07-01T10:00:00Z",
+        qualifications_readable: true,
+        qual_mapping: None,
     })
     .expect("aggregate")
 }
@@ -61,6 +63,10 @@ fn role_classification() {
         ("Event::Role::Leader", Leader),
         ("Event::Role::Participant", Participant),
         ("Event::Course::Role::Participant", Participant),
+        ("Event::Camp::Role::Coach", Coach),
+        ("Event::Camp::Role::AdvisorMountainSecurity", Other),
+        ("Event::Camp::Role::AdvisorSnowSecurity", Other),
+        ("Event::Camp::Role::AdvisorWaterSecurity", Other),
         ("Event::Role::Cook", Other),
         ("Event::Role::Helper", Other),
         ("Event::Role::Treasurer", Other),
@@ -84,7 +90,7 @@ fn qualification_labels() {
     assert_eq!(qual_keys_for_label("Modul BERG"), vec![Berg]);
     assert_eq!(qual_keys_for_label("Sicherheitsmodul Winter"), vec![Winter]);
     assert_eq!(qual_keys_for_label("Schneesport Zusatz"), vec![Winter]);
-    assert_eq!(qual_keys_for_label("SLRG Modul See"), vec![Slrg]);
+    assert_eq!(qual_keys_for_label("SLRG Modul See"), vec![Wasser, Slrg]);
     assert_eq!(qual_keys_for_label("Brevet Plus Pool"), vec![Slrg]);
     assert_eq!(qual_keys_for_label("Rettungsschwimmer"), vec![Slrg]);
     assert_eq!(qual_keys_for_label("Bergführer Zusatz Lagerleiter"), vec![Lagerleiter, Berg]);
@@ -258,6 +264,8 @@ fn coach_match() {
             camp_end: "2026-07-25",
             coach_person_id: c,
             fetched_at: "t",
+            qualifications_readable: true,
+            qual_mapping: None,
         })
         .unwrap()
     };
@@ -280,6 +288,8 @@ fn aggregate_errors_are_generic() {
             camp_end: "2026-07-25",
             coach_person_id: None,
             fetched_at: "t",
+            qualifications_readable: true,
+            qual_mapping: None,
         })
     };
     assert!(matches!(mk(&bad, "2026-07-18"), Err(coco_core::CoreError::Invalid(_))));
@@ -300,6 +310,8 @@ fn empty_participations_give_zero_bands() {
         camp_end: "2026-07-25",
         coach_person_id: None,
         fetched_at: "t",
+        qualifications_readable: true,
+        qual_mapping: None,
     })
     .unwrap();
     assert_eq!(a.participants_count, 0);
@@ -316,11 +328,11 @@ fn serde_shape_matches_typescript() {
     for k in [
         "zone", "baseUrl", "eventId", "eventName", "eventDates", "location", "maximumParticipants", "participantsCount",
         "participantsJsAgeCount", "participantsWithoutBirthday", "minAge", "maxAge", "ageBands", "leadersCount", "leaders",
-        "coachMatch", "fetchedAt",
+        "coachMatch", "coachNickname", "qualificationsReadable", "qualificationKinds", "fetchedAt",
     ] {
         assert!(o.contains_key(k), "missing {k}");
     }
-    assert_eq!(o.len(), 17);
+    assert_eq!(o.len(), 20);
     assert!(v["eventDates"][0].get("startAt").is_some() && v["eventDates"][0].get("finishAt").is_some());
     assert!(v["ageBands"][0].get("from").is_some() && v["ageBands"][0].get("count").is_some());
     let leader = &v["leaders"][0];
@@ -373,6 +385,204 @@ fn aggregate_contains_no_person_data() {
     for n in ["Anna", "Ben", "Cleo", "Dario", "Eli", "Gian", "Hanna", "Pixel", "Kuechenfee"] {
         assert!(!out.contains(n), "leaked {n}");
     }
+}
+
+#[test]
+fn qualification_label_keywords_per_key() {
+    use QualKey::*;
+    for l in ["Lagerleiter", "ZUSATZ LAGER J+S", "Zusatz Lagerleiter"] {
+        assert!(qual_keys_for_label(l).contains(&Lagerleiter), "{l}");
+    }
+    for l in ["Lagersport", "Trekking Leiter", "Leiter LS/T", "J+S LST", "Leiter*in J+S LS/T", "J+S-Leiter Lagersport"] {
+        assert!(qual_keys_for_label(l).contains(&LeiterLsT), "{l}");
+    }
+    assert!(!qual_keys_for_label("Gelst").contains(&LeiterLsT));
+    for l in ["Wasser", "Sicherheitsbereich Wasser", "Modul See", "Modul Fluss"] {
+        assert!(qual_keys_for_label(l).contains(&Wasser), "{l}");
+    }
+    for l in ["Berg", "Sicherheitsbereich Berg"] {
+        assert!(qual_keys_for_label(l).contains(&Berg), "{l}");
+    }
+    for l in ["Winter", "Schnee", "Sicherheitsbereich Winter"] {
+        assert!(qual_keys_for_label(l).contains(&Winter), "{l}");
+    }
+    for l in ["SLRG", "Brevet Plus", "Rettungsschwimmer", "Modul Pool", "Modul See", "Modul Fluss"] {
+        assert!(qual_keys_for_label(l).contains(&Slrg), "{l}");
+    }
+    // SLRG modules imply both Slrg and Wasser
+    assert_eq!(qual_keys_for_label("SLRG Modul Fluss"), vec![Wasser, Slrg]);
+    assert_eq!(qual_keys_for_label("Modul Pool"), vec![Slrg]);
+}
+
+#[test]
+fn user_mapping_replaces_builtin() {
+    use std::collections::HashMap;
+    use QualKey::*;
+    let mut m: HashMap<String, Vec<QualKey>> = HashMap::new();
+    m.insert("  sicherheitsmodul WASSER ".into(), vec![Berg]);
+    m.insert("Zusatz Lagerleiter".into(), vec![]);
+    assert_eq!(qual_keys_with_mapping("Sicherheitsmodul Wasser", Some(&m)), vec![Berg]);
+    assert!(qual_keys_with_mapping("zusatz lagerleiter ", Some(&m)).is_empty());
+    assert_eq!(qual_keys_with_mapping("Modul Berg", Some(&m)), vec![Berg]);
+    assert_eq!(qual_keys_with_mapping("Modul Berg", None), vec![Berg]);
+}
+
+fn participation(id: &str, person: &str, role: &str) -> Value {
+    json!({"id": id, "type": "event_participations",
+        "relationships": {"participant": {"data": {"type": "people", "id": person}}, "roles": {"data": [{"type": "event_roles", "id": role}]}}})
+}
+
+fn coach_pages() -> Vec<Value> {
+    vec![json!({
+        "data": [
+            participation("1", "300", "rl"),
+            participation("2", "301", "rc"),
+            participation("3", "302", "ra"),
+            participation("4", "303", "rp")
+        ],
+        "included": [
+            {"id": "300", "type": "people", "attributes": {"first_name": "Lena", "last_name": "Leitzinger", "nickname": "Luchs"}},
+            {"id": "301", "type": "people", "attributes": {"first_name": "Corinna", "last_name": "Coachmann", "nickname": null}},
+            {"id": "302", "type": "people", "attributes": {"first_name": "Adrian", "last_name": "Advisor", "nickname": "Ad"}},
+            {"id": "303", "type": "people", "attributes": {"first_name": "Tim", "last_name": "Teilnehmer", "birthday": "2014-07-18"}},
+            {"id": "rl", "type": "event_roles", "attributes": {"type": "Event::Camp::Role::Leader", "label": "Hauptleitung"}},
+            {"id": "rc", "type": "event_roles", "attributes": {"type": "Event::Camp::Role::Coach", "label": "Coach"}},
+            {"id": "ra", "type": "event_roles", "attributes": {"type": "Event::Camp::Role::AdvisorWaterSecurity", "label": "Berater Wasser"}},
+            {"id": "rp", "type": "event_roles", "attributes": {"type": "Event::Role::Participant", "label": "TN"}}
+        ]
+    })]
+}
+
+fn quals_doc() -> Vec<Value> {
+    vec![json!({
+        "data": [
+            {"id": "q1", "type": "qualifications", "attributes": {"start_at": "2020-01-01", "finish_at": null},
+             "relationships": {"person": {"data": {"type": "people", "id": "300"}}, "qualification_kind": {"data": {"type": "qualification_kinds", "id": "k1"}}}},
+            {"id": "q2", "type": "qualifications", "attributes": {"start_at": null, "qualified_at": "2026-07-20", "finish_at": null},
+             "relationships": {"person": {"data": {"type": "people", "id": "300"}}, "qualification_kind": {"data": {"type": "qualification_kinds", "id": "k2"}}}},
+            {"id": "q3", "type": "qualifications", "attributes": {"start_at": "2019-01-01", "finish_at": "2025-01-01"},
+             "relationships": {"person": {"data": {"type": "people", "id": "300"}}, "qualification_kind": {"data": {"type": "qualification_kinds", "id": "k3"}}}},
+            {"id": "q4", "type": "qualifications", "attributes": {"start_at": "2019-01-01", "finish_at": null},
+             "relationships": {"person": {"data": {"type": "people", "id": "300"}}, "qualification_kind": {"data": {"type": "qualification_kinds", "id": "k4"}}}},
+            {"id": "q5", "type": "qualifications", "attributes": {"start_at": "2019-01-01", "finish_at": null},
+             "relationships": {"person": {"data": {"type": "people", "id": "303"}}, "qualification_kind": {"data": {"type": "qualification_kinds", "id": "k4"}}}}
+        ],
+        "included": [
+            {"id": "k1", "type": "qualification_kinds", "attributes": {"label": "Zusatz Lagerleiter"}},
+            {"id": "k2", "type": "qualification_kinds", "attributes": {"label": "Sicherheitsbereich Berg"}},
+            {"id": "k3", "type": "qualification_kinds", "attributes": {"label": "SLRG Modul Pool"}},
+            {"id": "k4", "type": "qualification_kinds", "attributes": {"label": "Erste Hilfe Kurs"}}
+        ]
+    })]
+}
+
+fn reduce_with(
+    coach: Option<&str>,
+    ev: &Value,
+    q: &[Value],
+    readable: bool,
+    mapping: Option<&std::collections::HashMap<String, Vec<QualKey>>>,
+) -> MidataAggregate {
+    let p = coach_pages();
+    reduce_aggregate(&RawEventData {
+        base_url: "u",
+        event: ev,
+        participation_pages: &p,
+        qualification_pages: q,
+        camp_start: "2026-07-18",
+        camp_end: "2026-07-25",
+        coach_person_id: coach,
+        fetched_at: "t",
+        qualifications_readable: readable,
+        qual_mapping: mapping,
+    })
+    .unwrap()
+}
+
+#[test]
+fn coach_participation_is_neither_leader_nor_participant() {
+    let a = reduce_with(Some("301"), &event(), &quals_doc(), true, None);
+    assert_eq!(a.leaders_count, 1);
+    assert_eq!(a.leaders[0].nickname, "Luchs");
+    assert_eq!(a.participants_count, 1);
+    assert_eq!(a.coach_match, Some(true));
+    assert_eq!(a.coach_nickname.as_deref(), Some("Corinna")); // nickname null -> first name
+    let other = reduce_with(Some("999"), &event(), &quals_doc(), true, None);
+    assert_eq!(other.coach_match, Some(false));
+    // advisor_id 777 of the event is ignored while a coach participation exists
+    assert_eq!(reduce_with(Some("777"), &event(), &quals_doc(), true, None).coach_match, Some(false));
+    assert_eq!(reduce_with(None, &event(), &quals_doc(), true, None).coach_match, None);
+    let out = serde_json::to_string(&a).unwrap();
+    for n in ["Coachmann", "Leitzinger", "Advisor", "Teilnehmer"] {
+        assert!(!out.contains(n), "leaked {n}");
+    }
+    // no coach participation: fixture keeps the advisor_id fallback and no nickname
+    assert_eq!(aggregate(Some("777")).coach_nickname, None);
+}
+
+#[test]
+fn qualification_kinds_and_validity() {
+    use QualKey::*;
+    let a = reduce_with(None, &event(), &quals_doc(), true, None);
+    assert!(a.qualifications_readable);
+    let leader = &a.leaders[0];
+    assert!(leader.qualifications[&Lagerleiter]);
+    assert!(!leader.qualifications[&Berg], "qualified_at after camp start counts as start_at");
+    assert!(!leader.qualifications[&Slrg] && !leader.qualifications[&Wasser], "expired");
+    let labels: Vec<&str> = a.qualification_kinds.iter().map(|k| k.label.as_str()).collect();
+    // only leaders' qualifications; the participant's first aid kind is not counted, the leader's is
+    assert_eq!(labels, vec!["Erste Hilfe Kurs", "Sicherheitsbereich Berg", "SLRG Modul Pool", "Zusatz Lagerleiter"]);
+    let by = |l: &str| a.qualification_kinds.iter().find(|k| k.label == l).unwrap();
+    assert!(by("Erste Hilfe Kurs").keys.is_empty());
+    assert_eq!((by("Erste Hilfe Kurs").valid_leaders, by("Erste Hilfe Kurs").expired_leaders), (1, 0));
+    assert_eq!(by("SLRG Modul Pool").keys, vec![Slrg]);
+    assert_eq!((by("SLRG Modul Pool").valid_leaders, by("SLRG Modul Pool").expired_leaders), (0, 1));
+    assert_eq!((by("Sicherheitsbereich Berg").valid_leaders, by("Sicherheitsbereich Berg").expired_leaders), (0, 1));
+    assert_eq!((by("Zusatz Lagerleiter").valid_leaders, by("Zusatz Lagerleiter").expired_leaders), (1, 0));
+}
+
+#[test]
+fn qualification_mapping_in_aggregate() {
+    use std::collections::HashMap;
+    use QualKey::*;
+    let mut m: HashMap<String, Vec<QualKey>> = HashMap::new();
+    m.insert("erste hilfe kurs".into(), vec![Winter]);
+    m.insert("ZUSATZ LAGERLEITER".into(), vec![]);
+    let a = reduce_with(None, &event(), &quals_doc(), true, Some(&m));
+    assert!(a.leaders[0].qualifications[&Winter]);
+    assert!(!a.leaders[0].qualifications[&Lagerleiter], "empty list ignores the label");
+    let k = a.qualification_kinds.iter().find(|k| k.label == "Zusatz Lagerleiter").unwrap();
+    assert!(k.keys.is_empty());
+}
+
+#[test]
+fn unreadable_qualifications_are_flagged() {
+    let a = reduce_with(None, &event(), &quals_doc(), false, None);
+    assert!(!a.qualifications_readable);
+    assert!(a.qualification_kinds.is_empty());
+    assert!(a.leaders.iter().all(|l| l.qualifications.values().all(|v| !v)));
+    let v = serde_json::to_value(&a).unwrap();
+    assert_eq!(v["qualificationsReadable"], json!(false));
+    assert!(v["qualificationKinds"].is_array() && v.get("coachNickname").is_some());
+    let k = serde_json::to_value(QualKindInfo { label: "x".into(), keys: vec![QualKey::LeiterLsT], valid_leaders: 1, expired_leaders: 2 }).unwrap();
+    assert_eq!(k, json!({"label": "x", "keys": ["leiterLsT"], "validLeaders": 1, "expiredLeaders": 2}));
+}
+
+#[test]
+fn session_cookie_and_person_id_helpers() {
+    use coco_core::cookies::RawCookie;
+    let c = vec![RawCookie::new("other", "1"), RawCookie::new("_session_id", ""), RawCookie::new("_session_id", "abc")];
+    assert_eq!(pick_session_cookie(&c).map(|c| c.value.as_str()), Some("abc"));
+    assert!(pick_session_cookie(&c[..2]).is_none());
+    assert!(pick_session_cookie(&[]).is_none());
+    assert_eq!(person_id_from_path("/groups/1/people/123"), Some("123".into()));
+    assert_eq!(person_id_from_path("/de/people/45.json"), Some("45".into()));
+    assert_eq!(person_id_from_path("/people/7/qualifications"), Some("7".into()));
+    assert_eq!(person_id_from_path("/groups/1/people"), None);
+    assert_eq!(person_id_from_path("/people/abc"), None);
+    assert_eq!(person_id_from_path("/groups/12"), None);
+    let s = serde_json::to_value(MidataStatus { connected: true, base_url: None, method: None, cookie_names: vec![], person_id: Some("9".into()) }).unwrap();
+    assert_eq!(s["personId"], json!("9"));
 }
 
 #[test]

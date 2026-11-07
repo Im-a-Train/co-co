@@ -335,6 +335,13 @@ export interface MidataLeader {
   qualifications: Record<MidataQualKey, boolean>
 }
 
+export interface MidataQualKind {
+  label: string
+  keys: MidataQualKey[]
+  validLeaders: number
+  expiredLeaders: number
+}
+
 export interface MidataAggregate {
   zone: 'red-derived'
   baseUrl: string
@@ -354,6 +361,12 @@ export interface MidataAggregate {
   leaders: MidataLeader[]
   /** event advisor == coach's MiData person id (null = unknown). */
   coachMatch: boolean | null
+  /** Nickname of the coach set in MiData (role Event::Camp::Role::Coach); null = none. Absent in old aggregates. */
+  coachNickname?: string | null
+  /** false = qualifications could not be read (no permission), so the matrix shows only «missing». Absent in old aggregates. */
+  qualificationsReadable?: boolean
+  /** Qualification kinds found in MiData with the co-co columns they count for. Absent in old aggregates. */
+  qualificationKinds?: MidataQualKind[]
   /** «Stand MiData» */
   fetchedAt: IsoDateTime
 }
@@ -387,6 +400,8 @@ export interface MidataStatus {
   baseUrl: string | null
   method: 'session' | 'token' | null
   cookieNames: string[]
+  /** MiData person id detected from the login URL (null = unknown). */
+  personId?: string | null
 }
 
 /** Coach inputs that «Aus MiData übernehmen» can fill. */
@@ -928,6 +943,8 @@ export interface AppSettings {
     baseUrl: string
     /** The coach's own MiData person id (for the coach match, CMP-CAMP-01). */
     personId: string | null
+    /** Qualification label -> co-co columns; overrides the built-in mapping per label ([] = ignore label). */
+    qualMapping: Record<string, MidataQualKey[]>
   }
   /** M8: NDS connection settings (no secrets; the session cookie lives in Rust/keychain). */
   nds: {
@@ -940,7 +957,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   gpx: { paceLkmPerHour: 4, paceWoelfeLkmPerHour: 3.5, includeDescent: false },
   backup: { remindAfterRound: true, lastExportAt: null },
   rulePacks: [],
-  midata: { baseUrl: 'https://db.scout.ch', personId: null },
+  midata: { baseUrl: 'https://db.scout.ch', personId: null, qualMapping: {} },
   nds: { enabled: false },
 }
 

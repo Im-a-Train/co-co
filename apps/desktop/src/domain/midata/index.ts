@@ -12,6 +12,7 @@ import type {
   MidataAggregate,
   MidataField,
   MidataQualKey,
+  MidataQualKind,
   MidataRecord,
 } from '../types'
 import { MIDATA_QUAL_KEYS } from '../types'
@@ -154,6 +155,8 @@ export interface QualMatrixActivityCheck {
   qualifiedResponsibles: string[]
   /** null = no responsible could be matched to MiData. */
   ok: boolean | null
+  /** Keywords that made the detector flag this activity for the area (heuristic; for display). */
+  keywords: string[]
 }
 
 export interface QualificationMatrix {
@@ -164,6 +167,8 @@ export interface QualificationMatrix {
   covered: Record<MidataQualKey, number>
   /** Safety activities and whether a qualified leader is responsible. */
   activities: QualMatrixActivityCheck[]
+  /** false = MiData qualifications were not readable (no permission): cells are «unknown», not «missing». */
+  qualificationsReadable: boolean
   fetchedAt: IsoDateTime
 }
 
@@ -182,6 +187,7 @@ export function buildQualificationMatrix(
   agg: MidataAggregate,
   facts: CampFacts,
   areaOf: (activityIri: string) => SafetyArea[],
+  keywordsOf: (activityIri: string, area: SafetyArea) => string[] = () => [],
 ): QualificationMatrix {
   const perActivity = facts.activities.map((a) => ({ a, areas: [...new Set(areaOf(a.iri))] }))
   const present = new Set<SafetyArea>(perActivity.flatMap((x) => x.areas))
@@ -228,10 +234,11 @@ export function buildQualificationMatrix(
         responsibles: resp.map((c) => c.name),
         qualifiedResponsibles: qualified.map((c) => c.name),
         ok: matched.length === 0 ? null : qualified.length > 0,
+        keywords: keywordsOf(a.iri, area),
       })
     }
   }
-  return { columns, rows, covered, activities, fetchedAt: agg.fetchedAt }
+  return { columns, rows, covered, activities, qualificationsReadable: agg.qualificationsReadable !== false, fetchedAt: agg.fetchedAt }
 }
 
 /** Normalizes a nickname / display name / place for matching (lowercase, diacritics and ß folded, punctuation -> space). */
@@ -290,4 +297,48 @@ export function locationDiffers(mdLocation: string | null | undefined, ecamp: Re
   const mine = ecamp.map((x) => normalizeName(x ?? '')).filter(Boolean)
   if (!md || mine.length === 0) return false
   return !mine.some((x) => md.includes(x) || x.includes(md))
+}
+
+// ---------------------------------------------------------------------------------------------
+// Qualification kind mapping (MiData label -> co-co columns)
+// ---------------------------------------------------------------------------------------------
+
+export type QualMapping = Record<string, MidataQualKey[]>
+
+const has = (o: object, k: string): boolean => Object.prototype.hasOwnProperty.call(o, k)
+const sortKeys = (keys: readonly MidataQualKey[]): MidataQualKey[] => MIDATA_QUAL_KEYS.filter((k) => keys.includes(k))
+const sameKeys = (a: readonly MidataQualKey[], b: readonly MidataQualKey[]): boolean => {
+  const x = sortKeys(a)
+  const y = sortKeys(b)
+  return x.length === y.length && x.every((k, i) => k === y[i])
+}
+
+/** Keys a label counts for: the override from the settings wins over the keys the aggregate carries (built-in mapping). */
+export function effectiveKeys(kind: Pick<MidataQualKind, 'label' | 'keys'>, overrides: QualMapping): MidataQualKey[] {
+  return sortKeys(has(overrides, kind.label) ? overrides[kind.label] : kind.keys)
+}
+
+/** A label that counts for no column and was not explicitly ignored by an override. */
+export function isUnmappedKind(kind: Pick<MidataQualKind, 'label' | 'keys'>, overrides: QualMapping): boolean {
+  return !has(overrides, kind.label) && kind.keys.length === 0
+}
+
+/**
+ * The override map after the coach edited some labels. A label whose edited keys equal what the aggregate
+ * already carries and has no override yet gets no entry (minimal map); other labels keep their entry.
+ */
+export function nextQualMapping(current: QualMapping, kinds: readonly MidataQualKind[], edited: QualMapping): QualMapping {
+  const next: QualMapping = { ...current }
+  for (const kind of kinds) {
+    if (!has(edited, kind.label)) continue
+    const keys = sortKeys(edited[kind.label])
+    if (!has(current, kind.label) && sameKeys(keys, kind.keys)) delete next[kind.label]
+    else next[kind.label] = keys
+  }
+  return next
+}
+
+/** True if the edited mapping differs from the effective one (enables the save button). */
+export function qualMappingChanged(kinds: readonly MidataQualKind[], overrides: QualMapping, edited: QualMapping): boolean {
+  return kinds.some((k) => has(edited, k.label) && !sameKeys(edited[k.label], effectiveKeys(k, overrides)))
 }

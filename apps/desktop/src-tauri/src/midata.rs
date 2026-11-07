@@ -16,13 +16,13 @@
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use coco_core::cookies::{jar_cookie_string, RawCookie};
 use coco_core::midata::{
-    leader_person_ids, next_link, normalize_midata_base_url, parse_event_list_with_groups, event_group_ids, group_names_by_id, rank_events, probe_classic_fields, reduce_aggregate,
-    MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus, RawEventData, JSONAPI_ACCEPT, SESSION_COOKIE,
+    leader_person_ids, next_link, normalize_midata_base_url, parse_event_list_with_groups, event_group_ids, group_names_by_id, person_id_from_path, pick_session_cookie, rank_events, probe_classic_fields, reduce_aggregate,
+    MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus, QualKey, RawEventData, JSONAPI_ACCEPT,
 };
 use coco_core::types::AuthLog;
 use coco_core::CoreError;
@@ -76,6 +76,8 @@ struct Connection {
     method: Method,
     cookie_names: Vec<String>,
     token: Option<String>,
+    /// Person id detected from `/people/<id>` URLs (not secret, never logged with names).
+    person_id: Option<String>,
 }
 
 struct Inner {
@@ -140,6 +142,7 @@ impl MidataState {
                 method: Method::Token,
                 cookie_names: vec![],
                 token: Some(token.to_string()),
+                person_id: None,
             });
         });
         Ok(st)
@@ -159,9 +162,24 @@ impl MidataState {
         if let Some((base, token)) = loaded {
             let mut g = self.inner.write().await;
             if g.conn.is_none() {
-                g.conn = Some(Connection { base_url: base, method: Method::Token, cookie_names: vec![], token: Some(token) });
+                g.conn = Some(Connection {
+                    base_url: base,
+                    method: Method::Token,
+                    cookie_names: vec![],
+                    token: Some(token),
+                    person_id: None,
+                });
             }
         }
+    }
+
+    /// Base URL this state currently knows: the live connection, else the keychain pointer of the
+    /// last connected instance. None when nothing is known.
+    pub async fn known_base_url(&self) -> Option<String> {
+        if let Some(c) = self.inner.read().await.conn.as_ref() {
+            return Some(c.base_url.clone());
+        }
+        tauri::async_runtime::spawn_blocking(keychain_pointer).await.ok().flatten()
     }
 
     async fn ctx(&self) -> AppResult<Ctx> {
@@ -180,8 +198,9 @@ fn status_of(conn: Option<&Connection>) -> MidataStatus {
             base_url: Some(c.base_url.clone()),
             method: Some(c.method.as_str().into()),
             cookie_names: c.cookie_names.clone(),
+            person_id: c.person_id.clone(),
         },
-        None => MidataStatus { connected: false, base_url: None, method: None, cookie_names: vec![] },
+        None => MidataStatus { connected: false, base_url: None, method: None, cookie_names: vec![], person_id: None },
     }
 }
 
@@ -201,6 +220,10 @@ fn keychain_store(base: &str, token: &str) -> AppResult<()> {
     keyring::Entry::new(KEYCHAIN_SERVICE, KEYCHAIN_POINTER_USER)
         .and_then(|e| e.set_password(base))
         .map_err(keychain_err)
+}
+
+fn keychain_pointer() -> Option<String> {
+    keyring::Entry::new(KEYCHAIN_SERVICE, KEYCHAIN_POINTER_USER).ok()?.get_password().ok()
 }
 
 fn keychain_load() -> Option<(String, String)> {
@@ -225,6 +248,74 @@ fn keychain_delete(base: Option<String>) -> AppResult<()> {
         Err(e) => result = result.and(Err(keychain_err(e))),
     }
     result
+}
+
+/// Cookie jar + HTTP client holding the given cookies for the origin root of `base`.
+fn jar_client(base: &Url, cookies: &[RawCookie]) -> AppResult<(Arc<Jar>, reqwest::Client)> {
+    let jar = Arc::new(Jar::default());
+    let mut dir = base.clone();
+    dir.set_path("/");
+    for c in cookies {
+        jar.add_cookie_str(&jar_cookie_string(c, &dir), &dir);
+    }
+    let client = build_client(jar.clone())?;
+    Ok((jar, client))
+}
+
+/// True when a session adopted from the eCamp login may be installed: nothing connected yet, or the
+/// existing connection is a session for the same base URL (a token connection is never replaced).
+fn may_adopt(existing: Option<(&str, Method)>, base: &str) -> bool {
+    match existing {
+        None => true,
+        Some((b, m)) => m == Method::Session && b == base,
+    }
+}
+
+/// Adopts the MiData `_session_id` cookies seen in the eCamp login webview (same incognito store), so
+/// the user does not have to log in to MiData a second time. Best effort: returns false when no
+/// session cookie exists, a different connection is active or the client cannot be built. Only
+/// cookie NAMES are logged. Emits `midata://status` on success.
+pub async fn adopt_session_cookies<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &MidataState,
+    base_url: &str,
+    cookies: Vec<RawCookie>,
+    person_id: Option<String>,
+) -> bool {
+    let Ok(base) = normalize_midata_base_url(base_url) else { return false };
+    let Ok(base_u) = Url::parse(&base) else { return false };
+    if pick_session_cookie(&cookies).is_none() {
+        return false;
+    }
+    state.lazy_load().await;
+    let Ok((jar, client)) = jar_client(&base_u, &cookies) else { return false };
+    let names: Vec<String> = cookies.iter().map(|c| c.name.clone()).collect();
+    let status = {
+        let mut g = state.inner.write().await;
+        if !may_adopt(g.conn.as_ref().map(|c| (c.base_url.as_str(), c.method)), &base) {
+            return false;
+        }
+        let keep_person = g.conn.as_ref().and_then(|c| c.person_id.clone());
+        state.epoch.fetch_add(1, Ordering::SeqCst);
+        g.client = client;
+        g.jar = jar;
+        g.conn = Some(Connection {
+            base_url: base,
+            method: Method::Session,
+            cookie_names: names.clone(),
+            token: None,
+            person_id: person_id.or(keep_person),
+        });
+        status_of(g.conn.as_ref())
+    };
+    log(app, AuthLog::ok("midata-session-adopted", Some(format!("Aus eCamp-Anmeldung übernommen, Cookies: [{}]", names.join(", ")))));
+    emit_status(app, &status);
+    true
+}
+
+/// Shared slot for the person id seen in navigations of a login window.
+fn nav_person_slot() -> Arc<StdMutex<Option<String>>> {
+    Arc::new(StdMutex::new(None))
 }
 
 // ------------------------------------------------------- pure URL helpers
@@ -539,6 +630,7 @@ pub async fn fetch_aggregate_impl(
     camp_start: &str,
     camp_end: &str,
     coach_person_id: Option<&str>,
+    qual_mapping: Option<&HashMap<String, Vec<QualKey>>>,
 ) -> AppResult<MidataAggregate> {
     validate_id(event_id)?;
     validate_date(camp_start)?;
@@ -551,8 +643,20 @@ pub async fn fetch_aggregate_impl(
     let participations = get_pages(&ctx, api_url(&ctx.base, &participations_path(event_id))?).await?;
     let leaders = leader_person_ids(&participations);
     let mut qualifications = Vec::new();
+    let mut qualifications_readable = true;
     for chunk in leaders.chunks(QUAL_CHUNK) {
-        qualifications.extend(get_pages(&ctx, api_url(&ctx.base, &qualifications_path(chunk))?).await?);
+        // A refused or failed qualifications request must not fail the whole aggregate: the UI shows
+        // «nicht lesbar» instead of «niemand qualifiziert».
+        match get_pages(&ctx, api_url(&ctx.base, &qualifications_path(chunk))?).await {
+            Ok(pages) => qualifications.extend(pages),
+            Err(_) => {
+                qualifications_readable = false;
+                break;
+            }
+        }
+    }
+    if !qualifications_readable {
+        qualifications.clear();
     }
     let fetched_at = now_rfc3339();
     let aggregate = reduce_aggregate(&RawEventData {
@@ -564,6 +668,8 @@ pub async fn fetch_aggregate_impl(
         camp_end,
         coach_person_id,
         fetched_at: &fetched_at,
+        qualifications_readable,
+        qual_mapping,
     })?;
     Ok(aggregate)
 }
@@ -647,6 +753,8 @@ pub async fn midata_open_login<R: Runtime>(
     let epoch = state.epoch.fetch_add(1, Ordering::SeqCst) + 1;
 
     let nav_base = base_u.clone();
+    let nav_person = nav_person_slot();
+    let nav_person_w = nav_person.clone();
     let window = WebviewWindowBuilder::new(&app, MIDATA_LOGIN_LABEL, WebviewUrl::External(login_url))
         .title(LOGIN_TITLE)
         .inner_size(520.0, 760.0)
@@ -655,7 +763,18 @@ pub async fn midata_open_login<R: Runtime>(
         .focused(true)
         .incognito(true)
         // Main thread: no cookie access here. Only the MiData origin is allowed.
-        .on_navigation(move |url| url.as_str() == "about:blank" || same_origin(&nav_base, url))
+        .on_navigation(move |url| {
+            let ok = url.as_str() == "about:blank" || same_origin(&nav_base, url);
+            if ok {
+                // String work only (main thread): remember `/people/<id>` for the person id.
+                if let Some(id) = person_id_from_path(url.path()) {
+                    if let Ok(mut g) = nav_person_w.lock() {
+                        *g = Some(id);
+                    }
+                }
+            }
+            ok
+        })
         .build()?;
     // No window-event hook needed: the poller notices a closed window.
     drop(window);
@@ -663,14 +782,15 @@ pub async fn midata_open_login<R: Runtime>(
     log(&app, AuthLog::ok("midata-login-window-opened", None));
     let poll_app = app.clone();
     tauri::async_runtime::spawn(async move {
-        poll_login(poll_app, base_u, epoch).await;
+        poll_login(poll_app, base_u, epoch, nav_person).await;
     });
     Ok(())
 }
 
 /// Polls until a `_session_id` cookie exists AND the window left the sign-in pages.
-async fn poll_login<R: Runtime>(app: AppHandle<R>, base: Url, epoch: u64) {
+async fn poll_login<R: Runtime>(app: AppHandle<R>, base: Url, epoch: u64, nav_person: Arc<StdMutex<Option<String>>>) {
     let started = Instant::now();
+    let mut person_id: Option<String> = None;
     let mut last_names: Option<Vec<String>> = None;
     loop {
         tokio::time::sleep(POLL_INTERVAL).await;
@@ -703,6 +823,14 @@ async fn poll_login<R: Runtime>(app: AppHandle<R>, base: Url, epoch: u64) {
             Ok(Ok(x)) => x,
             _ => continue,
         };
+        if same_origin(&base, &url) {
+            if let Some(id) = person_id_from_path(url.path()) {
+                person_id = Some(id);
+            }
+        }
+        if let Some(id) = nav_person.lock().ok().and_then(|g| g.clone()) {
+            person_id = Some(id);
+        }
         let names: Vec<String> = cookies.iter().map(|c| c.name.clone()).collect();
         if last_names.as_ref() != Some(&names) {
             log(&app, AuthLog::ok("midata-cookies-read", Some(format!("Cookies: [{}]", names.join(", ")))));
@@ -710,18 +838,12 @@ async fn poll_login<R: Runtime>(app: AppHandle<R>, base: Url, epoch: u64) {
         }
         let signed_in = !url.path().contains("/users/")
             && same_origin(&base, &url)
-            && cookies.iter().any(|c| c.name == SESSION_COOKIE && !c.value.is_empty());
+            && pick_session_cookie(&cookies).is_some();
         if !signed_in {
             continue;
         }
 
-        let jar = Arc::new(Jar::default());
-        let mut dir = base.clone();
-        dir.set_path("/");
-        for c in &cookies {
-            jar.add_cookie_str(&jar_cookie_string(c, &dir), &dir);
-        }
-        let client = match build_client(jar.clone()) {
+        let (jar, client) = match jar_client(&base, &cookies) {
             Ok(c) => c,
             Err(e) => {
                 log(&app, AuthLog::fail("midata-login", Some(e.to_string())));
@@ -740,6 +862,7 @@ async fn poll_login<R: Runtime>(app: AppHandle<R>, base: Url, epoch: u64) {
                 method: Method::Session,
                 cookie_names: names,
                 token: None,
+                person_id: person_id.clone(),
             });
             status_of(g.conn.as_ref())
         };
@@ -786,7 +909,7 @@ pub async fn midata_set_token<R: Runtime>(
         let jar = Arc::new(Jar::default());
         g.client = build_client(jar.clone())?;
         g.jar = jar;
-        g.conn = Some(Connection { base_url: base, method: Method::Token, cookie_names: vec![], token: Some(token) });
+        g.conn = Some(Connection { base_url: base, method: Method::Token, cookie_names: vec![], token: Some(token), person_id: None });
         status_of(g.conn.as_ref())
     };
     emit_status(&app, &status);
@@ -838,9 +961,10 @@ pub async fn midata_fetch_aggregate<R: Runtime>(
     camp_start: String,
     camp_end: String,
     coach_person_id: Option<String>,
+    qual_mapping: Option<HashMap<String, Vec<QualKey>>>,
 ) -> AppResult<MidataAggregate> {
     ensure_main(&webview)?;
-    fetch_aggregate_impl(&state, &event_id, &camp_start, &camp_end, coach_person_id.as_deref()).await
+    fetch_aggregate_impl(&state, &event_id, &camp_start, &camp_end, coach_person_id.as_deref(), qual_mapping.as_ref()).await
 }
 
 #[tauri::command]
@@ -1036,9 +1160,25 @@ mod tests {
 
     #[test]
     fn status_hides_token() {
-        let c = Connection { base_url: "https://db.scout.ch".into(), method: Method::Token, cookie_names: vec![], token: Some("SECRET".into()) };
+        let c = Connection {
+            base_url: "https://db.scout.ch".into(),
+            method: Method::Token,
+            cookie_names: vec![],
+            token: Some("SECRET".into()),
+            person_id: Some("123".into()),
+        };
         let json = serde_json::to_string(&status_of(Some(&c))).unwrap();
         assert!(!json.contains("SECRET"));
         assert!(json.contains("\"method\":\"token\""));
+        assert!(json.contains("\"personId\":\"123\""));
+    }
+
+    #[test]
+    fn adoption_rules() {
+        let b = "https://db.scout.ch";
+        assert!(may_adopt(None, b));
+        assert!(may_adopt(Some((b, Method::Session)), b));
+        assert!(!may_adopt(Some((b, Method::Token)), b));
+        assert!(!may_adopt(Some(("https://other.example", Method::Session)), b));
     }
 }

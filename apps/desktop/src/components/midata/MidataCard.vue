@@ -4,9 +4,10 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampMidata, useMidata } from '@/composables/useMidata'
-import { buildQualificationMatrix, compareWithInputs } from '@/domain/midata'
+import { buildQualificationMatrix, compareWithInputs, type QualMapping, type SafetyArea } from '@/domain/midata'
+import { getAreaOverrides, saveAreaOverrides, setAreaDismissed, type CampAreaOverrides } from '@/domain/midata/areaOverrides'
 import type { CoachInputs, Iri, MidataAggregate, MidataField } from '@/domain/types'
-import { makeAreaOf } from './areas'
+import { dismissedEntries, makeAreaOf, makeKeywordsOf } from './areas'
 import { formatStand } from './format'
 import MidataAdoptDialog from './MidataAdoptDialog.vue'
 import MidataEventPicker from './MidataEventPicker.vue'
@@ -23,18 +24,47 @@ const camp = useCampMidata(() => props.campIri, facts)
 const pickerOpen = ref(false)
 const adoptOpen = ref(false)
 
+const dismissed = ref<CampAreaOverrides>({})
+async function loadDismissed(): Promise<void> {
+  try {
+    dismissed.value = await getAreaOverrides(props.campIri)
+  } catch {
+    dismissed.value = {}
+  }
+}
+
 onMounted(() => {
   void md.init()
   void camp.load()
+  void loadDismissed()
 })
 watch(
   () => [props.campIri, facts.value] as const,
   () => void camp.load(),
 )
+watch(() => props.campIri, () => void loadDismissed())
 
 const agg = computed(() => camp.record.value?.aggregate ?? null)
 const diffs = computed(() => (agg.value ? compareWithInputs(agg.value, props.inputs) : []))
-const matrix = computed(() => (agg.value && facts.value ? buildQualificationMatrix(agg.value, facts.value, makeAreaOf(facts.value.activities)) : null))
+const matrix = computed(() =>
+  agg.value && facts.value
+    ? buildQualificationMatrix(agg.value, facts.value, makeAreaOf(facts.value.activities, dismissed.value), makeKeywordsOf(facts.value.activities))
+    : null,
+)
+const dismissedList = computed(() => (facts.value ? dismissedEntries(facts.value.activities, dismissed.value) : []))
+
+async function setDismissed(iri: string, area: SafetyArea, value: boolean): Promise<void> {
+  const next = setAreaDismissed(dismissed.value, iri, area, value)
+  dismissed.value = next
+  try {
+    await saveAreaOverrides(props.campIri, next)
+  } catch {
+    // Kept in memory for this session; persistence is a convenience.
+  }
+}
+async function saveMapping(next: QualMapping): Promise<void> {
+  await md.saveQualMapping(next)
+}
 
 async function openPicker(): Promise<void> {
   pickerOpen.value = true
@@ -123,17 +153,20 @@ function apply(fields: MidataField[]): void {
               <div class="text-caption text-medium-emphasis">{{ t('midata.card.summary.leaders') }}</div>
               <div class="text-h6">{{ agg.leadersCount }}</div>
             </div>
-            <div>
-              <div class="text-caption text-medium-emphasis">{{ t('midata.card.summary.coach') }}</div>
-              <div class="text-h6">
-                <v-icon
-                  :icon="agg.coachMatch === true ? 'mdi-check-circle' : agg.coachMatch === false ? 'mdi-close-circle' : 'mdi-help-circle'"
-                  :color="agg.coachMatch === true ? 'success' : agg.coachMatch === false ? 'error' : undefined"
-                  :title="agg.coachMatch === true ? t('midata.card.summary.coachYes') : agg.coachMatch === false ? t('midata.card.summary.coachNo') : t('midata.card.summary.coachUnknown')"
-                  data-testid="midata-coach"
-                />
-              </div>
-            </div>
+          </div>
+          <div v-if="agg" class="mt-3 d-flex align-center flex-wrap ga-2" data-testid="midata-coach">
+            <template v-if="agg.coachNickname">
+              <v-icon
+                size="small"
+                :icon="agg.coachMatch === true ? 'mdi-check-circle' : agg.coachMatch === false ? 'mdi-close-circle' : 'mdi-help-circle'"
+                :color="agg.coachMatch === true ? 'success' : agg.coachMatch === false ? 'error' : undefined"
+              />
+              <span>{{ t('midata.card.summary.coachLine', { name: agg.coachNickname }) }}</span>
+              <span :class="agg.coachMatch === true ? 'text-success' : agg.coachMatch === false ? 'text-error' : 'text-medium-emphasis'" data-testid="midata-coach-match">
+                ({{ agg.coachMatch === true ? t('midata.card.summary.coachMatchYes') : agg.coachMatch === false ? t('midata.card.summary.coachMatchNo') : t('midata.card.summary.coachMatchUnknown') }})
+              </span>
+            </template>
+            <span v-else class="text-medium-emphasis">{{ t('midata.card.summary.coachNone') }}</span>
           </div>
           <div v-if="agg" class="text-caption text-medium-emphasis mt-2">
             {{ t('midata.card.summary.event') }}: {{ agg.eventName }}<template v-if="agg.location"> · {{ t('midata.card.summary.location') }}: {{ agg.location }}</template>
@@ -142,7 +175,18 @@ function apply(fields: MidataField[]): void {
       </v-card-text>
     </v-card>
 
-    <QualificationMatrix v-if="matrix" :matrix="matrix" />
+    <QualificationMatrix
+      v-if="matrix"
+      :matrix="matrix"
+      :kinds="agg?.qualificationKinds ?? []"
+      :mapping="md.qualMapping.value"
+      :dismissed="dismissedList"
+      :loading="camp.loading.value"
+      @save-mapping="saveMapping"
+      @reload="camp.refresh()"
+      @dismiss="(iri, area) => setDismissed(iri, area, true)"
+      @restore="(iri, area) => setDismissed(iri, area, false)"
+    />
 
     <MidataEventPicker
       v-model="pickerOpen"

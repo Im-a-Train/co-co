@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Settings > MiData: connection (login window or service token), own person id, M7-0 diagnosis. */
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMidata } from '@/composables/useMidata'
 import type { MidataProbe } from '@/domain/types'
@@ -24,6 +24,11 @@ onMounted(async () => {
   personId.value = md.personId.value ?? ''
 })
 watch([baseUrl, personId], () => (saved.value = false))
+watch(md.personId, (v) => {
+  if (v && !personId.value) personId.value = v
+})
+/** The stored id equals the one detected from the login URL. */
+const personIdDetected = computed(() => !!md.status.value.personId && md.status.value.personId === md.personId.value)
 
 async function saveSettings(): Promise<void> {
   await md.saveSettings({ baseUrl: baseUrl.value, personId: personId.value || null })
@@ -72,6 +77,7 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
             <v-chip size="small" variant="tonal" :color="md.status.value.connected ? 'success' : undefined" data-testid="midata-status">
               {{ md.status.value.connected ? t(`midata.settings.status.${md.status.value.method ?? 'session'}`) : t('midata.settings.status.none') }}
             </v-chip>
+            <span v-if="md.viaEcamp.value" class="text-caption" data-testid="midata-via-ecamp">{{ t('midata.settings.status.viaEcamp') }}</span>
             <span v-if="md.status.value.cookieNames.length" class="text-caption text-medium-emphasis">
               {{ t('midata.settings.status.cookies', { names: md.status.value.cookieNames.join(', ') }) }}
             </span>
@@ -85,7 +91,8 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
               {{ t('midata.settings.logout') }}
             </v-btn>
           </div>
-          <div class="text-caption mt-1 mb-4">{{ inTauri ? t('midata.settings.loginHint') : t('midata.settings.notInApp') }}</div>
+          <div class="text-caption mt-1">{{ inTauri ? t('midata.settings.loginHint') : t('midata.settings.notInApp') }}</div>
+          <div class="text-caption text-medium-emphasis mb-4" data-testid="midata-oauth-help">{{ t('midata.settings.oauthHelp') }}</div>
 
           <div class="text-subtitle-2 mb-1">{{ t('midata.settings.tokenTitle') }}</div>
           <div class="d-flex ga-2 align-start">
@@ -116,7 +123,11 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
             inputmode="numeric"
             data-testid="midata-personid"
             @blur="saveSettings"
-          />
+          >
+            <template v-if="personIdDetected" #append-inner>
+              <v-chip size="x-small" color="success" variant="tonal" data-testid="midata-personid-detected">{{ t('midata.settings.personIdDetected') }}</v-chip>
+            </template>
+          </v-text-field>
           <div class="d-flex align-center ga-3 mt-2">
             <v-btn variant="tonal" size="small" @click="saveSettings">{{ t('common.save') }}</v-btn>
             <span v-if="saved" class="text-caption text-success">{{ t('midata.settings.saved') }}</span>
