@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { buildCampRows, filterCampRows, formatIsoDate, sortCampRows, type CampRow } from '@/components/camps/campRows'
 import { useCampList } from '@/composables/useCampList'
+import { isLeaderRole } from '@/domain/selfCheck'
 import { listCoachInputs } from '@/domain/campFacts/store'
 import { daysBetween, deadlineStatus } from '@/domain/rules/deadlines'
 import { listCampSummaries } from '@/domain/rules/store'
@@ -47,6 +48,9 @@ const today = new Date().toISOString().slice(0, 10)
 
 function open(r: CampRow): void {
   void router.push(`/lager/${r.id}/uebersicht`)
+}
+function openSelfCheck(r: CampRow): void {
+  void router.push(`/lager/${r.id}/selbstcheck`)
 }
 function dates(r: CampRow): string {
   return r.start ? `${formatIsoDate(r.start)} – ${formatIsoDate(r.end ?? r.start)}` : t('camps.campsView.noDates')
@@ -156,6 +160,18 @@ function overdueDays(r: CampRow): number {
               {{ t(`camps.campsView.role.${r.role}`) }}
             </v-chip>
             <span v-else>–</span>
+            <v-btn
+              v-if="isLeaderRole(r.role)"
+              size="x-small"
+              variant="text"
+              class="ml-1"
+              prepend-icon="mdi-clipboard-check-outline"
+              data-testid="camp-selfcheck-link"
+              @click.stop="openSelfCheck(r)"
+              @keydown.enter.stop
+            >
+              {{ t('selfCheck.campsLink') }}
+            </v-btn>
           </td>
           <td>
             <v-chip size="small" :color="reviewColor(r.review)" variant="tonal">{{ t(`reviewStatus.${r.review}`) }}</v-chip>

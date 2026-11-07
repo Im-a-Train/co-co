@@ -1,0 +1,65 @@
+{
+  "selfCheck": {
+    "title": "Selbstcheck",
+    "introLeader": "Mit der Entwurfsrunde prüfst du dein Lager mit denselben Regeln wie später der Coach. Behebe die offenen Befunde, bevor du das Lager einreichst, so braucht es weniger Prüfrunden.",
+    "introCoach": "Die Entwurfsrunde lässt dieselben Regeln laufen wie die Prüfung, hier als Vorab-Check für die Lagerleitung. Sie zählt nicht als Prüfrunde und ändert weder Rundennummern noch Status.",
+    "kpi": {
+      "must": "Muss",
+      "should": "Soll",
+      "hint": "Hinweis",
+      "jsDays": "J+S-Tage",
+      "jsDaysValue": "{valid} von {total}",
+      "changed": "Geändert seit Selbstcheck",
+      "changedNone": "Noch kein Selbstcheck"
+    },
+    "run": {
+      "button": "Entwurfsrunde starten",
+      "dialogTitle": "Entwurfsrunde starten",
+      "note": "Notiz (optional)",
+      "confirm": "Starten",
+      "cancel": "Abbrechen",
+      "failed": "Die Entwurfsrunde konnte nicht gespeichert werden."
+    },
+    "progress": {
+      "title": "Fortschritt seit der letzten Entwurfsrunde",
+      "since": "Letzte Entwurfsrunde: {date}",
+      "noRun": "Noch keine Entwurfsrunde. Starte die erste, um den Fortschritt zu verfolgen.",
+      "fixed": "Behoben",
+      "remaining": "Offen",
+      "added": "Neu",
+      "empty": "Keine"
+    },
+    "report": {
+      "title": "Bericht",
+      "copy": "In Zwischenablage kopieren",
+      "copied": "Bericht kopiert",
+      "copyFailed": "Kopieren fehlgeschlagen",
+      "includeRed": "MiData/NDS-Angaben einschliessen",
+      "redHint": "Der Bericht kann den Rechner verlassen, wenn du ihn weitergibst. Mit dieser Option enthält er auch Befunde, die auf MiData- oder NDS-Angaben beruhen.",
+      "heading": "Selbstcheck «{camp}» vom {date}",
+      "counts": "Offen: {must} Muss, {should} Soll, {hint} Hinweis",
+      "jsDays": "J+S-Tage: {valid} von {total} gültig",
+      "group": {
+        "must": "Muss ({n})",
+        "should": "Soll ({n})",
+        "hint": "Hinweis ({n})"
+      },
+      "link": "In eCamp",
+      "none": "Keine offenen Befunde.",
+      "fixedHeading": "Behoben seit letztem Selbstcheck ({n})"
+    },
+    "history": {
+      "title": "Bisherige Entwurfsrunden",
+      "empty": "Noch keine Entwurfsrunden.",
+      "by": {
+        "leader": "Lagerleitung",
+        "coach": "Coach"
+      },
+      "counts": "{must} Muss, {should} Soll, {hint} Hinweis",
+      "delete": "Löschen",
+      "deleteConfirm": "Entwurfsrunde löschen?"
+    },
+    "openFinding": "Im Befund öffnen",
+    "campsLink": "Selbstcheck"
+  }
+}
