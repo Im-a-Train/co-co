@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Camp frame: header (title, dates, reload) + tabs + child view. FROZEN (architect).
- * Loads CampFacts once per camp via useCampFacts (data builder); child views use the same handle.
+ * Camp frame: header (title, dates, reload) + tabs + child view. Shared by all modules; change with care.
+ * Loads CampFacts once per camp via useCampFacts; child views use the same handle.
  */
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

@@ -1,4 +1,4 @@
-/** "Meine Lager" list (CampListEntry[] via loadCampList). OWNER: data builder. */
+/** "Meine Lager" list (CampListEntry[] via loadCampList). */
 import { ref, watch, type Ref } from 'vue'
 import { loadCampList } from '@/domain/campFacts'
 import type { CampListEntry } from '@/domain/types'

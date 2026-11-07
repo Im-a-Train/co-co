@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** /lager/:campId/runden: review status, rounds, diff, export reminder. OWNER: rounds builder. */
+/** /lager/:campId/runden: review status, rounds, diff, export reminder. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DiffView from '@/components/rounds/DiffView.vue'

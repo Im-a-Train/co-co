@@ -1,5 +1,5 @@
 /**
- * AI features (M5). OWNER: ai builder. Each feature builds a request (preview first), then calls send().
+ * AI features (M5). Each feature builds a request (preview first), then calls send().
  * Two-step API so the UI can show the exact payload before anything leaves the device.
  */
 import type { ActivityFact, CampFacts, DocumentRecord, FeedbackItem, Finding, Severity } from '../types'

@@ -1,4 +1,4 @@
-/** Turns file bytes into a DocumentRecord (extraction, checklist, GPX, links). OWNER: documents builder. */
+/** Turns file bytes into a DocumentRecord (extraction, checklist, GPX, links). */
 import { extractText, parseGpx } from './extract'
 import {
   checkSafetyConcept,

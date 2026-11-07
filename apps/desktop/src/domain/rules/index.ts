@@ -1,4 +1,4 @@
-/** Public API of the rules module. OWNER: rules builder. */
+/** Public API of the rules module. */
 export { evaluate, countFindings, validateRuleMeta, isValidOn, findingId, fillTemplate, compareFindings } from './engine'
 export {
   computeJsDays,

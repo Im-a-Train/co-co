@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** /regeln: rule catalogue of all bundled packs. OWNER: rules builder. */
+/** /regeln: rule catalogue of all bundled packs. */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import RuleCard from '@/components/rules/RuleCard.vue'

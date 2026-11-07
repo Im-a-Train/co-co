@@ -1,4 +1,4 @@
-/** German system prompts (green: written by co-co). OWNER: ai builder. */
+/** German system prompts (green: written by co-co). */
 
 export const REPHRASE_SYSTEM = `Du hilfst einem J+S-Coach (Jugend+Sport, Pfadi), Rückmeldungen zu einem Lagerprogramm zu formulieren.
 Formuliere den vorgegebenen Text um im Stil der Feedback-Kultur: wertschätzend, konkret, auf Augenhöhe, lösungsorientiert, ohne Vorwürfe.

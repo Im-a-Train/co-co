@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Soft AI review of an activity's safety considerations. Embedded by the cockpit builder (findings view);
+ * Soft AI review of an activity's safety considerations. Used in the findings view;
  * emitted findings go to useFindings().addAiFindings.
- * OWNER: ai builder. CONTRACT: props + emits below are frozen. Renders nothing while AI is disabled;
+ * Props/emits are used by feedback, documents and cockpit views.
+ * Renders nothing while AI is disabled;
  * always shows the redaction preview dialog before sending.
  */
 import { useI18n } from 'vue-i18n'

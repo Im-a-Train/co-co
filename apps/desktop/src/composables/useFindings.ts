@@ -1,7 +1,7 @@
 /**
  * Findings of one camp: builds RuleContext from useCampFacts + useCampSettings + documents (db) +
  * overrides + AppSettings, runs evaluate(loadBundledPacks(), ctx), writes a CampSummaryRecord.
- * Re-evaluates when facts / settings version / overrides / documents change. OWNER: rules builder.
+ * Re-evaluates when facts / settings version / overrides / documents change.
  * AI findings (origin 'ai') can be appended via addAiFindings (kept in memory only, shared per camp).
  */
 import { computed, onScopeDispose, ref, shallowRef, toValue, watch, type ComputedRef, type MaybeRefOrGetter, type Ref } from 'vue'

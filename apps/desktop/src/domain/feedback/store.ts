@@ -1,4 +1,4 @@
-/** Feedback persistence (table `feedback`). OWNER: feedback builder. */
+/** Feedback persistence (table `feedback`). */
 import { getDb } from '../storage/db'
 import type { FeedbackItem, Iri } from '../types'
 

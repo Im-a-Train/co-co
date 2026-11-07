@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Banner shown after a round was started/closed until a backup was exported. OWNER: rounds builder. */
+/** Banner shown after a round was started/closed until a backup was exported. */
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBackup } from './useBackup'

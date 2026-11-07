@@ -1,6 +1,6 @@
 # Rule pack "co-co Basis 2026.1" – format
 
-OWNER: rules builder. A rule = **YAML metadata** + **TypeScript predicate**, joined by `id`.
+A rule = **YAML metadata** + **TypeScript predicate**, joined by `id`.
 
 ```
 packs/basis/
@@ -71,7 +71,7 @@ export const jsDay01: RulePredicate = (ctx) =>
 - Each pack/rule is loaded via `import.meta.glob(..., { query: '?raw', import: 'default', eager: true })`.
 
 
-## Implementation notes (rules builder)
+## Implementation notes
 
 - 33 rules, ids as in the SPEC. YAML files: `rules/<ID>.yaml`, predicates grouped in `predicates/{js,completeness,safety,bestPractice}.ts`
   and registered in `predicates/index.ts` (the loader throws if a YAML has no predicate or vice versa).

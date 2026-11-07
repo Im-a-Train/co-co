@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > Diagnose: M0 spike protocol. OWNER: data builder. */
+/** Settings > Diagnose: M0 spike protocol. */
 import SpikeProtocolCard from '@/components/SpikeProtocolCard.vue'
 </script>
 

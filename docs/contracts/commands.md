@@ -1,6 +1,6 @@
-# Tauri command contract (M1–M5)
+# Tauri command contract
 
-Status: **frozen** (architect). The Rust builder implements these commands in `apps/desktop/src-tauri`.
+Status: **current contract**. Commands are implemented in `apps/desktop/src-tauri`; change this file together with the code.
 The frontend uses the typed wrappers in `apps/desktop/src/lib/tauri.ts` (`commands.*`, `onDocsChanged`,
 `onDocsDropped`). The one exception is `ai_complete`, which is wrapped in `apps/desktop/src/lib/tauriAi.ts`
 and may only be imported by `src/domain/zones/aiGateway.ts`. A vitest guard enforces this.
@@ -77,4 +77,4 @@ The frontend re-watches persisted folders from IndexedDB (`watchedFolders`) at s
 
 CSP: `connect-src` does **not** need `api.anthropic.com`, because the call happens in Rust. pdf.js
 loads its worker from a same-origin asset (`script-src 'self'` covers it). If pdf.js needs WASM
-decoders, add `'wasm-unsafe-eval'` to `script-src` (Rust builder owns `tauri.conf.json`).
+decoders, add `'wasm-unsafe-eval'` to `script-src`.

@@ -1,5 +1,5 @@
 /**
- * Lagertag-Rechner (J+S day calculator). OWNER: rules builder. Pure.
+ * Lagertag-Rechner (J+S day calculator). Pure.
  * Used by rules JS-DAY-01..04 AND by the cockpit (raster + KPIs), so its output is the contract.
  *
  * J+S units = schedule entries whose activity category maps to LS or LA.

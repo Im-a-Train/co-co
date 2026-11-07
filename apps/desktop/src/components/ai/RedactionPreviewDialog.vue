@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Shows exactly what will be sent to the AI (after redaction). OWNER: ai builder. */
+/** Shows exactly what will be sent to the AI (after redaction). */
 import { useI18n } from 'vue-i18n'
 import type { AiPreview } from '@/domain/zones/features'
 

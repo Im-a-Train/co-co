@@ -1,4 +1,4 @@
-/** Overrides + cached camp summaries (tables `overrides`, `campSummaries`). OWNER: rules builder. */
+/** Overrides + cached camp summaries (tables `overrides`, `campSummaries`). */
 import { getDb, newId, nowIso } from '../storage/db'
 import type { CampSummaryRecord, Iri, Override } from '../types'
 

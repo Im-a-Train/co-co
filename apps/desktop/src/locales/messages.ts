@@ -1,6 +1,6 @@
 /**
  * Merges all locale area files (src/locales/<lang>/<area>.json) into one message tree per language.
- * FROZEN (architect). Builders only edit their own area file; see docs/contracts/ownership.md.
+ * Each feature edits only its own area file.
  *
  * Every area file is deep-merged into the root, so area files must namespace their keys
  * (e.g. feedback.json -> { "feedback": { ... } }). A duplicate leaf key throws at startup.
@@ -44,7 +44,7 @@ const templateFiles = import.meta.glob<string>('./*/feedback-templates/*.md', {
 
 /**
  * Feedback templates (markdown) keyed by `<lang>/<templateFile>`, e.g. `de/grobprogramm`.
- * Content and format are owned by the feedback builder.
+ * Content and format are owned by the feedback feature.
  */
 export const feedbackTemplates: Record<string, string> = Object.fromEntries(
   Object.entries(templateFiles).map(([file, md]) => [

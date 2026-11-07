@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Rephrase a feedback item in Feedback-Kultur tone. Embedded by the feedback builder.
- * OWNER: ai builder. CONTRACT: props + emits below are frozen. Renders nothing while AI is disabled;
+ * Rephrase a feedback item in Feedback-Kultur tone.
+ * Props/emits are used by feedback, documents and cockpit views. Renders nothing while AI is disabled;
  * always shows the redaction preview dialog before sending.
  */
 import { useI18n } from 'vue-i18n'

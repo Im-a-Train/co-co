@@ -81,7 +81,7 @@ export function errorMessage(err: unknown): string {
 }
 
 // ---------------------------------------------------------------------------------------------
-// M1-M5 contract types (see docs/contracts/commands.md). FROZEN (architect); Rust builder implements.
+// M1-M5 contract types (see docs/contracts/commands.md). Implemented by the Rust commands.
 // ---------------------------------------------------------------------------------------------
 
 export interface FileFilter {

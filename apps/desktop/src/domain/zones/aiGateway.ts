@@ -1,5 +1,5 @@
 /**
- * The ONLY module allowed to call the AI command (lib/tauriAi.ts -> Rust ai_complete). OWNER: ai builder.
+ * The ONLY module allowed to call the AI command (lib/tauriAi.ts -> Rust ai_complete).
  *
  * send() refuses when AI is disabled, any 'red' part, any 'yellow' part that is not `redacted: true`,
  * unconfirmed requests and oversized prompts. It writes an AiLogEntry (counts only, never text).

@@ -1,5 +1,5 @@
 /**
- * Feedback domain (M2). OWNER: feedback builder. Pure (store in ./store.ts).
+ * Feedback domain. Pure (store in ./store.ts).
  * Feedback-Kultur order: kudos -> must -> suggestion -> question.
  */
 import { feedbackTemplates, messages, type MessageTree } from '../../locales/messages'

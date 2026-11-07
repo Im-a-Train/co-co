@@ -1,5 +1,5 @@
 /**
- * Deadlines across camps. OWNER: rules builder. Pure.
+ * Deadlines across camps. Pure.
  * NDS registration T-30 (JS-DL-01), NDS closing T+30 after last J+S activity (JS-DL-02),
  * Leihmaterial T-5w, Landeskarten T-3w (T-5w when the camp starts in Jun-Aug) (JS-DL-03),
  * Lagerbewilligung T-21.

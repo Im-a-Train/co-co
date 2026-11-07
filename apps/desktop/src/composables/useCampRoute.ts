@@ -1,4 +1,4 @@
-/** Current camp from the route (/lager/:campId/...). FROZEN (architect). */
+/** Current camp from the route (/lager/:campId/...). Shared by all modules; change with care. */
 import { computed, type ComputedRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { campIriFromId } from '@/domain/iri'

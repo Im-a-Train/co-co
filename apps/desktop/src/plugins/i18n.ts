@@ -1,7 +1,7 @@
 import { createI18n } from 'vue-i18n'
 import { messages } from '@/locales/messages'
 
-/** FROZEN (architect). Locale area files are merged in src/locales/messages.ts. */
+/** Locale area files are merged in src/locales/messages.ts. */
 export const i18n = createI18n({
   legacy: false,
   locale: 'de',

@@ -1,5 +1,5 @@
 /**
- * Data zones (ADR 0005) + optional AI (M5). OWNER: ai builder.
+ * Data zones (ADR 0005) + optional AI (M5).
  * Only ./aiGateway.ts may import '@/lib/tauriAi' (enforced by src/__tests__/contracts/aiGuard.test.ts).
  */
 import type { Zone, Zoned } from '../types'

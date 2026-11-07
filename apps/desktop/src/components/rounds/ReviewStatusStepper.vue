@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Review status workflow: stepper over the happy path + buttons for allowed transitions. OWNER: rounds builder. */
+/** Review status workflow: stepper over the happy path + buttons for allowed transitions. */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { REVIEW_TRANSITIONS } from '@/domain/rounds'

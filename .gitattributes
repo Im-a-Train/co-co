@@ -1,0 +1,8 @@
+# Normalise line endings (matches .editorconfig end_of_line = lf)
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.ico binary
+*.icns binary
+*.pdf binary

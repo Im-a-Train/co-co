@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** /lager/:campId/feedback: feedback composer. OWNER: feedback builder. Reads ?item=<id> to focus an item. */
+/** /lager/:campId/feedback: feedback composer. Reads ?item=<id> to focus an item. */
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

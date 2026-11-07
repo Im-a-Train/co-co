@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** /verbindung: eCamp instance, login and session (M0 cards). OWNER: data builder. */
+/** /verbindung: eCamp instance, login and session (M0 cards). */
 import { useI18n } from 'vue-i18n'
 import InstanceCard from '@/components/InstanceCard.vue'
 import LoginCard from '@/components/LoginCard.vue'

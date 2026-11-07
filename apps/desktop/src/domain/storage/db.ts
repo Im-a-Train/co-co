@@ -1,10 +1,9 @@
 /**
- * IndexedDB (Dexie) database 'coco' with the tables of ALL milestones. FROZEN (architect).
+ * IndexedDB (Dexie) database 'coco' with all co-co tables. Shared by all modules; change with care.
  *
- * Rules for builders
- * - Only touch the tables your module owns (docs/contracts/ownership.md); read others if needed.
- * - Never change the schema here. Schema changes go through the architect as a NEW version
- *   (`this.version(2).stores({...}).upgrade(...)`), never by editing version(1).
+ * Schema rules
+ * - Never edit an existing schema version. Add `this.version(n+1).stores({...}).upgrade(...)` instead.
+ * - Keep TABLE_NAMES and the backup export/import in sync with the tables.
  * - Records are plain JSON (see domain/types.ts), so backup export/import is a table dump.
  * - Importing this module is safe in Node (vitest): Dexie only opens IndexedDB on first query.
  *   Pure domain logic must still not depend on it, so it stays testable without IndexedDB.

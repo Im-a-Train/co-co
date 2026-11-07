@@ -1,4 +1,4 @@
-/** IRI helpers shared by all modules. FROZEN (architect). */
+/** IRI helpers shared by all modules. Shared by all modules; change with care. */
 import type { Iri } from './types'
 
 /** Last path segment of an IRI: `/api/camps/70ca971c992f` -> `70ca971c992f`. */

@@ -1,4 +1,4 @@
-/** Document persistence (tables `documents`, `watchedFolders`). OWNER: documents builder. */
+/** Document persistence (tables `documents`, `watchedFolders`). */
 import { getDb } from '../storage/db'
 import type { DocumentRecord, Iri, WatchedFolder } from '../types'
 

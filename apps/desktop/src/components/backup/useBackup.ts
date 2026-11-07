@@ -1,6 +1,6 @@
 /**
  * Backup state shared by Settings > Backup and the export reminder on the rounds page.
- * OWNER: rounds builder. Module-level refs so every consumer sees the same state.
+ * Module-level refs so every consumer sees the same state.
  */
 import { computed, ref } from 'vue'
 import {

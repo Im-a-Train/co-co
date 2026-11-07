@@ -1,5 +1,5 @@
 /**
- * Per-camp category mapping + coach inputs, reactive and persisted. OWNER: data builder.
+ * Per-camp category mapping + coach inputs, reactive and persisted.
  * Consumers (rules, cockpit, documents) rely on the shapes below. Changing a mapping or an input
  * bumps `version` so useFindings re-evaluates.
  */

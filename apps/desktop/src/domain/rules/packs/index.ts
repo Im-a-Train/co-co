@@ -1,5 +1,5 @@
 /**
- * Bundled rule packs. OWNER: rules builder. See ./basis/README.md for the YAML + TS format.
+ * Bundled rule packs. See ./basis/README.md for the YAML + TS format.
  *
  * YAML is loaded at build time via import.meta.glob (works in vite and vitest alike) and parsed
  * with the 'yaml' package. Predicates are registered per pack directory in PREDICATES below.

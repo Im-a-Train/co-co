@@ -1,5 +1,5 @@
 /**
- * Rule engine. OWNER: rules builder. Pure (no Vue/Tauri/Dexie).
+ * Rule engine. Pure (no Vue/Tauri/Dexie).
  *
  * - evaluate() runs every rule of every pack whose validity (pack AND rule validFrom/validTo) contains
  *   the camp start date (fallback: ctx.now when the camp has no dates).
