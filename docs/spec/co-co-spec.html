@@ -327,7 +327,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
 <header class="hero">
   <canvas id="topo" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M5 built, M6 in progress</span>
+    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M6 built, M7 MiData designed</span>
     <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
     <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
     <div class="badges">
@@ -336,7 +336,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
       <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
       <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
       <span class="badge">Language: <b>German</b>, ready for more</span>
-      <span class="badge">Status: <b>M0–M5 built</b> · CI green · M6 triage in progress</span>
+      <span class="badge">Status: <b>M0–M6 built</b> · next: M7 MiData</span>
     </div>
   </div>
 </header>
@@ -742,7 +742,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><span class="eyebrow">M3 · ✓ done</span><h3>Documents</h3><ul><li>Drop, then extract and index</li><li>Watched folders</li><li>Safety-concept checklist, GPX analysis, linker</li><li>Full-text search</li></ul></div>
     <div class="card"><span class="eyebrow">M4 · ✓ done</span><h3>Rounds + backup</h3><ul><li>Status workflow, snapshots, diff since the last round</li><li>JSON export and import</li><li>First GitHub Release</li></ul></div>
     <div class="card"><span class="eyebrow">M5 · ✓ done</span><h3>Optional AI</h3><ul><li>Zones, redaction and a preview before sending</li><li>Claude: rephrase feedback, summarise a document, soft review of safety considerations</li><li>Key stored in the OS keychain</li></ul></div>
-    <div class="card"><span class="eyebrow">M6 · in progress</span><h3>Triage + coach feedback</h3><ul><li>«Befunde durchgehen»: finding, activity and feedback editor side by side</li><li>Keys J/K, F, I; auto-advance to the next open finding</li><li>Fix «Feedback erstellen» in the Übersicht</li><li>«Übersteuern» renamed to «Ignorieren»; offer to disable a rule after repeated ignoring</li></ul></div>
+    <div class="card"><span class="eyebrow">M6 · ✓ done</span><h3>Triage + coach feedback</h3><ul><li>«Befunde durchgehen»: finding, activity and feedback editor side by side</li><li>Keys J/K, F, I; auto-advance to the next open finding</li><li>Fix «Feedback erstellen» in the Übersicht</li><li>«Übersteuern» renamed to «Ignorieren»; offer to disable a rule after repeated ignoring</li></ul></div>
     <div class="card"><span class="eyebrow">M7 · designed</span><h3>MiData (read-only)</h3><ul><li>M7-0: auth spike (session vs. token) + check the PBS camp fields</li><li>M7-1: Rust MiData module returning aggregates only</li><li>M7-2: «Aus MiData übernehmen» in Lager-Angaben</li><li>M7-3: qualification matrix + rules</li></ul></div>
   </div>
 </div></section>
@@ -896,7 +896,8 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
   ];
   const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
   const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status']);
-  const WIP=new Set(['Befunde-Triage','Ignorieren with a reason','Rule disabling']);
+  ['Befunde-Triage','Ignorieren with a reason','Rule disabling'].forEach(n=>DONE.add(n));
+  const WIP=new Set([]);
   const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';
   const root=document.getElementById('featgroups'); if(!root) return;
   root.innerHTML=G.map(([t,s,items])=>`<div class="fg"><h3>${t} <small>${items.filter(([n])=>st(n)==='done').length} of ${items.length} done</small></h3><div class="feats">${items.map(([n,d,p,ai])=>`<article class="feat ${st(n)==='done'?'is-done':''}" data-p="${p}" data-ai="${ai?1:0}" data-st="${st(n)}"><h4>${n}</h4><p>${d}</p><div class="tags">${st(n)==='done'?'<span class="pill t-done">Done</span>':st(n)==='wip'?'<span class="pill t-wip">In progress</span>':''}<span class="pill ${lab[p][0]}">${lab[p][1]}</span>${ai?'<span class="pill t-ai">AI</span>':''}</div></article>`).join('')}</div></div>`).join('');
