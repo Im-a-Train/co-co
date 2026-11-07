@@ -42,8 +42,26 @@ apps/desktop/src-tauri/    Tauri 2 app (Rust): login window, cookie jar, eCamp A
   crates/coco-core/        pure Rust logic (parsing, JWT payload decode, URL checks), testable everywhere
 docs/adr/                  architecture decision records
 docs/m0-spike-protocol.md  manual test plan for the login spike
-.github/workflows/ci.yml   CI: typecheck, vitest, cargo test, bundles for Windows/macOS/Linux
+.github/workflows/ci.yml   CI: typecheck, vitest, cargo test, Windows installer (macOS/Linux opt-in)
 ```
+
+## CI
+
+CI runs on the **self-hosted runner** (`self-hosted, Linux, X64`, currently `isengard`). It builds **Windows only** by default:
+
+| Job | Runner | When |
+|---|---|---|
+| `check`: typecheck, vitest, vite build, cargo test | self-hosted Linux | every push and PR |
+| `windows-cross`: NSIS installer cross-compiled with `cargo-xwin` | self-hosted Linux | every push and PR (default) |
+| `windows-native`: NSIS + MSI, native build | self-hosted Windows | when the repo variable `WINDOWS_BUILD` = `native` |
+| `linux`: deb + AppImage | self-hosted Linux | manual run, input `linux` |
+| `macos`: dmg | GitHub-hosted `macos-latest` | manual run, input `macos` |
+
+Runner host requirements:
+
+- **Linux runner:** the apt packages listed in `APT_PACKAGES` in `ci.yml`. These are the Tauri deps plus `nsis lld llvm clang` for the cross build. CI installs any missing ones itself if the runner user has passwordless sudo; otherwise it fails with an install command for you to run on the host.
+- **Windows runner (optional):** register it with the labels `self-hosted, Windows, X64`. Install VS Build Tools (C++ workload), the Windows SDK, Node 22 and rustup. Then set `WINDOWS_BUILD=native`.
+- **Cross build:** cargo-xwin downloads the MSVC CRT and the Windows SDK, under Microsoft's licence terms, and caches them on the runner. The installer is unsigned, so Windows SmartScreen will warn when it runs.
 
 ## Prerequisites
 
@@ -57,7 +75,7 @@ All platforms:
 
 - **Microsoft C++ Build Tools** ("Desktop development with C++") **and the Windows 10/11 SDK**, with
   the default Rust toolchain `stable-x86_64-pc-windows-msvc`. You need these for any real build
-  (`npm run tauri dev`, `npm run tauri build`) and for release builds. CI uses them on `windows-latest`.
+  (`npm run tauri dev`, `npm run tauri build`) and for release builds. CI does not need them: it cross-compiles on Linux, or builds natively on an optional self-hosted Windows runner.
 - **WebView2 runtime** (preinstalled on Windows 11).
 
 > **Note on the M0 development machine.** M0 was written on a Windows 11 machine without MSVC Build
@@ -70,7 +88,8 @@ All platforms:
 >
 > To run the app locally on Windows, either install MSVC Build Tools + the Windows SDK (recommended), or
 > install a complete MinGW-w64 toolchain (e.g. MSYS2/WinLibs with `dlltool`, `as`, `windres`, `gcc`).
-> Until then, the full app is compiled and bundled only in CI.
+> Until then, the full app is compiled and bundled only in CI. Download the `co-co-windows-x64` artifact
+> from the latest green run.
 
 ### macOS
 

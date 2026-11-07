@@ -13,7 +13,7 @@ This protocol is the evidence for [ADR 0003](adr/0003-login-via-webview-cookies.
 
 | Item | Notes |
 | --- | --- |
-| App build | Either run `npm run tauri dev -w apps/desktop` (needs the OS prerequisites from the README), or install the CI artifact `co-co-<platform>` from the latest green CI run on the branch. |
+| App build | Either run `npm run tauri dev -w apps/desktop` (needs the OS prerequisites from the README), or install the CI artifact `co-co-windows-x64` from the latest green CI run on the branch. |
 | Accounts | (A) an eCamp account that logs in via **PBS MiData**. (B) an eCamp account with **e-mail + password**. One person may have both. Test accounts on `https://dev.ecamp3.ch` are preferred where possible. |
 | Camps | Account should be a member of at least one camp with some activities. |
 | Network | Normal internet. No proxy that strips cookies. |
