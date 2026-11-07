@@ -6,7 +6,8 @@ import { commands } from '@/lib/tauri'
 import { toCommentHtmlParts, orderItems, lintItems, type FeedbackLint } from '@/domain/feedback'
 import { deleteFeedback, listFeedback, saveFeedback } from '@/domain/feedback/store'
 import { newId, nowIso } from '@/domain/storage/db'
-import type { FeedbackItem, FeedbackKind, FeedbackScope, Iri } from '@/domain/types'
+import { syncFeedbackWithComments, type CommentSyncSummary } from '@/domain/feedback/commentSync'
+import type { CampFacts, FeedbackItem, FeedbackKind, FeedbackScope, Iri } from '@/domain/types'
 
 export interface NewFeedback {
   scope: FeedbackScope
@@ -31,6 +32,10 @@ export interface FeedbackHandle {
   /** Posts an activity item as eCamp comment(s). Rejects with a readable message on failure. */
   postAsComment(id: string): Promise<void>
   markSent(id: string, sent: boolean): Promise<void>
+  /** Reads resolved/answered eCamp comments back into posted items (persists changed items). */
+  syncComments(facts: CampFacts): Promise<CommentSyncSummary>
+  /** Marks all current replies of an item as seen. */
+  markRepliesSeen(id: string): Promise<void>
 }
 
 function commentIri(res: unknown): string | undefined {
@@ -64,7 +69,8 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
   }
 
   async function persist(item: FeedbackItem): Promise<void> {
-    await saveFeedback(item)
+    // Items read from `items` carry reactive proxies in nested arrays, which IndexedDB cannot clone.
+    await saveFeedback(JSON.parse(JSON.stringify(item)) as FeedbackItem)
     const idx = items.value.findIndex((i) => i.id === item.id)
     if (idx >= 0) items.value.splice(idx, 1, item)
     else items.value.push(item)
@@ -117,7 +123,10 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
         const res = await commands.apiPostComment(item.campIri, item.activityIri, parts[i])
         current = { ...current, postedParts: i + 1, updatedAt: nowIso() }
         const iri = commentIri(res)
-        if (iri && !current.postedCommentIri) current.postedCommentIri = iri
+        if (iri) {
+          if (!current.postedCommentIri) current.postedCommentIri = iri
+          current.postedCommentIris = [...(current.postedCommentIris ?? []), iri]
+        }
         if (i + 1 === parts.length) current.status = 'posted'
         await persist(current)
       }
@@ -128,6 +137,26 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
 
   async function markSent(id: string, sent: boolean): Promise<void> {
     await update(id, { status: sent ? 'sent' : 'draft' })
+  }
+
+  async function syncComments(facts: CampFacts): Promise<CommentSyncSummary> {
+    // Comments are fetched best-effort and facts carry no failure flag: an empty list is treated as
+    // "not loaded" so a failed fetch never marks every posted item as deleted in eCamp.
+    const loaded = facts.comments.length > 0
+    // Items posted after the facts were loaded cannot be in them yet: wait for the next reload.
+    const candidates = items.value.filter((i) => i.updatedAt <= facts.loadedAt)
+    const summary = syncFeedbackWithComments(candidates, facts.comments, facts.userIri, nowIso(), loaded)
+    for (const changed of summary.changed) await persist(changed)
+    return summary
+  }
+
+  async function markRepliesSeen(id: string): Promise<void> {
+    const item = find(id)
+    const sync = item.commentSync
+    if (!sync || sync.replies.length === 0) return
+    const seen = new Set(sync.seenReplyIris ?? [])
+    if (sync.replies.every((r) => seen.has(r.iri))) return
+    await persist({ ...item, commentSync: { ...sync, seenReplyIris: sync.replies.map((r) => r.iri) } })
   }
 
   return {
@@ -142,5 +171,7 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     remove,
     postAsComment,
     markSent,
+    syncComments,
+    markRepliesSeen,
   }
 }

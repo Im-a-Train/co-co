@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import CommentSyncInfo from '@/components/feedback/CommentSyncInfo.vue'
 import AiRephraseButton from '@/components/ai/AiRephraseButton.vue'
 import { COMMENT_MAX_LENGTH, KIND_ORDER, type FeedbackLint } from '@/domain/feedback'
 import { commands } from '@/lib/tauri'
@@ -20,6 +21,7 @@ const emit = defineEmits<{
   remove: []
   post: []
   'mark-sent': [sent: boolean]
+  'replies-seen': []
 }>()
 
 const { t } = useI18n()
@@ -65,7 +67,7 @@ function save() {
 </script>
 
 <template>
-  <v-card variant="outlined" density="compact" :class="{ 'border-primary': focused }" :data-item-id="item.id">
+  <v-card variant="outlined" density="compact" :class="{ 'border-primary': focused }" :data-item-id="item.id" data-testid="feedback-item" :data-status="item.status">
     <v-card-text class="pb-2">
       <div class="d-flex flex-wrap align-center ga-2 mb-2">
         <v-chip size="small" :color="kindColor" variant="flat">{{ t(`feedback.kind.${item.kind}`) }}</v-chip>
@@ -84,6 +86,8 @@ function save() {
         <v-textarea v-model="text" :label="t('feedback.text')" auto-grow rows="2" density="compact" variant="outlined" hide-details="auto"
           :counter="canPost ? COMMENT_MAX_LENGTH : undefined" />
       </div>
+
+      <CommentSyncInfo v-if="item.status === 'posted' && item.commentSync" :item="item" @seen="emit('replies-seen')" />
 
       <v-alert v-if="openError" type="error" variant="tonal" density="compact" class="mt-2" :text="openError" />
       <v-alert v-for="l in lint" :key="l.code" type="warning" variant="tonal" density="compact" class="mt-2" :text="t(`feedback.lint.${l.code}`)" />

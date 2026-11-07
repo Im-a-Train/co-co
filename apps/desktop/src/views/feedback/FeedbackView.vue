@@ -9,13 +9,14 @@ import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useFeedback } from '@/composables/useFeedback'
 import { KIND_ORDER } from '@/domain/feedback'
+import { newReplies } from '@/domain/feedback/commentSync'
 import { activityUrlMap } from '@/domain/ecampLinks'
 import type { FeedbackKind, FeedbackScope } from '@/domain/types'
 
 const { t } = useI18n()
 const route = useRoute()
 const { campIri } = useCampRoute()
-const { facts } = useCampFacts(campIri)
+const { facts, load: loadFacts } = useCampFacts(campIri)
 const fb = useFeedback(campIri)
 
 const activityTitles = computed<Record<string, string>>(() =>
@@ -81,6 +82,47 @@ async function post(id: string) {
     postingId.value = null
   }
 }
+
+// Comment sync: runs whenever facts are (re)loaded and once the feedback items are available.
+const syncing = ref(false)
+const onlyNewReplies = ref(false)
+const hasPosted = computed(() => fb.items.value.some((i) => i.status === 'posted'))
+const visibleItems = computed(() =>
+  onlyNewReplies.value ? fb.ordered.value.filter((i) => newReplies(i.commentSync).length > 0) : fb.ordered.value,
+)
+async function runSync(announce: boolean) {
+  if (!facts.value || syncing.value) return
+  try {
+    const s = await fb.syncComments(facts.value)
+    if (announce) {
+      snack.value = {
+        text: s.resolved + s.withNewReplies + s.missing === 0
+          ? t('feedback.sync.nothing')
+          : t('feedback.sync.summary', { resolved: s.resolved, replies: s.withNewReplies, missing: s.missing }),
+        color: 'success',
+      }
+    }
+  } catch (e) {
+    snack.value = { text: `${t('feedback.sync.failed')}: ${e instanceof Error ? e.message : String(e)}`, color: 'error' }
+  }
+}
+async function syncNow() {
+  syncing.value = true
+  try {
+    await loadFacts(true)
+  } finally {
+    syncing.value = false
+  }
+  await runSync(true)
+}
+watch(
+  [() => facts.value, () => fb.loading.value],
+  () => {
+    if (!fb.loading.value) void runSync(false)
+  },
+  { immediate: true },
+)
+
 const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (!v) snack.value = null } })
 </script>
 
@@ -95,6 +137,11 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
         <div class="d-flex flex-wrap ga-2 mb-3">
           <v-btn size="small" variant="tonal" prepend-icon="mdi-plus" @click="openAdd('camp')">{{ t('feedback.addCamp') }}</v-btn>
           <v-btn size="small" variant="tonal" prepend-icon="mdi-plus" :disabled="!facts" @click="openAdd('activity')">{{ t('feedback.addActivity') }}</v-btn>
+          <v-spacer />
+          <v-switch v-if="hasPosted" v-model="onlyNewReplies" density="compact" hide-details color="primary" data-testid="filter-new-replies"
+            :label="t('feedback.sync.filterNew')" />
+          <v-btn size="small" variant="tonal" prepend-icon="mdi-sync" :loading="syncing" :disabled="!hasPosted" data-testid="sync-comments"
+            @click="syncNow">{{ t('feedback.sync.button') }}</v-btn>
         </div>
 
         <v-card v-if="adding" variant="outlined" class="mb-3">
@@ -117,7 +164,7 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
         <div v-if="fb.ordered.value.length === 0 && !fb.loading.value" class="text-medium-emphasis">{{ t('feedback.empty') }}</div>
         <div class="d-flex flex-column ga-3">
           <FeedbackItemCard
-            v-for="item in fb.ordered.value"
+            v-for="item in visibleItems"
             :key="item.id"
             :item="item"
             :activity-title="item.activityIri ? activityTitles[item.activityIri] : undefined"
@@ -130,6 +177,7 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
             @remove="fb.remove(item.id)"
             @post="post(item.id)"
             @mark-sent="(sent) => fb.markSent(item.id, sent)"
+            @replies-seen="fb.markRepliesSeen(item.id)"
           />
         </div>
       </v-col>
