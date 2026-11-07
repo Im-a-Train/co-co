@@ -14,7 +14,7 @@ onMounted(() => void b.refresh())
     {{ t('backup.reminder.text') }}
     <template #append>
       <v-btn size="small" variant="text" class="me-1" to="/einstellungen#backup">{{ t('backup.reminder.settings') }}</v-btn>
-      <v-btn size="small" variant="flat" color="warning" :loading="b.busy.value" @click="b.exportBackup">
+      <v-btn size="small" variant="flat" color="warning" :loading="b.busy.value" @click="() => b.exportBackup()">
         {{ t('backup.reminder.action') }}
       </v-btn>
     </template>

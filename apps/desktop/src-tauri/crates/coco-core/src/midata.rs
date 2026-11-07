@@ -1,0 +1,625 @@
+//! MiData (hitobito JSON:API v1, e.g. https://db.scout.ch) – pure parsing and
+//! reduction to aggregates (M7, red zone).
+//!
+//! Red-zone rule: raw MiData person data (birthdays, full names, AHV, health …)
+//! never leaves this module. Callers hand in raw JSON:API documents and get a
+//! [`MidataAggregate`] back: counts, age band, leaders as nickname +
+//! qualification yes/no, coach match. Only that aggregate is serialized to the
+//! UI. Error messages never contain person data or tokens.
+//!
+//! CONTRACT (M7): the signatures and serialized shapes below are shared with
+//! `src-tauri/src/midata.rs` and `apps/desktop/src/domain/types.ts`
+//! (`MidataAggregate`, `MidataEventSummary`, `MidataProbe`, `MidataStatus`).
+//! Do not change them without updating both sides.
+
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+
+use serde_json::Value;
+use url::Url;
+
+use crate::CoreError;
+
+/// Default MiData instance (PBS).
+pub const DEFAULT_MIDATA_BASE_URL: &str = "https://db.scout.ch";
+/// JSON:API media type sent as `Accept`.
+pub const JSONAPI_ACCEPT: &str = "application/vnd.api+json";
+/// hitobito session cookie name (session auth).
+pub const SESSION_COOKIE: &str = "_session_id";
+
+/// Qualification categories co-co checks. Serialized camelCase:
+/// `lagerleiter`, `leiterLsT`, `wasser`, `berg`, `winter`, `slrg`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum QualKey {
+    /// J+S «Zusatz Lagerleiter» (JS-LL-01).
+    Lagerleiter,
+    /// J+S Leiter*in Lagersport/Trekking (LS/T).
+    LeiterLsT,
+    /// LS/T module/Sicherheitsbereich Wasser.
+    Wasser,
+    /// LS/T module/Sicherheitsbereich Berg.
+    Berg,
+    /// LS/T module/Sicherheitsbereich Winter.
+    Winter,
+    /// SLRG brevet / module (BP-WATER-01).
+    Slrg,
+}
+
+pub const ALL_QUAL_KEYS: [QualKey; 6] =
+    [QualKey::Lagerleiter, QualKey::LeiterLsT, QualKey::Wasser, QualKey::Berg, QualKey::Winter, QualKey::Slrg];
+
+/// Age band of participants at camp start (inclusive bounds; `to` = None means open-ended).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgeBand {
+    pub from: u32,
+    pub to: Option<u32>,
+    pub count: u32,
+}
+
+/// Fixed band boundaries used for `age_bands` (from, to): 0–4, 5–6, 7–10, 11–14, 15–17, 18–20, 21+.
+pub const AGE_BANDS: [(u32, Option<u32>); 7] =
+    [(0, Some(4)), (5, Some(6)), (7, Some(10)), (11, Some(14)), (15, Some(17)), (18, Some(20)), (21, None)];
+
+/// One leader (participation with a leader role). `nickname` is yellow-zone
+/// (falls back to first name; never the full name). Qualifications are yes/no,
+/// valid over the whole camp period. `qualifications` always has all 6 keys.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MidataLeader {
+    pub nickname: String,
+    /// Event role label as shown by MiData (e.g. «Hauptleitung», «Leitung»).
+    pub role_label: String,
+    /// Main leader (Hauptleitung, role type `...::Leader`); false for assistants and security leaders.
+    #[serde(default)]
+    pub main_leader: bool,
+    pub qualifications: std::collections::BTreeMap<QualKey, bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventDate {
+    /// YYYY-MM-DD
+    pub start_at: String,
+    /// YYYY-MM-DD (same as start when MiData has none)
+    pub finish_at: String,
+}
+
+/// The ONLY MiData-derived structure that crosses to the UI.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MidataAggregate {
+    /// Always "red-derived".
+    pub zone: String,
+    pub base_url: String,
+    pub event_id: String,
+    pub event_name: String,
+    pub event_dates: Vec<EventDate>,
+    pub location: Option<String>,
+    pub maximum_participants: Option<u32>,
+    pub participants_count: u32,
+    /// Participants aged 5..=20 at camp start (J+S age).
+    pub participants_js_age_count: u32,
+    pub participants_without_birthday: u32,
+    pub min_age: Option<u32>,
+    pub max_age: Option<u32>,
+    pub age_bands: Vec<AgeBand>,
+    pub leaders_count: u32,
+    pub leaders: Vec<MidataLeader>,
+    /// event.advisor_id == coach person id; None when either is unknown.
+    pub coach_match: Option<bool>,
+    /// RFC 3339 UTC timestamp («Stand MiData»), set by the caller.
+    pub fetched_at: String,
+}
+
+/// Event list entry for the «Anlass wählen» picker (yellow: names only, no persons).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MidataEventSummary {
+    pub id: String,
+    pub name: String,
+    pub start_at: Option<String>,
+    pub finish_at: Option<String>,
+    pub location: Option<String>,
+}
+
+/// Result of the M7-0 spike probe. Contains field NAMES and HTTP status codes only.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MidataProbe {
+    pub auth_method: Option<String>,
+    pub event_status: u16,
+    pub participations_status: u16,
+    pub participations_readable: bool,
+    pub people_birthday_readable: bool,
+    pub qualifications_status: u16,
+    /// Status of the classic `/groups/{g}/events/{e}.json` export (None when no group id).
+    pub classic_json_status: Option<u16>,
+    /// PBS camp field names found in the classic export (e.g. "coach", "camp_submitted").
+    pub pbs_fields_present: Vec<String>,
+    /// Top-level attribute names of the classic export event object (names only).
+    pub classic_attribute_names: Vec<String>,
+}
+
+/// Login state of the MiData connection. Never contains cookie/token values.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MidataStatus {
+    pub connected: bool,
+    pub base_url: Option<String>,
+    /// "session" (login window) or "token" (service token from the keychain).
+    pub method: Option<String>,
+    pub cookie_names: Vec<String>,
+}
+
+/// Inputs for [`reduce_aggregate`]: raw JSON:API documents as returned by MiData.
+pub struct RawEventData<'a> {
+    pub base_url: &'a str,
+    /// `GET /api/events/{id}?include=dates`
+    pub event: &'a Value,
+    /// All pages of `GET /api/event_participations?filter[event_id]=..&include=person,roles`
+    pub participation_pages: &'a [Value],
+    /// All pages of `GET /api/qualifications?filter[person_id]=..&include=qualification_kind`
+    pub qualification_pages: &'a [Value],
+    /// Camp period from eCamp (YYYY-MM-DD), used for ages and qualification validity.
+    pub camp_start: &'a str,
+    pub camp_end: &'a str,
+    /// Logged-in coach's MiData person id (from settings), for `coach_match`.
+    pub coach_person_id: Option<&'a str>,
+    /// RFC 3339 timestamp to put into `fetched_at`.
+    pub fetched_at: &'a str,
+}
+
+/// Validates and normalizes a MiData base URL: https only (http only for
+/// loopback hosts), no path/query/fragment/credentials. Returns e.g. "https://db.scout.ch".
+pub fn normalize_midata_base_url(input: &str) -> Result<String, CoreError> {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return Err(CoreError::InvalidUrl("leer".into()));
+    }
+    let with_scheme = if trimmed.contains("://") { trimmed.to_string() } else { format!("https://{trimmed}") };
+    let url = Url::parse(&with_scheme).map_err(|e| CoreError::InvalidUrl(e.to_string()))?;
+    crate::instance::validate_remote_url(&url)?;
+    if !url.path().trim_matches('/').is_empty() || url.query().is_some() || url.fragment().is_some() {
+        return Err(CoreError::InvalidUrl("Pfad, Query und Fragment sind nicht erlaubt".into()));
+    }
+    Ok(url.origin().ascii_serialization())
+}
+
+/// Classifies an event role `type` (e.g. "Event::Camp::Role::Leader",
+/// "Event::Role::Participant", "Event::Camp::Role::AssistantLeader",
+/// "Event::Role::Cook") into leader / participant / other.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoleClass {
+    Leader,
+    Participant,
+    Other,
+}
+
+/// Mapping (by last `::` segment of the role type):
+/// - `Leader`, `AssistantLeader` and any segment starting with `Leader`
+///   (PBS: `LeaderMountainSecurity`, `LeaderSnowSecurity`, `LeaderWaterSecurity`) -> Leader
+/// - `Participant` -> Participant
+/// - everything else (Cook, Helper, Treasurer, Speaker, Kitchen, ...) -> Other
+pub fn classify_role(role_type: &str) -> RoleClass {
+    let last = role_type.rsplit("::").next().unwrap_or("").trim();
+    if last == "Participant" {
+        RoleClass::Participant
+    } else if last == "AssistantLeader" || last.starts_with("Leader") {
+        RoleClass::Leader
+    } else {
+        RoleClass::Other
+    }
+}
+
+fn fold_label(label: &str) -> String {
+    label
+        .to_lowercase()
+        .chars()
+        .map(|c| match c {
+            'ä' | 'à' | 'á' | 'â' => 'a',
+            'ö' | 'ò' | 'ó' | 'ô' => 'o',
+            'ü' | 'ù' | 'ú' | 'û' => 'u',
+            'é' | 'è' | 'ê' | 'ë' => 'e',
+            'ï' | 'î' | 'ì' => 'i',
+            other => other,
+        })
+        .collect()
+}
+
+/// Maps a qualification-kind label (German, as in MiData) to co-co categories.
+/// Case-insensitive keyword matching; one label may map to several keys.
+pub fn qual_keys_for_label(label: &str) -> Vec<QualKey> {
+    let l = fold_label(label);
+    let tokens: Vec<&str> = l.split(|c: char| !c.is_alphanumeric()).filter(|t| !t.is_empty()).collect();
+    let has = |k: &str| l.contains(k);
+    let mut out = Vec::new();
+    if has("lagerleit") {
+        out.push(QualKey::Lagerleiter);
+    }
+    if has("lagersport") || has("trekking") || has("ls/t") || tokens.contains(&"lst") {
+        out.push(QualKey::LeiterLsT);
+    }
+    if has("wasser") {
+        out.push(QualKey::Wasser);
+    }
+    if has("berg") {
+        out.push(QualKey::Berg);
+    }
+    if has("winter") || has("schnee") {
+        out.push(QualKey::Winter);
+    }
+    if has("slrg") || has("brevet") || has("rettungsschwimm") {
+        out.push(QualKey::Slrg);
+    }
+    out
+}
+
+fn is_leap(y: i32) -> bool {
+    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
+}
+
+/// Parses `YYYY-MM-DD` (a longer ISO datetime is truncated). Validates ranges.
+fn parse_date(s: &str) -> Option<(i32, u32, u32)> {
+    let head = s.trim().get(..10)?;
+    let b = head.as_bytes();
+    if b[4] != b'-' || b[7] != b'-' {
+        return None;
+    }
+    let y: i32 = head.get(..4)?.parse().ok()?;
+    let m: u32 = head.get(5..7)?.parse().ok()?;
+    let d: u32 = head.get(8..10)?.parse().ok()?;
+    let dim = match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if is_leap(y) {
+                29
+            } else {
+                28
+            }
+        }
+        _ => return None,
+    };
+    if d == 0 || d > dim {
+        return None;
+    }
+    Some((y, m, d))
+}
+
+/// Normalizes a date or datetime string to `YYYY-MM-DD`, None if unparsable.
+fn day_string(s: &str) -> Option<String> {
+    parse_date(s).map(|(y, m, d)| format!("{y:04}-{m:02}-{d:02}"))
+}
+
+/// Age in full years on `on` (YYYY-MM-DD) for a birthday (YYYY-MM-DD). None if unparsable or in the future.
+/// A Feb-29 birthday counts from Mar 1 in non-leap years.
+pub fn age_on(birthday: &str, on: &str) -> Option<u32> {
+    let (by, bm, bd) = parse_date(birthday)?;
+    let (y, m, d) = parse_date(on)?;
+    if (y, m, d) < (by, bm, bd) {
+        return None;
+    }
+    let mut age = y - by;
+    if (m, d) < (bm, bd) {
+        age -= 1;
+    }
+    u32::try_from(age).ok()
+}
+
+fn id_str(v: &Value) -> Option<String> {
+    match v {
+        Value::String(s) if !s.is_empty() => Some(s.clone()),
+        Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
+fn str_attr(item: &Value, key: &str) -> Option<String> {
+    item.get("attributes")?.get(key)?.as_str().map(str::trim).filter(|s| !s.is_empty()).map(String::from)
+}
+
+type Included = HashMap<(String, String), Value>;
+
+/// Index of `included` resources by (type, id).
+fn index_included(docs: &[&Value]) -> Included {
+    let mut map = HashMap::new();
+    for doc in docs {
+        if let Some(arr) = doc.get("included").and_then(Value::as_array) {
+            for item in arr {
+                if let (Some(t), Some(id)) = (item.get("type").and_then(Value::as_str), item.get("id").and_then(id_str)) {
+                    map.insert((t.to_string(), id), item.clone());
+                }
+            }
+        }
+    }
+    map
+}
+
+/// Resource identifiers `[(type, id)]` of a to-one/to-many relationship.
+fn rel_ids(item: &Value, rel: &str) -> Vec<(String, String)> {
+    let Some(data) = item.get("relationships").and_then(|r| r.get(rel)).and_then(|r| r.get("data")) else {
+        return Vec::new();
+    };
+    let one = |v: &Value| Some((v.get("type")?.as_str()?.to_string(), v.get("id").and_then(id_str)?));
+    match data {
+        Value::Array(a) => a.iter().filter_map(one).collect(),
+        Value::Object(_) => one(data).into_iter().collect(),
+        _ => Vec::new(),
+    }
+}
+
+fn dates_of(item: &Value, included: &Included) -> Vec<EventDate> {
+    let mut out = Vec::new();
+    for key in rel_ids(item, "dates") {
+        if let Some(d) = included.get(&key) {
+            if let Some(start) = str_attr(d, "start_at").and_then(|s| day_string(&s)) {
+                let finish = str_attr(d, "finish_at").and_then(|s| day_string(&s)).unwrap_or_else(|| start.clone());
+                out.push(EventDate { start_at: start, finish_at: finish });
+            }
+        }
+    }
+    if out.is_empty() {
+        if let Some(start) = str_attr(item, "start_at").and_then(|s| day_string(&s)) {
+            let finish = str_attr(item, "finish_at").and_then(|s| day_string(&s)).unwrap_or_else(|| start.clone());
+            out.push(EventDate { start_at: start, finish_at: finish });
+        }
+    }
+    out.sort_by(|a, b| a.start_at.cmp(&b.start_at));
+    out
+}
+
+/// Parses an events list document into picker entries.
+pub fn parse_event_list(doc: &Value) -> Result<Vec<MidataEventSummary>, CoreError> {
+    let data = doc
+        .get("data")
+        .and_then(Value::as_array)
+        .ok_or_else(|| CoreError::Invalid("MiData-Antwort enthält keine Anlassliste".into()))?;
+    let included = index_included(&[doc]);
+    let mut out = Vec::new();
+    for item in data {
+        let Some(id) = item.get("id").and_then(id_str) else { continue };
+        let dates = dates_of(item, &included);
+        out.push(MidataEventSummary {
+            id,
+            name: str_attr(item, "name").unwrap_or_default(),
+            start_at: dates.iter().map(|d| d.start_at.clone()).min(),
+            finish_at: dates.iter().map(|d| d.finish_at.clone()).max(),
+            location: str_attr(item, "location"),
+        });
+    }
+    Ok(out)
+}
+
+struct PersonAgg {
+    leader_label: Option<String>,
+    is_leader: bool,
+    /// Main leader (Hauptleitung): role type segment exactly `Leader`.
+    is_main: bool,
+    is_participant: bool,
+    person_id: Option<String>,
+}
+
+/// One entry per person (deduped over all participations), in first-seen order.
+fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
+    let refs: Vec<&Value> = pages.iter().collect();
+    let included = index_included(&refs);
+    let mut order: Vec<String> = Vec::new();
+    let mut map: HashMap<String, PersonAgg> = HashMap::new();
+    for page in pages {
+        let Some(data) = page.get("data").and_then(Value::as_array) else { continue };
+        for p in data {
+            let person = rel_ids(p, "person").into_iter().next().map(|(_, id)| id);
+            let key = match (&person, p.get("id").and_then(id_str)) {
+                (Some(id), _) => format!("p:{id}"),
+                (None, Some(pid)) => format!("n:{pid}"),
+                (None, None) => continue,
+            };
+            let mut is_leader = false;
+            let mut is_main = false;
+            let mut is_participant = false;
+            let mut label: Option<String> = None;
+            for rk in rel_ids(p, "roles") {
+                let Some(role) = included.get(&rk) else { continue };
+                let rtype = str_attr(role, "type").unwrap_or_default();
+                match classify_role(&rtype) {
+                    RoleClass::Leader => {
+                        is_leader = true;
+                        is_main |= rtype.rsplit("::").next().map(str::trim) == Some("Leader");
+                        if label.is_none() {
+                            label = str_attr(role, "label").or_else(|| rtype.rsplit("::").next().map(String::from));
+                        }
+                    }
+                    RoleClass::Participant => is_participant = true,
+                    RoleClass::Other => {}
+                }
+            }
+            let agg = map.entry(key.clone()).or_insert_with(|| {
+                order.push(key.clone());
+                PersonAgg { leader_label: None, is_leader: false, is_main: false, is_participant: false, person_id: person.clone() }
+            });
+            agg.is_leader |= is_leader;
+            agg.is_main |= is_main;
+            agg.is_participant |= is_participant;
+            if agg.leader_label.is_none() {
+                agg.leader_label = label;
+            }
+        }
+    }
+    order.into_iter().filter_map(|k| map.remove(&k)).collect()
+}
+
+/// Person ids (as strings) of all participations with a leader role, for the qualifications query.
+pub fn leader_person_ids(participation_pages: &[Value]) -> Vec<String> {
+    collect_people(participation_pages).into_iter().filter(|a| a.is_leader).filter_map(|a| a.person_id).collect()
+}
+
+/// `links.next` of a JSON:API document, if any (absolute URL as given by MiData).
+pub fn next_link(doc: &Value) -> Option<String> {
+    doc.get("links")?.get("next")?.as_str().filter(|s| !s.is_empty()).map(String::from)
+}
+
+fn u32_of(v: Option<&Value>) -> Option<u32> {
+    match v? {
+        Value::Number(n) => n.as_u64().and_then(|n| u32::try_from(n).ok()),
+        Value::String(s) => s.trim().parse().ok(),
+        _ => None,
+    }
+}
+
+/// Valid qualification keys per person id over the whole camp period.
+fn valid_qualifications(pages: &[Value], camp_start: &str, camp_end: &str) -> HashMap<String, BTreeSet<QualKey>> {
+    let refs: Vec<&Value> = pages.iter().collect();
+    let included = index_included(&refs);
+    let mut out: HashMap<String, BTreeSet<QualKey>> = HashMap::new();
+    for page in pages {
+        let Some(data) = page.get("data").and_then(Value::as_array) else { continue };
+        for q in data {
+            let Some((_, person)) = rel_ids(q, "person").into_iter().next() else { continue };
+            let Some(kind_key) = rel_ids(q, "qualification_kind").into_iter().next() else { continue };
+            let Some(kind) = included.get(&kind_key) else { continue };
+            let Some(label) = str_attr(kind, "label") else { continue };
+            let start = str_attr(q, "start_at").and_then(|s| day_string(&s));
+            let finish = str_attr(q, "finish_at").and_then(|s| day_string(&s));
+            let ok_start = start.is_none_or(|s| s.as_str() <= camp_start);
+            let ok_finish = finish.is_none_or(|f| f.as_str() >= camp_end);
+            if ok_start && ok_finish {
+                out.entry(person).or_default().extend(qual_keys_for_label(&label));
+            }
+        }
+    }
+    out
+}
+
+/// Reduces raw MiData documents to the aggregate. Pure; never logs.
+pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreError> {
+    let camp_start = day_string(raw.camp_start).ok_or_else(|| CoreError::Invalid("Lagerbeginn ungültig".into()))?;
+    let camp_end = day_string(raw.camp_end).ok_or_else(|| CoreError::Invalid("Lagerende ungültig".into()))?;
+    let event = raw
+        .event
+        .get("data")
+        .filter(|d| d.is_object())
+        .ok_or_else(|| CoreError::Invalid("MiData-Antwort enthält keinen Anlass".into()))?;
+    let event_id = event.get("id").and_then(id_str).ok_or_else(|| CoreError::Invalid("MiData-Anlass ohne Kennung".into()))?;
+    let ev_included = index_included(&[raw.event]);
+
+    let advisor = event.get("attributes").and_then(|a| a.get("advisor_id")).and_then(id_str);
+    let coach_match = match (raw.coach_person_id.map(str::trim).filter(|c| !c.is_empty()), advisor) {
+        (Some(c), Some(a)) => Some(a == c),
+        _ => None,
+    };
+
+    let refs: Vec<&Value> = raw.participation_pages.iter().collect();
+    let people_idx = index_included(&refs);
+    let people = collect_people(raw.participation_pages);
+    let quals = valid_qualifications(raw.qualification_pages, &camp_start, &camp_end);
+
+    let person_attr = |id: &Option<String>, attr: &str| -> Option<String> {
+        let rec = people_idx.get(&("people".to_string(), id.clone()?))?;
+        str_attr(rec, attr)
+    };
+
+    let mut bands: Vec<AgeBand> = AGE_BANDS.iter().map(|(f, t)| AgeBand { from: *f, to: *t, count: 0 }).collect();
+    let (mut participants_count, mut js_age, mut without_bd) = (0u32, 0u32, 0u32);
+    let (mut min_age, mut max_age): (Option<u32>, Option<u32>) = (None, None);
+    let mut leaders: Vec<MidataLeader> = Vec::new();
+    let mut anon = 0u32;
+
+    for p in &people {
+        if p.is_leader {
+            let nickname = person_attr(&p.person_id, "nickname").or_else(|| person_attr(&p.person_id, "first_name")).unwrap_or_else(|| {
+                anon += 1;
+                format!("Leiter/in {anon}")
+            });
+            let have: BTreeSet<QualKey> = p.person_id.as_ref().and_then(|id| quals.get(id)).cloned().unwrap_or_default();
+            let qualifications: BTreeMap<QualKey, bool> = ALL_QUAL_KEYS.iter().map(|k| (*k, have.contains(k))).collect();
+            leaders.push(MidataLeader {
+                nickname,
+                main_leader: p.is_main,
+                role_label: p.leader_label.clone().unwrap_or_else(|| "Leitung".into()),
+                qualifications,
+            });
+        } else if p.is_participant {
+            participants_count += 1;
+            match person_attr(&p.person_id, "birthday").and_then(|b| age_on(&b, &camp_start)) {
+                Some(age) => {
+                    if (5..=20).contains(&age) {
+                        js_age += 1;
+                    }
+                    min_age = Some(min_age.map_or(age, |m| m.min(age)));
+                    max_age = Some(max_age.map_or(age, |m| m.max(age)));
+                    if let Some(b) = bands.iter_mut().find(|b| age >= b.from && b.to.is_none_or(|t| age <= t)) {
+                        b.count += 1;
+                    }
+                }
+                None => without_bd += 1,
+            }
+        }
+    }
+    leaders.sort_by(|a, b| a.nickname.cmp(&b.nickname));
+
+    Ok(MidataAggregate {
+        zone: "red-derived".into(),
+        base_url: raw.base_url.to_string(),
+        event_id,
+        event_name: str_attr(event, "name").unwrap_or_default(),
+        event_dates: dates_of(event, &ev_included),
+        location: str_attr(event, "location"),
+        maximum_participants: u32_of(event.get("attributes").and_then(|a| a.get("maximum_participants"))),
+        participants_count,
+        participants_js_age_count: js_age,
+        participants_without_birthday: without_bd,
+        min_age,
+        max_age,
+        age_bands: bands,
+        leaders_count: u32::try_from(leaders.len()).unwrap_or(u32::MAX),
+        leaders,
+        coach_match,
+        fetched_at: raw.fetched_at.to_string(),
+    })
+}
+
+/// PBS camp field names looked for in the classic export (plus any name
+/// containing `expected_participants`).
+pub const PBS_CAMP_FIELDS: [&str; 24] = [
+    "coach",
+    "advisor_mountain_security",
+    "advisor_snow_security",
+    "advisor_water_security",
+    "camp_submitted",
+    "camp_submitted_at",
+    "canton",
+    "j_s_kind",
+    "j_s_security_snow",
+    "j_s_security_mountain",
+    "j_s_security_water",
+    "al_present",
+    "al_visiting",
+    "coach_visiting",
+    "local_scout_contact_present",
+    "camp_reminder_sent",
+    "total_expected_leading_participants",
+    "total_expected_participants",
+    "expected_participants_wolf_f",
+    "expected_participants_wolf_m",
+    "expected_participants_pfadi_f",
+    "expected_participants_pfadi_m",
+    "expected_participants_pio_f",
+    "expected_participants_pio_m",
+];
+
+/// Extracts PBS camp field names present in a classic event JSON export
+/// (`/groups/{g}/events/{e}.json`). Returns (pbs_fields_present, attribute_names). Names only.
+pub fn probe_classic_fields(doc: &Value) -> (Vec<String>, Vec<String>) {
+    let obj = doc
+        .get("events")
+        .and_then(Value::as_array)
+        .and_then(|a| a.first())
+        .or_else(|| doc.get("event").filter(|e| e.is_object()))
+        .unwrap_or(doc);
+    let names: BTreeSet<String> = obj.as_object().map(|o| o.keys().cloned().collect()).unwrap_or_default();
+    let pbs: Vec<String> =
+        names.iter().filter(|n| PBS_CAMP_FIELDS.contains(&n.as_str()) || n.contains("expected_participants")).cloned().collect();
+    (pbs, names.into_iter().collect())
+}

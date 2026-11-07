@@ -8,6 +8,7 @@ import {
   type CategoryMapping,
   type CoachInputs,
   type DocumentRecord,
+  type MidataAggregate,
   type RuleContext,
   type ScheduleEntryFact,
 } from '@/domain/types'
@@ -214,6 +215,29 @@ export function makeCoachInputs(over: Partial<CoachInputs> = {}): CoachInputs {
     lagerbewilligungDone: false,
     notes: '',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    ...over,
+  }
+}
+
+export function makeMidata(over: Partial<MidataAggregate> = {}): MidataAggregate {
+  return {
+    zone: 'red-derived',
+    baseUrl: 'https://db.example.test',
+    eventId: '4711',
+    eventName: 'Testlager',
+    eventDates: [{ startAt: '2031-07-12', finishAt: '2031-07-16' }],
+    location: null,
+    maximumParticipants: null,
+    participantsCount: 20,
+    participantsJsAgeCount: 18,
+    participantsWithoutBirthday: 0,
+    minAge: 8,
+    maxAge: 12,
+    ageBands: [],
+    leadersCount: 4,
+    leaders: [],
+    coachMatch: null,
+    fetchedAt: '2031-01-01T10:00:00.000Z',
     ...over,
   }
 }

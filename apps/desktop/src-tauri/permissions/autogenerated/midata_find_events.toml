@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-midata-find-events"
+description = "Enables the midata_find_events command without any pre-configured scope."
+commands.allow = ["midata_find_events"]
+
+[[permission]]
+identifier = "deny-midata-find-events"
+description = "Denies the midata_find_events command without any pre-configured scope."
+commands.deny = ["midata_find_events"]

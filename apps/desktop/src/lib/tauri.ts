@@ -128,6 +128,12 @@ export interface DocsDroppedEvent {
 export const EVENT_DOCS_CHANGED = 'docs://changed'
 export const EVENT_DOCS_DROPPED = 'docs://dropped'
 
+// M7: MiData (red zone). Only aggregates / summaries / names + status codes cross the IPC boundary.
+export type { MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus } from '@/domain/types'
+import type { MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus } from '@/domain/types'
+
+export const EVENT_MIDATA_STATUS = 'midata://status'
+
 export const commands = {
   // M0
   discoverInstance: (baseUrl: string) => call<InstanceInfo>('discover_instance', { baseUrl }),
@@ -166,6 +172,20 @@ export const commands = {
   aiSetKey: (key: string) => call<void>('ai_set_key', { key }),
   aiHasKey: () => call<boolean>('ai_has_key'),
   aiClearKey: () => call<void>('ai_clear_key'),
+
+  // M7: MiData (read-only). Refreshed only on explicit user action.
+  midataStatus: () => call<MidataStatus>('midata_status'),
+  /** Opens the MiData login window (no IPC); emits EVENT_MIDATA_STATUS when the session cookie is captured. */
+  midataOpenLogin: (baseUrl: string) => call<void>('midata_open_login', { baseUrl }),
+  /** Validates and stores a service token (X-TOKEN) in the OS keychain. */
+  midataSetToken: (baseUrl: string, token: string) => call<MidataStatus>('midata_set_token', { baseUrl, token }),
+  midataLogout: () => call<void>('midata_logout'),
+  /** Camp events (Event::Camp) overlapping [from, to] (YYYY-MM-DD). */
+  midataFindEvents: (from: string, to: string) => call<MidataEventSummary[]>('midata_find_events', { from, to }),
+  midataFetchAggregate: (eventId: string, campStart: string, campEnd: string, coachPersonId: string | null) =>
+    call<MidataAggregate>('midata_fetch_aggregate', { eventId, campStart, campEnd, coachPersonId }),
+  /** M7-0 spike: what the current auth can read (status codes + field names only). */
+  midataProbe: (eventId: string, groupId: string | null) => call<MidataProbe>('midata_probe', { eventId, groupId }),
 }
 
 /** Decodes DocumentBytes.bytesBase64. */
@@ -191,6 +211,11 @@ export async function onDocsDropped(handler: (e: DocsDroppedEvent) => void): Pro
 export async function onSession(handler: (session: SessionInfo) => void): Promise<UnlistenFn> {
   if (!isTauri()) return noop
   return listen<SessionInfo>(EVENT_SESSION, (e) => handler(e.payload))
+}
+
+export async function onMidataStatus(handler: (status: MidataStatus) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<MidataStatus>(EVENT_MIDATA_STATUS, (e) => handler(e.payload))
 }
 
 export async function onAuthLog(handler: (log: AuthLogEvent) => void): Promise<UnlistenFn> {

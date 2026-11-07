@@ -169,6 +169,11 @@ describe('itemFromFinding', () => {
     expect(it2.text).toContain('Sicherheit fehlt')
     expect(lintItems([it2])).toEqual([])
   })
+  it('marks findings that quote MiData as redDerived', () => {
+    const f = { ...finding, tags: ['midata'], message: 'Keine Wasser-Qualifikation (Quelle: MiData, Stand 01.06.2026)' } as Finding
+    expect(itemFromFinding(f, '/api/camps/c1').redDerived).toBe(true)
+    expect(itemFromFinding(finding, '/api/camps/c1').redDerived).toBeUndefined()
+  })
   it('creates camp-scope suggestion for non-must', () => {
     const f = { ...finding, severity: 'hint', scope: 'camp', targets: ['/api/camps/c1'] } as Finding
     const it2 = itemFromFinding(f, '/api/camps/c1')

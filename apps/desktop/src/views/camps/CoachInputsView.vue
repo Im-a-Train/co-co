@@ -3,11 +3,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fromTri, INPUT_RULES, normalizeInputs, parseCount, STUFEN, toTri, validateInputs, type TriState } from '@/components/camps/inputsForm'
+import MidataBadge from '@/components/midata/MidataBadge.vue'
+import MidataCard from '@/components/midata/MidataCard.vue'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useCampSettings } from '@/composables/useCampSettings'
 import { emptyCoachInputs } from '@/domain/campFacts/store'
+import { adoptFields } from '@/domain/midata'
 import { loadBundledPacks } from '@/domain/rules/packs'
-import type { CoachInputs } from '@/domain/types'
+import type { CoachInputs, MidataAggregate, MidataField } from '@/domain/types'
 
 const { t } = useI18n()
 const { campIri } = useCampRoute()
@@ -62,21 +65,33 @@ const dirty = computed(() => {
   return JSON.stringify(a) !== JSON.stringify(b)
 })
 
+/** A manual edit of a MiData-adopted field removes its badge. */
+function withoutBadge(key: string): CoachInputs['midataFields'] {
+  const { [key as MidataField]: _drop, ...rest } = draft.value.midataFields ?? {}
+  return rest
+}
+const badgeOf = (key: string): string | null => draft.value.midataFields?.[key as MidataField] ?? null
+
 function setNum(key: 'participantsCount' | 'participantsJsAgeCount' | 'minAge' | 'maxAge' | 'leadersCount' | 'slrgCount', v: string | null): void {
-  draft.value = { ...draft.value, [key]: parseCount(v) }
+  draft.value = { ...draft.value, [key]: parseCount(v), midataFields: withoutBadge(key) }
   saved.value = false
 }
 function setField<K extends keyof CoachInputs>(key: K, v: CoachInputs[K]): void {
-  draft.value = { ...draft.value, [key]: v }
+  draft.value = { ...draft.value, [key]: v, midataFields: withoutBadge(key) }
   saved.value = false
 }
 
-async function save(): Promise<void> {
+function onAdopt(fields: MidataField[], agg: MidataAggregate): void {
+  draft.value = adoptFields(draft.value, agg, fields, new Date().toISOString())
+  void save(fields)
+}
+
+async function save(adopted?: MidataField[]): Promise<void> {
   if (errors.value.length > 0) return
   saving.value = true
   saveError.value = null
   try {
-    await settings.saveCoachInputs(normalizeInputs(draft.value))
+    await settings.saveCoachInputs(normalizeInputs(draft.value), { adopted })
     resetDraft()
     saved.value = true
   } catch (e) {
@@ -113,7 +128,9 @@ const flagFields = [
       <div class="text-medium-emphasis">{{ t('camps.inputs.loading') }}</div>
     </div>
 
-    <v-form v-else @submit.prevent="save">
+    <v-form v-else @submit.prevent="save()">
+      <MidataCard :camp-iri="campIri" :inputs="draft" @adopt="onAdopt" />
+
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1">{{ t('camps.inputs.sections.general') }}</v-card-title>
         <v-card-text>
@@ -158,7 +175,9 @@ const flagFields = [
                 density="comfortable"
                 :data-testid="`input-${f.key}`"
                 @update:model-value="(v: string) => setNum(f.key, v)"
-              />
+              >
+                <template v-if="badgeOf(f.key)" #append-inner><MidataBadge :since="badgeOf(f.key)!" /></template>
+              </v-text-field>
             </v-col>
           </v-row>
           <v-select
@@ -171,7 +190,9 @@ const flagFields = [
             density="comfortable"
             class="mt-4"
             @update:model-value="(v: TriState) => setField('lagerleiterAttested', fromTri(v))"
-          />
+          >
+            <template v-if="badgeOf('lagerleiterAttested')" #append-inner><MidataBadge :since="badgeOf('lagerleiterAttested')!" /></template>
+          </v-select>
         </v-card-text>
       </v-card>
 

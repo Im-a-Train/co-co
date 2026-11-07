@@ -23,6 +23,13 @@ const COMMANDS: &[&str] = &[
     "ai_has_key",
     "ai_clear_key",
     "ai_complete",
+    "midata_status",
+    "midata_open_login",
+    "midata_set_token",
+    "midata_logout",
+    "midata_find_events",
+    "midata_fetch_aggregate",
+    "midata_probe",
 ];
 
 fn main() {

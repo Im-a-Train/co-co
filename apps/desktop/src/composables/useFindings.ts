@@ -16,7 +16,9 @@ import { disabledRuleIds, disablePromptCount, isGloballyDisabled } from '@/domai
 import { disableRuleStored, enableRuleStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
 import { useRuleState } from '@/composables/useRuleState'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
-import type { AppSettings, DocumentRecord, Finding, FindingCounts, Iri, Override, RulePack } from '@/domain/types'
+import type { AppSettings, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, Override, RulePack } from '@/domain/types'
+import { getMidataRecord } from '@/domain/midata/store'
+import { midataVersion } from '@/composables/midataSignal'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampSettings } from '@/composables/useCampSettings'
 
@@ -76,6 +78,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const overrides = shallowRef<Override[]>([])
   const documents = shallowRef<DocumentRecord[]>([])
   const appSettings = shallowRef<AppSettings>(DEFAULT_APP_SETTINGS)
+  const midata = shallowRef<MidataAggregate | null>(null)
   const evalError = ref<string | null>(null)
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
@@ -103,6 +106,24 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   )
   onScopeDispose(stop)
 
+  // MiData aggregate (red-derived; read from IndexedDB, re-read when the UI bumps midataVersion).
+  watch(
+    [iri, midataVersion],
+    async ([value]) => {
+      if (!value) {
+        midata.value = null
+        return
+      }
+      try {
+        const record = await getMidataRecord(value)
+        if (iri.value === value) midata.value = record?.aggregate ?? null
+      } catch {
+        midata.value = null
+      }
+    },
+    { immediate: true },
+  )
+
   // Make sure mapping + coach inputs get loaded once the facts are there.
   watch(
     () => factsHandle.facts.value,
@@ -121,6 +142,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
         facts,
         mapping: settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null,
         coachInputs: settingsHandle.coachInputs.value,
+        midata: midata.value,
         documents: documents.value,
         settings: appSettings.value,
         now: new Date(),

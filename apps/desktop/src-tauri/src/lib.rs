@@ -11,10 +11,13 @@ mod error;
 mod files;
 mod instance;
 mod login_window;
+mod midata;
 mod session;
 
 #[cfg(test)]
 mod live_tests;
+#[cfg(test)]
+mod midata_live_tests;
 
 use session::AppState;
 use tauri::Manager;
@@ -25,6 +28,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
+        .manage(midata::MidataState::new().expect("MiData-HTTP-Client konnte nicht erstellt werden"))
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             app.manage(files::FileState::load(&dir));
@@ -60,6 +64,13 @@ pub fn run() {
             commands::ai_has_key,
             commands::ai_clear_key,
             commands::ai_complete,
+            midata::midata_status,
+            midata::midata_open_login,
+            midata::midata_set_token,
+            midata::midata_logout,
+            midata::midata_find_events,
+            midata::midata_fetch_aggregate,
+            midata::midata_probe,
         ])
         .run(tauri::generate_context!())
         .expect("error while running co-co");

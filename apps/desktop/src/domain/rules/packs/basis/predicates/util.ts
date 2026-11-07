@@ -1,5 +1,5 @@
 /** Shared helpers of the basic rule pack predicates. Pure. */
-import type { ActivityFact, CampFacts, Evidence, RuleContext, RuleHit, Severity } from '@/domain/types'
+import type { ActivityFact, CampFacts, Evidence, MidataField, RuleContext, RuleHit, Severity } from '@/domain/types'
 import { categoryClassOf, isJsClass } from '../../../jsDays'
 
 // ---------------------------------------------------------------------------------------------
@@ -169,4 +169,34 @@ export function formatDateDe(iso: string): string {
 
 export function hhmm(iso: string): string {
   return iso.slice(11, 16)
+}
+
+// ---------------------------------------------------------------------------------------------
+// MiData (M7) helpers. Red-derived data: only the aggregate is available here.
+// ---------------------------------------------------------------------------------------------
+
+export function formatStand(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return formatDateDe(iso)
+  return d.toLocaleDateString('de-CH', { timeZone: 'Europe/Zurich', day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+/** «Stand» date (dd.mm.yyyy, de-CH) of the first of `fields` that was adopted from MiData, else null. */
+export function midataStand(ctx: RuleContext, fields: MidataField[]): string | null {
+  const map = ctx.coachInputs?.midataFields
+  if (!map) return null
+  for (const f of fields) {
+    const ts = map[f]
+    if (ts) return formatStand(ts)
+  }
+  return null
+}
+
+export function midataSourceText(stand: string): string {
+  return `Quelle: MiData, Stand ${stand}`
+}
+
+/** Evidence entry naming the MiData source. */
+export function midataEvidence(stand: string): Evidence {
+  return { kind: 'text', label: midataSourceText(stand) }
 }

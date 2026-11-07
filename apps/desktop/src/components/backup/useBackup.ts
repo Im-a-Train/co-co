@@ -30,6 +30,8 @@ const lastExportAt = ref<string | null>(null)
 const remindAfterRound = ref(true)
 const reminderDue = ref(false)
 const busy = ref(false)
+/** Leave out red-derived MiData data in the export (default on). */
+const omitRedDerived = ref(true)
 /** Error code (`backup.errors.<code>`) or raw message of the last failure. */
 const errorCode = ref<string | null>(null)
 const errorDetail = ref<string | null>(null)
@@ -63,7 +65,7 @@ async function exportBackup(): Promise<string | null> {
   errorCode.value = null
   try {
     const now = new Date()
-    const doc = await exportAll(undefined, now)
+    const doc = await exportAll(undefined, now, { omitRedDerived: omitRedDerived.value })
     const at = now.toISOString()
     // Mark the export inside the file itself so a restore does not remind again immediately.
     const t = doc.tables as Record<string, Record<string, unknown>[]>
@@ -138,6 +140,7 @@ export function useBackup() {
     /** True after a round was started/closed and no backup was exported since. */
     reminderDue: computed(() => reminderDue.value),
     busy: computed(() => busy.value),
+    omitRedDerived,
     errorCode: computed(() => errorCode.value),
     errorDetail: computed(() => errorDetail.value),
     pending: computed(() => pending.value),

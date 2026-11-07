@@ -1,0 +1,15 @@
+{"data":[
+ {"id":"q1","type":"qualifications","attributes":{"start_at":"2020-01-01","finish_at":null},"relationships":{"person":{"data":{"type":"people","id":"110"}},"qualification_kind":{"data":{"type":"qualification_kinds","id":"k1"}}}},
+ {"id":"q2","type":"qualifications","attributes":{"start_at":"2022-05-01","finish_at":"2026-12-31"},"relationships":{"person":{"data":{"type":"people","id":"110"}},"qualification_kind":{"data":{"type":"qualification_kinds","id":"k2"}}}},
+ {"id":"q3","type":"qualifications","attributes":{"start_at":"2022-05-01","finish_at":"2026-07-20"},"relationships":{"person":{"data":{"type":"people","id":"110"}},"qualification_kind":{"data":{"type":"qualification_kinds","id":"k3"}}}},
+ {"id":"q4","type":"qualifications","attributes":{"start_at":"2026-07-19","finish_at":null},"relationships":{"person":{"data":{"type":"people","id":"110"}},"qualification_kind":{"data":{"type":"qualification_kinds","id":"k4"}}}},
+ {"id":"q5","type":"qualifications","attributes":{"start_at":null,"finish_at":null},"relationships":{"person":{"data":{"type":"people","id":"110"}},"qualification_kind":{"data":{"type":"qualification_kinds","id":"k5"}}}},
+ {"id":"q6","type":"qualifications","attributes":{"start_at":"2023-03-03","finish_at":"2027-03-03"},"relationships":{"person":{"data":{"type":"people","id":"111"}},"qualification_kind":{"data":{"type":"qualification_kinds","id":"k2"}}}}
+],
+ "included":[
+ {"id":"k1","type":"qualification_kinds","attributes":{"label":"Zusatz Lagerleiter"}},
+ {"id":"k2","type":"qualification_kinds","attributes":{"label":"J+S Leiter*in Lagersport/Trekking"}},
+ {"id":"k3","type":"qualification_kinds","attributes":{"label":"Sicherheitsmodul Wasser"}},
+ {"id":"k4","type":"qualification_kinds","attributes":{"label":"Sicherheitsmodul Berg"}},
+ {"id":"k5","type":"qualification_kinds","attributes":{"label":"SLRG Brevet Plus Pool"}}
+]}

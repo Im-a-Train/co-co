@@ -1,0 +1,21 @@
+{"data":[
+ {"id":"11","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"111"}},"roles":{"data":[{"type":"event_roles","id":"r3"}]}}},
+ {"id":"12","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"112"}},"roles":{"data":[{"type":"event_roles","id":"r3"}]}}},
+ {"id":"13","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"110"}},"roles":{"data":[{"type":"event_roles","id":"r4"}]}}},
+ {"id":"14","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"101"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"15","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"120"}},"roles":{"data":[{"type":"event_roles","id":"r5"}]}}},
+ {"id":"16","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"113"}},"roles":{"data":[{"type":"event_roles","id":"r1"},{"type":"event_roles","id":"r6"}]}}}
+],
+ "included":[
+ {"id":"111","type":"people","attributes":{"first_name":"Mira","last_name":"Keller","nickname":"","birthday":"1995-09-09"}},
+ {"id":"112","type":"people","attributes":{"first_name":null,"last_name":"Steiner","birthday":"1998-01-02"}},
+ {"id":"110","type":"people","attributes":{"first_name":"Hanna","last_name":"Brunner","nickname":"Fuchs","birthday":"1990-04-04"}},
+ {"id":"101","type":"people","attributes":{"first_name":"Anna","last_name":"Zehnder","nickname":"Pixel","birthday":"2014-07-18"}},
+ {"id":"120","type":"people","attributes":{"first_name":"Koch","last_name":"Lehmann","nickname":"Kuechenfee","birthday":"1970-01-01"}},
+ {"id":"113","type":"people","attributes":{"first_name":"Ida","last_name":"Berger","birthday":"1999-12-12"}},
+ {"id":"r3","type":"event_roles","attributes":{"type":"Event::Camp::Role::AssistantLeader","label":"Leitung"}},
+ {"id":"r4","type":"event_roles","attributes":{"type":"Event::Camp::Role::LeaderWaterSecurity","label":"Wassersicherheit"}},
+ {"id":"r5","type":"event_roles","attributes":{"type":"Event::Role::Cook","label":"Küche"}},
+ {"id":"r6","type":"event_roles","attributes":{"type":"Event::Camp::Role::Leader","label":"Leitung"}}
+],
+ "links":{"next":null}}

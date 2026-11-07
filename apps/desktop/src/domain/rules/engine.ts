@@ -77,6 +77,9 @@ function effectiveSeverity(meta: RuleMeta, hitSeverity: Severity | undefined): S
   return sev
 }
 
+/** Findings quoting MiData (red-derived) carry the tag 'midata'; they must never reach the AI. */
+const MIDATA_SOURCE_RE = /Quelle:\s*MiData/
+
 function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Finding[] {
   const hits = rule.check(ctx)
   const out: Finding[] = []
@@ -84,6 +87,10 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Find
     const targets = hit.targets.length ? hit.targets : [ctx.facts.camp.iri]
     const id = findingId(rule.meta.id, targets)
     const evidence: Evidence[] = hit.evidence ?? []
+    const message = fillTemplate(
+      typeof hit.params?._message === 'string' ? hit.params._message : rule.meta.message,
+      hit.params,
+    )
     out.push({
       id,
       ruleId: rule.meta.id,
@@ -92,16 +99,16 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Find
       severity: effectiveSeverity(rule.meta, hit.severity),
       confidence: rule.meta.confidence,
       title: rule.meta.title,
-      message: fillTemplate(
-        typeof hit.params?._message === 'string' ? hit.params._message : rule.meta.message,
-        hit.params,
-      ),
+      message,
       scope: rule.meta.scope,
       targets,
       evidence,
       source: rule.meta.source,
       origin: 'rule',
-      tags: rule.meta.tags ?? [],
+      tags: [
+        ...(rule.meta.tags ?? []),
+        ...(evidence.some((e) => MIDATA_SOURCE_RE.test(e.label)) || MIDATA_SOURCE_RE.test(message) ? ['midata'] : []),
+      ],
       override: ctx.overrides.find((o) => o.findingId === id) ?? null,
     })
   }

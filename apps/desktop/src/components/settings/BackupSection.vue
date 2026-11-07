@@ -53,6 +53,13 @@ async function doImport() {
     </div>
 
     <v-switch
+      v-model="b.omitRedDerived.value"
+      :label="t('backup.omitMidata')"
+      density="compact"
+      hide-details
+      color="primary"
+    />
+    <v-switch
       :model-value="b.remindAfterRound.value"
       :label="t('backup.remind')"
       density="compact"

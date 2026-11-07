@@ -78,3 +78,28 @@ The frontend re-watches persisted folders from IndexedDB (`watchedFolders`) at s
 CSP: `connect-src` does **not** need `api.anthropic.com`, because the call happens in Rust. pdf.js
 loads its worker from a same-origin asset (`script-src 'self'` covers it). If pdf.js needs WASM
 decoders, add `'wasm-unsafe-eval'` to `script-src`.
+
+## M7: MiData (read-only, red zone)
+
+Own module `src-tauri/src/midata.rs` with its own reqwest client and cookie jar (never shared with
+eCamp). Raw responses are reduced in `coco_core::midata`; only aggregates, event summaries, probe
+results (names and status codes) and connection status cross to the UI. Birthdays and full names never
+leave Rust. Cookie values and the token are never logged, returned or put into error messages. All
+commands accept calls from the `main` window only. Nothing runs in the background: every network
+call is the result of an explicit user action.
+
+| Command | Args | Returns | Notes |
+| --- | --- | --- | --- |
+| `midata_status` | – | `MidataStatus { connected, baseUrl, method: 'session' \| 'token' \| null, cookieNames }` | Lazily restores a stored service token from the keychain (service `co-co-midata`). Cookie names only, never values. |
+| `midata_open_login` | `baseUrl: string` | `void` | Opens the separate login window `midata-login` (no capability, no IPC) on `<base>/users/sign_in`. Rust polls the jar for the `_session_id` cookie, stores it in the MiData jar, closes the window and emits `midata://status`. `baseUrl` must be https (http only for loopback hosts). |
+| `midata_set_token` | `baseUrl: string`, `token: string` | `MidataStatus` | Stores the service token in the OS keychain and uses it as header `X-TOKEN`. Token length is capped, the token is never returned. |
+| `midata_logout` | – | `void` | Clears the jar, the in-memory connection and the keychain token. Idempotent. Emits `midata://status`. |
+| `midata_find_events` | `from: string`, `to: string` (YYYY-MM-DD) | `MidataEventSummary[]` (`id, name, startAt, finishAt, location`) | `GET /api/events` with `filter[type]=Event::Camp` within the camp dates, paged. Used for the one-time event pick per camp. |
+| `midata_fetch_aggregate` | `eventId: string`, `campStart: string`, `campEnd: string`, `coachPersonId: string \| null` | `MidataAggregate` (zone `red-derived`) | Fetches event (+dates), participations (+person, roles), leader qualifications; reduces in Rust. Returns counts, J+S-age count (5–20 at camp start), min/max age, age bands, leaders as nickname + qualification yes/no, coach match, `fetchedAt`. Rejects with a German message when not connected or on HTTP errors (401 → «Anmeldung abgelaufen»). |
+| `midata_probe` | `eventId: string`, `groupId: string \| null` | `MidataProbe` | M7-0 spike. Returns auth method, HTTP status codes (event, participations, qualifications, classic export), whether participations and birthdays were readable, and **field names only** of the classic export `/groups/{g}/events/{e}.json` plus the PBS camp fields found. Never values. See `docs/m7-spike-protocol.md`. |
+
+Event: `midata://status` payload `MidataStatus`, emitted to `main` after login, token change and
+logout. The frontend also reads `midata_status` at start-up.
+
+Filter syntax (Graphiti style, e.g. `filter[event_id]`, `filter[type][eq]`) is **unverified** until
+the spike M7-0 ran against a real MiData account. It lives in one place in the Rust module.

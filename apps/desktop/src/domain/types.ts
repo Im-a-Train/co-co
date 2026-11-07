@@ -64,6 +64,9 @@ export interface CampInfo {
   /** Earliest period start / latest period end (null without periods). */
   start: IsoDate | null
   end: IsoDate | null
+  /** M7: MiData event link set by eCamp when the camp was created from MiData (null/absent otherwise). */
+  hitobitoEventId?: string | null
+  hitobitoProvider?: string | null
 }
 
 export interface PeriodFact {
@@ -296,6 +299,107 @@ export interface CoachInputs {
   /** Free notes of the coach (zone yellow). */
   notes: string
   updatedAt: IsoDateTime
+  /**
+   * M7: fields whose current value was accepted from MiData («Aus MiData übernehmen»), with the
+   * «Stand MiData» timestamp of the aggregate it came from. A manual edit of a field removes its entry.
+   */
+  midataFields?: Partial<Record<MidataField, IsoDateTime>>
+}
+
+// ---------------------------------------------------------------------------------------------
+// MiData (M7, red zone). Shapes mirror coco-core/src/midata.rs (serde camelCase). Only aggregates
+// ever reach the webview; raw person data stays in Rust. Never send any of this to the AI.
+// ---------------------------------------------------------------------------------------------
+
+export type MidataQualKey = 'lagerleiter' | 'leiterLsT' | 'wasser' | 'berg' | 'winter' | 'slrg'
+export const MIDATA_QUAL_KEYS: readonly MidataQualKey[] = ['lagerleiter', 'leiterLsT', 'wasser', 'berg', 'winter', 'slrg']
+
+export interface MidataAgeBand {
+  from: number
+  /** null = open-ended (21+) */
+  to: number | null
+  count: number
+}
+
+export interface MidataLeader {
+  /** Yellow zone: nickname (or first name), never the full name. */
+  nickname: string
+  roleLabel: string
+  /** Main leader (Hauptleitung); absent in aggregates stored before this field existed. */
+  mainLeader?: boolean
+  qualifications: Record<MidataQualKey, boolean>
+}
+
+export interface MidataAggregate {
+  zone: 'red-derived'
+  baseUrl: string
+  eventId: string
+  eventName: string
+  eventDates: { startAt: IsoDate; finishAt: IsoDate }[]
+  location: string | null
+  maximumParticipants: number | null
+  participantsCount: number
+  /** Participants aged 5-20 at camp start. */
+  participantsJsAgeCount: number
+  participantsWithoutBirthday: number
+  minAge: number | null
+  maxAge: number | null
+  ageBands: MidataAgeBand[]
+  leadersCount: number
+  leaders: MidataLeader[]
+  /** event advisor == coach's MiData person id (null = unknown). */
+  coachMatch: boolean | null
+  /** «Stand MiData» */
+  fetchedAt: IsoDateTime
+}
+
+export interface MidataEventSummary {
+  id: string
+  name: string
+  startAt: IsoDate | null
+  finishAt: IsoDate | null
+  location: string | null
+}
+
+export interface MidataProbe {
+  authMethod: string | null
+  eventStatus: number
+  participationsStatus: number
+  participationsReadable: boolean
+  peopleBirthdayReadable: boolean
+  qualificationsStatus: number
+  classicJsonStatus: number | null
+  pbsFieldsPresent: string[]
+  classicAttributeNames: string[]
+}
+
+export interface MidataStatus {
+  connected: boolean
+  baseUrl: string | null
+  method: 'session' | 'token' | null
+  cookieNames: string[]
+}
+
+/** Coach inputs that «Aus MiData übernehmen» can fill. */
+export type MidataField =
+  | 'participantsCount'
+  | 'participantsJsAgeCount'
+  | 'minAge'
+  | 'maxAge'
+  | 'leadersCount'
+  | 'slrgCount'
+  | 'lagerleiterAttested'
+
+/** Dexie table `midata` (one per camp). Tagged red-derived: AI gateway refuses it; backup may omit it. */
+export interface MidataRecord {
+  campIri: Iri
+  zone: 'red-derived'
+  /** MiData event id the camp is linked to (null = not linked yet). */
+  eventId: string | null
+  /** 'ecamp' = from camp.hitobitoEventId, 'manual' = picked by the coach. */
+  eventSource: 'ecamp' | 'manual' | null
+  aggregate: MidataAggregate | null
+  updatedAt: IsoDateTime
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -354,6 +458,8 @@ export interface RuleContext {
   facts: CampFacts
   mapping: CategoryMapping | null
   coachInputs: CoachInputs | null
+  /** M7: MiData aggregate of the camp (red-derived; null/absent = not connected). */
+  midata?: MidataAggregate | null
   documents: DocumentRecord[]
   settings: AppSettings
   /** Evaluation time (injected for testability). */
@@ -466,6 +572,8 @@ export interface FeedbackItem {
   activityIri?: Iri
   kind: FeedbackKind
   text: string
+  /** Text quotes MiData (red-derived): refused by the AI gateway. */
+  redDerived?: boolean
   ruleId?: string
   findingId?: string
   roundId?: string
@@ -695,6 +803,13 @@ export interface AppSettings {
   }
   /** Enabled rule pack ids (empty = all bundled packs). */
   rulePacks: string[]
+  /** M7: MiData connection settings (no secrets; token/cookies live in Rust/keychain). */
+  midata: {
+    /** Base URL of the MiData instance (default https://db.scout.ch). */
+    baseUrl: string
+    /** The coach's own MiData person id (for the coach match, CMP-CAMP-01). */
+    personId: string | null
+  }
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -702,6 +817,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   gpx: { paceLkmPerHour: 4, paceWoelfeLkmPerHour: 3.5, includeDescent: false },
   backup: { remindAfterRound: true, lastExportAt: null },
   rulePacks: [],
+  midata: { baseUrl: 'https://db.scout.ch', personId: null },
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-midata-logout"
+description = "Enables the midata_logout command without any pre-configured scope."
+commands.allow = ["midata_logout"]
+
+[[permission]]
+identifier = "deny-midata-logout"
+description = "Denies the midata_logout command without any pre-configured scope."
+commands.deny = ["midata_logout"]

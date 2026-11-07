@@ -1,6 +1,6 @@
 /**
  * App settings persistence (db.settings key 'app'). Shared by all modules.
- * Sections: `ai` (AI settings), `gpx` (documents), `backup` (rounds/backup), `rulePacks` (rules).
+ * Sections: `ai` (AI settings), `gpx` (documents), `backup` (rounds/backup), `rulePacks` (rules), `midata` (M7 connection).
  * Each feature only writes its own section via updateAppSettings({ <section>: ... }).
  */
 import { DEFAULT_APP_SETTINGS, type AppSettings } from '../types'
@@ -15,6 +15,7 @@ export function mergeSettings(stored: Partial<AppSettings> | null | undefined): 
     gpx: { ...DEFAULT_APP_SETTINGS.gpx, ...s.gpx },
     backup: { ...DEFAULT_APP_SETTINGS.backup, ...s.backup },
     rulePacks: s.rulePacks ?? [...DEFAULT_APP_SETTINGS.rulePacks],
+    midata: { ...DEFAULT_APP_SETTINGS.midata, ...s.midata },
   }
 }
 
@@ -34,6 +35,7 @@ export async function updateAppSettings(patch: AppSettingsPatch): Promise<AppSet
       gpx: { ...current.gpx, ...patch.gpx },
       backup: { ...current.backup, ...patch.backup },
       rulePacks: patch.rulePacks ?? current.rulePacks,
+      midata: { ...current.midata, ...patch.midata },
     })
     await db.settings.put({ key: KEY, value: next })
     return next

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { predicates as p } from '../packs/basis/predicates'
 import { coachNameMatches } from '../packs/basis/predicates/completeness'
-import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCtx, mappingOf } from './factory'
+import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCtx, makeMidata, mappingOf } from './factory'
 
 const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
@@ -103,5 +103,34 @@ describe('mapping variants', () => {
     expect(p['CMP-ACT-02'](makeCtx(b.facts, { mapping: mappingOf({ '/api/categories/custom': 'LA' }) }))).toHaveLength(1)
     expect(p['CMP-ACT-02'](makeCtx(b.facts, { mapping: mappingOf({ '/api/categories/custom': 'ES' }) }))).toEqual([])
     expect(a.iri).toBeTruthy()
+  })
+})
+
+describe('CMP-CAMP-01 with MiData', () => {
+  it('hints when the MiData advisor is not the coach', () => {
+    const f = new FactsBuilder().facts
+    const hits = p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: false }) }))
+    expect(hits).toHaveLength(1)
+    expect(hits[0].params?.detail).toContain('Quelle: MiData, Stand 01.01.2031')
+  })
+  it('stays quiet for match true / unknown', () => {
+    const f = new FactsBuilder().facts
+    expect(p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: true }) }))).toEqual([])
+    expect(p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: null }) }))).toEqual([])
+  })
+})
+
+describe('CMP-MD-01', () => {
+  const f = new FactsBuilder({ start: '2031-07-12', days: 5 }).facts
+  it('is silent without MiData or with equal dates', () => {
+    expect(p['CMP-MD-01'](makeCtx(f))).toEqual([])
+    expect(p['CMP-MD-01'](makeCtx(f, { midata: makeMidata() }))).toEqual([])
+  })
+  it('hints when dates differ', () => {
+    const md = makeMidata({ eventDates: [{ startAt: '2031-07-13T00:00:00', finishAt: '2031-07-16' }] })
+    const hits = p['CMP-MD-01'](makeCtx(f, { midata: md }))
+    expect(hits).toHaveLength(1)
+    expect(String(hits[0].params?._message)).toContain('12.07.2031–16.07.2031')
+    expect(String(hits[0].params?._message)).toContain('13.07.2031–16.07.2031')
   })
 })

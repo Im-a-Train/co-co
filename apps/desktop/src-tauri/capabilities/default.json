@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Local app UI only (window 'main'). The remote 'ecamp-login' window intentionally gets NO capability and therefore no IPC access. The app commands are declared in an app ACL manifest (build.rs), so they are only callable with these grants.",
+  "description": "Local app UI only (window 'main'). The remote 'ecamp-login' and 'midata-login' windows intentionally get NO capability and therefore no IPC access. The app commands are declared in an app ACL manifest (build.rs), so they are only callable with these grants.",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -25,6 +25,13 @@
     "allow-ai-set-key",
     "allow-ai-has-key",
     "allow-ai-clear-key",
-    "allow-ai-complete"
+    "allow-ai-complete",
+    "allow-midata-status",
+    "allow-midata-open-login",
+    "allow-midata-set-token",
+    "allow-midata-logout",
+    "allow-midata-find-events",
+    "allow-midata-fetch-aggregate",
+    "allow-midata-probe"
   ]
 }

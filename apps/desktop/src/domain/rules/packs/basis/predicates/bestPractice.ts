@@ -1,7 +1,7 @@
 /** PBS best practice hints (group 'best-practice'). Pure predicates of RuleContext. */
 import type { RuleContext, RuleHit, RulePredicate, ScheduleEntryFact, Stufe } from '@/domain/types'
 import { categoryClassOf, entryMinutes, hasJsMapping, isJsClass, minutesBetween, sortedDays, wallDate, wallMinutes } from '../../../jsDays'
-import { activityText, campHit, hasKeyword, WATER } from './util'
+import { activityText, campHit, hasKeyword, midataEvidence, midataSourceText, midataStand, WATER } from './util'
 
 const entriesOnDay = (ctx: RuleContext, date: string): ScheduleEntryFact[] =>
   ctx.facts.scheduleEntries.filter((e) => wallDate(e.start) === date).sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0))
@@ -79,7 +79,15 @@ export const bpWolf01: RulePredicate = (ctx) => {
   const i = ctx.coachInputs
   if (!i || i.stufe !== 'woelfe' || i.participantsCount === null || i.leadersCount === null) return []
   const needed = Math.ceil(i.participantsCount / 6)
-  return i.leadersCount >= needed ? [] : [campHit(ctx, { participants: i.participantsCount, leaders: i.leadersCount, needed })]
+  if (i.leadersCount >= needed) return []
+  const stand = midataStand(ctx, ['participantsCount', 'leadersCount'])
+  return [
+    campHit(
+      ctx,
+      { participants: i.participantsCount, leaders: i.leadersCount, needed, src: stand ? ` (${midataSourceText(stand)})` : '' },
+      stand ? { evidence: [midataEvidence(stand)] } : {},
+    ),
+  ]
 }
 
 export const bpWater01: RulePredicate = (ctx) => {
@@ -89,9 +97,20 @@ export const bpWater01: RulePredicate = (ctx) => {
   if (!hasWater) return []
   const needed = Math.ceil(i.participantsCount / 12)
   const have = i.slrgCount ?? 0
-  return have >= needed
-    ? []
-    : [campHit(ctx, { participants: i.participantsCount, have: i.slrgCount === null ? 'keine Angabe' : have, needed })]
+  if (have >= needed) return []
+  const stand = midataStand(ctx, ['slrgCount', 'participantsCount'])
+  return [
+    campHit(
+      ctx,
+      {
+        participants: i.participantsCount,
+        have: i.slrgCount === null ? 'keine Angabe' : have,
+        needed,
+        src: stand ? ` (${midataSourceText(stand)})` : '',
+      },
+      stand ? { evidence: [midataEvidence(stand)] } : {},
+    ),
+  ]
 }
 
 // BP-VAR-01 ----------------------------------------------------------------------------------

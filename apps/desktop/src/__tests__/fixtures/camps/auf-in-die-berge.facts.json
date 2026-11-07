@@ -22,6 +22,8 @@
       "city": null
     },
     "isPrototype": false,
+    "hitobitoEventId": null,
+    "hitobitoProvider": null,
     "start": "2031-01-24",
     "end": "2031-01-30"
   },

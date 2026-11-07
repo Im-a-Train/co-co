@@ -1,7 +1,7 @@
 /** Predicate registry of the basic pack: rule id -> predicate. */
 import type { RulePredicate } from '@/domain/types'
 import { bpRest01, bpSleep01, bpVar01, bpWater01, bpWolf01 } from './bestPractice'
-import { cmpAct01, cmpAct02, cmpAct03, cmpCamp01, cmpDay01, cmpLa01, cmpProg01 } from './completeness'
+import { cmpAct01, cmpAct02, cmpAct03, cmpCamp01, cmpDay01, cmpLa01, cmpMd01, cmpProg01 } from './completeness'
 import {
   jsBwz27,
   jsCamp01,
@@ -41,6 +41,7 @@ export const predicates: Record<string, RulePredicate> = {
   'CMP-LA-01': cmpLa01,
   'CMP-DAY-01': cmpDay01,
   'CMP-CAMP-01': cmpCamp01,
+  'CMP-MD-01': cmpMd01,
   'CMP-PROG-01': cmpProg01,
   'SAFE-WATER-01': safeWater01,
   'SAFE-MTN-01': safeMtn01,
