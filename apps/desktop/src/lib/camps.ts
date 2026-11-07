@@ -48,6 +48,11 @@ export function formatPeriodRange(p: PeriodSummary): string {
 }
 
 /** Builds the activities query of the contract: /api/activities?camp=<campIri>. */
+/** Camps the given user collaborates on (any role, incl. guest). eCamp rejects an unfiltered /api/camps. */
+export function campsPath(userIri: string): string {
+  return `/api/camps?campCollaborator=${encodeURIComponent(userIri)}`
+}
+
 export function activitiesPath(campIri: string): string {
   return `/api/activities?camp=${campIri}`
 }

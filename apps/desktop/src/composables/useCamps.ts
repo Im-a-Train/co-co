@@ -1,7 +1,8 @@
 import { ref } from 'vue'
-import { activitiesPath, toCampSummary, toPeriod, type CampSummary } from '@/lib/camps'
+import { activitiesPath, campsPath, toCampSummary, toPeriod, type CampSummary } from '@/lib/camps'
 import { asResource, collectionCount, embeddedList, str, type HalResource } from '@/lib/hal'
 import { commands, errorMessage } from '@/lib/tauri'
+import { useSession } from './useSession'
 import { useSpikeProtocol } from './useSpikeProtocol'
 
 export interface ActivitiesSummary {
@@ -35,7 +36,12 @@ async function loadCamps(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    const res = asResource(await commands.apiGet<HalResource>('/api/camps'))
+    // eCamp requires a filter on /api/camps (HTTP 400 otherwise). Like eCamp's own camp list
+    // (frontend/src/views/Camps.vue) we ask for the camps the current user collaborates on,
+    // which includes camps where the coach is invited as guest.
+    const userIri = useSession().session.value?.userIri
+    if (!userIri) throw new Error('Benutzer unbekannt – bitte neu anmelden.')
+    const res = asResource(await commands.apiGet<HalResource>(campsPath(userIri)))
     if (seq !== loadSeq) return
     camps.value = embeddedList(res)
       .map(toCampSummary)
@@ -43,7 +49,7 @@ async function loadCamps(): Promise<void> {
     loaded.value = true
     spike.campsCount.value = camps.value.length
     spike.addLog('ui', 'api-get-camps', true, `${camps.value.length}`)
-    spike.markResult('apiCallOk', 'ok', 'GET /api/camps')
+    spike.markResult('apiCallOk', 'ok', 'GET /api/camps?campCollaborator=[user]')
     spike.markResult('campsLoaded', 'ok', String(camps.value.length))
   } catch (err) {
     if (seq !== loadSeq) return

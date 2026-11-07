@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { activitiesPath, formatDateCh, toCampSummary } from '../camps'
+import { activitiesPath, campsPath, formatDateCh, toCampSummary } from '../camps'
 import { collectionCount, embeddedList, linkHref, stripTemplate, type HalResource } from '../hal'
 import { loadCustomInstances, normalizeBaseUrl, saveCustomInstances, STORAGE_KEY } from '../instances'
 import { resultForStep } from '../../composables/useSpikeProtocol'
+
+describe('campsPath', () => {
+  it('filters camps by collaborator (eCamp rejects unfiltered /api/camps)', () => {
+    expect(campsPath('/api/users/abc123')).toBe('/api/camps?campCollaborator=%2Fapi%2Fusers%2Fabc123')
+  })
+})
 
 describe('normalizeBaseUrl', () => {
   it('accepts https and normalizes to origin', () => {
