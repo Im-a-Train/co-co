@@ -1,0 +1,14 @@
+id: CMP-CON-06
+version: 1.0.0
+group: completeness
+title: "Hauptleitung in MiData eingetragen"
+description: "Im MiData-Anlass ist eine Hauptleitung eingetragen."
+message: "In MiData ist keine Hauptleitung eingetragen"
+severity: hint
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+tags: [vollstaendigkeit, midata]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

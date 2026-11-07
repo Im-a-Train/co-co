@@ -1,0 +1,14 @@
+id: CMP-CON-03
+version: 1.0.0
+group: completeness
+title: "Leitende in eCamp und MiData abgleichen"
+description: "Die Leitenden in eCamp und MiData sind dieselben Personen (Abgleich über Namen, Heuristik)."
+message: "Leitende in eCamp und MiData stimmen nicht überein (Abgleich über Namen)"
+severity: hint
+confidence: heuristic
+scope: camp
+validFrom: 2026-01-01
+tags: [vollstaendigkeit, midata]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

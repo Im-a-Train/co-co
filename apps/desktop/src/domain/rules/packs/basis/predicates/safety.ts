@@ -107,6 +107,39 @@ function fmtDuration(minutes: number): string {
   return h > 0 ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`
 }
 
+// SAFE-MTN-03 --------------------------------------------------------------------------------
+
+/**
+ * Mountain activities: responsibles matched to MiData leaders by name; none holds the mountain
+ * qualification. Winter is not checked (no winter keyword set exists in the pack).
+ */
+export const safeMtn03: RulePredicate = (ctx) => {
+  const md = ctx.midata
+  if (!md || md.qualificationsReadable === false) return []
+  const leadersByName = leadersByNormName(md.leaders)
+  const hits: RuleHit[] = []
+  for (const a of ctx.facts.activities) {
+    const found = matchKeywords(activityText(a), MOUNTAIN)
+    if (found.length === 0 || a.responsibleIris.length === 0) continue
+    const matched = a.responsibleIris
+      .map((iri) => ctx.facts.collaborators.find((c) => c.iri === iri))
+      .flatMap((c) => (c ? (leadersByName.get(normalizeName(c.displayName)) ?? []) : []))
+    if (matched.length === 0 || matched.some((l) => l.qualifications.berg)) continue
+    const stand = formatStand(md.fetchedAt)
+    const kw = found.slice(0, 3).join(', ')
+    hits.push({
+      targets: [a.iri],
+      params: {
+        title: a.title,
+        keywords: kw,
+        _message: `«${a.title}» (Berg/Wanderung: ${kw}): keine verantwortliche Person mit Berg-Qualifikation (${midataSourceText(stand)})`,
+      },
+      evidence: [activityEvidence(a, `Stichwörter: ${kw}`), midataEvidence(stand)],
+    })
+  }
+  return hits
+}
+
 // SAFE-ROPE-01 -------------------------------------------------------------------------------
 
 const ROPE_TOPICS = ['sicherung', 'verankerung', 'bremse']

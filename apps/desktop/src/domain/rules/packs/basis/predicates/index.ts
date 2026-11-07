@@ -2,6 +2,7 @@
 import type { RulePredicate } from '@/domain/types'
 import { bpRest01, bpSleep01, bpVar01, bpWater01, bpWolf01 } from './bestPractice'
 import { cmpAct01, cmpAct02, cmpAct03, cmpCamp01, cmpDay01, cmpLa01, cmpMd01, cmpNds01, cmpNds02, cmpNds03, cmpProg01 } from './completeness'
+import { cmpCon01, cmpCon02, cmpCon03, cmpCon04, cmpCon05, cmpCon06, cmpCon07, cmpCon08, cmpCon09, cmpCon10 } from './consistency'
 import {
   jsBwz27,
   jsCamp01,
@@ -18,7 +19,7 @@ import {
   jsLl01,
   jsStaff01,
 } from './js'
-import { safeDoc01, safeMtn01, safeMtn02, safeNight01, safeRope01, safeWater01, safeWx01 } from './safety'
+import { safeDoc01, safeMtn01, safeMtn02, safeMtn03, safeNight01, safeRope01, safeWater01, safeWx01 } from './safety'
 
 export const predicates: Record<string, RulePredicate> = {
   'JS-CAMP-01': jsCamp01,
@@ -46,9 +47,20 @@ export const predicates: Record<string, RulePredicate> = {
   'CMP-NDS-02': cmpNds02,
   'CMP-NDS-03': cmpNds03,
   'CMP-PROG-01': cmpProg01,
+  'CMP-CON-01': cmpCon01,
+  'CMP-CON-02': cmpCon02,
+  'CMP-CON-03': cmpCon03,
+  'CMP-CON-04': cmpCon04,
+  'CMP-CON-05': cmpCon05,
+  'CMP-CON-06': cmpCon06,
+  'CMP-CON-07': cmpCon07,
+  'CMP-CON-08': cmpCon08,
+  'CMP-CON-09': cmpCon09,
+  'CMP-CON-10': cmpCon10,
   'SAFE-WATER-01': safeWater01,
   'SAFE-MTN-01': safeMtn01,
   'SAFE-MTN-02': safeMtn02,
+  'SAFE-MTN-03': safeMtn03,
   'SAFE-ROPE-01': safeRope01,
   'SAFE-NIGHT-01': safeNight01,
   'SAFE-WX-01': safeWx01,
