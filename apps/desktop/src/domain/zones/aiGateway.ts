@@ -45,7 +45,7 @@ export class AiRefusedError extends Error {
 }
 
 /** Marker of a serialized MiData/NDS aggregate (JSON, any whitespace). */
-const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*(MiData|NDS)|"offerBusinessId"|"campBusinessId"/
+const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*(MiData|NDS)|"offerBusinessId"|"campBusinessId"|"redKeys"|"evaluatedFor"/
 
 /** Pure validation of zone rules; throws AiRefusedError. Exported for tests. */
 export function assertSendable(request: AiGatewayRequest): void {

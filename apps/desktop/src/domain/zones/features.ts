@@ -132,6 +132,21 @@ export function extractJsonArray(text: string): unknown[] {
   }
 }
 
+/**
+ * Serialisation guard for findings: `explain` (input facts, possibly values from the red zone) is never
+ * sent to the AI. Findings tagged 'midata' / 'nds-quelle' count as red as a whole and are dropped.
+ * Any feature that puts findings into a prompt must go through this function.
+ */
+export function findingsForAi(findings: Finding[]): Omit<Finding, 'explain'>[] {
+  return findings
+    .filter((f) => !f.tags.includes('midata') && !f.tags.includes('nds-quelle'))
+    .map((f) => {
+      const { explain, ...rest } = f
+      void explain
+      return rest
+    })
+}
+
 export function parseSafetyFindings(text: string, activity: ActivityFact): Finding[] {
   const seen = new Set<string>()
   const findings: Finding[] = []

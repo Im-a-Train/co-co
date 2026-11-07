@@ -34,6 +34,7 @@ export const safeWater01: RulePredicate = (ctx) => {
     if (a.content.safetyText.trim() === '') missing.push('keine Sicherheitsüberlegungen')
     const evidence: Evidence[] = [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)]
     const md = ctx.midata
+    let qualChecked = false
     if (md && a.responsibleIris.length > 0) {
       // Match eCamp responsibles with MiData leaders by normalised name; only judged if at least one matches.
       const leadersByName = leadersByNormName(md.leaders)
@@ -41,6 +42,7 @@ export const safeWater01: RulePredicate = (ctx) => {
         .map((iri) => ctx.facts.collaborators.find((c) => c.iri === iri))
         .flatMap((c) => (c ? (leadersByName.get(normalizeName(c.displayName)) ?? []) : []))
       if (matched.length > 0 && !matched.some((l) => l.qualifications.wasser || l.qualifications.slrg)) {
+        qualChecked = true
         const stand = formatStand(md.fetchedAt)
         missing.push(`keine verantwortliche Person mit Wasser-/SLRG-Qualifikation (${midataSourceText(stand)})`)
         evidence.push(midataEvidence(stand))
@@ -50,6 +52,13 @@ export const safeWater01: RulePredicate = (ctx) => {
     hits.push({
       targets: [a.iri],
       params: { title: a.title, missing: missing.join(' und '), keywords: found.slice(0, 3).join(', ') },
+      inputs: {
+        matchedKeyword: found[0],
+        responsiblesCount: a.responsibleIris.length,
+        safetyTextChars: a.content.safetyText.trim().length,
+        ...(qualChecked ? { waterQualificationFound: false } : {}),
+      },
+      ...(qualChecked ? { redKeys: ['waterQualificationFound'] } : {}),
       evidence,
     })
   }
@@ -70,6 +79,7 @@ export const safeMtn01: RulePredicate = (ctx) => {
     hits.push({
       targets: [a.iri],
       params: { title: a.title, keywords: found.slice(0, 3).join(', ') },
+      inputs: { matchedKeyword: found[0], linkedDocuments: 0, timeCalculationFound: false },
       evidence: [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)],
     })
   }
@@ -94,6 +104,7 @@ export const safeMtn02: RulePredicate = (ctx) => {
       hits.push({
         targets: [a.iri, d.id],
         params: { title: a.title, estimated: fmtDuration(est), slot: fmtDuration(slot), doc: d.name },
+        inputs: { estimatedMinutes: est, slotMinutes: slot },
         evidence,
       })
     }
@@ -129,6 +140,8 @@ export const safeMtn03: RulePredicate = (ctx) => {
     const kw = found.slice(0, 3).join(', ')
     hits.push({
       targets: [a.iri],
+      inputs: { matchedKeyword: found[0], responsiblesMatchedInMidata: matched.length, bergQualificationFound: false },
+      redKeys: ['responsiblesMatchedInMidata', 'bergQualificationFound'],
       params: {
         title: a.title,
         keywords: kw,
@@ -160,6 +173,7 @@ export const safeRope01: RulePredicate = (ctx) => {
     hits.push({
       targets: [a.iri],
       params: { title: a.title, reasons: reasons.join('; ') },
+      inputs: { matchedKeyword: found[0], safetyTextChars: safety.length, requiredChars: ROPE_MIN_CHARS, topicsMentioned: topics.length },
       evidence: [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)],
     })
   }
@@ -196,7 +210,17 @@ export const safeNight01: RulePredicate = (ctx) => {
       }
     }
     if (reasons.length === 0) continue
-    hits.push({ targets: [a.iri], params: { title: a.title, reasons: reasons.join('; ') }, evidence: [activityEvidence(a)] })
+    hits.push({
+      targets: [a.iri],
+      params: { title: a.title, reasons: reasons.join('; ') },
+      inputs: {
+        nightKeyword: keyword,
+        lateEntries: late.length,
+        safetyTextChars: a.content.safetyText.trim().length,
+        minRestMinutes: MIN_REST_MINUTES,
+      },
+      evidence: [activityEvidence(a)],
+    })
   }
   return hits
 }
@@ -225,6 +249,7 @@ export const safeWx01: RulePredicate = (ctx) => {
     if (list.some((a) => containsPhrase(activityText(a), SCHLECHTWETTER_PHRASES))) continue
     hits.push({
       targets: [day.iri],
+      inputs: { dayDate: day.date, outdoorActivities: outdoor.length, activitiesOnDay: list.length, badWeatherPlanFound: false },
       params: { date: `${day.date.slice(8, 10)}.${day.date.slice(5, 7)}.${day.date.slice(0, 4)}`, count: outdoor.length },
       evidence: outdoor.slice(0, 10).map((a) => activityEvidence(a)),
     })
@@ -260,6 +285,7 @@ export const safeDoc01: RulePredicate = (ctx) => {
     {
       targets: [camp, best.id],
       params: { doc: best.name, missing: missing.join(', ') },
+      inputs: { checkedDocuments: checked.length, bestDocumentItemsFound: score(best), itemsMissing: missing.length },
       evidence: [{ kind: 'document', documentId: best.id, label: best.name }],
     },
   ]

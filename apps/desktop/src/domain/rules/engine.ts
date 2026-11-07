@@ -20,6 +20,7 @@ import type {
   RulePack,
   Severity,
 } from '../types'
+import { buildExplanation, redSources } from './explain'
 
 const SEVERITY_RANK: Record<Severity, number> = { must: 0, should: 1, hint: 2 }
 const SEVERITIES = Object.keys(SEVERITY_RANK)
@@ -82,7 +83,7 @@ const MIDATA_SOURCE_RE = /Quelle:\s*MiData/
 /** Same for NDS: tag 'nds-quelle' (the static rule tag 'nds' only names the topic). */
 const NDS_SOURCE_RE = /Quelle:\s*NDS/
 
-function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Finding[] {
+function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campDate: IsoDate): Finding[] {
   const hits = rule.check(ctx)
   const out: Finding[] = []
   for (const hit of hits) {
@@ -93,12 +94,24 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Find
       typeof hit.params?._message === 'string' ? hit.params._message : rule.meta.message,
       hit.params,
     )
+    const severity = effectiveSeverity(rule.meta, hit.severity)
+    // Red-derived facts (hit.redKeys) also count as red where tags are used: add the source tag unless present.
+    const tags = [
+      ...(rule.meta.tags ?? []),
+      ...(evidence.some((e) => MIDATA_SOURCE_RE.test(e.label)) || MIDATA_SOURCE_RE.test(message) ? ['midata'] : []),
+      ...(evidence.some((e) => NDS_SOURCE_RE.test(e.label)) || NDS_SOURCE_RE.test(message) ? ['nds-quelle'] : []),
+    ]
+    if (hit.redKeys && hit.redKeys.length > 0) {
+      const src = redSources(rule.meta, hit, ctx)
+      if (src.midata && !tags.includes('midata')) tags.push('midata')
+      if (src.nds && !tags.includes('nds-quelle')) tags.push('nds-quelle')
+    }
     out.push({
       id,
       ruleId: rule.meta.id,
       ruleVersion: rule.meta.version,
       packId: pack?.id ?? null,
-      severity: effectiveSeverity(rule.meta, hit.severity),
+      severity,
       confidence: rule.meta.confidence,
       title: rule.meta.title,
       message,
@@ -107,12 +120,9 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Find
       evidence,
       source: rule.meta.source,
       origin: 'rule',
-      tags: [
-        ...(rule.meta.tags ?? []),
-        ...(evidence.some((e) => MIDATA_SOURCE_RE.test(e.label)) || MIDATA_SOURCE_RE.test(message) ? ['midata'] : []),
-        ...(evidence.some((e) => NDS_SOURCE_RE.test(e.label)) || NDS_SOURCE_RE.test(message) ? ['nds-quelle'] : []),
-      ],
+      tags,
       override: ctx.overrides.find((o) => o.findingId === id) ?? null,
+      explain: buildExplanation(rule.meta, pack, hit, ctx, campDate, severity),
     })
   }
   return out
@@ -142,7 +152,7 @@ export function evaluate(packs: RulePack[], ctx: RuleContext, opts: EvaluateOpti
       if (opts.disabledRuleIds?.has(rule.meta.id)) continue
       let produced: Finding[]
       try {
-        produced = evaluateRule(rule, pack, ctx)
+        produced = evaluateRule(rule, pack, ctx, campDate)
       } catch (e) {
         console.error(`[rules] ${rule.meta.id} failed`, e)
         continue

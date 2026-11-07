@@ -47,7 +47,14 @@ export const jsCamp01: RulePredicate = (ctx) => {
     longest = Math.max(longest, run)
   }
   if (days.length === 1) longest = 1
-  return longest >= 4 ? [] : [campHit(ctx, { days: longest }, { evidence: [campEvidence(ctx.facts)] })]
+  return longest >= 4
+    ? []
+    : [
+        {
+          ...campHit(ctx, { days: longest }, { evidence: [campEvidence(ctx.facts)] }),
+          inputs: { campDaysTotal: days.length, longestConsecutiveDays: longest, requiredDays: 4 },
+        },
+      ]
 }
 
 // JS-CAMP-02 ---------------------------------------------------------------------------------
@@ -61,12 +68,17 @@ export const jsCamp02: RulePredicate = (ctx) => {
   }
   if (n >= 12) return []
   const stand = midataStand(ctx, jsAge !== null ? ['participantsJsAgeCount'] : ['participantsCount'])
+  const hit = campHit(
+    ctx,
+    { detail: `nur ${n} angegeben, nötig sind mindestens 12${stand ? ` (${midataSourceText(stand)})` : ''}` },
+    stand ? { evidence: [midataEvidence(stand)] } : {},
+  )
   return [
-    campHit(
-      ctx,
-      { detail: `nur ${n} angegeben, nötig sind mindestens 12${stand ? ` (${midataSourceText(stand)})` : ''}` },
-      stand ? { evidence: [midataEvidence(stand)] } : {},
-    ),
+    {
+      ...hit,
+      inputs: { participants: n, jsAgeCounted: jsAge !== null, requiredParticipants: 12 },
+      ...(stand ? { redKeys: ['participants'] } : {}),
+    },
   ]
 }
 
@@ -88,6 +100,7 @@ export const jsDay01: RulePredicate = (ctx) => {
     hits.push({
       targets: [d.dayIri],
       params: { day: d.number, units: d.unitCount, minutes: d.jsMinutes },
+      inputs: { dayDate: d.date, jsUnits: d.unitCount, jsMinutes: d.jsMinutes, requiredUnits: 2, requiredMinutes: 240 },
       evidence: d.units.map((u) => {
         const a = activityOf(ctx, u.activityIri)
         return a ? activityEvidence(a, `${u.minutes} Min.`) : { kind: 'scheduleEntry' as const, iri: u.scheduleEntryIri, label: u.scheduleEntryIri }
@@ -109,6 +122,7 @@ export const jsDay02: RulePredicate = (ctx) => {
       hits.push({
         targets: [u.scheduleEntryIri],
         params: { day: d.number, title: a?.title ?? '?', minutes: u.minutes },
+        inputs: { dayDate: d.date, unitMinutes: u.minutes, requiredMinutes: 30 },
         evidence: a ? [activityEvidence(a, `${u.minutes} Min.`)] : [],
       })
     }
@@ -128,6 +142,7 @@ export const jsDay03: RulePredicate = (ctx) => {
     hits.push({
       targets: [d.dayIri],
       params: { day: d.number, count: bad.length, minutes: shortest },
+      inputs: { dayDate: d.date, gapsTooShort: bad.length, shortestGapMinutes: shortest, unitsOnDay: d.units.length },
       evidence: d.units.map((u) => {
         const a = activityOf(ctx, u.activityIri)
         return a ? activityEvidence(a, `${u.start.slice(11, 16)}–${u.end.slice(11, 16)}`) : { kind: 'scheduleEntry' as const, iri: u.scheduleEntryIri, label: u.scheduleEntryIri }
@@ -151,6 +166,14 @@ export const jsDay04: RulePredicate = (ctx) => {
     {
       targets: [first.dayIri, last.dayIri],
       params: { first: first.number, last: last.number, minutes },
+      inputs: {
+        firstDayDate: first.date,
+        lastDayDate: last.date,
+        firstDayMinutes: first.jsMinutes,
+        lastDayMinutes: last.jsMinutes,
+        combinedMinutes: minutes,
+        requiredMinutes: 240,
+      },
       // Nothing planned at all on arrival/departure is normal: only a hint.
       severity: minutes === 0 ? 'hint' : undefined,
     },
@@ -173,7 +196,12 @@ export const jsDay05: RulePredicate = (ctx) => {
       if (!a || !a.content.storyboardText.trim()) continue // CMP-ACT-02 reports missing storyboards
       const head = a.content.storyboardText.slice(0, 400)
       if (matchKeywords(head, WARMUP).length > 0) continue
-      hits.push({ targets: [a.iri], params: { title: a.title }, evidence: [activityEvidence(a)] })
+      hits.push({
+        targets: [a.iri],
+        params: { title: a.title },
+        inputs: { storyboardChecked: head.length, warmupKeywordFound: false },
+        evidence: [activityEvidence(a)],
+      })
     }
   }
   return hits
@@ -287,14 +315,35 @@ export const jsStaff01: RulePredicate = (ctx) => {
   const l = ctx.coachInputs?.leadersCount ?? null
   if (p === null || l === null) return []
   const needed = Math.max(MIN_LEADERS, Math.ceil(p / MAX_PARTICIPANTS_PER_LEADER))
-  return l >= needed ? [] : [campHit(ctx, { participants: p, leaders: l, needed })]
+  if (l >= needed) return []
+  const midataFields = ctx.coachInputs?.midataFields
+  const fromMidata = !!(midataFields?.participantsCount || midataFields?.leadersCount)
+  return [
+    {
+      ...campHit(ctx, { participants: p, leaders: l, needed }),
+      inputs: {
+        participants: p,
+        leaders: l,
+        neededLeaders: needed,
+        maxParticipantsPerLeader: MAX_PARTICIPANTS_PER_LEADER,
+        minLeaders: MIN_LEADERS,
+      },
+      ...(fromMidata
+        ? { redKeys: [...(midataFields?.participantsCount ? ['participants'] : []), ...(midataFields?.leadersCount ? ['leaders'] : [])] }
+        : {}),
+    },
+  ]
 }
 
 // JS-FREE-01 ---------------------------------------------------------------------------------
 
 export const jsFree01: RulePredicate = (ctx) => {
   if (!dayReady(ctx)) return []
-  return trainingFreeDays(report(ctx)).map((d) => ({ targets: [d.dayIri], params: { day: d.number, date: formatDateDe(d.date) } }))
+  return trainingFreeDays(report(ctx)).map((d) => ({
+    targets: [d.dayIri],
+    params: { day: d.number, date: formatDateDe(d.date) },
+    inputs: { dayDate: d.date, jsUnits: d.unitCount, jsMinutes: d.jsMinutes },
+  }))
 }
 
 // JS-BWZ-27 ----------------------------------------------------------------------------------
@@ -327,7 +376,11 @@ export const jsBwz27: RulePredicate = (ctx) => {
   for (const day of sortedDays(facts)) {
     const minutes = perDay.get(day.date) ?? 0
     if (minutes < BWZ_MINUTES) {
-      hits.push({ targets: [day.iri], params: { day: formatDateDe(day.date), minutes } })
+      hits.push({
+        targets: [day.iri],
+        params: { day: formatDateDe(day.date), minutes },
+        inputs: { dayDate: day.date, movementMinutes: minutes, requiredMinutes: BWZ_MINUTES },
+      })
     }
   }
   return hits
