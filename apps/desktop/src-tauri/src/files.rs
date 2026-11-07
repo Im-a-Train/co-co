@@ -11,6 +11,7 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use coco_core::docs::{check_size, coalesce, ChangeKind, MAX_DOCUMENT_BYTES, MAX_TEXT_FILE_BYTES};
+use coco_core::savefile::{ensure_extension, require_save_filter};
 use coco_core::scope::{is_hidden_name, PathScope};
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
@@ -200,12 +201,14 @@ pub async fn save_text_file<R: Runtime>(
 ) -> AppResult<Option<String>> {
     let app2 = app.clone();
     let name = sanitize_file_name(&default_name);
+    let (label, exts) = require_save_filter(&name)?;
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app2.dialog().file().add_filter("JSON", &["json"]).set_file_name(name).blocking_save_file()
+        app2.dialog().file().add_filter(label, exts).set_file_name(name).blocking_save_file()
     })
     .await?;
     let Some(fp) = picked else { return Ok(None) };
     let path = fp.into_path().map_err(|_| AppError::Unexpected("Ungültiger Dateipfad".into()))?;
+    let path = PathBuf::from(ensure_extension(&path_string(&path), exts));
     std::fs::write(&path, content.as_bytes()).map_err(io_err)?;
     Ok(Some(path_string(&path)))
 }

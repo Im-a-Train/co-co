@@ -64,7 +64,7 @@ The frontend re-watches persisted folders from IndexedDB (`watchedFolders`) at s
 
 | Command | Args | Returns | Notes |
 | --- | --- | --- | --- |
-| `save_text_file` | `defaultName: string`, `content: string` | `string \| null` | Native save dialog, filter `JSON (*.json)`. Writes UTF-8 and returns the path. `null` when cancelled. |
+| `save_text_file` | `defaultName: string`, `content: string` | `string \| null` | Native save dialog; the filter follows the extension of `defaultName` (`.json` JSON, `.ics` Kalender (ICS), `.md` Markdown, `.txt` Text; any other extension is an error). The chosen path gets that extension if missing. Writes UTF-8 and returns the path. `null` when cancelled. |
 | `open_text_file` | – | `{ name, content } \| null` | Native open dialog, filter `JSON (*.json)`, max 100 MB. `null` when cancelled. Does **not** add the file to the document scope. |
 
 ## M5: AI (optional, off by default)
