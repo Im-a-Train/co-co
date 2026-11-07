@@ -1,0 +1,75 @@
+{
+  "cockpit": {
+    "waiting": "Lagerdaten werden geladen …",
+    "overview": {
+      "title": "Übersicht",
+      "noFacts": "Noch keine Lagerdaten geladen.",
+      "kpi": {
+        "must": "Muss-Befunde",
+        "should": "Soll-Befunde",
+        "hint": "Hinweise",
+        "overridden": "{count} übersteuert",
+        "validDays": "Gültige J+S-Tage",
+        "validDaysOf": "{valid} von {total}",
+        "validDaysMissing": "J+S-Tage nicht berechenbar",
+        "changes": "Änderungen seit letzter Runde",
+        "changesNone": "Keine Runde gestartet",
+        "changesDetail": "{added} neu, {changed} geändert, {removed} entfernt",
+        "changesSince": "Seit Runde {n}: +{added} ~{changed} −{removed}",
+        "mapping": "Kategorien-Zuordnung",
+        "mappingConfirmed": "{mapped} von {total} bestätigt",
+        "mappingUnconfirmed": "{mapped} von {total} vorgeschlagen, noch nicht bestätigt",
+        "mappingOpen": "Jetzt prüfen"
+      },
+      "jsTime": {
+        "title": "J+S-Zeit pro Tag",
+        "threshold": "4-Stunden-Linie",
+        "day": "Tag {n}",
+        "valid": "gültig",
+        "invalid": "nicht gültig",
+        "empty": "Keine J+S-Zeit berechnet. Bitte Kategorien zuordnen."
+      },
+      "top": {
+        "title": "Wichtigste Befunde",
+        "all": "Alle Befunde",
+        "none": "Keine offenen Befunde."
+      },
+      "mappingBanner": "Die Kategorien-Zuordnung ist noch nicht bestätigt. Die J+S-Auswertung ist bis dahin nur ein Vorschlag.",
+      "inputsBanner": "Lager-Angaben fehlen (Teilnehmende, Stufe, NDS-Status). Einige Regeln brauchen sie."
+    },
+    "grid": {
+      "title": "Lagertag-Rechner",
+      "intro": "Tage als Spalten, 07 bis 23 Uhr. Farbe = Kategorie, gestreift = Sozialzeit unter 30 Minuten zwischen zwei J+S-Einheiten.",
+      "day": "Tag {n}",
+      "jsMinutes": "J+S {time}",
+      "jsMeter": "J+S-Zeit dieses Tages, Linie bei 4 Stunden",
+      "valid": "J+S-Tag gültig",
+      "invalid": "J+S-Tag nicht gültig",
+      "calcMissing": "J+S-Berechnung nicht verfügbar",
+      "hidden": "{count} Eintrag ausserhalb 07–23 Uhr | {count} Einträge ausserhalb 07–23 Uhr",
+      "gap": "Sozialzeit nur {minutes} min",
+      "legend": "Legende",
+      "legendGap": "Sozialzeit < 30 min",
+      "legendNotJs": "Gestrichelt = zählt nicht als J+S-Einheit",
+      "empty": "Keine Tage oder Programmpunkte vorhanden.",
+      "mappingHint": "Zuordnung noch nicht bestätigt: die J+S-Zeit ist ein Vorschlag."
+    },
+    "drawer": {
+      "time": "Zeit",
+      "category": "Kategorie",
+      "location": "Ort",
+      "responsibles": "Verantwortliche",
+      "noResponsibles": "Keine Verantwortlichen",
+      "storyboard": "Ablauf (Storyboard)",
+      "safety": "Sicherheitsüberlegungen",
+      "empty": "Leer",
+      "documents": "Verknüpfte Dokumente",
+      "noDocuments": "Keine Dokumente verknüpft",
+      "openDocuments": "Zu den Dokumenten",
+      "findings": "Befunde zu dieser Aktivität",
+      "noFindings": "Keine Befunde",
+      "createFeedback": "Feedback erstellen",
+      "allFindings": "In Befunden anzeigen"
+    }
+  }
+}

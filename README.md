@@ -33,6 +33,41 @@ What M0 contains:
 Out of scope for M0: any coaching features, offline storage of camp data, AI features, signing and
 auto-update.
 
+## Features (M1 - M5)
+
+- **M1 Cockpit + Regeln**: "Meine Lager", normalisierter Lager-Graph (CampFacts), Kategorie-Zuordnung (LS/LA/LP/ES/NONE, vom Coach einmal bestätigt; bis dahin laufen die Tagesregeln nicht), Regelwerk "co-co Basis 2026.1" (Severity must/should/hint, Confidence verified/conflict/unverified/best-practice/heuristic), Cockpit-KPIs, Lagertag-Rechner, Befunde mit Begründung (Overrides), Regelkatalog, Fristen.
+- **M2 Feedback**: Feedback-Punkte (Kudos, Auflage, Vorschlag, Frage), Vorlagen pro Besprechungszeitpunkt, Export als WhatsApp/E-Mail/Text, Posten als eCamp-Kommentar (wiederaufnehmbar bei Teilfehlern).
+- **M3 Dokumente**: Drag&Drop, Dateiauswahl, beobachtete Ordner; Extraktion (PDF, DOCX, GPX, TXT/MD), Sicherheitskonzept-Checkliste, GPX-Analyse (Leistungskilometer), Volltextsuche. Dokumente sind standardmässig gelb und `aiAllowed=false`. Per Drag&Drop abgelegte Ordner gelten nur für die Sitzung.
+- **M4 Runden + Backup**: Review-Status, Runden mit Snapshot und Diff, JSON-Export/-Import aller Daten (Import aktiviert nie die KI und stuft Dokumente nie herab).
+- **M5 Optionale KI** (standardmässig aus): Datenzonen, Anonymisierung mit Vorschau, `aiGateway.send()` als einziger Weg zum KI-Befehl, API-Key im OS-Schlüsselbund. Die Anonymisierung entfernt nur eCamp-Mitarbeitende, E-Mail, Telefon, AHV und Adressmuster; Namen von Teilnehmenden werden nicht erkannt. Vorschau immer prüfen.
+
+## Run, test, build
+
+```bash
+npm install
+npm run dev                                   # Vite + Tauri (npx tauri dev in apps/desktop)
+npm run typecheck && npm run test && npm run build:vite -w apps/desktop
+cd apps/desktop/src-tauri && cargo test --workspace && cargo clippy --workspace --all-targets -- -D warnings
+npx tauri build --debug --no-bundle -w apps/desktop   # run in apps/desktop
+```
+
+### Live test against an eCamp instance
+
+Credentials are never stored in the repo; pass them via environment variables:
+
+```bash
+ECAMP_E2E_URL=https://<your-ecamp> ECAMP_E2E_USER=<email> ECAMP_E2E_PASSWORD=<password> npm run test:live -w apps/desktop
+```
+
+### UI QA without Tauri
+
+`npm run test:ui -w apps/desktop` starts (or reuses) the vite dev server and drives the installed Microsoft Edge
+through `playwright-core` (no browser download). The page is loaded with `?mock=1`, which installs a Tauri IPC
+mock (`src/dev/mockTauri.ts`, dev mode only, never part of production builds) serving the dev-camp fixture.
+The script visits every route, collects console errors, raw i18n keys and horizontal overflow, exercises the main
+flows (mapping, drawer, feedback, documents, rounds, backup) and writes screenshots to `apps/desktop/e2e-ui/shots/`
+(override with `UI_SHOTS_DIR`). It exits non-zero on any problem.
+
 ## Repository layout
 
 ```

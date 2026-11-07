@@ -1,0 +1,14 @@
+id: JS-BWZ-27
+version: 1.0.0
+group: js
+title: "Bewegungszeit ab 2027"
+description: "Ab 2027 sind pro Lagertag mindestens 120 Minuten Bewegungszeit vorgesehen. Diese Regel ist noch ungeprüft und nur ein Hinweis."
+message: "{day}: nur {minutes} Min. Bewegungszeit (ab 2027 gefordert: 120 Min. pro Tag)"
+severity: hint
+confidence: unverified
+scope: day
+validFrom: 2027-01-01
+tags: [bewegungszeit]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

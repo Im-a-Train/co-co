@@ -1,0 +1,15 @@
+id: JS-FREE-01
+version: 1.0.0
+group: js
+title: "Trainingsfreie Tage"
+description: "Tage ohne J+S-Einheit gelten als trainingsfrei. Ob und wie viele zulässig sind, ist in den Quellen nicht eindeutig."
+message: "Tag {day} ({date}) hat keine J+S-Einheit (trainingsfreier Tag)"
+severity: should
+confidence: conflict
+scope: day
+validFrom: 2026-01-01
+inputs: [mapping]
+tags: [lagertag]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

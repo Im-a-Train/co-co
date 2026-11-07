@@ -1,0 +1,103 @@
+{
+  "rounds": {
+    "title": "Runden",
+    "intro": "Jede Runde hält den Stand des Lagers in eCamp fest. So siehst du bei der nächsten Runde, was sich geändert hat.",
+    "status": {
+      "title": "Review-Status",
+      "setTo": "Setzen auf",
+      "history": "Verlauf",
+      "noteLabel": "Notiz (optional)",
+      "noTransitions": "Keine weiteren Übergänge möglich."
+    },
+    "timeline": {
+      "title": "Runden",
+      "empty": "Noch keine Runde. Starte die erste Runde, um den aktuellen Stand festzuhalten.",
+      "round": "Runde {n}",
+      "started": "Gestartet {date}",
+      "closed": "Abgeschlossen {date}",
+      "open": "Offen",
+      "exported": "Gesichert",
+      "notExported": "Nicht gesichert",
+      "showChanges": "Änderungen anzeigen",
+      "hideChanges": "Änderungen ausblenden"
+    },
+    "start": {
+      "button": "Neue Runde starten",
+      "title": "Neue Runde starten",
+      "text": "Der aktuelle Stand des Lagers wird als Runde {n} festgehalten. Eine offene Runde wird dabei abgeschlossen.",
+      "noteLabel": "Notiz zur Runde (optional)",
+      "confirm": "Runde starten",
+      "needsFacts": "Der Lagerstand muss zuerst aus eCamp geladen werden."
+    },
+    "close": {
+      "button": "Runde abschliessen"
+    },
+    "diff": {
+      "sinceLast": "Änderungen seit Runde {n}",
+      "roundVs": "Änderungen in Runde {n}",
+      "firstRound": "Erste Runde: alles gilt als neu.",
+      "empty": "Keine Änderungen seit der letzten Runde.",
+      "general": "Lager, Tage und Kategorien",
+      "unnamed": "(ohne Titel)",
+      "counts": "{added} neu, {changed} geändert, {removed} entfernt",
+      "change": {
+        "added": "neu",
+        "changed": "geändert",
+        "removed": "entfernt"
+      },
+      "type": {
+        "camp": "Lager",
+        "period": "Block",
+        "day": "Tag",
+        "category": "Kategorie",
+        "activity": "Aktivität",
+        "scheduleEntry": "Programmeintrag",
+        "activityContent": "Inhalt"
+      },
+      "changedFields": "Geändert: {fields}"
+    },
+    "fields": {
+      "title": "Titel",
+      "shortTitle": "Kurztitel",
+      "motto": "Motto",
+      "kind": "Art",
+      "organizer": "Organisator",
+      "coachName": "Coach",
+      "courseKind": "Kursart",
+      "courseNumber": "Kursnummer",
+      "trainingAdvisorName": "Ausbildungsberatung",
+      "addressName": "Adressname",
+      "addressStreet": "Strasse",
+      "addressZipcode": "PLZ",
+      "addressCity": "Ort",
+      "start": "Beginn",
+      "end": "Ende",
+      "description": "Beschreibung",
+      "date": "Datum",
+      "short": "Kürzel",
+      "name": "Name",
+      "color": "Farbe",
+      "numberingStyle": "Nummerierung",
+      "location": "Ort",
+      "categoryIri": "Kategorie",
+      "progressLabelIri": "Fortschritt",
+      "responsibleIris": "Verantwortliche",
+      "activityIri": "Aktivität",
+      "dayIri": "Tag",
+      "storyboardText": "Ablauf (Storyboard)",
+      "safetyText": "Sicherheitsüberlegungen",
+      "notesText": "Notizen",
+      "learningObjectivesText": "Lernziele",
+      "materialText": "Material",
+      "laThematicAreas": "LA-Themenbereiche",
+      "learningTopics": "Lernthemen",
+      "ysCharacteristics": "J+S-Merkmale",
+      "ysPhysicalActivityDurationMinutes": "Bewegungszeit"
+    },
+    "errors": {
+      "invalidTransition": "Dieser Statuswechsel ist nicht erlaubt.",
+      "noFacts": "Der Lagerstand konnte nicht geladen werden.",
+      "noRound": "Runde nicht gefunden."
+    }
+  }
+}

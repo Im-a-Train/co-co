@@ -1,0 +1,15 @@
+id: JS-LL-01
+version: 1.0.0
+group: js
+title: "Zusatz Lagerleiter bestätigt"
+description: "Die Lagerleitung verfügt über die Zusatzausbildung Lagerleiter. Der Coach bestätigt dies in den Lager-Angaben."
+message: "Zusatz Lagerleiter: {detail}"
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs]
+tags: [leitung]
+source:
+  title: "Leitfaden Coach"
+  url: https://www.jugendundsport.ch/de/leitfaden-coach

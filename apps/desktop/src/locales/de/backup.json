@@ -1,0 +1,54 @@
+{
+  "backup": {
+    "title": "Backup",
+    "intro": "Alle co-co-Daten (Angaben, Feedback, Runden, Dokument-Auszüge, Einstellungen) liegen nur auf diesem Gerät. Exportiere sie regelmässig als JSON-Datei.",
+    "lastExport": "Letzter Export: {date}",
+    "neverExported": "Noch nie exportiert.",
+    "export": "Alles exportieren",
+    "exported": "Backup gespeichert: {path}",
+    "import": "Backup importieren",
+    "remind": "Nach jeder Runde ans Backup erinnern",
+    "reminder": {
+      "text": "Runde gespeichert. Exportiere jetzt ein Backup, damit der Stand nicht verloren geht.",
+      "action": "Jetzt exportieren",
+      "settings": "Zu den Einstellungen"
+    },
+    "preview": {
+      "title": "Backup importieren?",
+      "file": "Datei: {name}",
+      "exportedAt": "Exportiert am {date}",
+      "tables": "Enthaltene Daten",
+      "unknown": "Unbekannte Tabellen werden übersprungen: {names}",
+      "mode": "Importart",
+      "replace": "Ersetzen: alle bisherigen Daten werden gelöscht und durch das Backup ersetzt",
+      "merge": "Zusammenführen: Daten aus dem Backup ergänzen die bestehenden (gleiche Einträge werden überschrieben, Einstellungen bleiben)",
+      "confirmReplace": "Ja, alles ersetzen",
+      "confirmMerge": "Zusammenführen",
+      "cancel": "Abbrechen"
+    },
+    "done": "Import abgeschlossen ({count} Einträge). Lade die Ansicht neu, damit überall der neue Stand erscheint.",
+    "reload": "Neu laden",
+    "tableNames": {
+      "settings": "Einstellungen",
+      "coachInputs": "Lager-Angaben",
+      "mappings": "Kategorie-Zuordnungen",
+      "overrides": "Übersteuerungen",
+      "campSummaries": "Lager-Zusammenfassungen",
+      "feedback": "Feedback",
+      "reviews": "Review-Status",
+      "rounds": "Runden",
+      "snapshots": "Rundenstände",
+      "documents": "Dokumente",
+      "watchedFolders": "Überwachte Ordner",
+      "aiLog": "KI-Protokoll"
+    },
+    "errors": {
+      "notJson": "Die Datei ist keine gültige JSON-Datei.",
+      "notCoco": "Die Datei ist kein co-co-Backup.",
+      "tooNew": "Das Backup stammt aus einer neueren co-co-Version ({detail}). Bitte aktualisiere die App.",
+      "badTables": "Das Backup ist beschädigt (Tabelle {detail}).",
+      "badRecord": "Das Backup ist beschädigt (Eintrag {detail}).",
+      "generic": "Fehler: {detail}"
+    }
+  }
+}

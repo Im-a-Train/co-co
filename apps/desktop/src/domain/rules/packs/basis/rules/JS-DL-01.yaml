@@ -1,0 +1,15 @@
+id: JS-DL-01
+version: 1.0.0
+group: js
+title: "NDS-Anmeldung mindestens 30 Tage vor Lagerbeginn"
+description: "Das Lager ist spätestens 30 Tage vor Lagerbeginn in der NDS angemeldet."
+message: "NDS-Anmeldung: {detail}"
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs]
+tags: [frist, nds]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

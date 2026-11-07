@@ -1,0 +1,15 @@
+id: JS-CAMP-02
+version: 1.0.0
+group: js
+title: "Mindestens 12 Teilnehmende (5–20 Jahre)"
+description: "Für ein J+S-Lager braucht es mindestens 12 Teilnehmende im J+S-Alter von 5 bis 20 Jahren (Angabe des Coachs)."
+message: "Teilnehmende (5–20 Jahre): {detail}"
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs]
+tags: [teilnehmende]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

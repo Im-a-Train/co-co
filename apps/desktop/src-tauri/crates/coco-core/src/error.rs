@@ -11,6 +11,8 @@ pub enum CoreError {
     PathNotAllowed(String),
     #[error("Fremder Host nicht erlaubt: {0}")]
     ForeignOrigin(String),
+    #[error("Ungültige Eingabe: {0}")]
+    Invalid(String),
     #[error("JWT-Cookie ungültig: {0}")]
     InvalidJwt(String),
 }

@@ -30,3 +30,4 @@ Thumbs.db
 
 # Claude Code local state (worktrees, local settings)
 .claude/
+e2e-ui/shots/

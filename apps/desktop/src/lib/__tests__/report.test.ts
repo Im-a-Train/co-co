@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import de from '../../locales/de.json'
+import { messages } from '../../locales/messages'
 import {
   buildSpikeReport,
   describeOs,
@@ -12,7 +12,7 @@ import {
 
 // Minimal translator over de.json (named params, first plural form not needed here).
 const t: Translate = (key, params) => {
-  let node: unknown = de
+  let node: unknown = messages.de
   for (const part of key.split('.')) node = (node as Record<string, unknown> | undefined)?.[part]
   if (typeof node !== 'string') return key
   return node.replace(/\{(\w+)\}/g, (_, k: string) => String(params?.[k] ?? `{${k}}`))

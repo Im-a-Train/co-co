@@ -52,6 +52,12 @@ impl From<tauri::Error> for AppError {
     }
 }
 
+impl From<tauri_plugin_dialog::Error> for AppError {
+    fn from(e: tauri_plugin_dialog::Error) -> Self {
+        AppError::Unexpected(format!("Dateidialog fehlgeschlagen: {e}"))
+    }
+}
+
 impl Serialize for AppError {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&self.to_string())

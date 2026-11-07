@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "co-co",
+    "subtitle": "Coach Cockpit",
+    "milestone": "M1–M5",
+    "status": {
+      "loggedIn": "Angemeldet",
+      "loggedOut": "Nicht angemeldet"
+    }
+  },
+  "common": {
+    "yes": "ja",
+    "no": "nein",
+    "none": "keine",
+    "unknown": "unbekannt",
+    "retry": "Erneut versuchen",
+    "notImplemented": "Noch nicht umgesetzt",
+    "loading": "Lädt …",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schliessen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "reload": "Neu laden",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "confirm": "Bestätigen",
+    "error": "Fehler"
+  },
+  "notTauri": {
+    "title": "Nur in der Desktop-App verfügbar",
+    "text": "Diese Oberfläche läuft gerade in einem normalen Browser. Anmeldung und eCamp-Zugriff funktionieren nur in der co-co Desktop-App (npm run dev)."
+  },
+  "nav": {
+    "connection": "Verbindung",
+    "camps": "Meine Lager",
+    "deadlines": "Fristen",
+    "rules": "Regeln",
+    "settings": "Einstellungen",
+    "toggle": "Navigation ein-/ausblenden"
+  },
+  "campTabs": {
+    "overview": "Übersicht",
+    "grid": "Raster",
+    "findings": "Befunde",
+    "inputs": "Angaben",
+    "mapping": "Zuordnung",
+    "feedback": "Feedback",
+    "documents": "Dokumente",
+    "rounds": "Runden"
+  },
+  "campLayout": {
+    "backToList": "Zurück zu Meine Lager",
+    "loadFailed": "Lager konnte nicht geladen werden"
+  },
+  "severity": {
+    "must": "Muss",
+    "should": "Soll",
+    "hint": "Hinweis"
+  },
+  "confidence": {
+    "verified": "geprüft",
+    "conflict": "widersprüchlich",
+    "unverified": "ungeprüft",
+    "best-practice": "Best Practice",
+    "heuristic": "Heuristik"
+  },
+  "categoryClass": {
+    "LS": "Lagersport",
+    "LA": "Lageraktivität",
+    "LP": "Lagerprogramm",
+    "ES": "Essen",
+    "NONE": "Keine J+S-Zuordnung"
+  },
+  "reviewStatus": {
+    "neu": "Neu",
+    "in_review": "In Review",
+    "aenderungen_angefragt": "Änderungen angefragt",
+    "bewilligt": "Bewilligt",
+    "bewilligt_mit_auflagen": "Bewilligt mit Auflagen"
+  }
+}

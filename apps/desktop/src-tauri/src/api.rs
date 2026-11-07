@@ -6,6 +6,7 @@ use coco_core::origin::resolve_api_path;
 use coco_core::types::AuthLog;
 use reqwest::StatusCode;
 use tauri::{AppHandle, Runtime};
+use reqwest::header::CONTENT_TYPE;
 use url::Url;
 
 use crate::error::{AppError, AppResult};
@@ -16,18 +17,64 @@ const MAX_DETAIL_CHARS: usize = 300;
 const MAX_API_BODY: usize = 16 * 1024 * 1024;
 
 pub async fn api_get<R: Runtime>(app: &AppHandle<R>, state: &AppState, path: &str) -> AppResult<serde_json::Value> {
+    let (session, resp) = send_authed(app, state, "GET", path, |s, url| s.client.get(url.clone())).await?;
+    let v = into_json(resp).await;
+    ensure_still_current(state, &session).await?;
+    v
+}
+
+/// `POST /api/comments`. The body must already be validated (`coco_core::comments`).
+pub async fn post_comment<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    body: &serde_json::Value,
+) -> AppResult<serde_json::Value> {
+    let (_, resp) = send_authed(app, state, "POST", coco_core::comments::COMMENTS_PATH, |s, url| {
+        s.client.post(url.clone()).header(CONTENT_TYPE, "application/json").body(body.to_string())
+    })
+    .await?;
+    into_json(resp).await
+}
+
+/// `PATCH /api/comments/{id}` with merge-patch. 404/405 mean the instance has no comment PATCH.
+pub async fn patch_comment<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    path: &str,
+    patch: &serde_json::Value,
+) -> AppResult<serde_json::Value> {
+    let (_, resp) = send_authed(app, state, "PATCH", path, |s, url| {
+        s.client.patch(url.clone()).header(CONTENT_TYPE, "application/merge-patch+json").body(patch.to_string())
+    })
+    .await?;
+    if matches!(resp.status().as_u16(), 404 | 405) {
+        return Err(AppError::Unexpected("Kommentar kann auf dieser eCamp-Version nicht geändert werden".into()));
+    }
+    into_json(resp).await
+}
+
+/// Sends an authenticated request; on 401 refreshes the token once and retries once.
+async fn send_authed<R, F>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    method: &str,
+    path: &str,
+    build: F,
+) -> AppResult<(Session, reqwest::Response)>
+where
+    R: Runtime,
+    F: Fn(&Session, &Url) -> reqwest::RequestBuilder,
+{
     let session = state.current().await.ok_or(AppError::NotLoggedIn)?;
     let url = resolve_api_path(path, &session.instance.api_root, &session.instance.origins())?;
 
-    let resp = send(&session, &url).await?;
+    let resp = build(&session, &url).send().await?;
     if resp.status() != StatusCode::UNAUTHORIZED {
-        let v = into_json(resp).await;
-        ensure_still_current(state, &session).await?;
-        return v;
+        return Ok((session, resp));
     }
 
     // 401: refresh once (unless another task already refreshed), then retry once.
-    log(app, AuthLog::fail("api-401", Some(format!("GET {} -> 401, versuche Token-Erneuerung", url.path()))));
+    log(app, AuthLog::fail("api-401", Some(format!("{method} {} -> 401, versuche Token-Erneuerung", url.path()))));
     let retry_session = {
         let _guard = state.refresh_lock.lock().await;
         let current = state.current().await.ok_or(AppError::NotLoggedIn)?;
@@ -40,19 +87,16 @@ pub async fn api_get<R: Runtime>(app: &AppHandle<R>, state: &AppState, path: &st
     };
     // The session may have switched instance in between; re-validate.
     let url = resolve_api_path(path, &retry_session.instance.api_root, &retry_session.instance.origins())?;
-    let resp = send(&retry_session, &url).await?;
-    let ok = resp.status().is_success();
+    let resp = build(&retry_session, &url).send().await?;
     log(
         app,
         AuthLog {
             step: "api-retry".into(),
-            ok,
-            detail: Some(format!("GET {} -> HTTP {}", url.path(), resp.status().as_u16())),
+            ok: resp.status().is_success(),
+            detail: Some(format!("{method} {} -> HTTP {}", url.path(), resp.status().as_u16())),
         },
     );
-    let v = into_json(resp).await;
-    ensure_still_current(state, &retry_session).await?;
-    v
+    Ok((retry_session, resp))
 }
 
 /// After a logout or a new login while the request was in flight, the data
@@ -62,10 +106,6 @@ async fn ensure_still_current(state: &AppState, session: &Session) -> AppResult<
         Some(s) if Arc::ptr_eq(&s.jar, &session.jar) => Ok(()),
         _ => Err(AppError::NotLoggedIn),
     }
-}
-
-async fn send(session: &Session, url: &Url) -> AppResult<reqwest::Response> {
-    Ok(session.client.get(url.clone()).send().await?)
 }
 
 async fn into_json(resp: reqwest::Response) -> AppResult<serde_json::Value> {

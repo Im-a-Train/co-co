@@ -1,0 +1,15 @@
+id: SAFE-MTN-02
+version: 1.0.0
+group: safety
+title: "GPX-Marschzeit passt in den Zeitslot"
+description: "Die aus dem GPX berechnete Marschzeit passt in den geplanten Zeitslot der Aktivität."
+message: "«{title}»: Geschätzte Marschzeit {estimated} (GPX «{doc}») passt nicht in den Zeitslot von {slot}"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [documents, settings]
+tags: [sicherheit, berg]
+source:
+  title: "Lagersport/Trekking"
+  url: https://www.jugendundsport.ch/de/lagersport-trekking

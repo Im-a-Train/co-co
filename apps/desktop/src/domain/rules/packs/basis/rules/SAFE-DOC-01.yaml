@@ -1,0 +1,15 @@
+id: SAFE-DOC-01
+version: 1.0.0
+group: safety
+title: "Sicherheitskonzept vollständig"
+description: "Das hinterlegte Sicherheitskonzept enthält Notrufnummern, Spital, Krisenkontakt, Evakuation, Schlechtwetterplan, 3x3, Notfallapotheke und Lageradresse."
+message: "Sicherheitskonzept «{doc}» ist unvollständig. Es fehlt: {missing}"
+severity: should
+confidence: heuristic
+scope: document
+validFrom: 2026-01-01
+inputs: [documents]
+tags: [sicherheit, dokumente]
+source:
+  title: "Lagersport/Trekking"
+  url: https://www.jugendundsport.ch/de/lagersport-trekking

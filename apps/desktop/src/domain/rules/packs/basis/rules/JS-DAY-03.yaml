@@ -1,0 +1,15 @@
+id: JS-DAY-03
+version: 1.0.0
+group: js
+title: "Sozialzeit zwischen J+S-Einheiten"
+description: "Zwischen zwei aufeinanderfolgenden J+S-Einheiten eines Tages liegen mindestens 30 Minuten Sozialzeit."
+message: "Tag {day}: {count} Pause(n) zwischen J+S-Einheiten kürzer als 30 Min. (kürzeste: {minutes} Min.)"
+severity: must
+confidence: verified
+scope: day
+validFrom: 2026-01-01
+inputs: [mapping]
+tags: [lagertag, sozialzeit]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

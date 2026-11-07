@@ -1,0 +1,148 @@
+import { describe, expect, it } from 'vitest'
+import { TABLE_NAMES } from '../../storage/db'
+import {
+  BackupError,
+  exportFileName,
+  exportFromStore,
+  importIntoStore,
+  parseExport,
+  summarizeExport,
+  validateExport,
+  type BackupStore,
+  type BackupTable,
+} from '../index'
+
+/** In-memory table keyed by pk field (aiLog: auto-increment). */
+function memTable(pk: string): BackupTable {
+  const rows = new Map<unknown, unknown>()
+  let auto = 1
+  return {
+    toArray: async () => [...rows.values()],
+    clear: async () => void rows.clear(),
+    bulkPut: async (rs) => {
+      for (const r of rs) rows.set((r as Record<string, unknown>)[pk], r)
+    },
+    bulkAdd: async (rs) => {
+      for (const r of rs) {
+        const row = { ...(r as object) } as Record<string, unknown>
+        if (row[pk] === undefined) row[pk] = auto++
+        rows.set(row[pk], row)
+      }
+    },
+    keys: async () => [...rows.keys()],
+  }
+}
+const PK: Record<string, string> = {
+  settings: 'key',
+  coachInputs: 'campIri',
+  mappings: 'campIri',
+  overrides: 'id',
+  campSummaries: 'campIri',
+  feedback: 'id',
+  reviews: 'campIri',
+  rounds: 'id',
+  snapshots: 'id',
+  documents: 'id',
+  watchedFolders: 'id',
+  aiLog: 'id',
+}
+function makeStore(): BackupStore {
+  return Object.fromEntries(TABLE_NAMES.map((n) => [n, memTable(PK[n]!)]))
+}
+
+describe('backup', () => {
+  it('exports every table with header', async () => {
+    const s = makeStore()
+    await s.feedback!.bulkPut([{ id: 'f1', text: 'x' }])
+    const ex = await exportFromStore(s, new Date('2026-11-07T10:00:00Z'))
+    expect(ex).toMatchObject({ format: 'co-co-export', version: 1, exportedAt: '2026-11-07T10:00:00.000Z' })
+    expect(Object.keys(ex.tables).sort()).toEqual([...TABLE_NAMES].sort())
+    expect(ex.tables.feedback).toEqual([{ id: 'f1', text: 'x' }])
+  })
+
+  it('roundtrips through JSON (replace)', async () => {
+    const a = makeStore()
+    await a.settings!.bulkPut([{ key: 'app', value: { ai: { enabled: false }, backup: { lastExportAt: null } } }])
+    await a.reviews!.bulkPut([{ campIri: '/api/camps/1', status: 'in_review', history: [], updatedAt: 'x' }])
+    await a.snapshots!.bulkPut([{ id: 's', campIri: '/api/camps/1', roundId: 'r', entities: {}, facts: { t: 'äöü' } }])
+    await a.aiLog!.bulkAdd([{ at: 't', feature: 'rephrase' }])
+    const text = JSON.stringify(await exportFromStore(a))
+    const b = makeStore()
+    await b.feedback!.bulkPut([{ id: 'old' }])
+    const rep = await importIntoStore(b, parseExport(text), 'replace')
+    expect(rep.written.reviews).toBe(1)
+    expect(await b.feedback!.toArray()).toEqual([])
+    for (const n of TABLE_NAMES) expect(await b[n]!.toArray()).toEqual(await a[n]!.toArray())
+  })
+
+  it('merge keeps local settings and existing rows, adds new ones, appends aiLog', async () => {
+    const src = makeStore()
+    await src.settings!.bulkPut([
+      { key: 'app', value: 'remote' },
+      { key: 'other', value: 1 },
+    ])
+    await src.feedback!.bulkPut([
+      { id: 'f1', text: 'remote' },
+      { id: 'f2', text: 'new' },
+    ])
+    await src.aiLog!.bulkAdd([{ at: 'remote' }])
+    const data = parseExport(JSON.stringify(await exportFromStore(src)))
+    const dst = makeStore()
+    await dst.settings!.bulkPut([{ key: 'app', value: 'local' }])
+    await dst.feedback!.bulkPut([{ id: 'f0', text: 'local' }])
+    await dst.aiLog!.bulkAdd([{ at: 'local' }])
+    const rep = await importIntoStore(dst, data, 'merge')
+    expect((await dst.settings!.toArray()).find((r) => (r as { key: string }).key === 'app')).toMatchObject({ value: 'local' })
+    expect(rep.written.settings).toBe(1)
+    expect(await dst.feedback!.toArray()).toHaveLength(3)
+    expect(await dst.aiLog!.toArray()).toHaveLength(2)
+  })
+
+  it('skips unknown tables and reports them', async () => {
+    const data = validateExport({
+      format: 'co-co-export',
+      version: 1,
+      exportedAt: '2026-01-01T00:00:00Z',
+      tables: { feedback: [], future: [{ a: 1 }] },
+    })
+    const rep = await importIntoStore(makeStore(), data, 'replace')
+    expect(rep.skippedTables).toEqual(['future'])
+    expect(summarizeExport(data).unknownTables).toEqual(['future'])
+  })
+
+  const base = { format: 'co-co-export', version: 1, exportedAt: '2026-01-01T00:00:00Z', tables: {} }
+  it('validation rejects bad input with codes', () => {
+    const code = (f: () => unknown) => {
+      try {
+        f()
+      } catch (e) {
+        return (e as BackupError).code
+      }
+      return null
+    }
+    expect(code(() => parseExport('{nope'))).toBe('notJson')
+    expect(code(() => validateExport(null))).toBe('notCoco')
+    expect(code(() => validateExport({ ...base, format: 'x' }))).toBe('notCoco')
+    expect(code(() => validateExport({ ...base, version: 99 }))).toBe('tooNew')
+    expect(code(() => validateExport({ ...base, exportedAt: 'gestern' }))).toBe('notCoco')
+    expect(code(() => validateExport({ ...base, tables: [] }))).toBe('badTables')
+    expect(code(() => validateExport({ ...base, tables: { feedback: {} } }))).toBe('badTables')
+    expect(code(() => validateExport({ ...base, tables: { feedback: [1] } }))).toBe('badRecord')
+    expect(code(() => validateExport({ ...base, tables: { reviews: [{ status: 'neu' }] } }))).toBe('badRecord')
+    expect(code(() => validateExport({ ...base, tables: { aiLog: [{ at: 'x' }] } }))).toBeNull()
+  })
+
+  it('exportFileName uses local date', () => {
+    expect(exportFileName(new Date(2026, 10, 7))).toBe('co-co-backup-2026-11-07.json')
+  })
+
+  it('import never enables AI or loosens document zones', async () => {
+    const src = makeStore()
+    await src.settings!.bulkPut([{ key: 'app', value: { ai: { enabled: true } } }])
+    await src.documents!.bulkPut([{ id: 'd', zone: 'green', aiAllowed: true }])
+    const dst = makeStore()
+    await importIntoStore(dst, parseExport(JSON.stringify(await exportFromStore(src))), 'replace')
+    expect(((await dst.settings!.toArray())[0] as any).value.ai.enabled).toBe(false)
+    expect(await dst.documents!.toArray()).toEqual([{ id: 'd', zone: 'yellow', aiAllowed: false }])
+  })
+})

@@ -1,0 +1,86 @@
+{
+  "rules": {
+    "catalog": {
+      "title": "Regelkatalog",
+      "intro": "Alle Regeln der eingebauten Regelpakete mit Schweregrad, Konfidenz, Gültigkeit und Quelle. Regeln mit Konfidenz «ungeprüft» oder «widersprüchlich» sind nie ein «Muss».",
+      "search": "Regeln durchsuchen",
+      "allGroups": "Alle",
+      "empty": "Keine Regel passt zu deiner Suche.",
+      "loadFailed": "Regelpakete konnten nicht geladen werden",
+      "pack": {
+        "version": "Version {version}",
+        "validFrom": "gültig ab {date}",
+        "validTo": "gültig bis {date}",
+        "count": "{count} Regeln"
+      },
+      "group": {
+        "js": "J+S-Regeln",
+        "completeness": "Vollständigkeit",
+        "safety": "Sicherheit",
+        "best-practice": "PBS Best Practice"
+      },
+      "scope": {
+        "camp": "Lager",
+        "day": "Tag",
+        "activity": "Aktivität",
+        "scheduleEntry": "Programmblock",
+        "document": "Dokument"
+      },
+      "input": {
+        "mapping": "Kategorie-Zuordnung",
+        "coachInputs": "Lager-Angaben",
+        "documents": "Dokumente",
+        "settings": "Einstellungen"
+      },
+      "card": {
+        "description": "Beschreibung",
+        "message": "Meldung",
+        "source": "Quelle",
+        "validity": "Gültigkeit",
+        "validFrom": "ab {date}",
+        "validTo": "bis {date}",
+        "always": "unbegrenzt",
+        "needs": "Benötigt",
+        "scope": "Bezieht sich auf",
+        "version": "Regelversion {version}",
+        "tags": "Stichwörter",
+        "mustGuard": "Konfidenz begrenzt den Schweregrad: nie «Muss»"
+      }
+    },
+    "deadlines": {
+      "title": "Fristen",
+      "intro": "Fristen aller deiner Lager, sortiert nach Fälligkeit. Den Stand (angemeldet, bestellt, abgeschlossen) pflegst du unter «Angaben» im jeweiligen Lager.",
+      "empty": "Keine Fristen: Es sind keine Lager mit Startdatum vorhanden.",
+      "loadFailed": "Lager konnten nicht geladen werden",
+      "showDone": "Erledigte anzeigen",
+      "columns": {
+        "due": "Fällig am",
+        "camp": "Lager",
+        "kind": "Frist",
+        "status": "Stand"
+      },
+      "kind": {
+        "nds-registration": "NDS-Anmeldung (30 Tage vor Lagerbeginn)",
+        "nds-closing": "NDS-Abschluss (30 Tage nach der letzten J+S-Aktivität)",
+        "leihmaterial": "Leihmaterial bestellen (5 Wochen vorher)",
+        "landeskarten": "Landeskarten bestellen (3 Wochen vorher, Juni bis August 5 Wochen)",
+        "lagerbewilligung": "Lagerbewilligung (21 Tage vorher)"
+      },
+      "status": {
+        "done": "Erledigt",
+        "overdue": "Überfällig",
+        "soon": "Bald fällig",
+        "open": "Offen"
+      },
+      "relative": {
+        "today": "heute",
+        "in": "in {n} Tagen",
+        "inOne": "morgen",
+        "ago": "vor {n} Tagen",
+        "agoOne": "gestern"
+      },
+      "openCamp": "Lager-Angaben öffnen",
+      "rule": "Regel {id}"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+id: JS-DAY-02
+version: 1.0.0
+group: js
+title: "J+S-Einheit mindestens 30 Minuten"
+description: "Jede J+S-Einheit dauert mindestens 30 Minuten."
+message: "Tag {day}: «{title}» dauert nur {minutes} Min. (J+S-Einheiten brauchen mindestens 30 Min.)"
+severity: must
+confidence: verified
+scope: scheduleEntry
+validFrom: 2026-01-01
+inputs: [mapping]
+tags: [lagertag]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

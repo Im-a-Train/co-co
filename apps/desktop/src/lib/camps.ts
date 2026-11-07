@@ -54,5 +54,5 @@ export function campsPath(userIri: string): string {
 }
 
 export function activitiesPath(campIri: string): string {
-  return `/api/activities?camp=${campIri}`
+  return `/api/activities?camp=${encodeURIComponent(campIri)}`
 }

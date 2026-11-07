@@ -36,7 +36,7 @@ env:
   # Tauri 2 Linux build deps + tools for the Windows cross-build (NSIS, llvm-rc/lld, clang-cl for ring).
   APT_PACKAGES: >-
     libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev
-    libayatana-appindicator3-dev librsvg2-dev nsis lld llvm clang
+    libayatana-appindicator3-dev librsvg2-dev nsis lld llvm clang libdbus-1-dev pkg-config
 
 jobs:
   check:

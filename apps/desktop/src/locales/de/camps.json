@@ -1,0 +1,153 @@
+{
+  "camps": {
+    "title": "Lager",
+    "subtitle": "Deine Lager aus eCamp",
+    "count": "kein Lager | ein Lager | {n} Lager",
+    "reload": "Neu laden",
+    "loginFirst": "Melde dich an, um deine Lager zu sehen.",
+    "failed": "Lager konnten nicht geladen werden",
+    "empty": "Keine Lager gefunden.",
+    "motto": "Motto",
+    "coach": "Coach",
+    "activities": {
+      "title": "Aktivitäten",
+      "count": "keine Aktivitäten | 1 Aktivität | {n} Aktivitäten",
+      "failed": "Aktivitäten konnten nicht geladen werden"
+    },
+    "campsView": {
+      "title": "Meine Lager",
+      "search": "Lager suchen",
+      "refresh": "Aktualisieren",
+      "loading": "Lager werden geladen …",
+      "emptyTitle": "Keine Lager gefunden",
+      "emptyText": "Du bist in keinem eCamp-Lager als Mitarbeitende:r eingetragen.",
+      "noMatch": "Kein Lager passt zur Suche.",
+      "prototype": "Prototyp",
+      "open": "Lager öffnen",
+      "noDates": "Keine Daten",
+      "columns": {
+        "camp": "Lager",
+        "dates": "Zeitraum",
+        "role": "Meine Rolle",
+        "review": "Review",
+        "findings": "Befunde",
+        "deadline": "Nächste Frist",
+        "changes": "Letzte Runde"
+      },
+      "role": {
+        "guest": "Gast",
+        "member": "Mitarbeit",
+        "manager": "Lagerleitung"
+      },
+      "findings": {
+        "must": "{n} Muss-Befunde",
+        "should": "{n} Soll-Befunde",
+        "hint": "{n} Hinweise",
+        "neverEvaluated": "Noch nicht ausgewertet. Öffne das Lager, um es zu prüfen."
+      },
+      "deadline": {
+        "none": "Keine offene Frist",
+        "overdue": "überfällig",
+        "kind": {
+          "nds-registration": "NDS-Anmeldung",
+          "nds-closing": "NDS-Abschluss",
+          "leihmaterial": "Leihmaterial",
+          "landeskarten": "Landeskarten",
+          "lagerbewilligung": "Lagerbewilligung"
+        }
+      },
+      "round": {
+        "since": "seit {date}",
+        "none": "Noch keine Runde"
+      }
+    },
+    "inputs": {
+      "title": "Lager-Angaben",
+      "intro": "Angaben, die nicht in eCamp stehen. Sie fliessen in die Regeln und Fristen ein und bleiben auf diesem Gerät.",
+      "loading": "Angaben werden geladen …",
+      "usedBy": "Verwendet von",
+      "usedByNone": "Keine Regel verwendet diese Angabe direkt (Information für dich).",
+      "save": "Angaben speichern",
+      "saved": "Angaben gespeichert.",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "reset": "Änderungen verwerfen",
+      "unsaved": "Nicht gespeicherte Änderungen",
+      "tri": {
+        "yes": "ja",
+        "no": "nein",
+        "unknown": "unbekannt"
+      },
+      "errors": {
+        "ageRange": "Das Mindestalter darf nicht grösser sein als das Höchstalter.",
+        "jsAgeCount": "Teilnehmende im J+S-Alter können nicht mehr sein als alle Teilnehmenden."
+      },
+      "sections": {
+        "general": "Lager",
+        "participants": "Teilnehmende und Leitung",
+        "deadlines": "Fristen und Bestellungen",
+        "notes": "Notizen"
+      },
+      "fields": {
+        "isJsCamp": "J+S-Lager",
+        "isJsCampHint": "Unbekannt gilt wie ja: J+S-Regeln werden angewendet.",
+        "stufe": "Stufe",
+        "participantsCount": "Teilnehmende",
+        "participantsJsAgeCount": "Teilnehmende im J+S-Alter (5–20)",
+        "minAge": "Jüngstes Alter",
+        "maxAge": "Ältestes Alter",
+        "leadersCount": "Leitende",
+        "slrgCount": "Personen mit SLRG-Ausbildung",
+        "lagerleiterAttested": "Lagerleiter:in mit Zusatz «Lagerleiter» bestätigt",
+        "ndsRegistered": "Lager in der NDS angemeldet",
+        "ndsRegisteredOn": "Angemeldet am",
+        "ndsClosed": "Lager in der NDS abgeschlossen",
+        "ndsClosedOn": "Abgeschlossen am",
+        "leihmaterialOrdered": "Leihmaterial bestellt",
+        "landeskartenOrdered": "Landeskarten bestellt",
+        "lagerbewilligungDone": "Lagerbewilligung eingeholt",
+        "notes": "Notizen des Coachs"
+      },
+      "stufe": {
+        "biber": "Biber",
+        "woelfe": "Wölfe",
+        "pfadi": "Pfadi",
+        "pios": "Pios",
+        "rover": "Rover",
+        "gemischt": "Gemischt"
+      }
+    },
+    "mapping": {
+      "title": "Kategorien-Zuordnung",
+      "intro": "Ordne jede eCamp-Kategorie einer J+S-Klasse zu. Nur Lagersport (LS) und Lageraktivität (LA) zählen als J+S-Einheiten.",
+      "inactiveTitle": "J+S-Tagesregeln sind noch inaktiv",
+      "inactiveText": "Solange du die Zuordnung nicht bestätigt hast, laufen die J+S-Tagesregeln nicht. Prüfe die Vorschläge und bestätige sie einmal.",
+      "confirmedTitle": "Zuordnung bestätigt",
+      "confirmedText": "Bestätigt am {date}. Änderungen musst du erneut bestätigen.",
+      "loading": "Kategorien werden geladen …",
+      "empty": "Dieses Lager hat keine Kategorien.",
+      "failed": "Lager konnte nicht geladen werden",
+      "columns": {
+        "category": "Kategorie",
+        "activities": "Aktivitäten",
+        "guess": "Vorschlag",
+        "class": "Zuordnung"
+      },
+      "confidence": {
+        "high": "sicher",
+        "low": "unsicher"
+      },
+      "noGuess": "kein Vorschlag",
+      "confirm": "Zuordnung bestätigen",
+      "confirmChanges": "Änderung bestätigen",
+      "confirmed": "Zuordnung bestätigt.",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "class": {
+        "LS": "LS Lagersport",
+        "LA": "LA Lageraktivität",
+        "LP": "LP Lagerprogramm",
+        "ES": "ES Essen",
+        "NONE": "NONE ignorieren"
+      }
+    }
+  }
+}

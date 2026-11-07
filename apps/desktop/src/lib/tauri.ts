@@ -80,7 +80,56 @@ export function errorMessage(err: unknown): string {
   return String(err)
 }
 
+// ---------------------------------------------------------------------------------------------
+// M1-M5 contract types (see docs/contracts/commands.md). FROZEN (architect); Rust builder implements.
+// ---------------------------------------------------------------------------------------------
+
+export interface FileFilter {
+  /** Display name, e.g. "Dokumente" */
+  name: string
+  /** Extensions without dot, e.g. ["pdf", "docx", "gpx", "txt", "md"] */
+  extensions: string[]
+}
+
+export interface DocumentBytes {
+  path: string
+  name: string
+  size: number
+  modifiedMs: number
+  /** Standard base64 of the file content (max 25 MB file size). */
+  bytesBase64: string
+}
+
+export interface FolderEntry {
+  path: string
+  name: string
+  isDir: boolean
+  size: number
+  modifiedMs: number
+}
+
+export interface TextFile {
+  name: string
+  content: string
+}
+
+export type DocsChangeKind = 'create' | 'modify' | 'remove'
+
+export interface DocsChangedEvent {
+  folder: string
+  path: string
+  kind: DocsChangeKind
+}
+
+export interface DocsDroppedEvent {
+  paths: string[]
+}
+
+export const EVENT_DOCS_CHANGED = 'docs://changed'
+export const EVENT_DOCS_DROPPED = 'docs://dropped'
+
 export const commands = {
+  // M0
   discoverInstance: (baseUrl: string) => call<InstanceInfo>('discover_instance', { baseUrl }),
   openLoginWindow: (baseUrl: string) => call<void>('open_login_window', { baseUrl }),
   passwordLogin: (baseUrl: string, identifier: string, password: string) =>
@@ -89,9 +138,55 @@ export const commands = {
   refreshSession: () => call<SessionInfo>('refresh_session'),
   apiGet: <T = JsonObject>(path: string) => call<T>('api_get', { path }),
   logout: () => call<void>('logout'),
+
+  // M2: eCamp comments (the only write access to eCamp)
+  /** POST /api/comments { camp, activity, textHtml } -> created comment (HAL JSON). textHtml <= 1024 chars. */
+  apiPostComment: (campIri: string, activityIri: string, textHtml: string) =>
+    call<JsonObject>('api_post_comment', { campIri, activityIri, textHtml }),
+  /** PATCH /api/comments/{id} (application/merge-patch+json). May fail with 405 on instances without comment PATCH. */
+  apiPatchComment: (commentIri: string, patch: JsonObject) =>
+    call<JsonObject>('api_patch_comment', { commentIri, patch }),
+
+  // M3: files + documents (paths are only readable when allowed: picked, dropped, or in a watched folder)
+  pickFiles: (filters?: FileFilter[]) => call<string[]>('pick_files', { filters: filters ?? null }),
+  pickFolder: () => call<string | null>('pick_folder'),
+  readDocument: (path: string) => call<DocumentBytes>('read_document', { path }),
+  listFolder: (path: string) => call<FolderEntry[]>('list_folder', { path }),
+  watchFolder: (path: string) => call<void>('watch_folder', { path }),
+  unwatchFolder: (path: string) => call<void>('unwatch_folder', { path }),
+
+  // M4: backup files
+  /** Save dialog (JSON filter); returns the saved path or null when cancelled. */
+  saveTextFile: (defaultName: string, content: string) =>
+    call<string | null>('save_text_file', { defaultName, content }),
+  /** Open dialog (JSON filter); returns null when cancelled. */
+  openTextFile: () => call<TextFile | null>('open_text_file'),
+
+  // M5: AI key management (OS keychain). Completion lives in lib/tauriAi.ts (aiGateway only).
+  aiSetKey: (key: string) => call<void>('ai_set_key', { key }),
+  aiHasKey: () => call<boolean>('ai_has_key'),
+  aiClearKey: () => call<void>('ai_clear_key'),
+}
+
+/** Decodes DocumentBytes.bytesBase64. */
+export function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
 }
 
 const noop: UnlistenFn = () => {}
+
+export async function onDocsChanged(handler: (e: DocsChangedEvent) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<DocsChangedEvent>(EVENT_DOCS_CHANGED, (e) => handler(e.payload))
+}
+
+export async function onDocsDropped(handler: (e: DocsDroppedEvent) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<DocsDroppedEvent>(EVENT_DOCS_DROPPED, (e) => handler(e.payload))
+}
 
 export async function onSession(handler: (session: SessionInfo) => void): Promise<UnlistenFn> {
   if (!isTauri()) return noop

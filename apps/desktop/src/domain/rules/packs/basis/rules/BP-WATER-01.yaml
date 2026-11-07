@@ -1,0 +1,15 @@
+id: BP-WATER-01
+version: 1.0.0
+group: best-practice
+title: "1 SLRG-Qualifizierte pro 12 Teilnehmende"
+description: "Bei Wasseraktivitäten kommt eine Person mit SLRG-Qualifikation auf höchstens 12 Teilnehmende."
+message: "Wasseraktivitäten geplant, SLRG-Qualifizierte: {have} (empfohlen: 1 pro 12 Teilnehmende, also {needed} bei {participants})"
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs]
+tags: [wasser, leitung]
+source:
+  title: "Hering (PBS)"
+  url: https://hering.scout.ch/de

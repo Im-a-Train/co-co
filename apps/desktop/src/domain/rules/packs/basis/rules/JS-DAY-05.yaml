@@ -1,0 +1,15 @@
+id: JS-DAY-05
+version: 1.0.0
+group: js
+title: "Einheit beginnt mit Einstimmen/Aufwärmen"
+description: "Jede J+S-Einheit beginnt mit Einstimmen oder Aufwärmen. Geprüft wird, ob der Beginn des Ablaufs (Storyboard) ein entsprechendes Stichwort enthält."
+message: "«{title}»: Der Ablauf beginnt nicht erkennbar mit einem Einstimmen oder Aufwärmen"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping]
+tags: [lagertag, methodik]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

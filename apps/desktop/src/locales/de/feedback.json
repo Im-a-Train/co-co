@@ -1,0 +1,60 @@
+{
+  "feedback": {
+    "title": "Feedback",
+    "kind": { "kudos": "Kudos", "must": "Auflage", "suggestion": "Vorschlag", "question": "Frage" },
+    "scope": { "camp": "Lager", "activity": "Aktivität" },
+    "status": { "draft": "Entwurf", "posted": "In eCamp gepostet", "sent": "Gesendet" },
+    "section": {
+      "kudos": "Das gefällt uns",
+      "must": "Das braucht noch eine Anpassung",
+      "suggestion": "Vorschläge",
+      "question": "Fragen"
+    },
+    "lint": {
+      "must-without-next-step": "Auflage ohne Frage oder nächsten Schritt: Formuliere sie als Frage oder mit einem konkreten Vorschlag.",
+      "empty-text": "Der Text ist leer.",
+      "too-long-for-comment": "Zu lang für einen eCamp-Kommentar (max. 1024 Zeichen): wird beim Posten aufgeteilt."
+    },
+    "fromFinding": {
+      "must": "{title}: {message} Wie wollt ihr das lösen?",
+      "other": "{title}: {message} Was meint ihr dazu?"
+    },
+    "nextStepWords": "bitte|könnt ihr|könntet ihr|wollt ihr|ergänz|bis |vorschlag|schlage vor|sollte|solltet|prüf|klär|anpass",
+    "campFallback": "das Lager",
+    "partPrefix": "({n}/{total}) ",
+    "empty": "Noch kein Feedback erfasst.",
+    "addCamp": "Lager-Punkt",
+    "addActivity": "Aktivitäts-Punkt",
+    "selectActivity": "Aktivität wählen",
+    "text": "Text",
+    "kindLabel": "Art",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "post": "In eCamp posten",
+    "posting": "Wird gepostet …",
+    "postedOk": "Kommentar gepostet",
+    "postFailed": "Posten fehlgeschlagen",
+    "markSent": "Als gesendet markieren",
+    "markDraft": "Zurück zu Entwurf",
+    "charCount": "{n} / 1024 Zeichen",
+    "preview": "Vorschau",
+    "template": "Vorlage",
+    "noTemplate": "Keine Vorlage",
+    "templates": {
+      "grobprogramm": "Grobprogramm",
+      "programmbesprechung": "Programmbesprechung",
+      "auflagen": "Auflagen",
+      "nach-dem-lagerbesuch": "Nach dem Lagerbesuch",
+      "abschluss": "Abschluss"
+    },
+    "channel": { "whatsapp": "WhatsApp", "email": "E-Mail", "plain": "Text" },
+    "subject": "Betreff",
+    "copy": "Kopieren",
+    "copied": "In die Zwischenablage kopiert",
+    "copyFailed": "Kopieren fehlgeschlagen",
+    "loadFailed": "Feedback konnte nicht geladen werden",
+    "noFacts": "Lagerdaten sind noch nicht geladen. Aktivitätstitel fehlen deshalb."
+  }
+}

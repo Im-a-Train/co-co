@@ -109,7 +109,7 @@ describe('HAL helpers', () => {
     expect(formatDateCh('2026-07-11')).toBe('11.07.2026')
     expect(formatDateCh('2026-07-11T00:00:00+00:00')).toBe('11.07.2026')
     expect(formatDateCh(null)).toBe('–')
-    expect(activitiesPath('/api/camps/abc')).toBe('/api/activities?camp=/api/camps/abc')
+    expect(activitiesPath('/api/camps/abc')).toBe('/api/activities?camp=%2Fapi%2Fcamps%2Fabc')
   })
 })
 

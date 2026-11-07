@@ -1,0 +1,15 @@
+id: JS-DAY-01
+version: 1.0.0
+group: js
+title: "Gültiger J+S-Lagertag"
+description: "Ein Lagertag zählt für J+S, wenn mindestens zwei J+S-Einheiten (Lagersport/Lageraktivität) mit zusammen mindestens 240 Minuten stattfinden. Anreise- und Abreisetag beurteilt JS-DAY-04."
+message: "Tag {day}: {units} J+S-Einheiten, {minutes} Min. (nötig: mindestens 2 Einheiten und 240 Min.)"
+severity: must
+confidence: verified
+scope: day
+validFrom: 2026-01-01
+inputs: [mapping]
+tags: [lagertag]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

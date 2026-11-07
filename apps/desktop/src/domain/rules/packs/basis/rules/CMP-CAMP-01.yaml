@@ -1,0 +1,14 @@
+id: CMP-CAMP-01
+version: 1.0.0
+group: completeness
+title: "Coach im Lager eingetragen"
+description: "Im Lager ist der Coach eingetragen und stimmt mit dem angemeldeten Benutzer überein."
+message: "Coach im Lager: {detail}"
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+tags: [vollstaendigkeit]
+source:
+  title: "Leitfaden Coach"
+  url: https://www.jugendundsport.ch/de/leitfaden-coach

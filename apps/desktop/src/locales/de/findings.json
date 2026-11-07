@@ -1,0 +1,45 @@
+{
+  "findings": {
+    "title": "Befunde",
+    "empty": "Keine Befunde in dieser Auswahl.",
+    "emptyAll": "Keine Befunde. Das Lager erfüllt alle geprüften Regeln.",
+    "evaluating": "Regeln werden geprüft …",
+    "filters": {
+      "search": "Suchen",
+      "groups": "Bereich",
+      "showOverridden": "Übersteuerte anzeigen",
+      "activity": "Nur Aktivität: {title}",
+      "clearActivity": "Filter entfernen"
+    },
+    "group": {
+      "js": "J+S",
+      "completeness": "Vollständigkeit",
+      "safety": "Sicherheit",
+      "best-practice": "Best Practice"
+    },
+    "groupTitle": "{severity} ({count})",
+    "ruleId": "Regel {id}",
+    "source": "Quelle",
+    "sourceOpen": "Quelle öffnen (externer Link)",
+    "evidence": "Betrifft",
+    "aiTag": "KI-Einschätzung",
+    "createFeedback": "Feedback erstellen",
+    "feedbackFailed": "Das Feedback konnte nicht erstellt werden: {error}",
+    "override": "Übersteuern",
+    "removeOverride": "Übersteuerung aufheben",
+    "overridden": "Übersteuert",
+    "overrideReason": "Begründung: {reason}",
+    "dialog": {
+      "title": "Befund übersteuern",
+      "text": "Der Befund bleibt gespeichert, zählt aber nicht mehr in den Kennzahlen. Eine Begründung ist Pflicht.",
+      "reason": "Begründung",
+      "reasonRequired": "Bitte eine Begründung angeben.",
+      "confirm": "Übersteuern"
+    },
+    "ai": {
+      "title": "KI-Sicherheitsprüfung (optional)"
+    },
+    "notReady": "Die Regel-Auswertung ist noch nicht verfügbar.",
+    "actionFailed": "Aktion fehlgeschlagen: {error}"
+  }
+}

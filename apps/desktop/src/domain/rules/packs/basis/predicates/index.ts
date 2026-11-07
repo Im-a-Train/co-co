@@ -1,0 +1,57 @@
+/** Predicate registry of the basic pack: rule id -> predicate. */
+import type { RulePredicate } from '@/domain/types'
+import { bpRest01, bpSleep01, bpVar01, bpWater01, bpWolf01 } from './bestPractice'
+import { cmpAct01, cmpAct02, cmpAct03, cmpCamp01, cmpDay01, cmpLa01, cmpProg01 } from './completeness'
+import {
+  jsBwz27,
+  jsCamp01,
+  jsCamp02,
+  jsDay01,
+  jsDay02,
+  jsDay03,
+  jsDay04,
+  jsDay05,
+  jsDl01,
+  jsDl02,
+  jsDl03,
+  jsFree01,
+  jsLl01,
+  jsStaff01,
+} from './js'
+import { safeDoc01, safeMtn01, safeMtn02, safeNight01, safeRope01, safeWater01, safeWx01 } from './safety'
+
+export const predicates: Record<string, RulePredicate> = {
+  'JS-CAMP-01': jsCamp01,
+  'JS-CAMP-02': jsCamp02,
+  'JS-DAY-01': jsDay01,
+  'JS-DAY-02': jsDay02,
+  'JS-DAY-03': jsDay03,
+  'JS-DAY-04': jsDay04,
+  'JS-DAY-05': jsDay05,
+  'JS-DL-01': jsDl01,
+  'JS-DL-02': jsDl02,
+  'JS-DL-03': jsDl03,
+  'JS-LL-01': jsLl01,
+  'JS-STAFF-01': jsStaff01,
+  'JS-FREE-01': jsFree01,
+  'JS-BWZ-27': jsBwz27,
+  'CMP-ACT-01': cmpAct01,
+  'CMP-ACT-02': cmpAct02,
+  'CMP-ACT-03': cmpAct03,
+  'CMP-LA-01': cmpLa01,
+  'CMP-DAY-01': cmpDay01,
+  'CMP-CAMP-01': cmpCamp01,
+  'CMP-PROG-01': cmpProg01,
+  'SAFE-WATER-01': safeWater01,
+  'SAFE-MTN-01': safeMtn01,
+  'SAFE-MTN-02': safeMtn02,
+  'SAFE-ROPE-01': safeRope01,
+  'SAFE-NIGHT-01': safeNight01,
+  'SAFE-WX-01': safeWx01,
+  'SAFE-DOC-01': safeDoc01,
+  'BP-REST-01': bpRest01,
+  'BP-SLEEP-01': bpSleep01,
+  'BP-WOLF-01': bpWolf01,
+  'BP-WATER-01': bpWater01,
+  'BP-VAR-01': bpVar01,
+}

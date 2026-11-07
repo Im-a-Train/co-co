@@ -37,6 +37,18 @@ url = "2"
 base64 = "0.22"
 thiserror = "2"
 tokio = { version = "1", features = ["sync", "time"] }
+tauri-plugin-dialog = "2"
+notify = "8"
+dunce = "1"
+
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
 
 [dev-dependencies]
 # Mock runtime for the ignored live tests in src/live_tests.rs.

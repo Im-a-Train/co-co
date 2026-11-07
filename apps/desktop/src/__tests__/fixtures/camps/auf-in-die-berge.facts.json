@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 1,
+  "loadedAt": "2026-01-01T00:00:00.000Z",
+  "instanceBaseUrl": "https://dev.ecamp3.ch",
+  "userIri": "/api/users/dac7116e02ed",
+  "camp": {
+    "iri": "/api/camps/70ca971c992f",
+    "id": "70ca971c992f",
+    "title": "Auf in die Berge",
+    "shortTitle": "Skilager 2030",
+    "motto": null,
+    "kind": null,
+    "organizer": null,
+    "coachName": null,
+    "courseKind": null,
+    "courseNumber": null,
+    "trainingAdvisorName": null,
+    "address": {
+      "name": null,
+      "street": null,
+      "zipcode": null,
+      "city": null
+    },
+    "isPrototype": false,
+    "start": "2031-01-24",
+    "end": "2031-01-30"
+  },
+  "periods": [
+    {
+      "iri": "/api/periods/7fa4564a5d5d",
+      "description": "Main",
+      "start": "2031-01-24",
+      "end": "2031-01-30"
+    }
+  ],
+  "days": [
+    {
+      "iri": "/api/days/27ad4212466a",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 1,
+      "dayOffset": 0,
+      "date": "2031-01-24",
+      "start": "2031-01-24T00:00:00+00:00",
+      "end": "2031-01-25T00:00:00+00:00"
+    },
+    {
+      "iri": "/api/days/69426b72ce46",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 2,
+      "dayOffset": 1,
+      "date": "2031-01-25",
+      "start": "2031-01-25T00:00:00+00:00",
+      "end": "2031-01-26T00:00:00+00:00"
+    },
+    {
+      "iri": "/api/days/5dc6586312e0",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 3,
+      "dayOffset": 2,
+      "date": "2031-01-26",
+      "start": "2031-01-26T00:00:00+00:00",
+      "end": "2031-01-27T00:00:00+00:00"
+    },
+    {
+      "iri": "/api/days/839d27065403",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 4,
+      "dayOffset": 3,
+      "date": "2031-01-27",
+      "start": "2031-01-27T00:00:00+00:00",
+      "end": "2031-01-28T00:00:00+00:00"
+    },
+    {
+      "iri": "/api/days/755cbc1d9852",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 5,
+      "dayOffset": 4,
+      "date": "2031-01-28",
+      "start": "2031-01-28T00:00:00+00:00",
+      "end": "2031-01-29T00:00:00+00:00"
+    },
+    {
+      "iri": "/api/days/3a84cfaf795c",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 6,
+      "dayOffset": 5,
+      "date": "2031-01-29",
+      "start": "2031-01-29T00:00:00+00:00",
+      "end": "2031-01-30T00:00:00+00:00"
+    },
+    {
+      "iri": "/api/days/5e0c146f4a75",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "number": 7,
+      "dayOffset": 6,
+      "date": "2031-01-30",
+      "start": "2031-01-30T00:00:00+00:00",
+      "end": "2031-01-31T00:00:00+00:00"
+    }
+  ],
+  "scheduleEntries": [
+    {
+      "iri": "/api/schedule_entries/e68f4e47517a",
+      "activityIri": "/api/activities/b29d387cc403",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/27ad4212466a",
+      "start": "2031-01-24T08:00:00+00:00",
+      "end": "2031-01-24T18:00:00+00:00",
+      "durationMinutes": 600,
+      "dayNumber": 1,
+      "scheduleEntryNumber": 1,
+      "number": "1.1",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    },
+    {
+      "iri": "/api/schedule_entries/f0883e931649",
+      "activityIri": "/api/activities/b29d387cc403",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/69426b72ce46",
+      "start": "2031-01-25T08:00:00+00:00",
+      "end": "2031-01-25T18:00:00+00:00",
+      "durationMinutes": 600,
+      "dayNumber": 2,
+      "scheduleEntryNumber": 1,
+      "number": "2.1",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    },
+    {
+      "iri": "/api/schedule_entries/29c9e9a07d82",
+      "activityIri": "/api/activities/a13fadc97610",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/5dc6586312e0",
+      "start": "2031-01-26T08:00:00+00:00",
+      "end": "2031-01-26T19:00:00+00:00",
+      "durationMinutes": 660,
+      "dayNumber": 3,
+      "scheduleEntryNumber": 1,
+      "number": "3.A",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    },
+    {
+      "iri": "/api/schedule_entries/ee85308a97d1",
+      "activityIri": "/api/activities/b29d387cc403",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/839d27065403",
+      "start": "2031-01-27T08:00:00+00:00",
+      "end": "2031-01-27T18:00:00+00:00",
+      "durationMinutes": 600,
+      "dayNumber": 4,
+      "scheduleEntryNumber": 1,
+      "number": "4.1",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    },
+    {
+      "iri": "/api/schedule_entries/f08d69cae18a",
+      "activityIri": "/api/activities/a13fadc97610",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/755cbc1d9852",
+      "start": "2031-01-28T08:00:00+00:00",
+      "end": "2031-01-28T19:00:00+00:00",
+      "durationMinutes": 660,
+      "dayNumber": 5,
+      "scheduleEntryNumber": 1,
+      "number": "5.A",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    },
+    {
+      "iri": "/api/schedule_entries/7e8086d94633",
+      "activityIri": "/api/activities/a13fadc97610",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/3a84cfaf795c",
+      "start": "2031-01-29T08:00:00+00:00",
+      "end": "2031-01-29T19:00:00+00:00",
+      "durationMinutes": 660,
+      "dayNumber": 6,
+      "scheduleEntryNumber": 1,
+      "number": "6.A",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    },
+    {
+      "iri": "/api/schedule_entries/f89a1501dbb6",
+      "activityIri": "/api/activities/b29d387cc403",
+      "periodIri": "/api/periods/7fa4564a5d5d",
+      "dayIri": "/api/days/5e0c146f4a75",
+      "start": "2031-01-30T08:00:00+00:00",
+      "end": "2031-01-30T18:00:00+00:00",
+      "durationMinutes": 600,
+      "dayNumber": 7,
+      "scheduleEntryNumber": 1,
+      "number": "7.1",
+      "left": 0,
+      "width": 1,
+      "ysPhysicalActivityDurationMinutes": null
+    }
+  ],
+  "activities": [
+    {
+      "iri": "/api/activities/a13fadc97610",
+      "title": "Snowboardfahren",
+      "location": "Auf dem Anderen Berg",
+      "categoryIri": "/api/categories/eddb2cd8cee0",
+      "progressLabelIri": "/api/activity_progress_labels/af92782262d7",
+      "rootContentNodeIri": "/api/content_node/column_layouts/160f007bd04f",
+      "responsibleIris": [
+        "/api/camp_collaborations/10d8f02ce5b4",
+        "/api/camp_collaborations/5b24ce470d9f"
+      ],
+      "scheduleEntryIris": [
+        "/api/schedule_entries/29c9e9a07d82",
+        "/api/schedule_entries/f08d69cae18a",
+        "/api/schedule_entries/7e8086d94633"
+      ],
+      "content": {
+        "storyboardText": "von Morgen früh bis Spät am Abed | Snowboard Fahren | Rudolf😶🌫️\nZwischenzeit\nSpäter | Heimreise🤩\nam Ende | - Snowboard versorgen\n\n- Validieren\n\n- ???\n\n- Vom erfolgreichen Versorgen berichten\n\n- Kleider in den Trocknungsraum\n\n- Ausrüstung kontrollieren\n\n- Fisch für Folgetag bereitlegen\n\n- Weitere Dinge\n\n- Fortsetzung Folgt\n- A\n- AA\n\n- AB\n- AC\n- AD\n- Ef\n\n- GH\n\n- ADD\n- Pow\n- Pew\n\n- B\n\n- C\n- Fortsetzung\n\n- Teil 3\n- 😱\n\n- C\n- 😱",
+        "safetyText": "1. Vorbereitung🤗\n1.1. Ausrüstung überprüfen: Stelle sicher, dass dein Snowboard und die Bindungen in gutem Zustand und ordnungsgemäß eingestellt sind.\n1.2. Kleidung: Trage immer wetterangepasste Kleidung in mehreren Schichten. Dies ermöglicht es dir, Schichten hinzuzufügen oder zu entfernen, je nachdem wie kalt oder warm es ist.\n1.3. Geeignete Schutzausrüstung:\nHelm: Ein Helm kann vor schweren Kopfverletzungen schützen.\nSchutzbrille: Schützt die Augen vor UV-Strahlen, Wind, Schnee und reflektiertem Licht.\nHandgelenkschützer: Snowboarder sind besonders anfällig für Handgelenksverletzungen.\nKnieschoner und Steißbeinschützer können zusätzlichen Schutz bieten.\nRückenprotektor: Für Fahrer, die in schwierigem Gelände oder im Snowpark fahren.\n2. Wissen über die Umgebung\n2.1. Pistenkennzeichnung beachten: Informiere dich über die Schwierigkeitsgrade der Pisten (blau, rot, schwarz) und wähle Routen, die deinem Können entsprechen.\n2.2. Wetterbedingungen: Überprüfe den Wetterbericht und sei dir über mögliche Änderungen während des Tages bewusst.\n2.3. Avalanche-Bericht: Bei Tiefschneefahrten abseits der Piste immer den Lawinenbericht beachten und gegebenenfalls Lawinenausrüstung mitnehmen (Schaufel, Sonde, LVS-Gerät).\n3. Verhalten auf der Piste\n3.1. FIS-Regeln beachten: Die FIS-Regeln (Internationale Skiverbandsregeln) geben wichtige Verhaltenshinweise für alle Wintersportler.\n3.2. Geschwindigkeit kontrollieren: Fahre immer in einer Geschwindigkeit, bei der du rechtzeitig reagieren kannst.\n3.3. Rücksichtnahme: Passe deine Fahrweise den Bedingungen und deinem Können an. Beachte andere Snowboarder und Skifahrer.\n3.4. Überholen: Überhole nur, wenn du genügend Platz hast und niemanden gefährdest.\n4. Snowpark und Off-Piste\n4.1. Erkundung: Bevor du Hindernisse wie Kicker oder Rails angehst, schaue sie dir erst einmal an und mache dich mit der Landung vertraut.\n4.2. Gefährliche Bereiche meiden: Vermeide Bereiche mit Lawinengefahr oder unsicheren Bedingungen.\n4.3. Immer zu zweit unterwegs: Besonders abseits der Piste solltest du nie alleine unterwegs sein.\n5. Erste Hilfe\n5.1. Kenntnisse auffrischen: Es ist immer gut, wenn du Grundkenntnisse in Erster Hilfe hast.\n5.2. Notfallausrüstung: Trage immer ein kleines Erste-Hilfe-Set bei dir.\n5.3. Notruf: Kenne die Notrufnummer des Gebietes und habe einen geladenen Handyakku dabei.",
+        "notesText": "",
+        "learningObjectivesText": "",
+        "materialText": "",
+        "laThematicAreas": [],
+        "learningTopics": [],
+        "ysCharacteristics": [],
+        "ysPhysicalActivityDurationMinutes": null,
+        "contentTypes": [
+          "SafetyConsiderations",
+          "ColumnLayout",
+          "Storycontext",
+          "Storyboard"
+        ],
+        "hasStoryboard": true,
+        "hasSafetyConsiderations": true,
+        "contentNodeCount": 4
+      }
+    },
+    {
+      "iri": "/api/activities/b29d387cc403",
+      "title": "Skifahren auf dem Berg",
+      "location": "Auf dem Berg",
+      "categoryIri": "/api/categories/89a2e0ad0ab5",
+      "progressLabelIri": "/api/activity_progress_labels/af92782262d7",
+      "rootContentNodeIri": "/api/content_node/column_layouts/335448226d2a",
+      "responsibleIris": [
+        "/api/camp_collaborations/46d14f7c072c"
+      ],
+      "scheduleEntryIris": [
+        "/api/schedule_entries/e68f4e47517a",
+        "/api/schedule_entries/f0883e931649",
+        "/api/schedule_entries/ee85308a97d1",
+        "/api/schedule_entries/f89a1501dbb6"
+      ],
+      "content": {
+        "storyboardText": "08:00 | Aufstehen | Fredi\n08:30 | Frühstück | Küche\n09:00 | Abmarsch🥶\n09:02 | Im Glanz des Morgens, wenn der Himmel erwacht,\nEin Skifahrer auf den Bergen seine Spuren macht.\nDie Hänge sind verschneit, das Tal im Nebel ruht,\nIn dieser weißen Stille, wo der Abenteuer Mut.\nDie Skier gleiten leise über Pulverschnee,\nEin Marsch durch Berge, wild und hehr, so schön und so weh.\nDie Gipfel ragen stolz empor, zum Himmel, weit und frei,\nUnd Skifahrer tanzen auf den Höhn, in purer Harmonie.\nMit jedem Schwung, mit jedem Griff,\nDer Skifahrer auf den Bergen ein König ist.\nDie Winde singen Lieder, während er talwärts fliegt,\nUnd in der klaren Luft sein Lachen laut erklingt.\nDie Sonne malt ein Gold'nes Band auf schneebedeckte Höh'n,\nDer Skifahrer auf den Bergen, er fühlt sich groß und schön.\nDie Welt ist weit, das Herz ist leicht, die Sorgen weit entfernt,\nWenn man den Berg hinunterfährt, ist jede Last gern fern.\nSo zieht er seine Spuren in des Winters weißem Land,\nDer Skifahrer auf den Bergen, stark und zart und grand.\nIn dieser majestätischen Pracht, wo Abenteuer ruhn,\nDa tanzt er weiter, leicht und frei, und lässt sein Herz erblüh'n.\n09:30 | Ankunft auf dem Berg | Begrüssungskomitee\n09:35 | Aussicht geniessen\n10:00 | 🥶Skiplausch\n10:30 | In den abendlichen Schatten der majestätischen Alpen lag ein verborgenes Wunder, das die Herzen der Menschen in seinen Bann zog: das Skifahren. Die Berge erwachten mit einem leisen Flüstern zum Leben, wenn der erste Strahl des Morgens die schneebedeckten Gipfel küsste. Inmitten dieser eisigen Pracht, zwischen den höchsten Gipfeln und den sanften Tälern, entfaltete sich die Faszination des Skifahrens.\nSkifahren war nicht nur ein Sport; es war eine Reise, eine Erfahrung, die Körper, Geist und Seele in Einklang brachte. Wenn die Skifahrer die Gondelbahn bestiegen und die schwindelerregenden Höhen erreichten, spürten sie eine Mischung aus Aufregung und Ehrfurcht. Die Luft wurde kälter, klarer, und der Duft von frischem Schnee hing in der Luft wie der süßeste Duft der Welt.\nDie Abfahrt begann mit einem leichten Zittern der Vorfreude. Dann, wenn die ersten Schwünge gezogen wurden, verwandelte sich die Anspannung in pure Freiheit. Die Skier glitten mühelos über den Pulverschnee, ein unvergleichliches Gefühl von Leichtigkeit und Geschwindigkeit. Der Wind pfiff in den Ohren, die Welt verschwamm zu einem wunderschönen, weißen Wirbelwind, und für einen Augenblick schien die Zeit stillzustehen.\nSkifahren war eine Sinfonie der Bewegung. Die Skier reagierten auf die leichteste Berührung, auf die sanfte Neigung des Geländes, auf den Rhythmus des Berges. Die Kurven waren elegant, jede Drehung ein Tanzschritt auf der Schneebühne. Die Skifahrer spürten die Kraft ihrer Muskeln, die Herausforderung des Geländes und die Belohnung des reibungslosen Schwungs.\nAber Skifahren war nicht nur körperliche Anstrengung. Es war auch eine Reise in die Stille. Inmitten der schneebedeckten Weite gab es Raum für Gedanken, Raum für innere Ruhe. Der Anblick der majestätischen Berggipfel, die im Sonnenlicht glitzerten, ließ die Sorgen des Alltags verblassen. Das leise Knirschen des Schnees unter den Skiern war wie eine meditative Melodie, die die Seele beruhigte und den Geist klärte.\nSkifahren war auch eine Verbindung zur Natur. Die klare Luft, der reine Schnee, das Gefühl der Erde unter den Füßen – all das erinnerte die Skifahrer daran, wie kostbar und zerbrechlich unsere Welt war. Es war eine Erinnerung daran, dass wir Teil eines größeren Ganzen waren, dass die Berge, die Bäume und der Schnee ein Erbe waren, das es zu schützen galt.\nAber vielleicht war das Schönste am Skifahren die Gemeinschaft. In den gemütlichen Hütten nach einem Tag auf der Piste, saßen die Skifahrer zusammen, tauschten Geschichten aus, lachten über misslungene Schwünge und feierten gelungene Abfahrten. Es gab keine Fremden auf den Pisten – nur Gleichgesinnte, die die Liebe zum Skifahren teilten.\nFür all diese Gründe und noch viele mehr war das Skifahren in den Bergen mehr als nur eine Aktivität. Es war eine Leidenschaft, die die Skifahrer nicht nur auf die Pisten brachte, sondern auch in ihre Träume, ihre Gedanken und ihre Seelen. Es war eine Reise, die sie immer wieder antreten wollten, eine Erfahrung, die sie nie vergessen würden. Denn das Skifahren in den Bergen war nicht nur toll – es war magisch, und es berührte die Seele auf eine Weise, die schwer in Worte zu fassen war. Es war eine Liebe, die ein Leben lang dauerte, eine Beziehung zwischen Mensch und Berg, die ewig währen würde.\n11:00 | In der Tiefe des Winters, wenn der Schnee die Berggipfel bedeckte und die Pisten in ein funkelndes Weiß hüllte, kehrte unsere leidenschaftliche Skifahrerin Emma zurück zu den vertrauten Gipfeln der Alpen. Diesmal hatte sie eine besondere Mission: Sie wollte die anspruchsvollsten Hänge bezwingen und die entlegensten Täler erkunden. Mit jedem Abenteuer entdeckte sie nicht nur die Schönheit der Natur, sondern auch die Stärke und Entschlossenheit in sich selbst.\nEines Tages, als die Sonne hinter den Bergen versank und der Himmel sich in ein schillerndes Farbspiel tauchte, wagte sich Emma auf eine steile Abfahrt, die als \"Die Schwarze Schlange\" bekannt war. Der Name allein ließ die meisten Skifahrer erzittern, aber Emma war furchtlos. Mit einem klopfenden Herzen und einem entschlossenen Geist stürzte sie sich den steilen Hang hinab. Der Schnee wirbelte um sie herum, und sie spürte die Herausforderung, die dieser Hang darstellte. Doch mit jedem präzisen Schwung, mit jeder eleganten Kurve, meisterte sie die Schlange und triumphierte über die Angst.\nIn den folgenden Tagen erkundete Emma die abgelegensten Täler, die nur von erfahrenen Skifahrern erreicht werden konnten. Sie folgte den Spuren der Wildtiere, die den gleichen Pfad durch den Schnee genommen hatten. Sie überquerte gefrorene Flüsse und wanderte durch dichte Wälder, bevor sie wieder die Gipfel erklomm, um sich erneut in die atemberaubenden Abfahrten zu stürzen.\nMit jedem neuen Abenteuer wuchs ihre Liebe zu den Bergen und zum Skifahren. Sie fand nicht nur Freiheit und Freude auf den Pisten, sondern auch Weisheit und Gelassenheit. Die Berge lehrten sie Geduld, Ausdauer und Demut. Sie lehrten sie, dass manchmal der steilste Anstieg die größte Belohnung bringt und dass wahre Schönheit oft an den entlegensten Orten zu finden ist.\nEmma teilte ihre Abenteuer mit Gleichgesinnten, die sie unterwegs traf. Gemeinsam erklommen sie die höchsten Gipfel und stürzten sich in die steilsten Abfahrten. In ihrer Gemeinschaft fand sie nicht nur Freunde, sondern auch Inspiration. Jeder Skifahrer hatte seine eigene Geschichte, seine eigenen Gründe, warum er die Berge liebte. Doch sie alle teilten die gleiche Leidenschaft, die gleiche Begeisterung für das Skifahren und die gleiche Liebe zur Natur.\nUnd so setzte Emma ihre Reise fort, von einem Abenteuer zum nächsten, von einem Gipfel zum nächsten. Sie eroberte nicht nur die höchsten Berge, sondern auch die tiefsten Täler ihres eigenen Selbst. Mit jedem Schwung, mit jedem Atemzug, fühlte sie sich lebendiger, gestärkter und glücklicher.\nDurch die Herausforderungen und die Schönheit der Berge lernte Emma eine wichtige Lektion: Das Leben war wie eine Abfahrt im Pulverschnee. Es konnte manchmal steil und anspruchsvoll sein, aber mit Mut, Entschlossenheit und einer Prise Abenteuerlust konnte man jede Herausforderung meistern. Und am Ende der Abfahrt, wenn der Schnee sich wieder zu ruhigen Hängen verwandelte und die Sonne am Himmel glänzte, gab es nichts Schöneres, als zurückzublicken und zu erkennen, dass jeder Schwung, jede Herausforderung und jede Freude einen zu dem gemacht hatte, der man war.\nIn den Bergen fand Emma nicht nur eine Leidenschaft, sondern auch eine Heimat. Und so setzte sie ihre Reise fort, immer auf der Suche nach neuen Abenteuern, neuen Herausforderungen und neuen Wegen, das Leben in vollen Zügen zu genießen. Denn für Emma war das Skifahren nicht nur eine Aktivität – es war ein Lebensstil, eine Quelle der Inspiration und eine unerschöpfliche Quelle der Freude. Und so glitt sie weiter über die schneebedeckten Pisten, immer auf der Suche nach dem nächsten Abenteuer und der nächsten Dosis von dieser unbeschreiblichen Magie, die nur die Berge und das Skifahren bieten konnten. | Erwin\n12:00 | Mitagessen👃 | Eigenverantwortung\n13:00 | In einem malerischen Bergdorf, wo die Gipfel mit glitzerndem Schnee bedeckt waren und die Luft nach Kiefern duftete, lebte ein Junge namens Tim. Tim liebte den Winter über alles, besonders die Nachmittage, wenn die Sonne sanft über die schneebedeckten Hänge glitt und die Welt in ein goldenes Licht tauchte. Für Tim waren die Nachmittage perfekt für ein aufregendes Skierlebnis.\nAn einem dieser magischen Nachmittage schnallte sich Tim seine Skier an und machte sich auf den Weg zu seinem Lieblingshang, der von einem dichten Wald umgeben war. Die Bäume standen still und majestätisch, ihre Äste bogen sich unter der Last des frischen Schnees. Die Sonne stand tief am Himmel, und die Schatten der Bäume erstreckten sich wie dunkle Finger über die schneebedeckte Landschaft.\nTim stieß sich von der Spitze des Hügels ab und glitt elegant den Hang hinunter. Der Schnee unter seinen Skiern knirschte leise, während er die Kurven meisterte. Die Nachmittagssonne kitzelte sein Gesicht und ließ den Schnee um ihn herum funkeln wie Millionen kleiner Diamanten. Die Welt schien still zu stehen, und es gab nur Tim, die Berge und der Schnee.\nJe weiter er hinunterfuhr, desto schneller wurde er. Der Wind pfiff in seinen Ohren, und sein Herz klopfte vor Aufregung. Er fühlte sich frei, lebendig und voller Energie. Die schneebedeckte Landschaft um ihn herum war wie ein gemaltes Bild, ein Winterwunderland, das zum Leben erwacht war.\nUnten im Tal angekommen, entschied Tim sich, noch eine Runde zu drehen. Er fuhr die Piste entlang, ließ die sanften Hügel unter sich gleiten und genoss das Gefühl von Geschwindigkeit und Freiheit. Die Sonne begann langsam hinter den Gipfeln zu verschwinden, und der Himmel färbte sich in warmen Orangetönen und zarten Lilatönen.\nSchließlich machte Tim eine Pause und schaute sich um. Die Berge rund um ihn herum waren in ein magisches Abendlicht getaucht. Die Schatten wurden länger, und die Sterne begannen am Himmel zu funkeln. Tim spürte eine tiefe Dankbarkeit für diesen Moment der Ruhe und Schönheit.\nMit einem zufriedenen Lächeln fuhr Tim zurück ins Dorf. Der Nachmittag hatte ihm nicht nur ein unvergessliches Skierlebnis beschert, sondern auch einen Moment der inneren Ruhe und des Staunens über die Natur. Diese nachmittägliche Skifahrt hatte nicht nur seine Liebe zum Wintersport vertieft, sondern auch seine Verbundenheit mit der majestätischen Schönheit der Berge gestärkt.\nUnd so ging die Sonne langsam unter, während Tim nach Hause zurückkehrte, erfüllt von den Erlebnissen dieses magischen Nachmittags. Die Erinnerung an die goldenen Sonnenstrahlen, den glitzernden Schnee und das Gefühl von Freiheit würde für immer in seinem Herzen bleiben, und er wusste, dass er diese besonderen Nachmittage auf den Skihängen für den Rest seines Lebens schätzen würde.\nIn den folgenden Tagen kehrte Tim immer wieder zu seinem Lieblingshang zurück, um die Nachmittage mit Skifahren zu verbringen. Mit jedem Abfahrtslauf spürte er, wie er sich verbesserte, wie seine Kurven eleganter wurden und seine Geschwindigkeit zunahm. Doch nicht nur seine Skifähigkeiten entwickelten sich weiter, sondern auch seine Liebe zur Natur und seine Wertschätzung für die kleinen Freuden des Lebens.\nEines Nachmittags, als Tim den Hang hinunterfuhr, bemerkte er plötzlich ein seltsames Glitzern am Rande des Waldes. Neugierig bog er ab und näherte sich der Stelle. Dort entdeckte er eine versteckte Lichtung, auf der die Nachmittagssonne durch die Bäume fiel und den Schnee in ein funkelndes Meer aus Diamanten verwandelte. In der Mitte der Lichtung stand ein alter Holzpavillon, der von Schnee bedeckt war.\nTim betrat den Pavillon und fand sich in einem Raum voller Zauber und Wärme wieder. In der Mitte stand ein knisterndes Feuer, dessen Flammen ein gemütliches Licht verbreiteten. An den Wänden hingen alte Skier, und auf einem Tischchen neben einem rostigen Stuhl lag eine offene Karte der Umgebung.\nFasziniert studierte Tim die Karte und bemerkte eine Markierung auf einem nahegelegenen Berggipfel. Es war, als würde die Karte ihn auffordern, das nächste Abenteuer zu suchen. Tim spürte ein Kribbeln der Aufregung in sich aufsteigen. Ohne zu zögern, schnallte er sich seine Skier wieder an und machte sich auf den Weg zum markierten Berg.\nDer Aufstieg war anspruchsvoll, aber Tim spürte eine seltsame Energie, die ihn vorwärts trieb. Er kämpfte sich durch den Schnee, überwand steile Hänge und folgte dem Weg, den die Karte ihm wies. Als er den Gipfel erreichte, wurde er von einem atemberaubenden Panorama belohnt. Die Sonne stand tief am Himmel und tauchte die Berggipfel in ein warmes, goldenes Licht. Unter ihm erstreckten sich schier endlose Wälder und Täler, die von einer sanften Schneedecke bedeckt waren.\nTim fühlte sich wie der König der Welt. Er hatte nicht nur einen Berg erklommen, sondern auch sein eigenes Selbst überwunden. Er hatte die Herausforderung angenommen und war über seine Grenzen hinausgewachsen. In diesem Moment begriff er, dass die Natur nicht nur ein Ort war, den man erkunden konnte, sondern auch ein Spiegel, der einem die eigenen Stärken und Schwächen zeigte.\nMit einem Gefühl der Erfüllung und inneren Ruhe machte sich Tim auf den Rückweg. Er kehrte zum Pavillon zurück und verbrachte dort die Nacht. Die Sterne am Himmel schienen heller zu leuchten, und die Stille des Waldes umgab ihn wie ein schützendes Band. In dieser Nacht träumte er von endlosen Skihängen, von majestätischen Bergen und von der unendlichen Weite der Natur.\nAm nächsten Morgen kehrte Tim ins Dorf zurück, aber er war nicht mehr derselbe Junge, der er einmal gewesen war. Er hatte nicht nur gelernt, wie man Ski fuhr, sondern auch, wie man den Weg zu seinem eigenen Herzen fand. Er hatte nicht nur die Gipfel der Berge erklommen, sondern auch die Höhen seiner eigenen Seele erreicht.\nVon diesem Tag an wurde Tim zu einem Botschafter der Berge und der Natur. Er erzählte jedem, der es hören wollte, von seinen Abenteuern und von der unermesslichen Schönheit, die die Welt zu bieten hatte. Seine Geschichten inspirierten nicht nur die Menschen im Dorf, sondern auch Reisende aus fernen Ländern, die von seiner Begeisterung angesteckt wurden.\nUnd so lebte Tim sein Leben in Dankbarkeit und Liebe zur Natur. Jeden Nachmittag, wenn die Sonne über den Bergen stand und der Schnee glänzte, schnallte er sich seine Skier an und begab sich auf neue Abenteuer. Aber egal, wie weit er reiste oder wie hoch er stieg, sein Herz blieb immer im Dorf, inmitten der majestätischen Berge, die ihn gelehrt hatten, dass das größte Abenteuer oft darin besteht, sich selbst zu entdecken und die Schönheit in allem zu erkennen.\nDie Jahre vergingen, und Tim wurde zu einer Legende in seinem Dorf und weit darüber hinaus. Seine Geschichten von den Bergen und seinen Abenteuern fanden ihren Weg in Bücher und Magazine. Menschen aus allen Ecken der Welt kamen, um die magische Schönheit der Berge und die inspirierenden Geschichten von Tim zu erleben.\nIm Dorf selbst wurde Tim zu einer respektierten Figur, nicht nur wegen seiner Abenteuerlust, sondern auch wegen seiner Großzügigkeit und Hilfsbereitschaft. Er half den Dorfbewohnern bei der Organisation von Veranstaltungen und Festen und setzte sich für den Schutz der Umwelt in der Region ein.\nEines Tages, als Tim auf einem seiner gewohnten Nachmittagsskiausflüge war, bemerkte er etwas Seltsames in der Ferne. Rauch stieg am Horizont auf, und ein unheimliches Knistern drang an seine Ohren. Mit einem schlechten Gefühl in der Magengrube setzte er seine Abfahrt fort und fuhr zurück ins Dorf.\nAls er das Dorf erreichte, erkannte er die schreckliche Wahrheit. Ein verheerender Waldbrand war ausgebrochen und bedrohte die umliegenden Wälder und Häuser. Die Dorfbewohner waren in heller Aufregung, versuchten verzweifelt, das Feuer zu löschen, und evakuierten ihre Häuser.\nTim zögerte keinen Augenblick. Er schnallte sich seine Skier ab und griff nach einer Schaufel. Er schloss sich den Dorfbewohnern an, die Wasser aus nahegelegenen Bächen schöpften und das Feuer bekämpften. Stunden vergingen, in denen sie gegen die Flammen kämpften, aber sie schienen hoffnungslos überfordert zu sein.\nIn dieser dunkelsten Stunde kam Tim auf eine Idee. Er erinnerte sich an eine schmale, steile Rinne in den Bergen, die das Dorf von einem Hochgebirgsbach trennte. Wenn sie das Wasser aus diesem Bach leiten könnten, hätten sie eine Chance, das Feuer einzudämmen. Mit seiner Entschlossenheit und Erfahrung im Skifahren machte sich Tim auf den gefährlichen Weg zum Bach.\nEs war ein gefährlicher Ritt, denn die Rinne war steil und die Bedingungen waren schwierig. Doch Tim gab nicht auf. Mit seinen Skiern balancierte er vorsichtig auf dem schmalen Pfad und erreichte schließlich den Bach. Er befestigte seine Skier zu einer Art improvisierten Schlitten, füllte ihn mit Wasser und stürzte sich wieder den Hang hinab.\nZurück im Dorf wurde das Wasser aus Tims improvisiertem Schlitten eifrig auf das Feuer geworfen. Die Kombination aus den Anstrengungen der Dorfbewohner und dem stetigen Zustrom von Wasser aus dem Bach begann, das Feuer unter Kontrolle zu bringen. Stunden vergingen, aber schließlich konnten sie die Flammen besiegen und das Dorf vor der Zerstörung bewahren.\nErschöpft, aber erleichtert, kehrte Tim ins Dorf zurück, wo er von den Dorfbewohnern mit Dankbarkeit und Bewunderung empfangen wurde. Er hatte nicht nur die Berge bezwungen, sondern auch das Feuer, das ihre geliebte Heimat bedroht hatte.\nIn den Jahren, die folgten, wurde Tim zu einem Symbol der Entschlossenheit und des Mutes. Seine Geschichte von der Rettung des Dorfes wurde zu einer weiteren Legende, die von Generation zu Generation weitergegeben wurde. Aber für Tim selbst war das größte Geschenk die Gewissheit, dass die Berge nicht nur Orte der Schönheit und des Abenteuers waren, sondern auch Orte der Stärke und der Gemeinschaft.\nUnd so fuhr Tim weiterhin jeden Nachmittag die Hänge hinunter, aber jetzt war sein Herz nicht nur von der Schönheit der Natur erfüllt, sondern auch von der Wärme der Gemeinschaft, die er beschützt hatte. Denn die Nachmittage, die er auf seinen Skiern verbrachte, waren nicht nur Abenteuer, sondern auch eine Erinnerung daran, dass wahre Größe in der Bereitschaft liegt, für das zu kämpfen, was man liebt, und dass die Berge und die Natur eine Quelle der Inspiration und der Stärke sein können, die niemals versiegt.\nIn den Jahren, die nach dem verheerenden Waldbrand vergingen, blühte das Dorf dank Tim's Einsatz und der Zusammenhalt der Dorfgemeinschaft wieder auf. Neue Bäume wurden gepflanzt, die Häuser wurden wieder aufgebaut, und die Natur begann sich langsam zu regenerieren. Das Dorf wurde zu einem Symbol der Hoffnung und des Widerstands gegen die Naturgewalten.\nTim wurde zu einem angesehenen Ältesten im Dorf, und sein Rat wurde von allen geschätzt. Ob es um den Schutz der Natur, den Bau von Schutzhütten in den Bergen oder um Umweltaufklärung in den Schulen ging, Tim war stets an vorderster Front dabei. Er hatte nicht nur eine Leidenschaft für die Berge, sondern auch eine tiefe Verpflichtung, sie und das Dorf zu schützen.\nMit den Jahren lernte Tim auch eine junge Generation von Skifahrern, Naturliebhabern und Umweltschützern an. Er gründete eine Skischule im Dorf, in der nicht nur die Techniken des Skifahrens gelehrt wurden, sondern auch der Respekt vor der Natur und die Bedeutung des Umweltschutzes vermittelt wurden. Tim's Skischule wurde schnell zu einem Zentrum der Bildung und Inspiration für die Jugendlichen im Dorf.\nEines Tages, als Tim über die schneebedeckten Gipfel blickte und die Sonne langsam hinter den Bergen verschwinden sah, spürte er eine tiefe Zufriedenheit. Das Dorf, das er so sehr liebte, war wieder aufgebaut, die Natur blühte auf, und eine neue Generation war bereit, die Schönheit und den Wert der Umwelt zu schätzen.\nIn dieser Stille der Berge erinnerte sich Tim an all die Abenteuer, die er in seinem Leben erlebt hatte, an all die Höhen und Tiefen, an all die Herausforderungen, die er gemeistert hatte. Er dachte an die unzähligen Nachmittage, die er auf seinen Skiern verbracht hatte, und an all die Freude, die er in der Natur gefunden hatte.\nIn diesem Moment fasste Tim einen Entschluss. Er wollte seine Liebe zur Natur und seine Erfahrungen weitergeben, nicht nur an die Menschen in seinem Dorf, sondern an die Welt. Er beschloss, eine Stiftung zu gründen, die sich dem Schutz der Umwelt, der Bildung junger Menschen und der Förderung nachhaltiger Praktiken verschrieb.\nDie Jahre vergingen, und Tim's Stiftung wuchs zu einer internationalen Organisation heran. Sie führte Umweltschutzprojekte in verschiedenen Ländern durch, unterstützte Schulen und Gemeinden bei der Umweltaufklärung und schuf Schutzgebiete für gefährdete Tierarten. Tim wurde zu einem globalen Botschafter für die Natur und den Umweltschutz.\nAls er eines Tages hoch auf einem Berggipfel stand, umringt von einer Gruppe engagierter Umweltschützer aus verschiedenen Teilen der Welt, wusste Tim, dass sein Leben einen Sinn gefunden hatte. Er hatte nicht nur die Berge bezwungen, sondern auch seine eigene Bestimmung gefunden. Sein Herz war erfüllt von der Gewissheit, dass jeder Mensch einen Unterschied machen kann, dass jeder kleine Schritt in Richtung Umweltschutz zählt.\nUnd so lebte Tim sein Leben in Dankbarkeit und Erfüllung, wissend, dass seine Liebe zur Natur nicht nur sein eigenes Leben bereichert hatte, sondern auch das Leben von unzähligen Menschen auf der ganzen Welt. Seine Geschichte wurde zu einem Vermächtnis, das über Generationen hinweg weiterlebte, als Erinnerung daran, dass die Liebe zur Natur nicht nur eine Quelle der Freude ist, sondern auch eine Verantwortung, die wir gegenüber zukünftigen Generationen tragen. Und so schrieb Tim nicht nur eine Geschichte der Abenteuer in den Bergen, sondern auch eine Geschichte des Engagements, der Hoffnung und der unendlichen Liebe zur Natur. | 🧚🦍\n17:00 | Rückmarsch\n17:05 | Berg verlassen\n17:10 | Der Berg versteckte seine Spitze hinter dicken Wolken, während der Schnee die Erde mit einem glitzernden weißen Mantel überzog. Inmitten dieser malerischen Szenerie befand sich ein kleines Skigebiet namens \"Silberspitze\", ein Geheimtipp unter passionierten Wintersportlern. Es waren die letzten Tage der Skisaison, und der Berg war erfüllt von Menschen, die die letzten Schwünge im Schnee genießen wollten.\nZu diesen Menschen gehörte auch Lena, eine junge Frau mit feuerroten Haaren und einer Leidenschaft für das Skifahren, die in ihrer Familie seit Generationen weitergegeben wurde. Lena hatte ihre Kindheit auf diesen Pisten verbracht und jede Ecke von Silberspitze kannte sie wie ihre Westentasche.\nAn diesem besonderen Tag war die Sonne besonders hell, und die Pisten waren nahezu perfekt präpariert. Mit einer Gruppe von Freunden hatte Lena den ganzen Tag Skifahren verbracht, gelacht, Rennen gemacht und den Berg in all seiner Pracht genossen.\nAls der Tag sich jedoch dem Ende zuneigte und die Schatten länger wurden, überkam Lena eine tiefe Melancholie. Sie wusste, dass sie nach diesem Winter Silberspitze für eine lange Zeit verlassen würde. Ein Studium im Ausland und neue Abenteuer warteten auf sie, und obwohl sie sich darauf freute, war der Abschied von ihrem geliebten Berg schwer.\nDie Gruppe entschied sich, den Tag in der kleinen Berghütte am Fuße des Berges ausklingen zu lassen. Während sie dort saßen, umgeben von dem warmen Schein des Kaminfeuers, begann Lena, ihre Gefühle mit ihren Freunden zu teilen.\n\"Es ist seltsam\", begann sie, \"dieser Berg war immer ein fester Bestandteil meines Lebens. Er hat mir gezeigt, wie man fällt und wieder aufsteht, wie man die Natur respektiert und wie man die kleinen Momente schätzt. Ich kann mir kaum vorstellen, wie es sein wird, ihn für so lange Zeit nicht zu sehen.\"\nIhre Freunde nickten zustimmend. Jeder von ihnen hatte seine eigenen Erinnerungen und Verbindungen zu Silberspitze, und sie verstanden Lenas Gefühle.\n\"Das Schöne ist\", sagte Martin, einer ihrer ältesten Freunde, \"dass der Berg immer hier sein wird. Und egal, wo du bist oder was du tust, diese Erinnerungen werden immer ein Teil von dir sein.\"\nDie Gruppe verbrachte noch Stunden in der Hütte, teilte Geschichten, lachte und reflektierte über die Zeit, die sie zusammen auf dem Berg verbracht hatten. Als es schließlich Zeit war zu gehen, standen sie alle auf und traten hinaus in die kalte Nachtluft.\nLena blickte ein letztes Mal zurück auf den majestätischen Berg, der nun im Mondschein glänzte. Mit einem tiefen Atemzug füllte sie ihre Lungen mit der klaren Bergluft und flüsterte ein stilles \"Danke\" in die Stille der Nacht.\nUnd mit diesem Abschied wusste sie, dass sie zwar den Berg verlassen würde, aber die Erinnerungen und Lehren, die er ihr gegeben hatte, würde sie für immer bei sich tragen.\nIn den folgenden Monaten tauchte Lena in ein neues Abenteuer ein. Ihre Tage waren gefüllt mit Vorlesungen, neuen Freunden und der Erkundung einer unbekannten Stadt. Aber egal wie sehr sie sich in ihr neues Leben vertiefte, der Berg und ihre Erinnerungen an Silberspitze schwebten immer im Hintergrund ihres Geistes.\nEines Tages erhielt sie einen Brief, handgeschrieben auf grobem Papier. Das Absenderetikett verriet, dass er von der kleinen Berghütte am Fuße von Silberspitze kam. Als sie den Brief öffnete, fand sie eine kurze Notiz von Martin.\n\"Lena, ich hoffe, dieser Brief findet dich wohlauf. Der Berg vermisst dich, genau wie wir alle. Aber hier geht das Leben weiter. Die Pisten werden für die nächste Saison vorbereitet, und einige von uns helfen in der Berghütte aus. Ich dachte, ich schicke dir ein kleines Stück Heimat.\"\nIn dem Briefumschlag fand sie eine kleine, in Stoff eingewickelte Kette mit einem Anhänger in Form des Silberspitze-Berges.\nDas kleine Geschenk rührte Lena zutiefst. Sie legte die Kette um ihren Hals und fühlte sogleich eine Verbindung zu ihrer Heimat, zu ihren Freunden und vor allem zum Berg. Das Gefühl der Sehnsucht war immer noch da, aber nun war es gemischt mit einem Gefühl von Dankbarkeit und einer tiefen Verbindung zu ihrer Vergangenheit.\nMonate vergingen, und Lena begann, die Kette als ihr Talisman zu betrachten. Sie trug sie zu Prüfungen, zu neuen Abenteuern und immer dann, wenn sie sich ein bisschen verloren fühlte. Die Kette erinnerte sie daran, woher sie kam und gab ihr die Kraft, mutig in die Zukunft zu blicken.\nIn den Semesterferien kehrte Lena schließlich nach Hause zurück. Als sie den Berg wieder sah, fühlte sie eine Flut von Emotionen. Sie war zwar gewachsen und hatte sich verändert, aber der Berg und seine unveränderliche Präsenz gaben ihr das Gefühl, wieder nach Hause zu kommen.\nBei ihrer Rückkehr organisierten ihre Freunde eine kleine Überraschungsparty in der Berghütte. Die Wiedervereinigung war herzlich, und die Geschichten und Lacher füllten den Raum. Lena erzählte von ihren Abenteuern in der Ferne, und ihre Freunde von den Geschichten des Berges.\nAls der Abend zu Ende ging, standen sie alle draußen und blickten hinauf zur Silberspitze. Mit dem Wissen, dass sie immer eine Heimat hätten, wo immer das Leben sie auch hinführen mochte, nahmen sie sich fest in den Arm und begrüßten das nächste Kapitel ihres Lebens mit offenen Armen.",
+        "safetyText": "",
+        "notesText": "Die Euphorie des Skifahrens: Eine Reise durch den Pulverschnee 🐇\nEs gibt Momente im Leben, die eine eigene Melodie haben. Für Emma war es das sanfte Knirschen des Schnees unter ihren Skiern, das Pfeifen des Windes in ihren Ohren und das euphorische Lachen, das sich in der klaren Bergluft verlor. Skifahren war für sie nicht nur eine Aktivität; es war eine Leidenschaft, eine Obsession, eine Liebe, die sie von den Gipfeln der Alpen bis zu den Rocky Mountains verfolgte.\nIhr Abenteuer begann in einem kleinen Skiresort in den Alpen. Es war ein frostiger Morgen, als sie das erste Mal ihre Skier anschnallte. Ihr Herz pochte vor Aufregung, als sie den Hügel hinunterfuhr. Der kalte Wind fegte ihr ins Gesicht und ihre Wangen glühten vor Kälte. Aber all das war vergessen, als sie die Freiheit spürte, die das Skifahren mit sich brachte. Die Welt schien still zu stehen, während sie den Berg hinuntersauste. Es war, als ob sie flog, als ob sie eins wurde mit der schneebedeckten Landschaft um sie herum.\nMit der Zeit verbesserte sich Emmas Können. Sie wagte sich an steilere Hänge, meisterte die Kunst der Carving-Schwünge und wagte sich sogar in den Tiefschnee. Jeder Ausflug auf die Pisten war wie eine Reise in eine andere Welt, eine Welt voller Adrenalin, Schönheit und Herausforderung. Sie liebte es, die schier endlosen Hänge hinunterzufahren, den Pulverschnee unter sich zu spüren und den Blick über die majestätischen Berggipfel schweifen zu lassen. 🦔\nDoch das Skifahren war für Emma nicht nur ein sportliches Vergnügen. Es war auch eine Möglichkeit, dem Alltag zu entfliehen, den Stress der Arbeit hinter sich zu lassen und vollständig im Moment zu leben. Wenn sie auf den Pisten stand, gab es nur sie, die Berge und der Schnee. Alle Sorgen und Gedanken verschwanden, und sie fand Frieden und Glückseligkeit in der Bewegung.\nIm Laufe der Jahre erkundete Emma Skigebiete auf der ganzen Welt. Sie fuhr durch die verschneiten Wälder in Kanada, stürzte sich die steilen Hänge in der Schweiz hinunter und erlebte die endlose Weite der Skigebiete in den USA. Jeder Ort hatte seinen eigenen Reiz, seine eigenen Herausforderungen und seine eigene Schönheit.\nAber es waren nicht nur die Pisten, die Emma faszinierten. Es waren die Menschen, die sie unterwegs traf, die Skilehrer, die ihr halfen, ihre Technik zu verbessern, und die Gleichgesinnten, die ihre Leidenschaft teilten. Die Après-Ski-Abende in den gemütlichen Hütten, das Lachen, die Geschichten und das Gefühl der Gemeinschaft machten ihre Skireisen zu unvergesslichen Erlebnissen.\nMit jedem weiteren Skitag wuchs Emmas Liebe zum Skifahren. Sie genoss die Herausforderung, die Geschwindigkeit, die Freiheit und die Verbindung zur Natur. Skifahren war für sie nicht nur ein Sport, sondern eine Lebensweise, eine Quelle der Freude und eine unerschöpfliche Inspirationsquelle.\nUnd so setzte Emma ihre Skireisen fort, von einem Skigebiet zum nächsten, von einem Abenteuer zum nächsten. Sie wusste, dass solange es Berge gab und Schnee, würde sie ihre Skier anschnallen, den Hang hinunterfahren und die Euphorie des Skifahrens in vollen Zügen genießen. Denn für Emma war Skifahren nicht nur eine Leidenschaft - es war ihre Seele, die im Pulverschnee zum Leben erwachte.",
+        "learningObjectivesText": "",
+        "materialText": "",
+        "laThematicAreas": [],
+        "learningTopics": [],
+        "ysCharacteristics": [],
+        "ysPhysicalActivityDurationMinutes": null,
+        "contentTypes": [
+          "Storyboard",
+          "ColumnLayout",
+          "Storycontext",
+          "Notes"
+        ],
+        "hasStoryboard": true,
+        "hasSafetyConsiderations": false,
+        "contentNodeCount": 4
+      }
+    }
+  ],
+  "categories": [
+    {
+      "iri": "/api/categories/89a2e0ad0ab5",
+      "short": "Ski",
+      "name": "Ski",
+      "color": "#3720A5",
+      "numberingStyle": "1"
+    },
+    {
+      "iri": "/api/categories/eddb2cd8cee0",
+      "short": "Snwb",
+      "name": "Snowboard",
+      "color": "#248DB3",
+      "numberingStyle": "A"
+    }
+  ],
+  "collaborators": [
+    {
+      "iri": "/api/camp_collaborations/10d8f02ce5b4",
+      "userIri": "/api/users/9145944210a7",
+      "role": "guest",
+      "status": "established",
+      "displayName": "Bi-Pi",
+      "nickname": null,
+      "firstname": null,
+      "surname": null,
+      "abbreviation": "⚜️",
+      "isCurrentUser": false
+    },
+    {
+      "iri": "/api/camp_collaborations/46d14f7c072c",
+      "userIri": "/api/users/a2f4f3879c85",
+      "role": "manager",
+      "status": "established",
+      "displayName": "Bruce Wayne",
+      "nickname": null,
+      "firstname": null,
+      "surname": null,
+      "abbreviation": null,
+      "isCurrentUser": false
+    },
+    {
+      "iri": "/api/camp_collaborations/5b24ce470d9f",
+      "userIri": "/api/users/a3d9d86dc23b",
+      "role": "member",
+      "status": "established",
+      "displayName": "John Wick",
+      "nickname": null,
+      "firstname": null,
+      "surname": null,
+      "abbreviation": null,
+      "isCurrentUser": false
+    },
+    {
+      "iri": "/api/camp_collaborations/d1c0a4522283",
+      "userIri": "/api/users/dac7116e02ed",
+      "role": "manager",
+      "status": "established",
+      "displayName": "Luke Skywalker",
+      "nickname": null,
+      "firstname": null,
+      "surname": null,
+      "abbreviation": null,
+      "isCurrentUser": true
+    }
+  ],
+  "dayResponsibles": [
+    {
+      "iri": "/api/day_responsibles/0c0674ee1f9b",
+      "dayIri": "/api/days/69426b72ce46",
+      "collaborationIri": "/api/camp_collaborations/46d14f7c072c"
+    },
+    {
+      "iri": "/api/day_responsibles/1d19f71ffd00",
+      "dayIri": "/api/days/755cbc1d9852",
+      "collaborationIri": "/api/camp_collaborations/10d8f02ce5b4"
+    },
+    {
+      "iri": "/api/day_responsibles/3237e7c271c5",
+      "dayIri": "/api/days/27ad4212466a",
+      "collaborationIri": "/api/camp_collaborations/5b24ce470d9f"
+    }
+  ],
+  "activityResponsibles": [
+    {
+      "iri": "/api/activity_responsibles/06743ccfeedd",
+      "activityIri": "/api/activities/a13fadc97610",
+      "collaborationIri": "/api/camp_collaborations/10d8f02ce5b4"
+    },
+    {
+      "iri": "/api/activity_responsibles/21bc6661c569",
+      "activityIri": "/api/activities/a13fadc97610",
+      "collaborationIri": "/api/camp_collaborations/5b24ce470d9f"
+    },
+    {
+      "iri": "/api/activity_responsibles/a9a760e36fd8",
+      "activityIri": "/api/activities/b29d387cc403",
+      "collaborationIri": "/api/camp_collaborations/46d14f7c072c"
+    }
+  ],
+  "progressLabels": [
+    {
+      "iri": "/api/activity_progress_labels/fb1ebb58f96e",
+      "title": "Vorschlag",
+      "position": 1
+    },
+    {
+      "iri": "/api/activity_progress_labels/8cb103856f01",
+      "title": "Organisation Abgeschlossen",
+      "position": 2
+    },
+    {
+      "iri": "/api/activity_progress_labels/af92782262d7",
+      "title": "Rudolf OK",
+      "position": 3
+    }
+  ],
+  "comments": [
+    {
+      "iri": "/api/comments/d6fddfe3c07a",
+      "activityIri": "/api/activities/b29d387cc403",
+      "parentIri": null,
+      "textHtml": "<p>Schöne Aktivität! Die <strong>Sicherheitsüberlegungen</strong> fehlen aber noch, siehe https://www.jugendundsport.ch — das ist für die Kantonsbeiträge <em>zwingend</em>. 🏔️</p>",
+      "authorIri": "/api/camp_collaborations/10d8f02ce5b4",
+      "authorDisplayName": "Bi-Pi",
+      "createTime": "2026-07-28T19:42:11+00:00",
+      "resolvedAt": null
+    },
+    {
+      "iri": "/api/comments/27a64b0fc2c0",
+      "activityIri": "/api/activities/b29d387cc403",
+      "parentIri": null,
+      "textHtml": "<p>Zur Sicherheit auf dem Berg fehlt uns noch fast alles: Bitte beschreibt, wer die Gruppe führt, welche Ausbildung diese Person hat, wie ihr den Lawinenlagebericht einholt und wann, ab welchem Gefahrengrad ihr auf das Ausweichprogramm wechselt und wer diesen Entscheid fällt, wo die Sammelpunkte liegen, wie und wie oft ihr die Teilnehmenden zählt, welches Notfallmaterial mitkommt und wer es trägt, wer die Rettungskette auslöst, welche Telefonnummern die Leitenden zusätzlich auf Papier dabeihaben, wie ihr die Eltern im Ereignisfall informiert, wie ihr mit Teilnehmenden umgeht, die nicht mehr weiterlaufen können, und woran ihr merkt, dass die Gruppe umkehren muss. Das ist der Punkt, den die Kantone bei uns am häufigsten beanstanden, und ohne diese Angaben können wir die Aktivität nicht abschliessend beurteilen und das Lager auch nicht bewilligen.</p>",
+      "authorIri": "/api/camp_collaborations/10d8f02ce5b4",
+      "authorDisplayName": "Bi-Pi",
+      "createTime": "2026-07-28T19:55:47+00:00",
+      "resolvedAt": null
+    },
+    {
+      "iri": "/api/comments/5d64013d7c65",
+      "activityIri": "/api/activities/b29d387cc403",
+      "parentIri": null,
+      "textHtml": "<p>Bitte noch klären:</p><ul><li><p>Wer hat den Lawinenkurs?</p></li><li><p>Notfallkonzept bei dichtem Nebel</p></li><li><p><s>Schlitteln</s> haben wir gestrichen</p></li></ul>",
+      "authorIri": "/api/camp_collaborations/10d8f02ce5b4",
+      "authorDisplayName": "Bi-Pi",
+      "createTime": "2026-07-28T20:03:29+00:00",
+      "resolvedAt": null
+    },
+    {
+      "iri": "/api/comments/897358359032",
+      "activityIri": "/api/activities/a13fadc97610",
+      "parentIri": null,
+      "textHtml": "<p>Diese Aktivität überschneidet sich mit dem Skifahren am Samstag. 🤔</p>",
+      "authorIri": "/api/camp_collaborations/10d8f02ce5b4",
+      "authorDisplayName": "Bi-Pi",
+      "createTime": "2026-07-28T20:11:05+00:00",
+      "resolvedAt": "2026-07-30T10:03:27+00:00"
+    },
+    {
+      "iri": "/api/comments/6bef4d6808a7",
+      "activityIri": "/api/activities/b29d387cc403",
+      "parentIri": "/api/comments/d6fddfe3c07a",
+      "textHtml": "<p>Danke fürs Feedback, wir ergänzen die <strong>Sicherheitsüberlegungen</strong> bis Ende Monat.</p>",
+      "authorIri": "/api/camp_collaborations/46d14f7c072c",
+      "authorDisplayName": "Bruce Wayne",
+      "createTime": "2026-07-29T08:17:36+00:00",
+      "resolvedAt": null
+    },
+    {
+      "iri": "/api/comments/05755bd3ae41",
+      "activityIri": null,
+      "parentIri": null,
+      "textHtml": "<p>Generell fehlt mir im ganzen Lager eine Aussage dazu, wie ihr mit dem Wetter umgeht. Bitte ergänzen, bevor ich das Lager bewilligen kann.</p>",
+      "authorIri": "/api/camp_collaborations/46d14f7c072c",
+      "authorDisplayName": "Bruce Wayne",
+      "createTime": "2026-07-29T08:24:02+00:00",
+      "resolvedAt": null
+    },
+    {
+      "iri": "/api/comments/c0a8e3b5f912",
+      "activityIri": "/api/activities/b29d387cc403",
+      "parentIri": "/api/comments/d6fddfe3c07a",
+      "textHtml": "<p>Super, danke! Ich schaue es mir dann nochmals an.</p>",
+      "authorIri": "/api/camp_collaborations/10d8f02ce5b4",
+      "authorDisplayName": "Bi-Pi",
+      "createTime": "2026-07-29T09:02:18+00:00",
+      "resolvedAt": null
+    }
+  ]
+}

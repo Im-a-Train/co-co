@@ -1,0 +1,91 @@
+import type { ActivityFact, CampFacts } from '../../types'
+
+export function makeActivity(n: number, over: Partial<ActivityFact> = {}): ActivityFact {
+  return {
+    iri: `/api/activities/a${n}`,
+    title: `Aktivität ${n}`,
+    location: null,
+    categoryIri: '/api/categories/c1',
+    progressLabelIri: null,
+    rootContentNodeIri: null,
+    responsibleIris: [],
+    scheduleEntryIris: [`/api/schedule_entries/s${n}`],
+    content: {
+      storyboardText: 'Einstimmen',
+      safetyText: '',
+      notesText: '',
+      learningObjectivesText: '',
+      materialText: '',
+      laThematicAreas: [],
+      learningTopics: [],
+      ysCharacteristics: [],
+      ysPhysicalActivityDurationMinutes: null,
+      contentTypes: [],
+      hasStoryboard: true,
+      hasSafetyConsiderations: false,
+      contentNodeCount: 1,
+    },
+    ...over,
+  }
+}
+
+export function makeFacts(activityCount = 2): CampFacts {
+  const activities = Array.from({ length: activityCount }, (_, i) => makeActivity(i + 1))
+  return {
+    schemaVersion: 1,
+    loadedAt: '2026-11-07T10:00:00.000Z',
+    instanceBaseUrl: null,
+    userIri: '/api/users/u1',
+    camp: {
+      iri: '/api/camps/camp1',
+      id: 'camp1',
+      title: 'Sola',
+      shortTitle: null,
+      motto: null,
+      kind: null,
+      organizer: null,
+      coachName: 'Coach',
+      courseKind: null,
+      courseNumber: null,
+      trainingAdvisorName: null,
+      address: { name: null, street: null, zipcode: null, city: null },
+      isPrototype: false,
+      start: '2027-07-10',
+      end: '2027-07-17',
+    },
+    periods: [{ iri: '/api/periods/p1', description: null, start: '2027-07-10', end: '2027-07-17' }],
+    days: [
+      {
+        iri: '/api/days/d1',
+        periodIri: '/api/periods/p1',
+        number: 1,
+        dayOffset: 0,
+        date: '2027-07-10',
+        start: '2027-07-10T06:00:00+00:00',
+        end: '2027-07-11T06:00:00+00:00',
+      },
+    ],
+    scheduleEntries: activities.map((a, i) => ({
+      iri: `/api/schedule_entries/s${i + 1}`,
+      activityIri: a.iri,
+      periodIri: '/api/periods/p1',
+      dayIri: '/api/days/d1',
+      start: '2027-07-10T09:00:00+00:00',
+      end: '2027-07-10T10:30:00+00:00',
+      durationMinutes: 90,
+      dayNumber: 1,
+      scheduleEntryNumber: i + 1,
+      number: `1.${i + 1}`,
+      left: 0,
+      width: 0,
+      ysPhysicalActivityDurationMinutes: null,
+    })),
+    activities,
+    categories: [{ iri: '/api/categories/c1', short: 'LS', name: 'Lagersport', color: '#fff', numberingStyle: '1' }],
+    collaborators: [],
+    dayResponsibles: [],
+    activityResponsibles: [],
+    progressLabels: [],
+    comments: [],
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "settings": {
+    "title": "Einstellungen",
+    "sections": {
+      "instances": "Instanzen",
+      "ai": "KI",
+      "backup": "Backup",
+      "diagnostics": "Diagnose"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+id: CMP-ACT-02
+version: 1.0.0
+group: completeness
+title: "LS/LA-Aktivität ohne Ablauf"
+description: "Lagersport- und Lageraktivitäten haben einen Ablauf (Storyboard)."
+message: "«{title}» ist eine J+S-Einheit, hat aber keinen Ablauf (Storyboard)"
+severity: should
+confidence: best-practice
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping]
+tags: [vollstaendigkeit]
+source:
+  title: "Hering (PBS)"
+  url: https://hering.scout.ch/de

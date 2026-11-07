@@ -11,6 +11,8 @@
     "preview": "vite preview --port 1420 --strictPort",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
+    "test:live": "vitest run src/e2e",
+    "test:ui": "node e2e-ui/run.mjs",
     "tauri": "tauri",
     "dev": "tauri dev",
     "build": "tauri build"
@@ -18,15 +20,22 @@
   "dependencies": {
     "@mdi/font": "7.4.47",
     "@tauri-apps/api": "~2.12.4",
+    "dexie": "4.4.7",
+    "mammoth": "1.13.0",
+    "minisearch": "7.2.0",
+    "pdfjs-dist": "6.5.438",
     "vue": "~3.5.45",
     "vue-i18n": "~11.4.18",
-    "vuetify": "~3.13.7"
+    "vue-router": "4.6.4",
+    "vuetify": "~3.13.7",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "~2.12.4",
     "@types/node": "^22.19.0",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/tsconfig": "^0.9.1",
+    "playwright-core": "^1.65.0",
     "typescript": "~5.9.3",
     "vite": "^8.3.6",
     "vite-plugin-vuetify": "^2.1.3",

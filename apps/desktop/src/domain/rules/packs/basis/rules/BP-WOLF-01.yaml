@@ -1,0 +1,15 @@
+id: BP-WOLF-01
+version: 1.0.0
+group: best-practice
+title: "1 Leitende pro 6 Wölfe"
+description: "Bei der Wolfsstufe kommt eine leitende Person auf höchstens 6 Kinder."
+message: "{leaders} Leitende für {participants} Wölfe (empfohlen: 1 pro 6, also mindestens {needed})"
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs]
+tags: [leitung]
+source:
+  title: "Hering (PBS)"
+  url: https://hering.scout.ch/de

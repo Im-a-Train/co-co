@@ -9,6 +9,20 @@ const COMMANDS: &[&str] = &[
     "refresh_session",
     "api_get",
     "logout",
+    "api_post_comment",
+    "api_patch_comment",
+    "pick_files",
+    "pick_folder",
+    "read_document",
+    "list_folder",
+    "watch_folder",
+    "unwatch_folder",
+    "save_text_file",
+    "open_text_file",
+    "ai_set_key",
+    "ai_has_key",
+    "ai_clear_key",
+    "ai_complete",
 ];
 
 fn main() {

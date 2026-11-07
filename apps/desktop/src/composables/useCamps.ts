@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { activitiesPath, campsPath, toCampSummary, toPeriod, type CampSummary } from '@/lib/camps'
-import { asResource, collectionCount, embeddedList, str, type HalResource } from '@/lib/hal'
+import { asResource, collectionCount, embeddedList, linkHref, selfHref, str, type HalResource } from '@/lib/hal'
 import { commands, errorMessage } from '@/lib/tauri'
 import { useSession } from './useSession'
 import { useSpikeProtocol } from './useSpikeProtocol'
@@ -41,9 +41,18 @@ async function loadCamps(): Promise<void> {
     // which includes camps where the coach is invited as guest.
     const userIri = useSession().session.value?.userIri
     if (!userIri) throw new Error('Benutzer unbekannt – bitte neu anmelden.')
-    const res = asResource(await commands.apiGet<HalResource>(campsPath(userIri)))
+    const items: HalResource[] = []
+    const seen = new Set<string>()
+    let next: string | null = campsPath(userIri)
+    while (next && !seen.has(next)) {
+      seen.add(next)
+      const res: HalResource | null = asResource(await commands.apiGet<HalResource>(next))
+      items.push(...embeddedList(res))
+      next = linkHref(res, 'next')
+      if (next === selfHref(res)) next = null
+    }
     if (seq !== loadSeq) return
-    camps.value = embeddedList(res)
+    camps.value = items
       .map(toCampSummary)
       .filter((c): c is CampSummary => c !== null)
     loaded.value = true

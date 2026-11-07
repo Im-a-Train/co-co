@@ -1,0 +1,103 @@
+{
+  "documents": {
+    "title": "Dokumente",
+    "intro": "Dokumente bleiben auf deinem Computer. co-co speichert nur den extrahierten Text und die Metadaten im Browser-Speicher der App.",
+    "drop": {
+      "title": "Dateien hierher ziehen",
+      "hint": "PDF, DOCX, GPX, TXT oder MD. Du kannst auch einen Ordner hierher ziehen, er wird dann überwacht.",
+      "pickFiles": "Dateien wählen",
+      "pickFolder": "Ordner überwachen",
+      "busy": "Dokumente werden gelesen …"
+    },
+    "folders": {
+      "title": "Überwachte Ordner",
+      "empty": "Noch kein Ordner überwacht.",
+      "remove": "Überwachung beenden",
+      "rescan": "Ordner neu einlesen"
+    },
+    "list": {
+      "title": "Dokumente dieses Lagers",
+      "empty": "Noch keine Dokumente. Ziehe Dateien in das Fenster oder wähle sie aus.",
+      "remove": "Aus co-co entfernen",
+      "noLink": "Keine Aktivität verknüpft",
+      "linkedTo": "Verknüpft mit",
+      "confirmQuestion": "bestätigen?",
+      "confirm": "Verknüpfung bestätigen",
+      "reject": "Vorschlag verwerfen",
+      "unlink": "Verknüpfung lösen",
+      "pending": "{n} Verknüpfung(en) zu bestätigen",
+      "error": "Fehler beim Lesen",
+      "kind": {
+        "pdf": "PDF",
+        "docx": "Word",
+        "gpx": "GPX",
+        "txt": "Text",
+        "md": "Markdown",
+        "other": "Andere"
+      },
+      "score": "Übereinstimmung {pct} %"
+    },
+    "detail": {
+      "title": "Details",
+      "select": "Wähle ein Dokument aus der Liste.",
+      "path": "Pfad",
+      "size": "Grösse",
+      "imported": "Eingelesen",
+      "textLength": "{n} Zeichen Text",
+      "noText": "Kein Text extrahiert",
+      "preview": "Textvorschau",
+      "zone": "Datenzone: gelb (nur lokal)"
+    },
+    "ai": {
+      "label": "KI darf dieses Dokument verwenden",
+      "warning": "Achtung: Nur wenn du das aktivierst, darf die optionale KI-Funktion Inhalte dieses Dokuments (nach Anonymisierung und Vorschau) an einen externen Dienst senden. Lass es aus, wenn das Dokument Personendaten oder vertrauliche Angaben enthält.",
+      "summary": "KI-Zusammenfassung"
+    },
+    "checklist": {
+      "title": "Sicherheitskonzept: Checkliste",
+      "complete": "Alle Punkte gefunden",
+      "incomplete": "{n} Punkt(e) fehlen",
+      "notChecked": "Für dieses Dokument wurde keine Checkliste erstellt.",
+      "found": "gefunden",
+      "missing": "fehlt",
+      "items": {
+        "emergencyNumbers": "Notrufnummern (144, 1414, 117, 118, 145)",
+        "hospital": "Nächstes Spital",
+        "crisisContact": "Krisenkontakt / Pfadi-Helpline",
+        "evacuation": "Evakuation / Notunterkunft",
+        "badWeather": "Schlechtwetterkonzept",
+        "threeByThree": "3x3-Lagebeurteilung",
+        "firstAid": "Erste-Hilfe-Material und Verantwortliche",
+        "campAddress": "Lageradresse / Koordinaten"
+      }
+    },
+    "gpx": {
+      "title": "GPX-Analyse",
+      "distance": "Distanz",
+      "ascent": "Aufstieg",
+      "descent": "Abstieg",
+      "highest": "Höchster Punkt",
+      "lowest": "Tiefster Punkt",
+      "lkm": "Leistungskilometer",
+      "lkmFormula": "Lkm = km + Aufstieg/100",
+      "includeDescent": "Abstieg einrechnen (+ Abstieg/150)",
+      "pace": "Tempo (Lkm pro Stunde)",
+      "paceDefault": "Standard",
+      "paceWoelfe": "Wölfe",
+      "estimate": "Geschätzte Gehzeit",
+      "slot": "Geplanter Zeitslot",
+      "fits": "Passt in den Zeitslot",
+      "tooLong": "Gehzeit übersteigt den Zeitslot um {min} min",
+      "noSlot": "Keine Aktivität mit Zeitslot verknüpft",
+      "points": "{n} Punkte"
+    },
+    "search": {
+      "label": "In Dokumenten und eCamp-Inhalten suchen",
+      "empty": "Keine Treffer.",
+      "document": "Dokument",
+      "activity": "Aktivität"
+    },
+    "minutes": "{n} min",
+    "hoursMinutes": "{h} h {m} min"
+  }
+}

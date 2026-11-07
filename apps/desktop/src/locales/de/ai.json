@@ -1,0 +1,46 @@
+{
+  "ai": {
+    "title": "KI (optional)",
+    "enable": "KI-Funktionen aktivieren",
+    "enableHint": "Standardmässig aus. Ohne Aktivierung wird nie etwas an die KI gesendet.",
+    "model": "Modell",
+    "noFacts": "Lagerdaten sind noch nicht geladen.",
+    "zones": {
+      "text": "Datenzonen: Grün (Regeln, Vorlagen) darf gesendet werden. Gelb (Feedback-Texte, Dokumente, Lagerdaten) nur anonymisiert und nach Bestätigung der Vorschau. Rot (Personendaten, MiData/NDS) wird nie gesendet. Namen werden durch Leiter A, B, ... ersetzt, E-Mail-Adressen, Telefonnummern, AHV-Nummern und Adressen entfernt."
+    },
+    "key": {
+      "title": "API-Schlüssel",
+      "stored": "Schlüssel hinterlegt",
+      "missing": "Kein Schlüssel hinterlegt",
+      "label": "Neuer API-Schlüssel",
+      "clear": "Schlüssel löschen",
+      "saved": "Schlüssel im Schlüsselbund des Betriebssystems gespeichert.",
+      "hint": "Der Schlüssel wird im Schlüsselbund des Betriebssystems abgelegt und nie angezeigt."
+    },
+    "preview": {
+      "title": "Das wird an die KI gesendet",
+      "explain": "Dies ist der genaue Text nach der Anonymisierung. Es wird nichts anderes übermittelt.",
+      "redactions": "Anonymisierte Stellen: {n}",
+      "send": "Senden"
+    },
+    "rephrase": { "button": "Mit KI umformulieren" },
+    "summary": { "button": "Mit KI zusammenfassen", "notAllowed": "KI-Nutzung für dieses Dokument nicht erlaubt" },
+    "safety": { "button": "KI-Einschätzung Sicherheit", "tag": "KI-Einschätzung" },
+    "features": {
+      "rephrase": "Umformulieren",
+      "summarise": "Zusammenfassen",
+      "safetyReview": "Sicherheits-Einschätzung"
+    },
+    "log": {
+      "title": "KI-Protokoll (ohne Inhalte)",
+      "empty": "Noch keine KI-Anfragen.",
+      "at": "Zeit",
+      "feature": "Funktion",
+      "tokens": "Tokens (ein / aus)",
+      "redactions": "Anonymisiert",
+      "status": "Status",
+      "ok": "ok",
+      "failed": "Fehler"
+    }
+  }
+}

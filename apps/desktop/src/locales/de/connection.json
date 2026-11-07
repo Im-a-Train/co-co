@@ -1,24 +1,4 @@
 {
-  "app": {
-    "name": "co-co",
-    "subtitle": "Coach Cockpit",
-    "milestone": "M0 · Login-Spike",
-    "status": {
-      "loggedIn": "Angemeldet",
-      "loggedOut": "Nicht angemeldet"
-    }
-  },
-  "common": {
-    "yes": "ja",
-    "no": "nein",
-    "none": "keine",
-    "unknown": "unbekannt",
-    "retry": "Erneut versuchen"
-  },
-  "notTauri": {
-    "title": "Nur in der Desktop-App verfügbar",
-    "text": "Diese Oberfläche läuft gerade in einem normalen Browser. Anmeldung und eCamp-Zugriff funktionieren nur in der co-co Desktop-App (npm run dev)."
-  },
   "instance": {
     "title": "eCamp-Instanz",
     "subtitle": "Mit welchem eCamp soll co-co sprechen?",
@@ -83,22 +63,6 @@
     "refresh": "Token erneuern",
     "logout": "Abmelden"
   },
-  "camps": {
-    "title": "Lager",
-    "subtitle": "Deine Lager aus eCamp",
-    "count": "kein Lager | ein Lager | {n} Lager",
-    "reload": "Neu laden",
-    "loginFirst": "Melde dich an, um deine Lager zu sehen.",
-    "failed": "Lager konnten nicht geladen werden",
-    "empty": "Keine Lager gefunden.",
-    "motto": "Motto",
-    "coach": "Coach",
-    "activities": {
-      "title": "Aktivitäten",
-      "count": "keine Aktivitäten | 1 Aktivität | {n} Aktivitäten",
-      "failed": "Aktivitäten konnten nicht geladen werden"
-    }
-  },
   "protocol": {
     "title": "Spike-Protokoll",
     "subtitle": "Diagnose der Anmeldung – zum Einfügen ins GitHub-Issue / ADR",
@@ -144,5 +108,8 @@
     "detail": "Detail",
     "log": "Ereignisprotokoll",
     "noLog": "Keine Ereignisse aufgezeichnet."
+  },
+  "connection": {
+    "title": "Verbindung"
   }
 }

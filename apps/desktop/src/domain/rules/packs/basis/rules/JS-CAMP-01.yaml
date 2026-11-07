@@ -1,0 +1,14 @@
+id: JS-CAMP-01
+version: 1.0.0
+group: js
+title: "Lager mit mindestens 4 aufeinanderfolgenden Tagen"
+description: "Ein J+S-Lager dauert mindestens 4 aufeinanderfolgende Tage."
+message: "Das Lager dauert nur {days} aufeinanderfolgende Tage (nötig: mindestens 4)"
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+tags: [lagerdauer]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

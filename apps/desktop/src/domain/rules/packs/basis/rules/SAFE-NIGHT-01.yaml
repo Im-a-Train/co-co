@@ -1,0 +1,14 @@
+id: SAFE-NIGHT-01
+version: 1.0.0
+group: safety
+title: "Nachtaktivität: Sicherheit und Ruhezeit"
+description: "Aktivitäten nach 22 Uhr oder in der Nacht haben Sicherheitsüberlegungen und lassen bis zum nächsten Programmstart mindestens 8,5 Stunden Ruhe."
+message: "«{title}» (Nachtaktivität): {reasons}"
+severity: hint
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+tags: [sicherheit, nacht]
+source:
+  title: "Hering (PBS)"
+  url: https://hering.scout.ch/de
