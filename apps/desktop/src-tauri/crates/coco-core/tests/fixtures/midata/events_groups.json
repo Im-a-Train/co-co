@@ -1,14 +1,12 @@
 {"data":[
- {"id":"1","type":"events","attributes":{"name":"Sommerlager Alpha","type":"Event::Camp"},"relationships":{"dates":{"data":[{"type":"event_dates","id":"d1"}]},"groups":{"data":[{"type":"groups","id":"g1"},{"type":"groups","id":"g2"}]}}},
- {"id":"2","type":"events","attributes":{"name":"Lager Beta","type":"Event::Camp"},"relationships":{"dates":{"data":[{"type":"event_dates","id":"d2"}]}}},
- {"id":"3","type":"events","attributes":{"name":"Kurs Gamma","type":"Event::Course"},"relationships":{"dates":{"data":[{"type":"event_dates","id":"d3"}]}}},
+ {"id":"1","type":"events","attributes":{"name":"Sommerlager Alpha","type":"Event::Camp","group_ids":[11,12]},"relationships":{"dates":{"data":[{"type":"dates","id":"d1"}]}}},
+ {"id":"2","type":"events","attributes":{"name":"Lager Beta","type":"Event::Camp"},"relationships":{"dates":{"data":[{"type":"dates","id":"d2"}]}}},
+ {"id":"3","type":"events","attributes":{"name":"Kurs Gamma","type":"Event::Course"},"relationships":{"dates":{"data":[{"type":"dates","id":"d3"}]}}},
  {"id":"4","type":"events","attributes":{"name":"Lager ohne Datum"},"relationships":{"dates":{"data":[]}}},
- {"id":"5","type":"events","attributes":{"name":"Winterlager","type":"Event::Camp"},"relationships":{"dates":{"data":[{"type":"event_dates","id":"d5"}]}}}
+ {"id":"5","type":"events","attributes":{"name":"Winterlager","type":"Event::Camp"},"relationships":{"dates":{"data":[{"type":"dates","id":"d5"}]}}}
 ],
  "included":[
- {"id":"g1","type":"groups","attributes":{"name":"Abteilung Alpha"}},
- {"id":"g2","type":"groups","attributes":{"name":"Region Nord"}},
- {"id":"d1","type":"event_dates","attributes":{"start_at":"2026-07-18T00:00:00.000+02:00","finish_at":"2026-07-25T00:00:00.000+02:00"}},
- {"id":"d2","type":"event_dates","attributes":{"start_at":"2026-07-23","finish_at":"2026-07-30"}},
- {"id":"d3","type":"event_dates","attributes":{"start_at":"2026-07-06","finish_at":"2026-07-08"}},
- {"id":"d5","type":"event_dates","attributes":{"start_at":"2026-12-27","finish_at":"2026-12-31"}}]}
+ {"id":"d1","type":"dates","attributes":{"start_at":"2026-07-18T00:00:00.000+02:00","finish_at":"2026-07-25T00:00:00.000+02:00"}},
+ {"id":"d2","type":"dates","attributes":{"start_at":"2026-07-23","finish_at":"2026-07-30"}},
+ {"id":"d3","type":"dates","attributes":{"start_at":"2026-07-06","finish_at":"2026-07-08"}},
+ {"id":"d5","type":"dates","attributes":{"start_at":"2026-12-27","finish_at":"2026-12-31"}}]}

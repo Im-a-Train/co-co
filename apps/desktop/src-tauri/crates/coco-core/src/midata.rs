@@ -164,9 +164,9 @@ pub struct RawEventData<'a> {
     pub base_url: &'a str,
     /// `GET /api/events/{id}?include=dates`
     pub event: &'a Value,
-    /// All pages of `GET /api/event_participations?filter[event_id]=..&include=person,roles`
+    /// All pages of `GET /api/event_participations?filter[event_id][eq]=..&include=participant,roles`
     pub participation_pages: &'a [Value],
-    /// All pages of `GET /api/qualifications?filter[person_id]=..&include=qualification_kind`
+    /// All pages of `GET /api/qualifications?filter[person_id][eq]=..&include=qualification_kind`
     pub qualification_pages: &'a [Value],
     /// Camp period from eCamp (YYYY-MM-DD), used for ages and qualification validity.
     pub camp_start: &'a str,
@@ -384,6 +384,46 @@ pub fn parse_event_list(doc: &Value) -> Result<Vec<MidataEventSummary>, CoreErro
 /// Like `parse_event_list`; with `camp_only` drops events whose `type` attribute is present
 /// and does not contain "Camp" (fallback when the server ignored the type filter).
 pub fn parse_event_list_filtered(doc: &Value, camp_only: bool) -> Result<Vec<MidataEventSummary>, CoreError> {
+    parse_event_list_with_groups(doc, camp_only, &HashMap::new())
+}
+
+/// Group ids (`attributes.group_ids`) of all events of the given list documents, deduped, in first-seen order.
+pub fn event_group_ids(docs: &[Value]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for doc in docs {
+        for item in doc.get("data").and_then(Value::as_array).into_iter().flatten() {
+            for g in item.get("attributes").and_then(|a| a.get("group_ids")).and_then(Value::as_array).into_iter().flatten() {
+                if let Some(id) = id_str(g) {
+                    if !out.contains(&id) {
+                        out.push(id);
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// `group id -> name` from `GET /api/groups` documents (prefers `display_name`, else `name`).
+pub fn group_names_by_id(docs: &[Value]) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for doc in docs {
+        for g in doc.get("data").and_then(Value::as_array).into_iter().flatten() {
+            let Some(id) = g.get("id").and_then(id_str) else { continue };
+            if let Some(name) = str_attr(g, "display_name").or_else(|| str_attr(g, "name")) {
+                out.insert(id, name);
+            }
+        }
+    }
+    out
+}
+
+/// Like [`parse_event_list_filtered`]; organisation names come from `attributes.group_ids` mapped through `names`.
+pub fn parse_event_list_with_groups(
+    doc: &Value,
+    camp_only: bool,
+    names: &HashMap<String, String>,
+) -> Result<Vec<MidataEventSummary>, CoreError> {
     let data = doc
         .get("data")
         .and_then(Value::as_array)
@@ -401,8 +441,8 @@ pub fn parse_event_list_filtered(doc: &Value, camp_only: bool) -> Result<Vec<Mid
         }
         let dates = dates_of(item, &included);
         let mut group_names: Vec<String> = Vec::new();
-        for key in rel_ids(item, "groups") {
-            if let Some(name) = included.get(&key).and_then(|g| str_attr(g, "name")) {
+        for g in item.get("attributes").and_then(|a| a.get("group_ids")).and_then(Value::as_array).into_iter().flatten() {
+            if let Some(name) = id_str(g).and_then(|id| names.get(&id).cloned()) {
                 if !group_names.contains(&name) {
                     group_names.push(name);
                 }
@@ -506,7 +546,15 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
     for page in pages {
         let Some(data) = page.get("data").and_then(Value::as_array) else { continue };
         for p in data {
-            let person = rel_ids(p, "person").into_iter().next().map(|(_, id)| id);
+            if p.get("attributes").and_then(|a| a.get("active")).and_then(Value::as_bool) == Some(false) {
+                continue;
+            }
+            let part = {
+                let r = rel_ids(p, "participant");
+                if r.is_empty() { rel_ids(p, "person") } else { r }
+            };
+            let is_guest = part.first().is_some_and(|(t, _)| t == "event_guests");
+            let person = part.into_iter().next().map(|(t, id)| if t == "event_guests" { format!("guest:{id}") } else { id });
             let key = match (&person, p.get("id").and_then(id_str)) {
                 (Some(id), _) => format!("p:{id}"),
                 (None, Some(pid)) => format!("n:{pid}"),
@@ -520,14 +568,14 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
                 let Some(role) = included.get(&rk) else { continue };
                 let rtype = str_attr(role, "type").unwrap_or_default();
                 match classify_role(&rtype) {
-                    RoleClass::Leader => {
+                    RoleClass::Leader if !is_guest => {
                         is_leader = true;
                         is_main |= rtype.rsplit("::").next().map(str::trim) == Some("Leader");
                         if label.is_none() {
                             label = str_attr(role, "label").or_else(|| rtype.rsplit("::").next().map(String::from));
                         }
                     }
-                    RoleClass::Participant => is_participant = true,
+                    RoleClass::Participant | RoleClass::Leader => is_participant = true,
                     RoleClass::Other => {}
                 }
             }
@@ -548,7 +596,12 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
 
 /// Person ids (as strings) of all participations with a leader role, for the qualifications query.
 pub fn leader_person_ids(participation_pages: &[Value]) -> Vec<String> {
-    collect_people(participation_pages).into_iter().filter(|a| a.is_leader).filter_map(|a| a.person_id).collect()
+    collect_people(participation_pages)
+        .into_iter()
+        .filter(|a| a.is_leader)
+        .filter_map(|a| a.person_id)
+        .filter(|id| !id.starts_with("guest:"))
+        .collect()
 }
 
 /// `links.next` of a JSON:API document, if any (MiData may return a relative URL; resolve against the current page).

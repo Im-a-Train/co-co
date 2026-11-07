@@ -1,12 +1,12 @@
 {"data":[
- {"id":"1","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"101"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"2","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"102"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"3","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"103"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"4","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"104"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"5","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"105"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"6","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"106"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"7","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"107"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"10","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"110"}},"roles":{"data":[{"type":"event_roles","id":"r2"}]}}}
+ {"id":"1","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"101"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"2","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"102"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"3","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"103"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"4","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"104"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"5","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"105"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"6","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"106"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"7","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"107"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"10","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"110"}},"roles":{"data":[{"type":"event_roles","id":"r2"}]}}}
 ],
  "included":[
  {"id":"101","type":"people","attributes":{"first_name":"Anna","last_name":"Zehnder","nickname":"Pixel","birthday":"2014-07-18"}},

@@ -40,7 +40,7 @@ codes, field names and counts, never values.
 - Are **birthdays** readable on `/api/people` (needed for the J+S age)? If not, age numbers stay manual.
 - Do **qualifications** (`/api/qualifications`, `qualification_kinds`) work, with start/finish dates?
 - Does the **classic export** `/groups/{g}/events/{e}.json` contain PBS fields: coach, expected participants per Stufe, Lagermeldung (`camp_submitted`), J+S safety flags, canton? Which attribute names?
-- **Filter syntax:** do `filter[event_id]`, `filter[type][eq]=Event::Camp`, date filters and `include=` work as assumed? Correct them in the Rust module (one place).
+- **Filter syntax:** names are now verified against the OpenAPI spec (`docs/contracts/midata-api.md`): `filter[event_id][eq]`, `filter[type][eq]=Event::Camp`, `filter[after_or_on][eq]`, `include=participant,roles`. Only check that the server accepts them (date filter semantics unverified).
 - Token vs. session: which one can a normal coach use?
 
 ## Results

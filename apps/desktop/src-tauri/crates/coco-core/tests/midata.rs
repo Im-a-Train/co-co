@@ -132,8 +132,13 @@ fn event_list_groups_and_types() {
     let doc = fx(include_str!("fixtures/midata/events_groups.json"));
     let all = parse_event_list(&doc).unwrap();
     assert_eq!(all.len(), 5);
-    assert_eq!(all[0].group_names, vec!["Abteilung Alpha", "Region Nord"]);
-    assert!(all[1].group_names.is_empty());
+    assert!(all[0].group_names.is_empty()); // no groups document -> no names
+    assert_eq!(event_group_ids(std::slice::from_ref(&doc)), vec!["11", "12"]);
+    let groups = fx(include_str!("fixtures/midata/groups.json"));
+    let names = group_names_by_id(&[groups]);
+    let named = parse_event_list_with_groups(&doc, false, &names).unwrap();
+    assert_eq!(named[0].group_names, vec!["Abteilung Alpha", "Region Nord"]);
+    assert!(named[1].group_names.is_empty());
     let camps = parse_event_list_filtered(&doc, true).unwrap();
     let ids: Vec<&str> = camps.iter().map(|e| e.id.as_str()).collect();
     assert_eq!(ids, vec!["1", "2", "4", "5"]); // course 3 dropped, untyped kept
@@ -383,4 +388,20 @@ fn classic_probe() {
     assert_eq!(names2.len(), 2);
     let (pbs3, names3) = probe_classic_fields(&json!([]));
     assert!(pbs3.is_empty() && names3.is_empty());
+}
+
+#[test]
+fn guests_and_inactive_participations() {
+    let doc = json!({
+        "data": [
+            {"id":"1","type":"event_participations","attributes":{"active":true},"relationships":{"participant":{"data":{"type":"event_guests","id":"g1"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+            {"id":"2","type":"event_participations","attributes":{"active":false},"relationships":{"participant":{"data":{"type":"people","id":"5"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+            {"id":"3","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"6"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}}
+        ],
+        "included": [
+            {"id":"6","type":"people","attributes":{"birthday":"2014-07-18"}},
+            {"id":"r1","type":"event_roles","attributes":{"type":"Event::Camp::Role::Leader","label":"Leitung"}}
+        ]
+    });
+    assert_eq!(leader_person_ids(std::slice::from_ref(&doc)), vec!["6"]);
 }

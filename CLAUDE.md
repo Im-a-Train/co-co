@@ -99,6 +99,10 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
   gives API root, cookie prefix and feature flags. Cloudflare rejects non-browser User-Agents
   (relevant for Node-based tests).
 
+## MiData API gotchas (see `docs/contracts/midata-api.md`)
+
+- Check every MiData query against https://db.scout.ch/api/openapi.json (see `docs/contracts/midata-api.md`); include/filter names are validated and unknown ones return HTTP 400.
+
 ## Environment notes
 
 - Windows dev needs MSVC Build Tools (C++ workload) + Windows SDK and the `stable-msvc` Rust
