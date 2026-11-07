@@ -15,6 +15,8 @@ const props = defineProps<{
   facts: CampFacts | null
   findings: Finding[]
   classOf: (categoryIri: Iri | null) => CategoryClass
+  /** Set when the grid was opened from a finding: shows «Zurück zum Befund». */
+  origin?: { ruleId: string; title: string } | null
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
@@ -23,6 +25,7 @@ const emit = defineEmits<{
   /** Jump to the documents tab (documentId selects a document there). */
   openDocument: [documentId: string | null]
   aiFindings: [findings: Finding[]]
+  backToFinding: []
 }>()
 const { t } = useI18n()
 
@@ -57,7 +60,22 @@ watch(
   >
     <div v-if="activity" class="pa-4">
       <div class="d-flex align-start ga-2">
-        <div class="flex-grow-1" />
+        <div class="flex-grow-1">
+          <template v-if="origin">
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-arrow-left"
+              :text="t('findings.backToFinding.button')"
+              data-testid="drawer-back-to-finding"
+              @click="emit('backToFinding')"
+            />
+            <div class="text-caption text-medium-emphasis mt-1">
+              {{ t('findings.backToFinding.context', origin) }}
+            </div>
+          </template>
+        </div>
         <v-btn icon="mdi-close" variant="text" size="small" :aria-label="t('common.close')" @click="emit('update:modelValue', false)" />
       </div>
 

@@ -122,6 +122,12 @@ pub struct MidataEventSummary {
     pub start_at: Option<String>,
     pub finish_at: Option<String>,
     pub location: Option<String>,
+    /// Names of the organisations (groups) running the event; empty when unknown.
+    #[serde(default)]
+    pub group_names: Vec<String>,
+    /// Days overlapping the eCamp camp period; None when unknown (set by `rank_events`).
+    #[serde(default)]
+    pub overlap_days: Option<u32>,
 }
 
 /// Result of the M7-0 spike probe. Contains field NAMES and HTTP status codes only.
@@ -370,8 +376,14 @@ fn dates_of(item: &Value, included: &Included) -> Vec<EventDate> {
     out
 }
 
-/// Parses an events list document into picker entries.
+/// Parses an events list document into picker entries (no type filtering).
 pub fn parse_event_list(doc: &Value) -> Result<Vec<MidataEventSummary>, CoreError> {
+    parse_event_list_filtered(doc, false)
+}
+
+/// Like `parse_event_list`; with `camp_only` drops events whose `type` attribute is present
+/// and does not contain "Camp" (fallback when the server ignored the type filter).
+pub fn parse_event_list_filtered(doc: &Value, camp_only: bool) -> Result<Vec<MidataEventSummary>, CoreError> {
     let data = doc
         .get("data")
         .and_then(Value::as_array)
@@ -380,16 +392,100 @@ pub fn parse_event_list(doc: &Value) -> Result<Vec<MidataEventSummary>, CoreErro
     let mut out = Vec::new();
     for item in data {
         let Some(id) = item.get("id").and_then(id_str) else { continue };
+        if camp_only {
+            if let Some(t) = str_attr(item, "type") {
+                if !t.contains("Camp") {
+                    continue;
+                }
+            }
+        }
         let dates = dates_of(item, &included);
+        let mut group_names: Vec<String> = Vec::new();
+        for key in rel_ids(item, "groups") {
+            if let Some(name) = included.get(&key).and_then(|g| str_attr(g, "name")) {
+                if !group_names.contains(&name) {
+                    group_names.push(name);
+                }
+            }
+        }
         out.push(MidataEventSummary {
             id,
             name: str_attr(item, "name").unwrap_or_default(),
             start_at: dates.iter().map(|d| d.start_at.clone()).min(),
             finish_at: dates.iter().map(|d| d.finish_at.clone()).max(),
             location: str_attr(item, "location"),
+            group_names,
+            overlap_days: None,
         });
     }
     Ok(out)
+}
+
+/// Days since a fixed epoch for a valid civil date (Howard Hinnant's algorithm).
+fn day_number(s: &str) -> Option<i64> {
+    let (y, m, d) = parse_date(s)?;
+    let y = i64::from(y) - i64::from(m <= 2);
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = i64::from((m + 9) % 12);
+    let doy = (153 * mp + 2) / 5 + i64::from(d) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    Some(era * 146_097 + doe)
+}
+
+/// Inclusive overlap in days of two date ranges; 0 when disjoint, None when a date is unparsable.
+fn overlap_between(a: (&str, &str), b: (&str, &str)) -> Option<i64> {
+    let (a0, a1, b0, b1) = (day_number(a.0)?, day_number(a.1)?, day_number(b.0)?, day_number(b.1)?);
+    Some((a1.min(b1) - a0.max(b0) + 1).max(0))
+}
+
+/// Client-side filter and ranking of the picker list. Events that clearly do not overlap
+/// `[from, to]` are dropped; events without dates are kept at the end. `overlap_days` is the overlap
+/// with the camp period (`camp_start`/`camp_end`, falling back to `[from, to]`). Order: largest
+/// overlap first, then nearest start date to the camp start, then name.
+pub fn rank_events(
+    events: Vec<MidataEventSummary>,
+    from: &str,
+    to: &str,
+    camp_start: Option<&str>,
+    camp_end: Option<&str>,
+) -> Vec<MidataEventSummary> {
+    let (cs, ce) = match (camp_start, camp_end) {
+        (Some(a), Some(b)) if day_number(a).is_some() && day_number(b).is_some() => (a, b),
+        _ => (from, to),
+    };
+    let anchor = day_number(cs).unwrap_or(0);
+    let mut dated: Vec<(MidataEventSummary, i64, i64)> = Vec::new();
+    let mut undated: Vec<MidataEventSummary> = Vec::new();
+    for mut e in events {
+        let range = match (e.start_at.clone(), e.finish_at.clone().or_else(|| e.start_at.clone())) {
+            (Some(a), Some(b)) => Some((a, b)),
+            _ => None,
+        };
+        let Some((a, b)) = range else {
+            e.overlap_days = None;
+            undated.push(e);
+            continue;
+        };
+        match overlap_between((&a, &b), (from, to)) {
+            Some(0) => continue,
+            Some(_) => {}
+            None => {
+                e.overlap_days = None;
+                undated.push(e);
+                continue;
+            }
+        }
+        let ov = overlap_between((&a, &b), (cs, ce)).unwrap_or(0);
+        e.overlap_days = u32::try_from(ov).ok();
+        let dist = (day_number(&a).unwrap_or(anchor) - anchor).abs();
+        dated.push((e, ov, dist));
+    }
+    dated.sort_by(|x, y| y.1.cmp(&x.1).then(x.2.cmp(&y.2)).then_with(|| x.0.name.cmp(&y.0.name)));
+    let mut out: Vec<MidataEventSummary> = dated.into_iter().map(|t| t.0).collect();
+    undated.sort_by(|x, y| x.name.cmp(&y.name));
+    out.extend(undated);
+    out
 }
 
 struct PersonAgg {
@@ -455,7 +551,7 @@ pub fn leader_person_ids(participation_pages: &[Value]) -> Vec<String> {
     collect_people(participation_pages).into_iter().filter(|a| a.is_leader).filter_map(|a| a.person_id).collect()
 }
 
-/// `links.next` of a JSON:API document, if any (absolute URL as given by MiData).
+/// `links.next` of a JSON:API document, if any (MiData may return a relative URL; resolve against the current page).
 pub fn next_link(doc: &Value) -> Option<String> {
     doc.get("links")?.get("next")?.as_str().filter(|s| !s.is_empty()).map(String::from)
 }

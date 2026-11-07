@@ -180,8 +180,9 @@ export const commands = {
   /** Validates and stores a service token (X-TOKEN) in the OS keychain. */
   midataSetToken: (baseUrl: string, token: string) => call<MidataStatus>('midata_set_token', { baseUrl, token }),
   midataLogout: () => call<void>('midata_logout'),
-  /** Camp events (Event::Camp) overlapping [from, to] (YYYY-MM-DD). */
-  midataFindEvents: (from: string, to: string) => call<MidataEventSummary[]>('midata_find_events', { from, to }),
+  /** Camp events (Event::Camp, all visible organisations) overlapping [from, to] (YYYY-MM-DD), ranked by overlap with the camp. */
+  midataFindEvents: (from: string, to: string, campStart: string | null, campEnd: string | null) =>
+    call<MidataEventSummary[]>('midata_find_events', { from, to, campStart, campEnd }),
   midataFetchAggregate: (eventId: string, campStart: string, campEnd: string, coachPersonId: string | null) =>
     call<MidataAggregate>('midata_fetch_aggregate', { eventId, campStart, campEnd, coachPersonId }),
   /** M7-0 spike: what the current auth can read (status codes + field names only). */

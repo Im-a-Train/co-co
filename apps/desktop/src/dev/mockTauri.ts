@@ -46,6 +46,21 @@ const Q = (lagerleiter: boolean, leiterLsT: boolean, wasser: boolean, berg: bool
   winter,
   slrg,
 })
+/** Invented MiData camps of three organisations: exact match, partial overlap, no overlap. */
+function midataEvents(campStart: string, campEnd: string) {
+  const shift = (iso: string, days: number): string => {
+    const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`)
+    d.setUTCDate(d.getUTCDate() + days)
+    return d.toISOString().slice(0, 10)
+  }
+  const len = Math.round((Date.parse(campEnd.slice(0, 10)) - Date.parse(campStart.slice(0, 10))) / 86_400_000) + 1
+  return [
+    { id: '4101', name: 'Sommerlager Musterstufe', startAt: campStart.slice(0, 10), finishAt: campEnd.slice(0, 10), location: 'Musterhausen', groupNames: ['Abteilung Musterhausen'], overlapDays: len },
+    { id: '4102', name: 'Pfingstlager Beispielabteilung', startAt: shift(campEnd, -1), finishAt: shift(campEnd, 6), location: 'Beispieldorf', groupNames: ['Abteilung Beispieldorf', 'Region Beispiel'], overlapDays: 2 },
+    { id: '4103', name: 'Herbstlager Testwald', startAt: shift(campEnd, 8), finishAt: shift(campEnd, 12), location: 'Testwald', groupNames: ['Pfadi Testwald'], overlapDays: 0 },
+  ]
+}
+
 function midataAggregate(eventId: string, campStart: string, campEnd: string, coachPersonId: string | null) {
   return {
     zone: 'red-derived' as const,
@@ -167,10 +182,7 @@ export function installMockTauri(): void {
           midataConnected = false
           return null
         case 'midata_find_events':
-          return [
-            { id: '4101', name: 'Sommerlager Musterstufe', startAt: String(a.from), finishAt: String(a.to), location: 'Musterhausen' },
-            { id: '4102', name: 'Pfingstlager Beispielabteilung', startAt: String(a.from), finishAt: String(a.from), location: 'Beispieldorf' },
-          ]
+          return midataEvents(String(a.campStart ?? a.from), String(a.campEnd ?? a.to))
         case 'midata_fetch_aggregate':
           return midataAggregate(String(a.eventId), String(a.campStart), String(a.campEnd), (a.coachPersonId as string | null) ?? null)
         case 'midata_probe':

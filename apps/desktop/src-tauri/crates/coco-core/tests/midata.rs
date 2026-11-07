@@ -128,6 +128,52 @@ fn event_list() {
 }
 
 #[test]
+fn event_list_groups_and_types() {
+    let doc = fx(include_str!("fixtures/midata/events_groups.json"));
+    let all = parse_event_list(&doc).unwrap();
+    assert_eq!(all.len(), 5);
+    assert_eq!(all[0].group_names, vec!["Abteilung Alpha", "Region Nord"]);
+    assert!(all[1].group_names.is_empty());
+    let camps = parse_event_list_filtered(&doc, true).unwrap();
+    let ids: Vec<&str> = camps.iter().map(|e| e.id.as_str()).collect();
+    assert_eq!(ids, vec!["1", "2", "4", "5"]); // course 3 dropped, untyped kept
+}
+
+#[test]
+fn rank_events_by_overlap() {
+    let doc = fx(include_str!("fixtures/midata/events_groups.json"));
+    let list = parse_event_list(&doc).unwrap();
+    let r = rank_events(list, "2026-07-04", "2026-08-08", Some("2026-07-18"), Some("2026-07-25"));
+    let ids: Vec<&str> = r.iter().map(|e| e.id.as_str()).collect();
+    assert_eq!(ids, vec!["1", "2", "3", "4"]); // 5 outside window dropped, undated last
+    assert_eq!(r[0].overlap_days, Some(8));
+    assert_eq!(r[1].overlap_days, Some(3));
+    assert_eq!(r[2].overlap_days, Some(0));
+    assert_eq!(r[3].overlap_days, None);
+}
+
+#[test]
+fn rank_events_nearest_start_breaks_ties() {
+    let ev = |id: &str, a: &str, b: &str| MidataEventSummary {
+        id: id.into(),
+        name: id.into(),
+        start_at: Some(a.into()),
+        finish_at: Some(b.into()),
+        location: None,
+        group_names: vec![],
+        overlap_days: None,
+    };
+    let r = rank_events(
+        vec![ev("far", "2026-08-05", "2026-08-06"), ev("near", "2026-07-10", "2026-07-12")],
+        "2026-07-04",
+        "2026-08-08",
+        Some("2026-07-18"),
+        Some("2026-07-25"),
+    );
+    assert_eq!(r.iter().map(|e| e.id.as_str()).collect::<Vec<_>>(), vec!["near", "far"]);
+}
+
+#[test]
 fn links() {
     assert_eq!(next_link(&fx(include_str!("fixtures/midata/events_list.json"))).as_deref(), Some("https://db.example.test/api/events?page[number]=2"));
     assert_eq!(next_link(&pages()[1]), None);
@@ -278,8 +324,9 @@ fn serde_shape_matches_typescript() {
     for k in ["lagerleiter", "leiterLsT", "wasser", "berg", "winter", "slrg"] {
         assert!(qk.contains(&k), "missing qual {k}");
     }
-    let s = serde_json::to_value(MidataEventSummary { id: "1".into(), name: "n".into(), start_at: None, finish_at: None, location: None }).unwrap();
+    let s = serde_json::to_value(MidataEventSummary { id: "1".into(), name: "n".into(), start_at: None, finish_at: None, location: None, group_names: vec![], overlap_days: None }).unwrap();
     assert!(s.get("startAt").is_some());
+    assert!(s.get("groupNames").is_some() && s.get("overlapDays").is_some());
     let p = serde_json::to_value(MidataProbe {
         auth_method: None,
         event_status: 200,

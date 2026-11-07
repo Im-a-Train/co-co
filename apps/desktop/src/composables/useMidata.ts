@@ -14,6 +14,28 @@ import { bumpMidata, midataVersion } from './midataSignal'
 
 const t = (key: string): string => i18n.global.t(key)
 
+/** The picker searches camp start - 14 days .. camp end + 14 days. */
+export const EVENT_SEARCH_MARGIN_DAYS = 14
+
+/** Length in days (inclusive) of the camp the last event search ran for; the picker compares overlaps with it. */
+export const searchedCampDays = ref<number | null>(null)
+
+/** `YYYY-MM-DD` shifted by `days` (UTC arithmetic, no DST effects); null for invalid input. */
+export function shiftDate(iso: string, days: number): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (!m) return null
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + days))
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10)
+}
+
+/** Inclusive number of days between two ISO dates; null for invalid input. */
+export function inclusiveDays(start: string, end: string): number | null {
+  const a = shiftDate(start, 0)
+  const b = shiftDate(end, 0)
+  if (!a || !b) return null
+  return Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000) + 1
+}
+
 const NO_STATUS: MidataStatus = { connected: false, baseUrl: null, method: null, cookieNames: [] }
 
 const baseUrl = ref(DEFAULT_APP_SETTINGS.midata.baseUrl)
@@ -184,7 +206,14 @@ export function useCampMidata(campIri: MaybeRefOrGetter<Iri>, facts: MaybeRefOrG
     }
     eventsLoading.value = true
     try {
-      events.value = await commands.midataFindEvents(f.camp.start, f.camp.end)
+      const from = shiftDate(f.camp.start, -EVENT_SEARCH_MARGIN_DAYS)
+      const to = shiftDate(f.camp.end, EVENT_SEARCH_MARGIN_DAYS)
+      if (!from || !to) {
+        eventsError.value = t('midata.card.noDates')
+        return
+      }
+      searchedCampDays.value = inclusiveDays(f.camp.start, f.camp.end)
+      events.value = await commands.midataFindEvents(from, to, f.camp.start.slice(0, 10), f.camp.end.slice(0, 10))
     } catch (e) {
       eventsError.value = errorMessage(e)
     } finally {

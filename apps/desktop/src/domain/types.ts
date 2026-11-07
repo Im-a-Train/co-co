@@ -359,6 +359,10 @@ export interface MidataEventSummary {
   startAt: IsoDate | null
   finishAt: IsoDate | null
   location: string | null
+  /** Organisations (groups) running the event. */
+  groupNames?: string[]
+  /** Days overlapping the eCamp camp; null when the event has no dates. */
+  overlapDays?: number | null
 }
 
 export interface MidataProbe {

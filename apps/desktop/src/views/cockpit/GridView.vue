@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /** /lager/:campId/raster: Lagertag-Rechner week grid + activity details drawer. */
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { campIdFromIri } from '@/domain/iri'
 import { buildGrid } from '@/domain/cockpit'
 import type { Finding, Iri } from '@/domain/types'
 import ActivityDrawer from '@/components/cockpit/ActivityDrawer.vue'
-import { triageLocation } from '@/domain/triage'
+import { backToFindingLocation, originFromQuery, previousEntryIsOrigin, triageLocation } from '@/domain/triage'
 import WeekGrid from '@/components/cockpit/WeekGrid.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 
@@ -26,6 +26,43 @@ if (typeof route.query.activity === 'string') {
   selected.value = route.query.activity
   drawer.value = true
 }
+
+// ---- «Zurück zum Befund» (grid opened from a finding) ----------------------------------------------
+const origin = computed(() => originFromQuery(route.query))
+const originFinding = computed(() => {
+  const o = origin.value
+  return o ? (findingsHandle.findings.value.find((f) => f.id === o.findingId) ?? null) : null
+})
+const originContext = computed(() =>
+  originFinding.value ? { ruleId: originFinding.value.ruleId, title: originFinding.value.title } : null,
+)
+
+function backToFinding() {
+  const o = origin.value
+  if (!o) return
+  const prev = (window.history.state as { back?: string | null } | null)?.back
+  if (previousEntryIsOrigin(prev, campIri.value, o)) router.back()
+  else void router.push(backToFindingLocation(campIri.value, o))
+}
+
+function isTyping(e: KeyboardEvent): boolean {
+  const el = e.target as HTMLElement | null
+  return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))
+}
+function onKey(e: KeyboardEvent) {
+  if (!origin.value || e.defaultPrevented || isTyping(e)) return
+  const altLeft = e.key === 'ArrowLeft' && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
+  const esc = e.key === 'Escape'
+  if (!altLeft && !esc) return
+  e.preventDefault()
+  if (esc && drawer.value) {
+    drawer.value = false // first Esc closes the drawer, the next one goes back
+    return
+  }
+  backToFinding()
+}
+onMounted(() => window.addEventListener('keydown', onKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 function select(iri: Iri) {
   selected.value = iri
@@ -59,6 +96,21 @@ function showFindings(iri: Iri) {
 
 <template>
   <div>
+    <div v-if="origin" class="back-to-finding d-flex align-center flex-wrap ga-3 mb-3 pa-2 rounded" data-testid="back-to-finding-bar">
+      <v-btn
+        color="primary"
+        variant="flat"
+        prepend-icon="mdi-arrow-left"
+        :text="t('findings.backToFinding.button')"
+        data-testid="back-to-finding"
+        @click="backToFinding"
+      />
+      <span v-if="originContext" class="text-body-2 text-truncate" data-testid="back-to-finding-context">
+        {{ t('findings.backToFinding.context', originContext) }}
+      </span>
+      <v-spacer />
+      <span class="text-caption text-medium-emphasis">{{ t('findings.backToFinding.hint') }}</span>
+    </div>
     <h1 class="text-h5 mb-1">{{ t('cockpit.grid.title') }}</h1>
     <p class="text-body-2 text-medium-emphasis mb-3">{{ t('cockpit.grid.intro') }}</p>
 
@@ -100,6 +152,8 @@ function showFindings(iri: Iri) {
       :facts="facts"
       :findings="findingsHandle.findings.value"
       :class-of="settings.classOf"
+      :origin="originContext"
+      @back-to-finding="backToFinding"
       @feedback="feedback"
       @show-findings="showFindings"
       @open-document="openDocument"
@@ -107,3 +161,14 @@ function showFindings(iri: Iri) {
     />
   </div>
 </template>
+
+<style scoped>
+.back-to-finding {
+  position: sticky;
+  top: calc(var(--v-layout-top, 0px) + 4px);
+  z-index: 5;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--v-theme-primary));
+  box-shadow: 0 2px 6px rgb(0 0 0 / 15%);
+}
+</style>

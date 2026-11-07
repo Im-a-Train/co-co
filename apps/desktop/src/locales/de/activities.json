@@ -1,0 +1,36 @@
+{
+  "activities": {
+    "title": "Aktivitäten",
+    "intro": "Alle Programmpunkte des Lagers als Liste. Klick auf eine Zeile öffnet die Details.",
+    "search": "Suchen (Titel, Ort, Verantwortliche)",
+    "filters": {
+      "class": "Klasse",
+      "day": "Tag",
+      "all": "Alle",
+      "onlyFindings": "Nur mit Befunden",
+      "noResponsible": "Ohne Verantwortliche",
+      "reset": "Filter zurücksetzen"
+    },
+    "day": "Tag {n} ({date})",
+    "columns": {
+      "number": "Nr.",
+      "title": "Titel",
+      "category": "Kategorie",
+      "time": "Tag / Zeit",
+      "duration": "Dauer",
+      "location": "Ort",
+      "responsibles": "Verantwortliche",
+      "progress": "Fortschritt",
+      "findings": "Befunde",
+      "documents": "Dokumente",
+      "documentsShort": "Dok.",
+      "actions": "Aktionen"
+    },
+    "entryDay": "Tag {n}",
+    "moreEntries": "+{count}",
+    "count": "{shown} von {total} Aktivitäten",
+    "empty": "Keine Aktivitäten vorhanden.",
+    "noMatch": "Keine Aktivität passt zu den Filtern.",
+    "showInGrid": "Im Raster anzeigen"
+  }
+}

@@ -362,7 +362,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
     <div class="dec"><span class="k">Documents</span><span class="v">Drop + watched folders</span><span class="n">Safety-concept checklist, GPX analysis, linking documents to activities, full-text search.</span></div>
     <div class="dec"><span class="k">Rules</span><span class="v">YAML + TS predicates</span><span class="n">4 groups: J+S core, completeness, safety heuristics, PBS best practice. Unit-tested on sample camps.</span></div>
     <div class="dec"><span class="k">AI</span><span class="v">Optional Claude, own key</span><span class="n">Off by default. Text passes local redaction first, and you see a preview before anything is sent.</span></div>
-    <div class="dec"><span class="k">Later, not v1</span><span class="v">MiData · NDS</span><span class="n">The architecture keeps a red zone ready for them: data stays on the device and never reaches the AI.</span></div>
+    <div class="dec"><span class="k">Red zone</span><span class="v">MiData ✓ · NDS next</span><span class="n">MiData is read-only and reduced to aggregates in Rust (M7); NDS follows. Red data stays on the device and never reaches the AI.</span></div>
   </div>
 </div></section>
 
@@ -374,7 +374,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
   <div class="zones">
     <div class="zone g"><h3>Green · co-co's own data</h3><ul><li>Rule packs, rule results, category mappings</li><li>Review status, rounds, snapshot hashes</li><li>Feedback drafts with no names in them</li></ul><span class="ai">AI: allowed</span></div>
     <div class="zone y"><h3>Yellow · camp content</h3><ul><li>eCamp program, storyboards, safety considerations</li><li>Leader names and nicknames (responsibles, collaborators)</li><li>Dropped documents (safety concepts, hike plans)</li></ul><span class="ai">AI: only with opt-in, after redaction (names → «Leiter A», phone numbers, e-mail addresses, AHV numbers and addresses removed) and a preview</span></div>
-    <div class="zone r"><h3>Red · MiData / NDS (later)</h3><ul><li>Participant lists, birth dates, AHV numbers, health data</li><li>Leader qualifications with personal details</li><li>Kept in a separate encrypted store, read-only</li></ul><span class="ai">AI: never. Only aggregates (e.g. «28 TN, 10–14 J.», «Otter: SLRG Modul See gültig ✓») reach the rule engine.</span></div>
+    <div class="zone r"><h3>Red · MiData (built) / NDS (next)</h3><ul><li>Participant lists, birth dates, AHV numbers, health data</li><li>Leader qualifications with personal details</li><li>Reduced to aggregates in Rust; only the aggregate is stored, tagged red-derived, and left out of backups by default</li></ul><span class="ai">AI: never. Only aggregates (e.g. «28 TN, 10–14 J.», «Otter: SLRG Modul See gültig ✓») reach the rule engine.</span></div>
   </div>
   <div class="grid3">
     <div class="card"><h3>How it is enforced</h3><p>Data objects are wrapped as <span class="mono">Zoned&lt;T&gt;</span>. The single <span class="mono">aiGateway.send()</span> function accepts only green data or yellow data that has been redacted. A lint rule bans imports of the AI client anywhere else.</p></div>
@@ -626,7 +626,7 @@ Details stehen als Kommentare in eCamp. Gruess, Falk</div>
       </g>
       <text x="716" y="66" font-weight="700" font-size="13">eCamp API (any instance)</text><text class="sub" x="716" y="84">read camps as guest</text><text class="sub" x="716" y="100">POST /comments</text>
       <text x="716" y="170" font-weight="700" font-size="13">Claude API (optional)</text><text class="sub" x="716" y="188">your own key · off by default</text><text class="sub" x="716" y="204">only via the AI gateway</text><text class="sub" x="716" y="220">redaction + preview first</text>
-      <text x="716" y="286" font-weight="700" font-size="13">MiData · NDS (later)</text><text class="sub" x="716" y="304">red zone · separate store</text><text class="sub" x="716" y="320">aggregates only to rules</text><text class="sub" x="716" y="336">never to AI</text>
+      <text x="716" y="286" font-weight="700" font-size="13">MiData (M7) · NDS (next)</text><text class="sub" x="716" y="304">red zone · separate store</text><text class="sub" x="716" y="320">aggregates only to rules</text><text class="sub" x="716" y="336">never to AI</text>
       <g stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ar2)">
         <path d="M330 290 C 600 290 640 120 700 85"/>
         <path d="M640 180 L 700 190"/>
@@ -681,7 +681,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
 
 <!-- MIDATA -->
 <section id="midata"><div class="wrap">
-  <span class="eyebrow">Design · M7 · red zone</span>
+  <span class="eyebrow">Built · M7 · red zone</span>
   <h2>MiData connection</h2>
   <p class="lede">MiData (db.scout.ch, PBS's hitobito) knows who is actually in the camp: participants, leaders and their qualifications. co-co uses it read-only to fill the «Lager-Angaben» and to back the rules that today depend on what the coach types in. Personal data stays in a red zone: only counts and yes/no facts reach the app's UI and storage, and nothing from MiData ever reaches the AI.</p>
   <div class="grid2">
@@ -697,7 +697,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       <li><b>The PBS camp fields are not in JSON:API v1</b>: coach, expected participants per Stufe, Lagermeldung («camp submitted»), J+S safety flags, canton. Spike M7-0 checks whether the classic JSON export (<span class="mono">/groups/{id}/events/{id}.json</span>) exposes them. If not, they stay as coach input.</li>
       <li><b>NDS has no API.</b> NDS registration and closing stay manual checkboxes in the Angaben.</li>
       <li>Whether a coach's MiData role may read the participations of a camp they coach is unverified, and the spike checks it.</li>
-    </ul><h3 style="margin-top:8px">The link to eCamp already exists</h3><p>eCamp camps carry <span class="mono">hitobitoEventId</span> and <span class="mono">hitobitoProvider</span> (set when a camp is created from MiData). co-co uses that link directly. For camps without it, the coach picks the event from <span class="mono">/api/events?filter[type][eq]=Event::Camp</span> within the camp dates, once per camp.</p></div>
+    </ul><h3 style="margin-top:8px">The link to eCamp already exists</h3><p>eCamp camps carry <span class="mono">hitobitoEventId</span> and <span class="mono">hitobitoProvider</span> (set when a camp is created from MiData). co-co uses that link directly. For camps without it, the coach picks the event from <span class="mono">/api/events?filter[type][eq]=Event::Camp</span> once per camp. The picker searches camp dates ±14 days across every organisation the MiData account can see, ranks events by overlap with the eCamp dates, shows the organisation, and accepts an event number typed in directly.</p></div>
   </div>
   <h3>Lager-Angaben ← MiData</h3>
   <div class="tbl"><table class="cmp">
@@ -746,7 +746,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><span class="eyebrow">M4 · ✓ done</span><h3>Rounds + backup</h3><ul><li>Status workflow, snapshots, diff since the last round</li><li>JSON export and import</li><li>First GitHub Release</li></ul></div>
     <div class="card"><span class="eyebrow">M5 · ✓ done</span><h3>Optional AI</h3><ul><li>Zones, redaction and a preview before sending</li><li>Claude: rephrase feedback, summarise a document, soft review of safety considerations</li><li>Key stored in the OS keychain</li></ul></div>
     <div class="card"><span class="eyebrow">M6 · ✓ done</span><h3>Triage + coach feedback</h3><ul><li>«Befunde durchgehen»: finding, activity and feedback editor side by side</li><li>Keys J/K, F, I; auto-advance to the next open finding</li><li>Fix «Feedback erstellen» in the Übersicht</li><li>«Übersteuern» renamed to «Ignorieren»; offer to disable a rule after repeated ignoring</li></ul></div>
-    <div class="card"><span class="eyebrow">M7 · ✓ built</span><h3>MiData (read-only)</h3><ul><li>M7-0: Spike-Werkzeug gebaut, Live-Lauf ausstehend (auth session vs. token, PBS camp fields)</li><li>M7-1: Rust MiData module returning aggregates only</li><li>M7-2: «Aus MiData übernehmen» in Lager-Angaben</li><li>M7-3: qualification matrix + rules</li></ul></div>
+    <div class="card"><span class="eyebrow">M7 · ✓ built</span><h3>MiData (read-only)</h3><ul><li>M7-0: spike tooling built, live run pending (auth session vs. token, PBS camp fields, filter syntax)</li><li>M7-1: Rust MiData module returning aggregates only</li><li>M7-2: «Aus MiData übernehmen» in Lager-Angaben</li><li>M7-3: qualification matrix + rules</li><li>Also: event search ±14 days across organisations, «Aktivitäten» tab, «Zurück zum Befund»</li></ul></div>
   </div>
 </div></section>
 
@@ -813,7 +813,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
   const S={must:['p-block','Muss'],should:['p-warn','Soll'],hint:['p-hint','Hinweis']};
   const R=[
     ['JS-CAMP-01','Camp lasts ≥ 4 consecutive days (the LS/T 3-day exception needs confirming by hand)','Period.start/end','must','J+S Lager · verified'],
-    ['JS-CAMP-02','≥ 12 participants aged 5–20 (entered by hand until MiData)','Coach input','must','J+S Lager · verified'],
+    ['JS-CAMP-02','≥ 12 participants aged 5–20 (coach input, can be adopted from MiData)','Coach input / MiData','must','J+S Lager · verified'],
     ['JS-DAY-01','Valid camp day: ≥ 2 J+S units, ≥ 4 h in total','ScheduleEntry + mapping','must','Leitfaden Sportarten · verified'],
     ['JS-DAY-02','Each J+S unit ≥ 30 min','ScheduleEntry','must','Leitfaden Sportarten · verified'],
     ['JS-DAY-03','≥ 30 min Sozialzeit between J+S units','ScheduleEntry','must','J+S Lager · verified'],
@@ -832,6 +832,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ['CMP-LA-01','LA block without a Themenbereich','LAThematicArea','should','Completeness'],
     ['CMP-DAY-01','Day without a day lead (Tagesverantwortliche)','DayResponsible','should','Completeness'],
     ['CMP-CAMP-01','Coach name empty or different from your profile','Camp.coachName','hint','Completeness'],
+    ['CMP-MD-01','eCamp camp dates or location differ from the linked MiData event','MiData event','hint','MiData · best practice'],
     ['CMP-PROG-01','Activities not labelled «fertig geplant» from T−21','ActivityProgressLabel','hint','Completeness'],
     ['SAFE-WATER-01','Water keywords (baden, See, Fluss, Kanu…) → water qualification assigned and safety considerations present','Text + responsibles','should','Merkblatt LS/T · heuristic'],
     ['SAFE-MTN-01','Hike or mountain keywords → time calculation, alternative route and map (document or GPX)','Text + documents','should','Merkblatt LS/T · heuristic'],
@@ -861,6 +862,8 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['My camps','Every camp where you are a guest, with status, open findings and the next deadline.','v1'],
       ['Category guess + confirm','LS/LA/LP/ES guessed from short names and J+S fields; you confirm once per camp.','v1'],
       ['Lagertag calculator + grid','Valid J+S days, Sozialzeit gaps and the arrival/departure rule, computed live.','v1'],
+      ['Back to the finding','«Im Raster anzeigen» from a finding keeps the origin: a sticky «Zurück zum Befund» bar in the grid and in the activity drawer (Alt+← / Esc) returns to exactly that finding.','v1'],
+      ['Activity list','Tab «Aktivitäten»: all activities as a sortable table (number, category class, times, duration, place, responsibles, progress, findings, documents) with filters kept in the URL and the activity drawer on click.','v1'],
       ['Befunde-Triage','Step through findings with the affected activity shown inline; save feedback or ignore with one key and jump to the next open finding. The position survives switching to Raster or Feedback.','v1'],
       ['Rule disabling','After a rule has been ignored repeatedly, co-co offers to turn it off for this camp or for all camps; re-enable in the rule catalogue.','v1'],
       ['Findings with sources','Muss/Soll/Hinweis/Lob, each with its rule ID, source link, evidence and a jump to eCamp.','v1'],
@@ -913,7 +916,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ['Platform','',[
       ['German UI, i18n-ready','vue-i18n; UI, rule texts and templates in locales/de.','v1'],
       ['JSON backup','Export and import all co-co data; a reminder after each round.','v1'],
-      ['Data zones','Green/yellow/red labels and an AI gateway with redaction.','next'],
+      ['Data zones','Green/yellow/red labels and an AI gateway with redaction; MiData-backed findings and feedback are refused.','v1'],
       ['Auto-update + signing','When other coaches start using it.','later'],
       ['MiData (read-only, red zone)','Fills Lager-Angaben from MiData: participant counts, age band, leader qualifications, coach match. Only aggregates; see the MiData section.','v1'],
       ['NDS status','Manual status flags at first (there is no public API); later an export in the NDS program template.','later'],
@@ -945,7 +948,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ]],
   ];
   const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
-  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix']);
+  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list']);
   ['Befunde-Triage','Ignorieren with a reason','Rule disabling','Versioned rule packs','Confidence badges','Safety-activity detector','Soft safety review (AI)'].forEach(n=>DONE.add(n));
   const WIP=new Set([]);
   const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';
