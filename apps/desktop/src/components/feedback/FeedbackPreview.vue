@@ -10,10 +10,11 @@ const { t } = useI18n()
 
 const channel = ref<FeedbackChannel>('whatsapp')
 const templateId = ref<FeedbackTemplateId | null>(null)
+const includeLinks = ref(true)
 const notice = ref<string | null>(null)
 
 const rendered = computed(() =>
-  renderFeedback(props.items, channel.value, { ...props.context, templateId: templateId.value ?? undefined }),
+  renderFeedback(props.items, channel.value, { ...props.context, templateId: templateId.value ?? undefined, includeLinks: includeLinks.value }),
 )
 
 async function copy(text: string) {
@@ -34,6 +35,7 @@ async function copy(text: string) {
         hide-details
         class="mb-3"
       />
+      <v-switch v-model="includeLinks" :label="t('feedback.includeLinks')" density="compact" color="primary" hide-details class="mb-2" />
       <v-tabs v-model="channel" density="compact" class="mb-3">
         <v-tab v-for="c in (['whatsapp', 'email', 'plain'] as const)" :key="c" :value="c">{{ t(`feedback.channel.${c}`) }}</v-tab>
       </v-tabs>

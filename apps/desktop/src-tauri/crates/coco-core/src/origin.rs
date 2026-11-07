@@ -63,6 +63,27 @@ pub fn resolve_api_path(path: &str, api_root: &Url, allowed: &[Origin]) -> Resul
     Ok(url)
 }
 
+/// Validates an eCamp web-UI URL that the frontend wants opened in the system
+/// browser: same origin as the session's instance, https (http only on
+/// loopback), no credentials, path below `/camps/`, no dot segments.
+pub fn validate_ecamp_web_url(url: &str, instance_base: &Url) -> Result<Url, CoreError> {
+    if url.len() > 2048 {
+        return Err(CoreError::Invalid("URL ist zu lang".into()));
+    }
+    if url.chars().any(|c| c.is_control() || c == '\\') {
+        return Err(CoreError::InvalidUrl("ungültige Zeichen in der URL".into()));
+    }
+    let u = Url::parse(url).map_err(|e| CoreError::InvalidUrl(e.to_string()))?;
+    crate::instance::validate_remote_url(&u)?;
+    if u.origin() != instance_base.origin() {
+        return Err(CoreError::ForeignOrigin(u.origin().ascii_serialization()));
+    }
+    if !u.path().starts_with("/camps/") || contains_dot_segment(u.path()) {
+        return Err(CoreError::PathNotAllowed(u.path().to_string()));
+    }
+    Ok(u)
+}
+
 fn contains_dot_segment(path: &str) -> bool {
     let without_query = path.split(['?', '#']).next().unwrap_or("");
     without_query.split('/').any(|seg| {
@@ -178,5 +199,41 @@ mod tests {
     #[test]
     fn session_origins_dedupes() {
         assert_eq!(allowed().len(), 1);
+    }
+
+    fn base() -> Url {
+        Url::parse("https://app.ecamp3.ch").unwrap()
+    }
+
+    #[test]
+    fn web_url_accepts_good() {
+        let u = validate_ecamp_web_url(
+            "https://app.ecamp3.ch/camps/abc123/SoLa26/program/activity/def456/ghi789/Postenlauf",
+            &base(),
+        )
+        .unwrap();
+        assert_eq!(u.host_str(), Some("app.ecamp3.ch"));
+        assert!(validate_ecamp_web_url("https://app.ecamp3.ch/camps/a/S%C3%A4%2Fx?x=1#f", &base()).is_ok());
+        let local = Url::parse("http://localhost:3000").unwrap();
+        assert!(validate_ecamp_web_url("http://localhost:3000/camps/a", &local).is_ok());
+    }
+
+    #[test]
+    fn web_url_rejects_bad() {
+        let bad = |s: &str| validate_ecamp_web_url(s, &base()).is_err();
+        assert!(bad("https://evil.example/camps/a"));
+        assert!(bad("https://app.ecamp3.ch:8443/camps/a"));
+        assert!(bad("http://app.ecamp3.ch/camps/a"));
+        assert!(bad("https://user@app.ecamp3.ch/camps/a"));
+        assert!(bad("https://app.ecamp3.ch/api/camps/a"));
+        assert!(bad("https://app.ecamp3.ch/camps"));
+        assert!(bad("https://app.ecamp3.ch/camps/../admin"));
+        assert!(bad("https://app.ecamp3.ch/camps/%2e%2e/admin"));
+        assert!(bad("javascript:alert(1)"));
+        assert!(bad("//evil.example/camps/a"));
+        assert!(bad("/camps/a"));
+        assert!(bad("https://app.ecamp3.ch/camps/a\\b"));
+        assert!(bad("https://app.ecamp3.ch/camps/a\nb"));
+        assert!(bad(&format!("https://app.ecamp3.ch/camps/{}", "a".repeat(2100))));
     }
 }

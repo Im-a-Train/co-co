@@ -30,6 +30,7 @@ pub fn run() {
     let state = AppState::new().expect("HTTP-Client konnte nicht erstellt werden");
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(state)
         .manage(midata::MidataState::new().expect("MiData-HTTP-Client konnte nicht erstellt werden"))
         .manage(nds::NdsState::new().expect("NDS-HTTP-Client konnte nicht erstellt werden"))
@@ -56,6 +57,7 @@ pub fn run() {
             commands::logout,
             commands::api_post_comment,
             commands::api_patch_comment,
+            commands::open_ecamp_url,
             commands::pick_files,
             commands::pick_folder,
             commands::read_document,

@@ -11,6 +11,7 @@ const COMMANDS: &[&str] = &[
     "logout",
     "api_post_comment",
     "api_patch_comment",
+    "open_ecamp_url",
     "pick_files",
     "pick_folder",
     "read_document",

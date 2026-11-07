@@ -13,6 +13,10 @@ export interface RenderContext {
   campTitle: string
   /** activityIri -> display title (e.g. "1.2 Postenlauf") */
   activityTitles: Record<Iri, string>
+  /** activityIri -> eCamp web URL (see domain/ecampLinks). Missing entries render without link. */
+  activityUrls?: Record<Iri, string>
+  /** Append the eCamp link to activity items (default true when activityUrls is given). */
+  includeLinks?: boolean
   templateId?: FeedbackTemplateId
   coachName?: string | null
   /** Overrides the bundled template (mainly for tests). */
@@ -73,9 +77,17 @@ function itemLine(item: FeedbackItem, channel: FeedbackChannel, ctx: RenderConte
   const text = item.text.trim().replace(/\n+/g, ' ')
   const title = item.scope === 'activity' && item.activityIri ? ctx.activityTitles[item.activityIri] : undefined
   const label = title ? (channel === 'whatsapp' ? `*${title}*: ` : `${title}: `) : ''
-  return channel === 'whatsapp'
-    ? `${WHATSAPP_EMOJI[item.kind]} ${label}${text}`
-    : `- ${label}${text}`
+  const url =
+    ctx.includeLinks !== false && item.scope === 'activity' && item.activityIri
+      ? ctx.activityUrls?.[item.activityIri]
+      : undefined
+  if (channel === 'whatsapp') {
+    // Raw URL on its own line so WhatsApp autolinks it.
+    return `${WHATSAPP_EMOJI[item.kind]} ${label}${text}` + (url ? `
+   ${url}` : '')
+  }
+  return `- ${label}${text}` + (url ? `
+  ${tr('feedback.linkLabel')}: ${url}` : '')
 }
 
 /** Renders grouped items (sections in Feedback-Kultur order) without template. */
