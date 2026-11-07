@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-midata-status"
+description = "Enables the midata_status command without any pre-configured scope."
+commands.allow = ["midata_status"]
+
+[[permission]]
+identifier = "deny-midata-status"
+description = "Denies the midata_status command without any pre-configured scope."
+commands.deny = ["midata_status"]

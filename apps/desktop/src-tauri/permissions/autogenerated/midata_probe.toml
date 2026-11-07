@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-midata-probe"
+description = "Enables the midata_probe command without any pre-configured scope."
+commands.allow = ["midata_probe"]
+
+[[permission]]
+identifier = "deny-midata-probe"
+description = "Denies the midata_probe command without any pre-configured scope."
+commands.deny = ["midata_probe"]

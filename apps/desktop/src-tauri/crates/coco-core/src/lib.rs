@@ -12,6 +12,7 @@ pub mod error;
 pub mod instance;
 pub mod jwt;
 pub mod login;
+pub mod midata;
 pub mod origin;
 pub mod refresh;
 pub mod scope;

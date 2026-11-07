@@ -71,6 +71,7 @@ const PRIMARY_KEY: Record<string, string> = {
   documents: 'id',
   watchedFolders: 'id',
   aiLog: 'id',
+  midata: 'campIri',
 }
 
 export async function exportFromStore(store: BackupStore, now: Date = new Date()): Promise<CocoExport> {
