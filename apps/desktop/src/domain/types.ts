@@ -309,6 +309,11 @@ export interface CoachInputs {
    * timestamp of the aggregate it came from. A manual edit of a field removes its entry.
    */
   ndsFields?: Partial<Record<NdsField, IsoDateTime>>
+  /**
+   * Deadline radar: PBS milestones (bundled list, see domain/rules/milestones.ts) the coach marked as
+   * done, keyed by milestone id, value = date marked done. Absent = none done.
+   */
+  milestonesDone?: Record<string, IsoDate>
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -584,6 +589,14 @@ export interface RuleHit {
   params?: Record<string, string | number>
   /** Optional severity downgrade for this hit (never upgrade above meta.severity). */
   severity?: Severity
+  /**
+   * Explainability: the input facts the predicate looked at to reach this verdict (e.g.
+   * `{ dayDate: '2031-07-12', jsMinutes: 210, requiredMinutes: 240 }`). Shown in the «Warum?» panel.
+   * Plain values only; red-derived values must be marked by putting the key under `redKeys`.
+   */
+  inputs?: Record<string, string | number | boolean | null>
+  /** Keys of `inputs` whose values come from MiData/NDS (red-derived; hidden from AI, labelled in UI). */
+  redKeys?: string[]
 }
 
 export interface RuleContext {
@@ -640,6 +653,43 @@ export interface Finding {
   tags: string[]
   /** Set when the coach overrode this finding. */
   override: Override | null
+  /** Explainability panel data (rule findings only; absent for AI findings). Never sent to the AI. */
+  explain?: FindingExplanation
+}
+
+/** Availability of one rule input for this evaluation (see RuleMeta.inputs). */
+export interface ExplainInput {
+  key: RuleInput | 'midata' | 'nds'
+  /** 'used' = present and fed to the rule; 'missing' = the rule would use it but it is absent. */
+  state: 'used' | 'missing'
+  /** Short German detail, e.g. «bestätigt am 03.05.2031», «Stand MiData 01.05.2031», «3 Dokumente». */
+  detail?: string
+}
+
+export interface ExplainFact {
+  key: string
+  value: string | number | boolean | null
+  /** Value came from MiData/NDS. */
+  red?: boolean
+}
+
+/** Why a finding exists: rule version, pack, validity, severity reasoning and input facts. */
+export interface FindingExplanation {
+  packId: string | null
+  packName: string | null
+  packVersion: string | null
+  ruleVersion: string
+  validFrom: IsoDate | null
+  validTo: IsoDate | null
+  /** Date the validity was checked against (camp start, fallback: evaluation day). */
+  evaluatedFor: IsoDate
+  evaluatedAt: IsoDateTime
+  baseSeverity: Severity
+  /** How the final severity came about. */
+  severityReason: 'rule' | 'hit-downgrade' | 'confidence-clamp'
+  inputs: ExplainInput[]
+  /** Facts from RuleHit.inputs followed by RuleHit.params (without `_message`), deduplicated by key. */
+  facts: ExplainFact[]
 }
 
 export interface FindingCounts {
@@ -672,7 +722,14 @@ export interface CampSummaryRecord {
   evaluatedAt: IsoDateTime
 }
 
-export type DeadlineKind = 'nds-registration' | 'nds-closing' | 'leihmaterial' | 'landeskarten' | 'lagerbewilligung'
+export type DeadlineKind =
+  | 'nds-registration'
+  | 'nds-closing'
+  | 'leihmaterial'
+  | 'landeskarten'
+  | 'lagerbewilligung'
+  /** Deadline radar: a PBS milestone from the bundled list (see `milestoneId`, `title`). */
+  | 'pbs-milestone'
 
 export interface Deadline {
   campIri: Iri
@@ -682,6 +739,12 @@ export interface Deadline {
   done: boolean
   ruleId: string | null
   source: Source | null
+  /** For kind 'pbs-milestone': milestone id from the bundled list. */
+  milestoneId?: string
+  /** For kind 'pbs-milestone': German title (other kinds use the i18n key of their kind). */
+  title?: string
+  /** For kind 'pbs-milestone': the milestone list is not verified against Hering yet. */
+  confidence?: Confidence
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -715,8 +778,37 @@ export interface FeedbackItem {
   postedCommentIri?: Iri
   /** Number of comment parts already posted (resume after a partial failure). */
   postedParts?: number
+  /** IRIs of all posted comment parts, in order (postedCommentIri is the first one). */
+  postedCommentIris?: Iri[]
+  /** Comment sync: what happened to the posted comment(s) in eCamp. Set only for posted items. */
+  commentSync?: CommentSyncState
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
+}
+
+/** A reply (or a likely answer) to a posted feedback comment, read back from eCamp. */
+export interface CommentReply {
+  iri: Iri
+  authorDisplayName: string | null
+  /** Plain text (HTML stripped). Zone yellow (camp content). */
+  text: string
+  createTime: IsoDateTime | null
+  /**
+   * false = direct reply (eCamp `parent` link points at one of our comments);
+   * true = later comment by someone else on the same activity without a parent link (likely answer).
+   */
+  inferred: boolean
+}
+
+export interface CommentSyncState {
+  syncedAt: IsoDateTime
+  /** Latest resolvedAt among our posted parts (null = not resolved in eCamp). */
+  resolvedAt: IsoDateTime | null
+  /** True when none of our posted comment IRIs exists in eCamp anymore (deleted there). */
+  missing: boolean
+  replies: CommentReply[]
+  /** Reply IRIs the coach has already seen (marks «neu» on the rest). */
+  seenReplyIris?: Iri[]
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -881,6 +973,38 @@ export interface Diff {
   toRoundId: string | null
   entries: DiffEntry[]
   counts: Record<DiffChange, number>
+}
+
+/**
+ * Leader self-check («Entwurfsrunde»): the rules run for the Lagerleitung before they submit. Kept
+ * apart from review rounds (own table `selfChecks`, Dexie v4) so round numbering, «Änderungen seit
+ * letzter Runde» and the backup reminder only count real review rounds.
+ */
+export interface SelfCheckFinding {
+  id: string
+  ruleId: string
+  severity: Severity
+  title: string
+  message: string
+  targets: string[]
+  /** Finding quotes MiData/NDS (tags 'midata' / 'nds-quelle'). */
+  redDerived: boolean
+}
+
+export interface SelfCheckRun {
+  id: string
+  campIri: Iri
+  createdAt: IsoDateTime
+  /** Who ran it: the Lagerleitung (role member/manager) or the coach on their behalf. */
+  by: 'leader' | 'coach'
+  /** Snapshot of the facts (table `snapshots`, roundId = `selfcheck:<id>`), for «geändert seit Selbstcheck». */
+  snapshotId: string | null
+  note: string
+  counts: FindingCounts
+  validJsDays: number | null
+  totalDays: number | null
+  /** Open (not ignored) findings at the time of the run. */
+  findings: SelfCheckFinding[]
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -13,6 +13,10 @@ import { chromium } from 'playwright-core'
 import { midataFlows } from './midata-flows.mjs'
 import { ndsFlows } from './nds-flows.mjs'
 import { triageFlows } from './triage-flows.mjs'
+import { commentSyncFlows } from './commentsync-flows.mjs'
+import { explainFlows } from './explain-flows.mjs'
+import { selfCheckFlows } from './selfcheck-flows.mjs'
+import { radarFlows } from './radar-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const PORT = Number(process.env.UI_PORT || 1420)
@@ -171,6 +175,10 @@ async function main() {
   await triageFlows({ page, step, go, shot, BASE })
   await midataFlows({ page, step, go, shot, BASE })
   await ndsFlows({ page, step, go, shot, BASE })
+  await commentSyncFlows({ page, step, go, shot, BASE })
+  await explainFlows({ page, step, go, shot, BASE })
+  await selfCheckFlows({ page, step, go, shot, BASE })
+  await radarFlows({ page, step, go, shot, BASE })
 
   await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')
