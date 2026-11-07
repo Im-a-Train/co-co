@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  backToFindingLocation,
   feedbackForFinding,
   findingStatus,
+  gridLocationFromFinding,
   nextOpenIndex,
+  originFromQuery,
+  previousEntryIsOrigin,
   progressOf,
   recallPosition,
   rememberPosition,
@@ -98,5 +102,39 @@ describe('position + routing', () => {
     expect(loc.params.campId).toBe('70ca971c992f')
     expect(loc.query).toEqual({ befund: 'R-1:a', editor: '1' })
     expect(triageLocation('/api/camps/x', 'R-1:a').query).toEqual({ befund: 'R-1:a' })
+  })
+})
+
+describe('Befund -> Raster -> zurück', () => {
+  const camp = '/api/camps/70ca971c992f'
+  it('gridLocationFromFinding carries activity and origin', () => {
+    const loc = gridLocationFromFinding(camp, 'R-1:a', '/api/activities/a1')
+    expect(loc.name).toBe('camp-grid')
+    expect(loc.params.campId).toBe('70ca971c992f')
+    expect(loc.query).toEqual({ activity: '/api/activities/a1', vonBefund: 'R-1:a' })
+    const l = gridLocationFromFinding(camp, 'R-1:a', '/api/activities/a1', { list: true, filterActivity: '/api/activities/z' })
+    expect(l.query).toMatchObject({ vonAnsicht: 'liste', vonFilter: '/api/activities/z' })
+  })
+  it('originFromQuery parses and ignores a plain grid query', () => {
+    expect(originFromQuery({ activity: 'x' })).toBeNull()
+    expect(originFromQuery({ vonBefund: ['a', 'b'] })).toBeNull()
+    expect(originFromQuery({ vonBefund: 'R-1:a' })).toEqual({ findingId: 'R-1:a', list: false, filterActivity: null })
+  })
+  it('round-trips mode and filter back to the Befunde location', () => {
+    const q = gridLocationFromFinding(camp, 'R-1:a', '/api/activities/a1', { list: true, filterActivity: '/api/activities/z' }).query
+    const origin = originFromQuery(q)!
+    const back = backToFindingLocation(camp, origin)
+    expect(back.name).toBe('camp-findings')
+    expect(back.query).toEqual({ befund: 'R-1:a', ansicht: 'liste', activity: '/api/activities/z' })
+    expect(backToFindingLocation(camp, { findingId: 'R-1:a', list: false, filterActivity: null }).query).toEqual({ befund: 'R-1:a' })
+  })
+  it('previousEntryIsOrigin only accepts the identical Befunde entry', () => {
+    const o = { findingId: 'R-1:a', list: false, filterActivity: null }
+    const p = '/lager/70ca971c992f/befunde'
+    expect(previousEntryIsOrigin(`${p}?befund=R-1%3Aa`, camp, o)).toBe(true)
+    expect(previousEntryIsOrigin(`${p}?befund=R-2%3Ab`, camp, o)).toBe(false)
+    expect(previousEntryIsOrigin(`${p}?befund=R-1%3Aa&ansicht=liste`, camp, o)).toBe(false)
+    expect(previousEntryIsOrigin('/lager/70ca971c992f/raster', camp, o)).toBe(false)
+    expect(previousEntryIsOrigin(null, camp, o)).toBe(false)
   })
 })

@@ -7,7 +7,8 @@ import { computed, ref, shallowRef, toValue, watch, type ComputedRef, type Maybe
 import { classOf, guessCategories, mappingFromGuesses } from '@/domain/campFacts'
 import { getCoachInputs, getMapping, saveCoachInputs, saveMapping } from '@/domain/campFacts/store'
 import { dropEditedMidataFields } from '@/domain/midata'
-import type { CampFacts, CategoryClass, CategoryMapping, CoachInputs, Iri, MidataField } from '@/domain/types'
+import { dropEditedNdsFields } from '@/domain/nds'
+import type { CampFacts, CategoryClass, CategoryMapping, CoachInputs, Iri, MidataField, NdsField } from '@/domain/types'
 import { useCampFacts } from './useCampFacts'
 
 export interface CampSettingsHandle {
@@ -22,7 +23,7 @@ export interface CampSettingsHandle {
   classOf(categoryIri: Iri | null): CategoryClass
   saveMapping(mapping: CategoryMapping): Promise<void>
   /** `opts.adopted`: MiData fields accepted in this save (they keep their badge). */
-  saveCoachInputs(inputs: CoachInputs, opts?: { adopted?: readonly MidataField[] }): Promise<void>
+  saveCoachInputs(inputs: CoachInputs, opts?: { adopted?: readonly MidataField[]; adoptedNds?: readonly NdsField[] }): Promise<void>
 }
 
 const version = ref(0)
@@ -92,7 +93,11 @@ export function useCampSettings(campIri: MaybeRefOrGetter<Iri>): CampSettingsHan
       const adopted = opts?.adopted ?? []
       const midataFields = { ...(cleaned.midataFields ?? {}) }
       for (const f of adopted) if (next.midataFields?.[f]) midataFields[f] = next.midataFields[f]
-      const saved = { ...cleaned, midataFields, updatedAt: new Date().toISOString() }
+      const prevInputs = inputs.value[next.campIri] ?? null
+      const cleanedNds = dropEditedNdsFields(prevInputs, cleaned)
+      const ndsFields = { ...(cleanedNds.ndsFields ?? {}) }
+      for (const f of opts?.adoptedNds ?? []) if (next.ndsFields?.[f]) ndsFields[f] = next.ndsFields[f]
+      const saved = { ...cleanedNds, midataFields, ...(next.ndsFields || cleanedNds.ndsFields ? { ndsFields } : {}), updatedAt: new Date().toISOString() }
       await saveCoachInputs(saved)
       inputs.value = { ...inputs.value, [saved.campIri]: saved }
       version.value += 1

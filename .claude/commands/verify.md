@@ -10,7 +10,8 @@ error lines). Do not stop at the first failure; run all steps, then summarise.
 3. `npm run build:vite -w apps/desktop`
 4. In `apps/desktop/src-tauri` (with `export PATH="$HOME/.cargo/bin:$PATH"` if cargo is not found):
    `cargo test --workspace` and `cargo clippy --workspace --all-targets -- -D warnings`
-5. If files under `apps/desktop/src/views`, `components` or `layouts` changed: `npm run test:ui -w apps/desktop`,
-   then open the screenshots it lists and check them. Afterwards make sure no Vite server is left on port 1420.
+5. If files under `apps/desktop/src/views`, `components` or `layouts` changed: `UI_PORT=1431 npm run test:ui -w apps/desktop` (port 1420 is often held by another worktree),
+   then open the screenshots it lists and check them. Afterwards make sure no Vite server you started is left running on that port.
+6. If behaviour or status changed: update `docs/spec/co-co-spec.html` and republish it to the spec artifact (see CLAUDE.md "Working agreements").
 
 $ARGUMENTS

@@ -1,0 +1,4 @@
+{"data":{"campList":{"content":[
+{"businessId":"7001","offerItemNumber":1,"groupName":"Testgruppe Alpha","duration":{"first":"2026-07-18","last":"2026-07-25"},"offerItemState":"WAITING_FOR_ASSESSMENT"},
+{"businessId":"7002","offerItemNumber":2,"groupName":"Testgruppe Beta","duration":{"first":"2026-08-10","last":"2026-08-14"},"offerItemState":"BRAND_NEW_CODE"}
+],"totalElements":2,"totalPages":1,"number":0,"size":50}}}

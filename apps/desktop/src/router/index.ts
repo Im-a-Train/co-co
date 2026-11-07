@@ -18,6 +18,7 @@ declare module 'vue-router' {
 export const CAMP_TABS = [
   { path: 'uebersicht', name: 'camp-overview', titleKey: 'campTabs.overview', icon: 'mdi-view-dashboard-outline' },
   { path: 'raster', name: 'camp-grid', titleKey: 'campTabs.grid', icon: 'mdi-calendar-week' },
+  { path: 'aktivitaeten', name: 'camp-activities', titleKey: 'campTabs.activities', icon: 'mdi-format-list-bulleted' },
   { path: 'befunde', name: 'camp-findings', titleKey: 'campTabs.findings', icon: 'mdi-alert-circle-check-outline' },
   { path: 'angaben', name: 'camp-inputs', titleKey: 'campTabs.inputs', icon: 'mdi-form-select' },
   { path: 'zuordnung', name: 'camp-mapping', titleKey: 'campTabs.mapping', icon: 'mdi-shape-outline' },
@@ -31,6 +32,7 @@ export type CampTabName = (typeof CAMP_TABS)[number]['name']
 const campViews: Record<CampTabName, () => Promise<unknown>> = {
   'camp-overview': () => import('@/views/cockpit/OverviewView.vue'),
   'camp-grid': () => import('@/views/cockpit/GridView.vue'),
+  'camp-activities': () => import('@/views/cockpit/ActivitiesView.vue'),
   'camp-findings': () => import('@/views/cockpit/FindingsView.vue'),
   'camp-inputs': () => import('@/views/camps/CoachInputsView.vue'),
   'camp-mapping': () => import('@/views/camps/MappingView.vue'),

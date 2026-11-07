@@ -1,10 +1,10 @@
 {"data":[
- {"id":"11","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"111"}},"roles":{"data":[{"type":"event_roles","id":"r3"}]}}},
- {"id":"12","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"112"}},"roles":{"data":[{"type":"event_roles","id":"r3"}]}}},
- {"id":"13","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"110"}},"roles":{"data":[{"type":"event_roles","id":"r4"}]}}},
- {"id":"14","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"101"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
- {"id":"15","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"120"}},"roles":{"data":[{"type":"event_roles","id":"r5"}]}}},
- {"id":"16","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"113"}},"roles":{"data":[{"type":"event_roles","id":"r1"},{"type":"event_roles","id":"r6"}]}}}
+ {"id":"11","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"111"}},"roles":{"data":[{"type":"event_roles","id":"r3"}]}}},
+ {"id":"12","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"112"}},"roles":{"data":[{"type":"event_roles","id":"r3"}]}}},
+ {"id":"13","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"110"}},"roles":{"data":[{"type":"event_roles","id":"r4"}]}}},
+ {"id":"14","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"101"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"15","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"120"}},"roles":{"data":[{"type":"event_roles","id":"r5"}]}}},
+ {"id":"16","type":"event_participations","relationships":{"participant":{"data":{"type":"people","id":"113"}},"roles":{"data":[{"type":"event_roles","id":"r1"},{"type":"event_roles","id":"r6"}]}}}
 ],
  "included":[
  {"id":"111","type":"people","attributes":{"first_name":"Mira","last_name":"Keller","nickname":"","birthday":"1995-09-09"}},

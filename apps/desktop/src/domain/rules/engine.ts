@@ -79,6 +79,8 @@ function effectiveSeverity(meta: RuleMeta, hitSeverity: Severity | undefined): S
 
 /** Findings quoting MiData (red-derived) carry the tag 'midata'; they must never reach the AI. */
 const MIDATA_SOURCE_RE = /Quelle:\s*MiData/
+/** Same for NDS: tag 'nds-quelle' (the static rule tag 'nds' only names the topic). */
+const NDS_SOURCE_RE = /Quelle:\s*NDS/
 
 function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Finding[] {
   const hits = rule.check(ctx)
@@ -108,6 +110,7 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext): Find
       tags: [
         ...(rule.meta.tags ?? []),
         ...(evidence.some((e) => MIDATA_SOURCE_RE.test(e.label)) || MIDATA_SOURCE_RE.test(message) ? ['midata'] : []),
+        ...(evidence.some((e) => NDS_SOURCE_RE.test(e.label)) || NDS_SOURCE_RE.test(message) ? ['nds-quelle'] : []),
       ],
       override: ctx.overrides.find((o) => o.findingId === id) ?? null,
     })

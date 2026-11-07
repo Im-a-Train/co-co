@@ -304,6 +304,11 @@ export interface CoachInputs {
    * «Stand MiData» timestamp of the aggregate it came from. A manual edit of a field removes its entry.
    */
   midataFields?: Partial<Record<MidataField, IsoDateTime>>
+  /**
+   * M8: fields whose current value was accepted from NDS («Aus NDS übernehmen»), with the «Stand NDS»
+   * timestamp of the aggregate it came from. A manual edit of a field removes its entry.
+   */
+  ndsFields?: Partial<Record<NdsField, IsoDateTime>>
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -359,6 +364,10 @@ export interface MidataEventSummary {
   startAt: IsoDate | null
   finishAt: IsoDate | null
   location: string | null
+  /** Organisations (groups) running the event. */
+  groupNames?: string[]
+  /** Days overlapping the eCamp camp; null when the event has no dates. */
+  overlapDays?: number | null
 }
 
 export interface MidataProbe {
@@ -389,6 +398,114 @@ export type MidataField =
   | 'leadersCount'
   | 'slrgCount'
   | 'lagerleiterAttested'
+
+// ---------------------------------------------------------------------------------------------
+// NDS (M8, red zone). Shapes mirror coco-core/src/nds.rs (serde camelCase). Only aggregates and
+// counts cross the IPC boundary; no names, birth dates, AHV numbers, addresses, e-mails or IBANs.
+// Unknown state codes are kept as raw strings.
+// ---------------------------------------------------------------------------------------------
+
+export interface NdsCounts {
+  children: number | null
+  adolescents: number | null
+  totalParticipants: number | null
+  totalInstructors: number | null
+  jsInstructors: number | null
+  campDays: number | null
+  totalActivities: number | null
+}
+
+export interface NdsStatistics {
+  planned: NdsCounts
+  actual: NdsCounts
+  coachAuthorizedForContribution: boolean | null
+}
+
+export interface NdsActivities {
+  total: number
+  /** activityState (raw code) -> count. */
+  byState: Record<string, number>
+  /** activityType (raw code) -> count. */
+  byType: Record<string, number>
+  lastActivityDate: IsoDate | null
+  /** Activities in the known open-attendance state (ATTENDANCE_OPEN, inferred, not yet observed). */
+  attendanceOpenCount: number
+}
+
+export interface NdsRentalOrder {
+  orderState: string | null
+  dispatchmentDate: IsoDate | null
+  returnDate: IsoDate | null
+}
+
+export interface NdsAggregate {
+  offerBusinessId: string
+  campBusinessId: string
+  offerNumber: string | null
+  start: IsoDate | null
+  end: IsoDate | null
+  /** Raw state codes (see NDS_STATE_LABELS in domain/nds). */
+  offerState: string | null
+  offerItemState: string | null
+  /** Date of approvalTimestamp («bewilligt am»). */
+  approvedOn: IsoDate | null
+  statistics: NdsStatistics
+  /** involvementType (raw code) -> count. */
+  supervisorCounts: Record<string, number>
+  participantCount: number
+  /** targetAudienceGroup (raw code) -> count. */
+  participantCountsByAudience: Record<string, number>
+  activities: NdsActivities
+  campAgendaUploaded: boolean | null
+  rentalOrders: NdsRentalOrder[]
+  /** «Stand NDS» */
+  fetchedAt: IsoDateTime
+}
+
+export interface NdsCampSummary {
+  offerBusinessId: string
+  campBusinessId: string
+  offerNumber: string | null
+  offerItemNumber: string | null
+  groupName: string | null
+  start: IsoDate | null
+  end: IsoDate | null
+  offerState: string | null
+  offerItemState: string | null
+}
+
+export interface NdsProbeEndpoint {
+  name: string
+  status: number | null
+  fieldsPresent: string[]
+  fieldsMissing: string[]
+}
+
+/** Diagnosis: HTTP status per endpoint and field NAMES only. */
+export interface NdsProbe {
+  connected: boolean
+  endpoints: NdsProbeEndpoint[]
+}
+
+export interface NdsStatus {
+  connected: boolean
+  /** Cookie names only, never values. */
+  cookieNames: string[]
+}
+
+/** Coach inputs that «Aus NDS übernehmen» can fill. */
+export type NdsField = 'ndsRegistered' | 'ndsRegisteredOn' | 'ndsClosed'
+
+/** Dexie table `nds` (one per camp). Tagged red-derived: AI gateway refuses it; backup may omit it. */
+export interface NdsRecord {
+  campIri: Iri
+  zone: 'red-derived'
+  /** NDS ids the camp is linked to (null = not linked yet). */
+  link: { offerBusinessId: string; campBusinessId: string } | null
+  aggregate: NdsAggregate | null
+  fetchedAt: IsoDateTime | null
+  updatedAt: IsoDateTime
+}
 
 /** Dexie table `midata` (one per camp). Tagged red-derived: AI gateway refuses it; backup may omit it. */
 export interface MidataRecord {
@@ -460,6 +577,8 @@ export interface RuleContext {
   coachInputs: CoachInputs | null
   /** M7: MiData aggregate of the camp (red-derived; null/absent = not connected). */
   midata?: MidataAggregate | null
+  /** M8: NDS aggregate of the camp (red-derived; null/absent = not connected). */
+  nds?: NdsAggregate | null
   documents: DocumentRecord[]
   settings: AppSettings
   /** Evaluation time (injected for testability). */
@@ -810,6 +929,10 @@ export interface AppSettings {
     /** The coach's own MiData person id (for the coach match, CMP-CAMP-01). */
     personId: string | null
   }
+  /** M8: NDS connection settings (no secrets; the session cookie lives in Rust/keychain). */
+  nds: {
+    enabled: boolean
+  }
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -818,6 +941,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   backup: { remindAfterRound: true, lastExportAt: null },
   rulePacks: [],
   midata: { baseUrl: 'https://db.scout.ch', personId: null },
+  nds: { enabled: false },
 }
 
 // ---------------------------------------------------------------------------------------------

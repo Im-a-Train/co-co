@@ -46,6 +46,7 @@ const PK: Record<string, string> = {
   watchedFolders: 'id',
   aiLog: 'id',
   midata: 'campIri',
+  nds: 'campIri',
 }
 function makeStore(): BackupStore {
   return Object.fromEntries(TABLE_NAMES.map((n) => [n, memTable(PK[n]!)]))
@@ -136,11 +137,14 @@ describe('backup', () => {
   it('omitRedDerived leaves out the midata table, default keeps it', async () => {
     const s = makeStore()
     await s.midata!.bulkPut([{ campIri: '/api/camps/1', zone: 'red-derived' }])
+    await s.nds!.bulkPut([{ campIri: '/api/camps/1', zone: 'red-derived' }])
     const all = await exportFromStore(s)
     expect(all.tables.midata).toHaveLength(1)
+    expect(all.tables.nds).toHaveLength(1)
     const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
     expect('midata' in lean.tables).toBe(false)
-    expect(Object.keys(lean.tables).sort()).toEqual(TABLE_NAMES.filter((n) => n !== 'midata').sort())
+    expect('nds' in lean.tables).toBe(false)
+    expect(Object.keys(lean.tables).sort()).toEqual(TABLE_NAMES.filter((n) => n !== 'midata' && n !== 'nds').sort())
   })
 
   it('replace-import of an export without the midata table (v1 / omitted) empties local midata; merge keeps it', async () => {
@@ -173,12 +177,27 @@ describe('backup', () => {
     expect('midataFields' in row).toBe(false)
   })
 
+  it('omitRedDerived strips values adopted from NDS from coachInputs', async () => {
+    const s = makeStore()
+    await s.coachInputs!.bulkPut([
+      { campIri: '/c/1', ndsRegistered: true, ndsRegisteredOn: '2031-05-01', ndsClosed: true, ndsClosedOn: '2031-09-01', ndsFields: { ndsRegistered: 'x', ndsRegisteredOn: 'x' } },
+    ])
+    const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
+    const row = lean.tables.coachInputs[0] as Record<string, unknown>
+    expect(row.ndsRegistered).toBe(false)
+    expect(row.ndsRegisteredOn).toBeNull()
+    expect(row.ndsClosed).toBe(true)
+    expect('ndsFields' in row).toBe(false)
+  })
+
   it('imports an export that contains midata', async () => {
     const src = makeStore()
     await src.midata!.bulkPut([{ campIri: '/api/camps/1', zone: 'red-derived' }])
+    await src.nds!.bulkPut([{ campIri: '/api/camps/1', zone: 'red-derived' }])
     const dst = makeStore()
     const rep = await importIntoStore(dst, parseExport(JSON.stringify(await exportFromStore(src))), 'merge')
     expect(rep.written.midata).toBe(1)
+    expect(rep.written.nds).toBe(1)
   })
 
   it('exportFileName uses local date', () => {

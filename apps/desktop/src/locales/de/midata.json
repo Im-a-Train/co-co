@@ -84,11 +84,22 @@
     },
     "picker": {
       "title": "MiData-Anlass wählen",
-      "intro": "Lager in MiData, die in den Daten deines eCamp-Lagers stattfinden.",
+      "intro": "Die Suche deckt die Lagerdaten ±14 Tage ab und alle Organisationen, die dein MiData-Konto sehen darf.",
       "loading": "Anlässe werden geladen …",
       "empty": "Keine Lager im Zeitraum gefunden.",
+      "emptyFiltered": "Kein Anlass passt zum Filter.",
       "failed": "Anlässe konnten nicht geladen werden",
-      "noDates": "ohne Datum"
+      "noDates": "ohne Datum",
+      "filter": "Filter nach Name oder Organisation",
+      "exact": "passt zu den Lagerdaten",
+      "overlap": "überschneidet sich {n} Tage | überschneidet sich {n} Tag | überschneidet sich {n} Tage",
+      "noOverlap": "keine Überschneidung",
+      "noGroups": "Organisation unbekannt",
+      "manualTitle": "Nicht dabei?",
+      "manualLabel": "Anlass-Nr. direkt eingeben",
+      "manualHint": "Die Nummer steht in der MiData-Adresse des Anlasses.",
+      "manualInvalid": "Bitte nur Ziffern eingeben.",
+      "manualApply": "Verknüpfen"
     },
     "adopt": {
       "title": "Aus MiData übernehmen",

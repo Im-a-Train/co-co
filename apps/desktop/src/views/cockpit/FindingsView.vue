@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** /lager/:campId/befunde: triage ("Befunde durchgehen") or the grouped list with filters, ignore and Feedback erstellen. */
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -11,7 +11,7 @@ import {
   type FindingFilter,
 } from '@/domain/cockpit'
 import { campIdFromIri } from '@/domain/iri'
-import { activityIriOfFinding, recallPosition, rememberPosition, statusesOf } from '@/domain/triage'
+import { activityIriOfFinding, gridLocationFromFinding, recallPosition, rememberPosition, statusesOf } from '@/domain/triage'
 import { useFeedback } from '@/composables/useFeedback'
 import type { ActivityFact, Finding, Iri, RuleGroup } from '@/domain/types'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
@@ -139,10 +139,34 @@ async function undoOverride(f: Finding) {
 async function feedback(f: Finding) {
   error.value = await createFeedbackFromFinding(router, campIri.value, f)
 }
-function openActivity(iri: Iri) {
-  if (triageKey.value) rememberPosition(campIri.value, triageKey.value)
-  void router.push({ name: 'camp-grid', params: { campId: campIdFromIri(campIri.value) }, query: { activity: iri } })
+/** Jump to the grid; the origin is carried along so the grid can offer «Zurück zum Befund». */
+function openActivity(iri: Iri, findingId?: string) {
+  const id = findingId ?? triageKey.value
+  if (id) rememberPosition(campIri.value, id)
+  if (!id) {
+    void router.push({ name: 'camp-grid', params: { campId: campIdFromIri(campIri.value) }, query: { activity: iri } })
+    return
+  }
+  void router.push(
+    gridLocationFromFinding(campIri.value, id, iri, { list: mode.value === 'list', filterActivity: filter.activityIri }),
+  )
 }
+
+/** Coming back in list mode: scroll to and focus the finding's card. */
+const listTarget = typeof route.query.befund === 'string' && route.query.ansicht === 'liste' ? route.query.befund : null
+watch(
+  [mode, groups],
+  async () => {
+    if (!listTarget || mode.value !== 'list') return
+    await nextTick()
+    const el = document.querySelector<HTMLElement>(`[data-finding-id="${CSS.escape(listTarget)}"]`)
+    if (!el || el.dataset.scrolled) return
+    el.dataset.scrolled = '1'
+    el.scrollIntoView?.({ block: 'center' })
+    el.focus({ preventScroll: true })
+  },
+  { immediate: true, flush: 'post' },
+)
 function addAi(list: Finding[]) {
   void tryAction(() => findingsHandle.addAiFindings(list))
 }
@@ -214,7 +238,7 @@ function addAi(list: Finding[]) {
       @save-feedback="triageSave"
       @ignore="doOverride"
       @unignore="undoOverride"
-      @open-activity="openActivity"
+      @open-activity="(iri: string) => openActivity(iri)"
       @open-feedback="openFeedbackItem"
     />
 
@@ -270,10 +294,13 @@ function addAi(list: Finding[]) {
             v-for="f in g.findings"
             :key="f.id"
             :finding="f"
+            :data-finding-id="f.id"
+            tabindex="-1"
+            class="finding-card"
             @feedback="feedback"
             @override="askOverride"
             @remove-override="undoOverride"
-            @open-activity="openActivity"
+            @open-activity="(iri: string) => openActivity(iri, f.id)"
           />
         </div>
       </section>

@@ -1,6 +1,12 @@
 {
   "findings": {
     "title": "Befunde",
+    "backToFinding": {
+      "button": "Zurück zum Befund",
+      "hint": "Alt+← oder Esc",
+      "context": "{ruleId} · {title}",
+      "label": "Du kommst von diesem Befund:"
+    },
     "empty": "Keine Befunde in dieser Auswahl.",
     "emptyAll": "Keine Befunde. Das Lager erfüllt alle geprüften Regeln.",
     "evaluating": "Regeln werden geprüft …",

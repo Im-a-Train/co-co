@@ -1,0 +1,7 @@
+{"data":{"offerList":{"content":[
+{"businessId":"9001","offerNumber":4711,"duration":{"first":"2026-07-18","last":"2026-07-25"},"offerState":"WAITING_FOR_ASSESSMENT","offerGroup":"NG3","campCount":2,"courseCount":0},
+{"businessId":"9002","offerNumber":4712,"duration":{"first":"2026-03-01","last":"2026-03-05"},"offerState":"PAYED_CH"},
+{"businessId":"9003","offerNumber":4713,"duration":{"first":"2026-07-24","last":null},"offerState":"SOME_NEW_STATE"},
+{"offerNumber":1,"duration":{"first":"2026-07-20","last":"2026-07-21"}},
+{"businessId":"9004","offerNumber":4714}
+],"totalElements":5,"totalPages":1,"number":0,"size":50}}}

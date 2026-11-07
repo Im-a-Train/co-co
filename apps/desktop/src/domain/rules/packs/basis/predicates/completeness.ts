@@ -1,6 +1,7 @@
 /** Completeness rules (group 'completeness'). Pure predicates of RuleContext. */
 import type { RuleContext, RuleHit, RulePredicate } from '@/domain/types'
 import { datesDiffer, locationDiffers, midataDateRange } from '@/domain/midata'
+import { ndsDatesDiffer, participantsDiffer } from '@/domain/nds'
 import { addDays, daysBetween } from '../../../deadlines'
 import {
   activityEvidence,
@@ -12,6 +13,8 @@ import {
   isJsActivity,
   midataEvidence,
   midataSourceText,
+  ndsEvidence,
+  ndsSourceText,
   MOUNTAIN,
   normalize,
   OUTDOOR,
@@ -152,5 +155,69 @@ export const cmpProg01: RulePredicate = (ctx) => {
       params: { count: behind.length, label: highest.title, days: Math.max(left, 0) },
       evidence: behind.slice(0, MAX_EVIDENCE).map((a) => activityEvidence(a)),
     } satisfies RuleHit,
+  ]
+}
+
+// CMP-NDS-01 ---------------------------------------------------------------------------------
+
+/** eCamp camp dates vs. NDS camp dates (date part only). */
+export const cmpNds01: RulePredicate = (ctx) => {
+  const nds = ctx.nds
+  const { start, end } = ctx.facts.camp
+  if (!nds || !start || !end || !ndsDatesDiffer(nds, start, end)) return []
+  const stand = formatStand(nds.fetchedAt)
+  const a = `${formatDateDe(start)}–${formatDateDe(end)}`
+  const b = `${formatDateDe(nds.start ?? '')}–${formatDateDe(nds.end ?? '')}`
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: { _message: `Lagerdaten in eCamp (${a}) und NDS (${b}) stimmen nicht überein (${ndsSourceText(stand)})`, stand },
+      evidence: [ndsEvidence(stand)],
+    },
+  ]
+}
+
+// CMP-NDS-02 ---------------------------------------------------------------------------------
+
+/** After the camp: activities in NDS whose attendance check (AWK) is still open. */
+export const cmpNds02: RulePredicate = (ctx) => {
+  const nds = ctx.nds
+  const end = ctx.facts.camp.end ?? nds?.end ?? null
+  if (!nds || !end) return []
+  if (ctx.now.toISOString().slice(0, 10) <= end.slice(0, 10)) return []
+  const open = nds.activities.attendanceOpenCount
+  if (!(open > 0)) return []
+  const stand = formatStand(nds.fetchedAt)
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: { count: open, _message: `In der NDS ${open === 1 ? 'ist bei 1 Aktivität' : `sind bei ${open} Aktivitäten`} die Anwesenheitskontrolle (AWK) noch offen (${ndsSourceText(stand)})`, stand },
+      evidence: [ndsEvidence(stand)],
+    },
+  ]
+}
+
+// CMP-NDS-03 ---------------------------------------------------------------------------------
+
+/** NDS planned participants vs. MiData (preferred) or coach-input participant count: more than 20 % apart. */
+export const cmpNds03: RulePredicate = (ctx) => {
+  const nds = ctx.nds
+  if (!nds) return []
+  const planned = nds.statistics.planned.totalParticipants
+  const md = ctx.midata?.participantsCount ?? null
+  const mine = md ?? ctx.coachInputs?.participantsCount ?? null
+  if (!participantsDiffer(planned, mine)) return []
+  const stand = formatStand(nds.fetchedAt)
+  const label = md !== null ? 'MiData' : 'Angabe des Coachs'
+  const src = md !== null ? ` / ${midataSourceText(formatStand(ctx.midata!.fetchedAt))}` : ''
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: {
+        _message: `In der NDS sind ${planned} Teilnehmende geplant, laut ${label} ${mine}: Abweichung über 20 % (${ndsSourceText(stand)}${src})`,
+        stand,
+      },
+      evidence: [ndsEvidence(stand)],
+    },
   ]
 }

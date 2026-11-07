@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { midataFlows } from './midata-flows.mjs'
+import { ndsFlows } from './nds-flows.mjs'
 import { triageFlows } from './triage-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -52,7 +53,7 @@ function record(ok, name, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' - ' + detail : ''}`)
 }
 
-const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
+const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata|nds)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
 
 async function shot(page, name) {
   const file = join(SHOTS, `${name}.png`)
@@ -104,7 +105,7 @@ async function main() {
   const routes = [
     ['/verbindung', 'verbindung'],
     ['/lager', 'lager'],
-    ...['uebersicht', 'raster', 'befunde', 'angaben', 'zuordnung', 'feedback', 'dokumente', 'runden'].map((t) => [
+    ...['uebersicht', 'raster', 'aktivitaeten', 'befunde', 'angaben', 'zuordnung', 'feedback', 'dokumente', 'runden'].map((t) => [
       `/lager/${CAMP}/${t}`,
       `lager-${t}`,
     ]),
@@ -151,8 +152,25 @@ async function main() {
       throw new Error('drawer not open')
   })
 
+  await step('flow: activities list filter and drawer', async () => {
+    await go('aktivitaeten', 'flow-activities')
+    const total = await page.locator('.activities-table tbody tr').count()
+    if (total < 1) throw new Error('no activity rows')
+    await page.getByTestId('activities-only-findings').locator('input').check({ force: true })
+    await page.waitForTimeout(500)
+    if (!/befunde=1/.test(page.url())) throw new Error('filter not in URL')
+    const shown = await page.locator('.activities-table tbody tr').count()
+    if (shown > total) throw new Error('filter did not reduce rows')
+    await shot(page, 'flow-activities-filtered')
+    await page.locator('.activities-table tbody tr').first().click({ timeout: 5000 })
+    await page.waitForTimeout(800)
+    await shot(page, 'flow-activities-drawer')
+    if (!(await page.locator('.v-navigation-drawer--right').count())) throw new Error('drawer not open')
+  })
+
   await triageFlows({ page, step, go, shot, BASE })
   await midataFlows({ page, step, go, shot, BASE })
+  await ndsFlows({ page, step, go, shot, BASE })
 
   await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')

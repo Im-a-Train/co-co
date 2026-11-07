@@ -122,6 +122,12 @@ pub struct MidataEventSummary {
     pub start_at: Option<String>,
     pub finish_at: Option<String>,
     pub location: Option<String>,
+    /// Names of the organisations (groups) running the event; empty when unknown.
+    #[serde(default)]
+    pub group_names: Vec<String>,
+    /// Days overlapping the eCamp camp period; None when unknown (set by `rank_events`).
+    #[serde(default)]
+    pub overlap_days: Option<u32>,
 }
 
 /// Result of the M7-0 spike probe. Contains field NAMES and HTTP status codes only.
@@ -158,9 +164,9 @@ pub struct RawEventData<'a> {
     pub base_url: &'a str,
     /// `GET /api/events/{id}?include=dates`
     pub event: &'a Value,
-    /// All pages of `GET /api/event_participations?filter[event_id]=..&include=person,roles`
+    /// All pages of `GET /api/event_participations?filter[event_id][eq]=..&include=participant,roles`
     pub participation_pages: &'a [Value],
-    /// All pages of `GET /api/qualifications?filter[person_id]=..&include=qualification_kind`
+    /// All pages of `GET /api/qualifications?filter[person_id][eq]=..&include=qualification_kind`
     pub qualification_pages: &'a [Value],
     /// Camp period from eCamp (YYYY-MM-DD), used for ages and qualification validity.
     pub camp_start: &'a str,
@@ -370,8 +376,54 @@ fn dates_of(item: &Value, included: &Included) -> Vec<EventDate> {
     out
 }
 
-/// Parses an events list document into picker entries.
+/// Parses an events list document into picker entries (no type filtering).
 pub fn parse_event_list(doc: &Value) -> Result<Vec<MidataEventSummary>, CoreError> {
+    parse_event_list_filtered(doc, false)
+}
+
+/// Like `parse_event_list`; with `camp_only` drops events whose `type` attribute is present
+/// and does not contain "Camp" (fallback when the server ignored the type filter).
+pub fn parse_event_list_filtered(doc: &Value, camp_only: bool) -> Result<Vec<MidataEventSummary>, CoreError> {
+    parse_event_list_with_groups(doc, camp_only, &HashMap::new())
+}
+
+/// Group ids (`attributes.group_ids`) of all events of the given list documents, deduped, in first-seen order.
+pub fn event_group_ids(docs: &[Value]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for doc in docs {
+        for item in doc.get("data").and_then(Value::as_array).into_iter().flatten() {
+            for g in item.get("attributes").and_then(|a| a.get("group_ids")).and_then(Value::as_array).into_iter().flatten() {
+                if let Some(id) = id_str(g) {
+                    if !out.contains(&id) {
+                        out.push(id);
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// `group id -> name` from `GET /api/groups` documents (prefers `display_name`, else `name`).
+pub fn group_names_by_id(docs: &[Value]) -> HashMap<String, String> {
+    let mut out = HashMap::new();
+    for doc in docs {
+        for g in doc.get("data").and_then(Value::as_array).into_iter().flatten() {
+            let Some(id) = g.get("id").and_then(id_str) else { continue };
+            if let Some(name) = str_attr(g, "display_name").or_else(|| str_attr(g, "name")) {
+                out.insert(id, name);
+            }
+        }
+    }
+    out
+}
+
+/// Like [`parse_event_list_filtered`]; organisation names come from `attributes.group_ids` mapped through `names`.
+pub fn parse_event_list_with_groups(
+    doc: &Value,
+    camp_only: bool,
+    names: &HashMap<String, String>,
+) -> Result<Vec<MidataEventSummary>, CoreError> {
     let data = doc
         .get("data")
         .and_then(Value::as_array)
@@ -380,16 +432,100 @@ pub fn parse_event_list(doc: &Value) -> Result<Vec<MidataEventSummary>, CoreErro
     let mut out = Vec::new();
     for item in data {
         let Some(id) = item.get("id").and_then(id_str) else { continue };
+        if camp_only {
+            if let Some(t) = str_attr(item, "type") {
+                if !t.contains("Camp") {
+                    continue;
+                }
+            }
+        }
         let dates = dates_of(item, &included);
+        let mut group_names: Vec<String> = Vec::new();
+        for g in item.get("attributes").and_then(|a| a.get("group_ids")).and_then(Value::as_array).into_iter().flatten() {
+            if let Some(name) = id_str(g).and_then(|id| names.get(&id).cloned()) {
+                if !group_names.contains(&name) {
+                    group_names.push(name);
+                }
+            }
+        }
         out.push(MidataEventSummary {
             id,
             name: str_attr(item, "name").unwrap_or_default(),
             start_at: dates.iter().map(|d| d.start_at.clone()).min(),
             finish_at: dates.iter().map(|d| d.finish_at.clone()).max(),
             location: str_attr(item, "location"),
+            group_names,
+            overlap_days: None,
         });
     }
     Ok(out)
+}
+
+/// Days since a fixed epoch for a valid civil date (Howard Hinnant's algorithm).
+fn day_number(s: &str) -> Option<i64> {
+    let (y, m, d) = parse_date(s)?;
+    let y = i64::from(y) - i64::from(m <= 2);
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = i64::from((m + 9) % 12);
+    let doy = (153 * mp + 2) / 5 + i64::from(d) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    Some(era * 146_097 + doe)
+}
+
+/// Inclusive overlap in days of two date ranges; 0 when disjoint, None when a date is unparsable.
+fn overlap_between(a: (&str, &str), b: (&str, &str)) -> Option<i64> {
+    let (a0, a1, b0, b1) = (day_number(a.0)?, day_number(a.1)?, day_number(b.0)?, day_number(b.1)?);
+    Some((a1.min(b1) - a0.max(b0) + 1).max(0))
+}
+
+/// Client-side filter and ranking of the picker list. Events that clearly do not overlap
+/// `[from, to]` are dropped; events without dates are kept at the end. `overlap_days` is the overlap
+/// with the camp period (`camp_start`/`camp_end`, falling back to `[from, to]`). Order: largest
+/// overlap first, then nearest start date to the camp start, then name.
+pub fn rank_events(
+    events: Vec<MidataEventSummary>,
+    from: &str,
+    to: &str,
+    camp_start: Option<&str>,
+    camp_end: Option<&str>,
+) -> Vec<MidataEventSummary> {
+    let (cs, ce) = match (camp_start, camp_end) {
+        (Some(a), Some(b)) if day_number(a).is_some() && day_number(b).is_some() => (a, b),
+        _ => (from, to),
+    };
+    let anchor = day_number(cs).unwrap_or(0);
+    let mut dated: Vec<(MidataEventSummary, i64, i64)> = Vec::new();
+    let mut undated: Vec<MidataEventSummary> = Vec::new();
+    for mut e in events {
+        let range = match (e.start_at.clone(), e.finish_at.clone().or_else(|| e.start_at.clone())) {
+            (Some(a), Some(b)) => Some((a, b)),
+            _ => None,
+        };
+        let Some((a, b)) = range else {
+            e.overlap_days = None;
+            undated.push(e);
+            continue;
+        };
+        match overlap_between((&a, &b), (from, to)) {
+            Some(0) => continue,
+            Some(_) => {}
+            None => {
+                e.overlap_days = None;
+                undated.push(e);
+                continue;
+            }
+        }
+        let ov = overlap_between((&a, &b), (cs, ce)).unwrap_or(0);
+        e.overlap_days = u32::try_from(ov).ok();
+        let dist = (day_number(&a).unwrap_or(anchor) - anchor).abs();
+        dated.push((e, ov, dist));
+    }
+    dated.sort_by(|x, y| y.1.cmp(&x.1).then(x.2.cmp(&y.2)).then_with(|| x.0.name.cmp(&y.0.name)));
+    let mut out: Vec<MidataEventSummary> = dated.into_iter().map(|t| t.0).collect();
+    undated.sort_by(|x, y| x.name.cmp(&y.name));
+    out.extend(undated);
+    out
 }
 
 struct PersonAgg {
@@ -410,7 +546,15 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
     for page in pages {
         let Some(data) = page.get("data").and_then(Value::as_array) else { continue };
         for p in data {
-            let person = rel_ids(p, "person").into_iter().next().map(|(_, id)| id);
+            if p.get("attributes").and_then(|a| a.get("active")).and_then(Value::as_bool) == Some(false) {
+                continue;
+            }
+            let part = {
+                let r = rel_ids(p, "participant");
+                if r.is_empty() { rel_ids(p, "person") } else { r }
+            };
+            let is_guest = part.first().is_some_and(|(t, _)| t == "event_guests");
+            let person = part.into_iter().next().map(|(t, id)| if t == "event_guests" { format!("guest:{id}") } else { id });
             let key = match (&person, p.get("id").and_then(id_str)) {
                 (Some(id), _) => format!("p:{id}"),
                 (None, Some(pid)) => format!("n:{pid}"),
@@ -424,14 +568,14 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
                 let Some(role) = included.get(&rk) else { continue };
                 let rtype = str_attr(role, "type").unwrap_or_default();
                 match classify_role(&rtype) {
-                    RoleClass::Leader => {
+                    RoleClass::Leader if !is_guest => {
                         is_leader = true;
                         is_main |= rtype.rsplit("::").next().map(str::trim) == Some("Leader");
                         if label.is_none() {
                             label = str_attr(role, "label").or_else(|| rtype.rsplit("::").next().map(String::from));
                         }
                     }
-                    RoleClass::Participant => is_participant = true,
+                    RoleClass::Participant | RoleClass::Leader => is_participant = true,
                     RoleClass::Other => {}
                 }
             }
@@ -452,10 +596,15 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
 
 /// Person ids (as strings) of all participations with a leader role, for the qualifications query.
 pub fn leader_person_ids(participation_pages: &[Value]) -> Vec<String> {
-    collect_people(participation_pages).into_iter().filter(|a| a.is_leader).filter_map(|a| a.person_id).collect()
+    collect_people(participation_pages)
+        .into_iter()
+        .filter(|a| a.is_leader)
+        .filter_map(|a| a.person_id)
+        .filter(|id| !id.starts_with("guest:"))
+        .collect()
 }
 
-/// `links.next` of a JSON:API document, if any (absolute URL as given by MiData).
+/// `links.next` of a JSON:API document, if any (MiData may return a relative URL; resolve against the current page).
 pub fn next_link(doc: &Value) -> Option<String> {
     doc.get("links")?.get("next")?.as_str().filter(|s| !s.is_empty()).map(String::from)
 }

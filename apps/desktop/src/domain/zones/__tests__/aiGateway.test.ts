@@ -47,6 +47,16 @@ describe('aiGateway red-derived marker', () => {
   })
 })
 
+describe('aiGateway NDS marker', () => {
+  it('refuses sentences quoting NDS as source and serialized NDS aggregates', async () => {
+    const value = 'AWK offen (Quelle: NDS, Stand 01.06.2026)'
+    await expect(send(req({ parts: [{ zone: 'yellow', value, redacted: true }] }))).rejects.toThrow(/Rote Daten/)
+    const json = JSON.stringify({ offerBusinessId: 'o1', campBusinessId: 'c1' })
+    await expect(send(req({ parts: [{ zone: 'green', value: json }] }))).rejects.toThrow(/Rote Daten/)
+    expect(complete).not.toHaveBeenCalled()
+  })
+})
+
 describe('aiGateway.send', () => {
   it('sends a valid request and logs metadata only', async () => {
     const res = await send(req({ maxTokens: 99999 }))

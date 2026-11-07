@@ -1,9 +1,9 @@
 {"data":[
- {"id":"5001","type":"events","attributes":{"name":"Sommerlager Testwald","location":"Testwald"},"relationships":{"dates":{"data":[{"type":"event_dates","id":"d1"},{"type":"event_dates","id":"d2"}]}}},
+ {"id":"5001","type":"events","attributes":{"name":"Sommerlager Testwald","location":"Testwald"},"relationships":{"dates":{"data":[{"type":"dates","id":"d1"},{"type":"dates","id":"d2"}]}}},
  {"id":6002,"type":"events","attributes":{"name":"Pfingstlager Beispiel","location":null},"relationships":{"dates":{"data":[]}}},
  {"id":"6003","type":"events","attributes":{"name":"Herbstlager","start_at":"2026-10-03T08:00:00Z","finish_at":"2026-10-10T08:00:00Z"}}
 ],
  "included":[
- {"id":"d1","type":"event_dates","attributes":{"start_at":"2026-07-18T00:00:00.000+02:00","finish_at":"2026-07-20T00:00:00.000+02:00"}},
- {"id":"d2","type":"event_dates","attributes":{"start_at":"2026-07-21","finish_at":"2026-07-25T00:00:00.000+02:00"}}],
+ {"id":"d1","type":"dates","attributes":{"start_at":"2026-07-18T00:00:00.000+02:00","finish_at":"2026-07-20T00:00:00.000+02:00"}},
+ {"id":"d2","type":"dates","attributes":{"start_at":"2026-07-21","finish_at":"2026-07-25T00:00:00.000+02:00"}}],
  "links":{"next":"https://db.example.test/api/events?page[number]=2"}}

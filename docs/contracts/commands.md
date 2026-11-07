@@ -94,12 +94,38 @@ call is the result of an explicit user action.
 | `midata_open_login` | `baseUrl: string` | `void` | Opens the separate login window `midata-login` (no capability, no IPC) on `<base>/users/sign_in`. Rust polls the jar for the `_session_id` cookie, stores it in the MiData jar, closes the window and emits `midata://status`. `baseUrl` must be https (http only for loopback hosts). |
 | `midata_set_token` | `baseUrl: string`, `token: string` | `MidataStatus` | Stores the service token in the OS keychain and uses it as header `X-TOKEN`. Token length is capped, the token is never returned. |
 | `midata_logout` | – | `void` | Clears the jar, the in-memory connection and the keychain token. Idempotent. Emits `midata://status`. |
-| `midata_find_events` | `from: string`, `to: string` (YYYY-MM-DD) | `MidataEventSummary[]` (`id, name, startAt, finishAt, location`) | `GET /api/events` with `filter[type]=Event::Camp` within the camp dates, paged. Used for the one-time event pick per camp. |
+| `midata_find_events` | `from: string`, `to: string` (YYYY-MM-DD search window, UI: camp ±14 days), `campStart?: string`, `campEnd?: string` (eCamp camp period) | `MidataEventSummary[]` (`id, name, startAt, finishAt, location, groupNames, overlapDays`) | `GET /api/events` with `filter[type][eq]=Event::Camp` + `filter[after_or_on][eq]`/`filter[before_or_on][eq]`, `include=dates` (plus one best-effort `/api/groups?filter[id][eq]=..` request for organisation names), all organisations visible to the account, paged (relative `links.next` resolved against the current page, same origin only). On HTTP 400 retried without date filters, then without type filter (HTTP 400 messages name path and parameter names). Always filtered/ranked client-side: events not overlapping `[from, to]` dropped, undated last; sorted by overlap with the camp period, then nearest start. Used for the one-time event pick per camp. |
 | `midata_fetch_aggregate` | `eventId: string`, `campStart: string`, `campEnd: string`, `coachPersonId: string \| null` | `MidataAggregate` (zone `red-derived`) | Fetches event (+dates), participations (+person, roles), leader qualifications; reduces in Rust. Returns counts, J+S-age count (5–20 at camp start), min/max age, age bands, leaders as nickname + qualification yes/no, coach match, `fetchedAt`. Rejects with a German message when not connected or on HTTP errors (401 → «Anmeldung abgelaufen»). |
 | `midata_probe` | `eventId: string`, `groupId: string \| null` | `MidataProbe` | M7-0 spike. Returns auth method, HTTP status codes (event, participations, qualifications, classic export), whether participations and birthdays were readable, and **field names only** of the classic export `/groups/{g}/events/{e}.json` plus the PBS camp fields found. Never values. See `docs/m7-spike-protocol.md`. |
 
 Event: `midata://status` payload `MidataStatus`, emitted to `main` after login, token change and
 logout. The frontend also reads `midata_status` at start-up.
 
-Filter syntax (Graphiti style, e.g. `filter[event_id]`, `filter[type][eq]`) is **unverified** until
-the spike M7-0 ran against a real MiData account. It lives in one place in the Rust module.
+Query names are verified against the OpenAPI spec, see `docs/contracts/midata-api.md` (date-filter
+semantics stay unverified; the client-side filter is authoritative). They live in one place in the Rust module.
+
+## M8: NDS (read-only, red zone, unofficial web API)
+
+Own module `src-tauri/src/nds.rs` with its own reqwest client and cookie jar (never shared with eCamp
+or MiData). The API is reverse-engineered, see `docs/contracts/nds-api/` and
+[ADR 0007](../adr/0007-nds-red-zone.md). Only `GET` and GraphQL queries are sent (documents starting
+with `mutation` are rejected in code). Requests send `Accept: application/json` and header
+`default-language: de`; GraphQL goes to `POST /<service>/graphql/admin` with
+`{operationName, variables, query}` and list `chunk {size, page, sort: []}`; errors arrive in
+`errors` with HTTP 200. Raw responses are reduced in `coco_core::nds`; only aggregates, camp summaries,
+probe results (field names and status codes) and connection status cross to the UI. Names, birth
+dates, AHV numbers, addresses, e-mails and IBANs never leave Rust and are never logged. Cookie values
+are never logged, returned or put into error messages. All commands accept calls from the `main`
+window only. Nothing runs in the background. Unknown state codes are kept as raw strings.
+
+| Command | Args | Returns | Notes |
+| --- | --- | --- | --- |
+| `nds_status` | – | `NdsStatus { connected, cookieNames }` | Lazily restores the stored session from the keychain (service `co-co-nds`). Cookie names only, never values. |
+| `nds_open_login` | – | `void` | Opens the separate login window `nds-login` (no capability, no IPC) on `https://www.nds.baspo.admin.ch/perorgfin/oauth2/authorization/keycloak` (AGOV -> Keycloak). Rust polls the jar for the `SESSION` cookie, stores the session in the NDS jar and the keychain, closes the window and emits `nds://status`. |
+| `nds_logout` | – | `void` | Clears the jar, the in-memory connection and the keychain entry. Idempotent. Emits `nds://status`. |
+| `nds_find_camps` | `from: string`, `to: string` (YYYY-MM-DD) | `NdsCampSummary[]` (`offerBusinessId, campBusinessId, offerNumber, offerItemNumber, groupName, start, end, offerState, offerItemState`) | youthtraining `OfferList` (all pages), offers overlapping the dates, then `CampList($offerBusinessId)` per offer, camps overlapping the dates. Used for the one-time camp pick per camp. |
+| `nds_fetch_aggregate` | `offerBusinessId: string`, `campBusinessId: string` | `NdsAggregate` | Fetches `/youthtraining/offer/offer/{offerId}/details`, `/offer/camp/{campId}/details` and `/statistics`, `ActivityListForCamp`, `SupervisorsListForCamp`, `ParticipantsListForCamp` and `rentalMaterialOrderListForCamp`; reduces in Rust. Returns state codes, `approvedOn` (date of `approvalTimestamp` or null), planned/actual counts, supervisor counts by `involvementType`, participant count (and by `targetAudienceGroup`), activities `{total, byState, byType, lastActivityDate, attendanceOpenCount}` (attendanceOpenCount counts only the inferred code `ATTENDANCE_OPEN`), `campAgendaUploaded`, rental orders `{orderState, dispatchmentDate, returnDate}`, `fetchedAt`. Rejects with a German message when not connected or on HTTP errors (401/403 -> «Anmeldung abgelaufen»). |
+| `nds_probe` | `campBusinessId: string` | `NdsProbe { connected, endpoints: [{name, status, fieldsPresent, fieldsMissing}] }` | Diagnosis. HTTP status per endpoint used and which expected fields were present. **Field names only**, never values. |
+
+Event: `nds://status` payload `NdsStatus`, emitted to `main` after login and logout. The frontend also
+reads `nds_status` at start-up.

@@ -101,3 +101,63 @@ export function activityIriOfFinding(finding: Finding, facts: CampFacts | null):
   }
   return null
 }
+
+// ---- Befund -> Raster -> zurück zum Befund ---------------------------------------------------------
+
+export interface FindingOrigin {
+  findingId: string
+  /** Befunde was in list mode (otherwise triage). */
+  list: boolean
+  /** Activity filter that was active in Befunde, if any. */
+  filterActivity: Iri | null
+}
+
+const str = (v: unknown): string | null => (typeof v === 'string' && v ? v : null)
+
+/** Route location for the grid with the activity open, remembering which finding we came from. */
+export function gridLocationFromFinding(
+  campIri: Iri,
+  findingId: string,
+  activityIri: Iri,
+  opts: { list?: boolean; filterActivity?: Iri | null } = {},
+) {
+  return {
+    name: 'camp-grid',
+    params: { campId: campIdFromIri(campIri) },
+    query: {
+      activity: activityIri,
+      vonBefund: findingId,
+      ...(opts.list ? { vonAnsicht: 'liste' } : {}),
+      ...(opts.filterActivity ? { vonFilter: opts.filterActivity } : {}),
+    },
+  }
+}
+
+/** The finding the grid was opened from (null when the grid was opened normally). */
+export function originFromQuery(query: Record<string, unknown>): FindingOrigin | null {
+  const findingId = str(query.vonBefund)
+  if (!findingId) return null
+  return { findingId, list: query.vonAnsicht === 'liste', filterActivity: str(query.vonFilter) }
+}
+
+/** Route location of the Befunde tab exactly as it was left (same finding, mode and filter). */
+export function backToFindingLocation(campIri: Iri, origin: FindingOrigin) {
+  const query: Record<string, string> = { befund: origin.findingId }
+  if (origin.list) query.ansicht = 'liste'
+  if (origin.filterActivity) query.activity = origin.filterActivity
+  return { name: 'camp-findings', params: { campId: campIdFromIri(campIri) }, query }
+}
+
+/**
+ * True when the previous history entry (`history.state.back`, a full path) already is the
+ * Befunde location we want to return to, so router.back() lands there without a new entry.
+ */
+export function previousEntryIsOrigin(previousFullPath: string | null | undefined, campIri: Iri, origin: FindingOrigin): boolean {
+  if (!previousFullPath) return false
+  const [path = '', qs = ''] = previousFullPath.split('?')
+  if (!path.endsWith(`/lager/${campIdFromIri(campIri)}/befunde`)) return false
+  const q = new URLSearchParams(qs)
+  if (q.get('befund') !== origin.findingId) return false
+  if ((q.get('ansicht') === 'liste') !== origin.list) return false
+  return (q.get('activity') || null) === origin.filterActivity
+}

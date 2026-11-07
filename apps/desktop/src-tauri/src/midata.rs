@@ -14,13 +14,14 @@
 //! into error messages. Raw JSON documents are dropped at the end of each
 //! function and never logged.
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use coco_core::cookies::{jar_cookie_string, RawCookie};
 use coco_core::midata::{
-    leader_person_ids, next_link, normalize_midata_base_url, parse_event_list, probe_classic_fields, reduce_aggregate,
+    leader_person_ids, next_link, normalize_midata_base_url, parse_event_list_with_groups, event_group_ids, group_names_by_id, rank_events, probe_classic_fields, reduce_aggregate,
     MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus, RawEventData, JSONAPI_ACCEPT, SESSION_COOKIE,
 };
 use coco_core::types::AuthLog;
@@ -270,34 +271,58 @@ fn same_origin(base: &Url, other: &Url) -> bool {
     base.origin() == other.origin()
 }
 
-// All MiData query strings are built here. NOTE: filter syntax unverified – M7-0.
-// (Graphiti style `filter[x]=..` / `filter[x][eq]=..`; resolved by the live probe.)
+// All MiData query strings are built here. Names are checked against the official OpenAPI spec
+// (https://db.scout.ch/api/openapi.json, see docs/contracts/midata-api.md): unknown include/filter
+// names are rejected with HTTP 400. The `queries_match_openapi` test guards this.
 
-/// filter syntax unverified – M7-0
-fn events_path(from: &str, to: &str) -> String {
-    format!(
-        "/api/events?filter[type][eq]=Event::Camp&filter[after_or_on]={from}&filter[before_or_on]={to}&include=dates&page[size]={PAGE_SIZE}"
-    )
+const GROUP_ID_CHUNK: usize = 50;
+
+fn events_path(from: &str, to: &str, with_dates: bool, with_type: bool) -> String {
+    let mut q = String::from("/api/events?");
+    if with_type {
+        q.push_str("filter[type][eq]=Event::Camp&");
+    }
+    if with_dates {
+        q.push_str(&format!("filter[after_or_on][eq]={from}&filter[before_or_on][eq]={to}&"));
+    }
+    q.push_str(&format!("include=dates&page[size]={PAGE_SIZE}"));
+    q
 }
 
-/// filter syntax unverified – M7-0
+fn groups_path(ids: &[String]) -> String {
+    format!("/api/groups?filter[id][eq]={}&fields[groups]=name,display_name&page[size]={PAGE_SIZE}", ids.join(","))
+}
+
 fn event_path(id: &str) -> String {
     format!("/api/events/{id}?include=dates")
 }
 
-/// filter syntax unverified – M7-0
 fn participations_path(id: &str) -> String {
     format!(
-        "/api/event_participations?filter[event_id]={id}&include=person,roles&fields[people]=nickname,first_name,birthday&page[size]={PAGE_SIZE}"
+        "/api/event_participations?filter[event_id][eq]={id}&include=participant,roles&fields[people]=nickname,first_name,birthday&page[size]={PAGE_SIZE}"
     )
 }
 
-/// filter syntax unverified – M7-0
 fn qualifications_path(person_ids: &[String]) -> String {
     format!(
-        "/api/qualifications?filter[person_id]={}&include=qualification_kind&page[size]={PAGE_SIZE}",
+        "/api/qualifications?filter[person_id][eq]={}&include=qualification_kind&page[size]={PAGE_SIZE}",
         person_ids.join(",")
     )
+}
+
+/// Path plus parameter names only (no values), for diagnosable HTTP 400 messages.
+fn url_shape(url: &Url) -> String {
+    let mut names: Vec<String> = Vec::new();
+    for (k, _) in url.query_pairs() {
+        if k != "page[number]" && !names.iter().any(|n| *n == k) {
+            names.push(k.into_owned());
+        }
+    }
+    if names.is_empty() {
+        url.path().to_string()
+    } else {
+        format!("{}: {}", url.path(), names.join(", "))
+    }
 }
 
 fn token_check_path() -> &'static str {
@@ -341,7 +366,12 @@ struct Fetched {
 }
 
 fn status_error(status: u16) -> AppError {
+    status_error_for(status, None)
+}
+
+fn status_error_for(status: u16, shape: Option<&str>) -> AppError {
     match status {
+        400 if shape.is_some() => AppError::Unexpected(format!("MiData antwortete mit HTTP 400 ({})", shape.unwrap_or_default())),
         401 | 403 => AppError::Unexpected(format!(
             "MiData: nicht angemeldet oder keine Berechtigung (HTTP {status})"
         )),
@@ -376,9 +406,10 @@ async fn fetch(ctx: &Ctx, url: Url, accept: &'static str) -> AppResult<Fetched> 
 }
 
 async fn get_json(ctx: &Ctx, url: Url) -> AppResult<Value> {
+    let shape = url_shape(&url);
     let f = fetch(ctx, url, JSONAPI_ACCEPT).await?;
     if !(200..300).contains(&f.status) {
-        return Err(status_error(f.status));
+        return Err(status_error_for(f.status, Some(&shape)));
     }
     f.body.ok_or_else(|| AppError::Http("Antwort nicht lesbar (kein JSON)".into()))
 }
@@ -404,12 +435,35 @@ fn with_page_number(url: &Url, n: usize) -> Url {
     out
 }
 
+/// Resolves a `links.next` value (MiData sends relative URLs) against the current page URL and
+/// refuses anything leaving the origin.
+fn resolve_next(base: &Url, current: &Url, next: &str) -> AppResult<Url> {
+    let url = current.join(next).map_err(|e| AppError::Core(CoreError::InvalidUrl(e.to_string())))?;
+    if !same_origin(base, &url) {
+        return Err(AppError::Core(CoreError::ForeignOrigin(url.origin().ascii_serialization())));
+    }
+    Ok(url)
+}
+
 /// All pages of a collection, following `links.next` (same origin only, max 50 pages).
 async fn get_pages(ctx: &Ctx, first: Url) -> AppResult<Vec<Value>> {
+    let shape = url_shape(&first);
+    match get_pages_status(ctx, first).await? {
+        Ok(pages) => Ok(pages),
+        Err(status) => Err(status_error_for(status, Some(&shape))),
+    }
+}
+
+/// Like `get_pages`, but a non-2xx answer is returned as `Ok(Err(status))` so callers can retry.
+async fn get_pages_status(ctx: &Ctx, first: Url) -> AppResult<Result<Vec<Value>, u16>> {
     let mut pages = Vec::new();
     let mut url = first;
     for number in 1..=MAX_PAGES {
-        let doc = get_json(ctx, url.clone()).await?;
+        let f = fetch(ctx, url.clone(), JSONAPI_ACCEPT).await?;
+        if !(200..300).contains(&f.status) {
+            return Ok(Err(f.status));
+        }
+        let doc = f.body.ok_or_else(|| AppError::Http("Antwort nicht lesbar (kein JSON)".into()))?;
         let next = next_link(&doc);
         let full = full_page(&doc);
         pages.push(doc);
@@ -419,29 +473,64 @@ async fn get_pages(ctx: &Ctx, first: Url) -> AppResult<Vec<Value>> {
                 // followed by more data, so ask for page[number]+1 (unverified, M7-0) until a short page.
                 url = with_page_number(&url, number + 1);
             }
-            None => return Ok(pages),
+            None => return Ok(Ok(pages)),
             Some(n) => {
-                let next_url = Url::parse(&n).map_err(|e| AppError::Core(CoreError::InvalidUrl(e.to_string())))?;
-                if !same_origin(&ctx.base, &next_url) {
-                    return Err(AppError::Core(CoreError::ForeignOrigin(next_url.origin().ascii_serialization())));
-                }
-                url = next_url;
+                url = resolve_next(&ctx.base, &url, &n)?;
             }
         }
     }
     Err(AppError::Unexpected(format!("MiData: mehr als {MAX_PAGES} Seiten – abgebrochen")))
 }
 
-pub async fn find_events_impl(state: &MidataState, from: &str, to: &str) -> AppResult<Vec<MidataEventSummary>> {
+/// Camp search over all organisations visible to the account. The hitobito filter syntax is
+/// unverified (M7-0), so on HTTP 400 the request is retried without the date filters and then
+/// without the type filter; the result is always filtered and ranked client-side.
+pub async fn find_events_impl(
+    state: &MidataState,
+    from: &str,
+    to: &str,
+    camp_start: Option<&str>,
+    camp_end: Option<&str>,
+) -> AppResult<Vec<MidataEventSummary>> {
     validate_date(from)?;
     validate_date(to)?;
-    let ctx = state.ctx().await?;
-    let pages = get_pages(&ctx, api_url(&ctx.base, &events_path(from, to))?).await?;
-    let mut out = Vec::new();
-    for p in &pages {
-        out.extend(parse_event_list(p)?);
+    for d in [camp_start, camp_end].into_iter().flatten() {
+        validate_date(d)?;
     }
-    Ok(out)
+    let ctx = state.ctx().await?;
+    let attempts = [(true, true), (false, true), (false, false)];
+    let mut last_shape = String::new();
+    for (with_dates, with_type) in attempts {
+        let url = api_url(&ctx.base, &events_path(from, to, with_dates, with_type))?;
+        last_shape = url_shape(&url);
+        match get_pages_status(&ctx, url).await? {
+            Ok(pages) => {
+                let names = fetch_group_names(&ctx, &pages).await;
+                let mut out = Vec::new();
+                for p in &pages {
+                    out.extend(parse_event_list_with_groups(p, !with_type, &names)?);
+                }
+                return Ok(rank_events(out, from, to, camp_start, camp_end));
+            }
+            Err(400) => {}
+            Err(status) => return Err(status_error_for(status, Some(&last_shape))),
+        }
+    }
+    Err(status_error_for(400, Some(&last_shape)))
+}
+
+/// Organisation names for the events' `group_ids` (one request per 50 ids). Best effort: any failure
+/// yields fewer or no names instead of failing the search.
+async fn fetch_group_names(ctx: &Ctx, event_pages: &[Value]) -> HashMap<String, String> {
+    let ids: Vec<String> = event_group_ids(event_pages).into_iter().filter(|id| validate_id(id).is_ok()).collect();
+    let mut docs: Vec<Value> = Vec::new();
+    for chunk in ids.chunks(GROUP_ID_CHUNK) {
+        let Ok(url) = api_url(&ctx.base, &groups_path(chunk)) else { continue };
+        if let Ok(Ok(pages)) = get_pages_status(ctx, url).await {
+            docs.extend(pages);
+        }
+    }
+    group_names_by_id(&docs)
 }
 
 pub async fn fetch_aggregate_impl(
@@ -734,9 +823,11 @@ pub async fn midata_find_events<R: Runtime>(
     state: State<'_, MidataState>,
     from: String,
     to: String,
+    camp_start: Option<String>,
+    camp_end: Option<String>,
 ) -> AppResult<Vec<MidataEventSummary>> {
     ensure_main(&webview)?;
-    find_events_impl(&state, &from, &to).await
+    find_events_impl(&state, &from, &to, camp_start.as_deref(), camp_end.as_deref()).await
 }
 
 #[tauri::command]
@@ -790,11 +881,11 @@ mod tests {
 
     #[test]
     fn page_number_fallback() {
-        let u = Url::parse("https://db.scout.ch/api/event_participations?filter[event_id]=42&page[size]=100").unwrap();
+        let u = Url::parse("https://db.scout.ch/api/event_participations?filter[event_id][eq]=42&page[size]=100").unwrap();
         let n2 = with_page_number(&u, 2);
         let q: Vec<(String, String)> = n2.query_pairs().map(|(k, v)| (k.into_owned(), v.into_owned())).collect();
         assert!(q.contains(&("page[number]".into(), "2".into())));
-        assert!(q.contains(&("filter[event_id]".into(), "42".into())));
+        assert!(q.contains(&("filter[event_id][eq]".into(), "42".into())));
         let n3 = with_page_number(&n2, 3);
         assert_eq!(n3.query_pairs().filter(|(k, _)| k == "page[number]").count(), 1);
         assert!(n3.query_pairs().any(|(k, v)| k == "page[number]" && v == "3"));
@@ -805,18 +896,97 @@ mod tests {
 
     #[test]
     fn query_building() {
-        let p = events_path("2026-07-01", "2026-07-31");
-        assert!(p.starts_with("/api/events?filter[type][eq]=Event::Camp"));
-        assert!(p.contains("filter[after_or_on]=2026-07-01"));
-        assert!(p.contains("filter[before_or_on]=2026-07-31"));
-        assert!(p.contains("include=dates"));
-        assert!(participations_path("42").contains("filter[event_id]=42"));
-        assert!(participations_path("42").contains("page[size]=100"));
+        let p = events_path("2026-07-01", "2026-07-31", true, true);
+        assert_eq!(
+            p,
+            "/api/events?filter[type][eq]=Event::Camp&filter[after_or_on][eq]=2026-07-01&filter[before_or_on][eq]=2026-07-31&include=dates&page[size]=100"
+        );
+        let no_dates = events_path("2026-07-01", "2026-07-31", false, true);
+        assert!(no_dates.contains("Event::Camp") && !no_dates.contains("after_or_on") && no_dates.contains("include=dates"));
+        let bare = events_path("2026-07-01", "2026-07-31", false, false);
+        assert!(!bare.contains("filter[") && bare.contains("include=dates"));
+        assert_eq!(
+            participations_path("42"),
+            "/api/event_participations?filter[event_id][eq]=42&include=participant,roles&fields[people]=nickname,first_name,birthday&page[size]=100"
+        );
         assert_eq!(event_path("42"), "/api/events/42?include=dates");
+        assert_eq!(
+            groups_path(&["1".into(), "2".into()]),
+            "/api/groups?filter[id][eq]=1,2&fields[groups]=name,display_name&page[size]=100"
+        );
         let q = qualifications_path(&["1".into(), "2".into()]);
-        assert!(q.contains("filter[person_id]=1,2"));
+        assert!(q.contains("filter[person_id][eq]=1,2"));
         assert!(q.contains("include=qualification_kind"));
         assert_eq!(classic_path("7", "42"), "/groups/7/events/42.json");
+    }
+
+    #[test]
+    fn queries_match_openapi() {
+        // (path, allowed filters, allowed includes, allowed fields[..] keys) from docs/contracts/midata-api.md
+        type Spec = (&'static str, &'static [&'static str], &'static [&'static str], &'static [&'static str]);
+        let spec: &[Spec] = &[
+            (
+                "/api/events",
+                &[
+                    "filter[type][eq]",
+                    "filter[group_id][eq]",
+                    "filter[after_or_on][eq]",
+                    "filter[before_or_on][eq]",
+                    "filter[advisor_id][eq]",
+                    "filter[kind_id][eq]",
+                    "filter[id][eq]",
+                ],
+                &["contact", "contact_details", "kind", "dates", "participations", "advisor"],
+                &[],
+            ),
+            ("/api/groups", &["filter[id][eq]"], &[], &["fields[groups]"]),
+            ("/api/event_participations", &["filter[event_id][eq]"], &["event", "participant", "roles"], &["fields[people]"]),
+            ("/api/qualifications", &["filter[person_id][eq]"], &["person", "qualification_kind"], &[]),
+        ];
+        let people_attrs = ["first_name", "nickname", "birthday"];
+        let group_attrs = ["name", "display_name"];
+        let paths = vec![
+            events_path("2026-07-01", "2026-07-31", true, true),
+            events_path("2026-07-01", "2026-07-31", false, true),
+            events_path("2026-07-01", "2026-07-31", false, false),
+            event_path("42"),
+            groups_path(&["1".into(), "2".into()]),
+            participations_path("42"),
+            qualifications_path(&["1".into(), "2".into()]),
+            token_check_path().to_string(),
+        ];
+        for path in paths {
+            let url = Url::parse("https://db.scout.ch").unwrap().join(path.trim_start_matches('/')).unwrap();
+            let base_path = if url.path().starts_with("/api/events/") { "/api/events" } else { url.path() };
+            let (_, filters, includes, fields) =
+                spec.iter().find(|(p, ..)| *p == base_path).unwrap_or_else(|| panic!("unknown endpoint {path}"));
+            for (k, v) in url.query_pairs() {
+                match k.as_ref() {
+                    "include" => {
+                        for i in v.split(',') {
+                            assert!(includes.contains(&i), "include value `{i}` not in spec for {path}");
+                        }
+                    }
+                    "page[size]" | "page[number]" => {}
+                    k if k.starts_with("filter[") => assert!(filters.contains(&k), "filter `{k}` not in spec for {path}"),
+                    k if k.starts_with("fields[") => {
+                        assert!(fields.contains(&k), "fields param `{k}` not in spec for {path}");
+                        let allowed: &[&str] = if k == "fields[people]" { &people_attrs } else { &group_attrs };
+                        for a in v.split(',') {
+                            assert!(allowed.contains(&a), "field `{a}` not allowed in {k}");
+                        }
+                    }
+                    other => panic!("unknown parameter `{other}` in {path}"),
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn shape_hides_values() {
+        let u = Url::parse("https://db.scout.ch/api/events?filter[type][eq]=Event::Camp&include=dates&page[number]=2").unwrap();
+        assert_eq!(url_shape(&u), "/api/events: filter[type][eq], include");
+        assert!(status_error_for(400, Some("/api/events: include")).to_string().contains("HTTP 400 (/api/events: include)"));
     }
 
     #[test]
@@ -826,6 +996,24 @@ mod tests {
         assert_eq!(u.host_str(), Some("db.scout.ch"));
         assert_eq!(u.path(), "/api/events");
         assert!(api_url(&base, "https://evil.example/x").is_err());
+    }
+
+    #[test]
+    fn next_link_resolution() {
+        let base = Url::parse("https://db.scout.ch").unwrap();
+        let cur = Url::parse("https://db.scout.ch/api/events?page[number]=1&page[size]=100").unwrap();
+        // relative (what MiData actually sends)
+        let r = resolve_next(&base, &cur, "/api/events?page[number]=2&page[size]=100").unwrap();
+        assert_eq!(r.host_str(), Some("db.scout.ch"));
+        assert_eq!(r.path(), "/api/events");
+        assert!(r.query().unwrap().contains("page[number]=2"));
+        // absolute same-origin
+        let a = resolve_next(&base, &cur, "https://db.scout.ch/api/events?page[number]=3").unwrap();
+        assert!(a.query().unwrap().contains("page[number]=3"));
+        // foreign origins refused
+        assert!(resolve_next(&base, &cur, "https://evil.example/api/events?page[number]=2").is_err());
+        assert!(resolve_next(&base, &cur, "//evil.example/api").is_err());
+        assert!(resolve_next(&base, &cur, "http://db.scout.ch/api").is_err());
     }
 
     #[test]

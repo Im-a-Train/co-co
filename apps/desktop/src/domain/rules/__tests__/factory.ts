@@ -9,6 +9,7 @@ import {
   type CoachInputs,
   type DocumentRecord,
   type MidataAggregate,
+  type NdsAggregate,
   type RuleContext,
   type ScheduleEntryFact,
 } from '@/domain/types'
@@ -278,6 +279,30 @@ export function makeCtx(facts: CampFacts, over: Partial<RuleContext> = {}): Rule
     now: new Date('2031-01-01T12:00:00Z'),
     userDisplayName: null,
     overrides: [],
+    ...over,
+  }
+}
+
+const NO_COUNTS = { children: null, adolescents: null, totalParticipants: null, totalInstructors: null, jsInstructors: null, campDays: null, totalActivities: null }
+
+export function makeNds(over: Partial<NdsAggregate> = {}): NdsAggregate {
+  return {
+    offerBusinessId: 'offer-1',
+    campBusinessId: 'camp-1',
+    offerNumber: '1234567',
+    start: '2031-07-12',
+    end: '2031-07-16',
+    offerState: null,
+    offerItemState: null,
+    approvedOn: null,
+    statistics: { planned: { ...NO_COUNTS }, actual: { ...NO_COUNTS }, coachAuthorizedForContribution: null },
+    supervisorCounts: {},
+    participantCount: 0,
+    participantCountsByAudience: {},
+    activities: { total: 0, byState: {}, byType: {}, lastActivityDate: null, attendanceOpenCount: 0 },
+    campAgendaUploaded: null,
+    rentalOrders: [],
+    fetchedAt: '2031-01-01T10:00:00.000Z',
     ...over,
   }
 }

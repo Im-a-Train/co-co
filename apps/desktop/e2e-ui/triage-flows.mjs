@@ -91,6 +91,50 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     if ((await currentId()) !== id) throw new Error('position lost after back/forward')
   })
 
+  await step('flow: finding -> grid -> «Zurück zum Befund» returns to the same finding', async () => {
+    await go('befunde', 'flow-back-to-finding')
+    await page.waitForSelector('.triage-item')
+    // pick the first finding that has an activity to jump to
+    const n = await page.locator('.triage-item').count()
+    let id = null
+    for (let i = 0; i < n; i++) {
+      await page.locator('.triage-item').nth(i).click()
+      await page.waitForTimeout(250)
+      if (await page.getByRole('button', { name: /im raster öffnen/i }).count()) {
+        id = await currentId()
+        break
+      }
+    }
+    if (!id) throw new Error('no finding with an activity found')
+    await page.getByRole('button', { name: /im raster öffnen/i }).first().click()
+    await page.waitForURL(/raster\?.*vonBefund=/, { timeout: 5000 })
+    await page.waitForSelector('[data-testid="back-to-finding"]', { timeout: 5000 })
+    await page.waitForSelector('[data-testid="drawer-back-to-finding"]', { timeout: 5000 })
+    await page.waitForTimeout(500)
+    await shot(page, 'flow-back-to-finding-grid-drawer')
+    const ctx = await page.locator('[data-testid="drawer-back-to-finding"]').locator('xpath=..').innerText()
+    if (!/·/.test(ctx)) throw new Error('rule id / title missing in drawer: ' + ctx)
+    // Esc closes only the drawer; the bar button stays reachable
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    await shot(page, 'flow-back-to-finding-grid')
+    await page.locator('[data-testid="back-to-finding"]').click()
+    await page.waitForSelector('.triage-item.active', { timeout: 5000 })
+    await page.waitForTimeout(500)
+    if ((await currentId()) !== id) throw new Error('not back on the same finding')
+    if (!/befunde\?.*befund=/.test(page.url())) throw new Error('url: ' + page.url())
+    await shot(page, 'flow-back-to-finding-triage')
+
+    // keyboard: Alt+Left from the grid, via history
+    await page.getByRole('button', { name: /im raster öffnen/i }).first().click()
+    await page.waitForSelector('[data-testid="back-to-finding"]', { timeout: 5000 })
+    await page.waitForTimeout(400)
+    await page.keyboard.press('Alt+ArrowLeft')
+    await page.waitForSelector('.triage-item.active', { timeout: 5000 })
+    await page.waitForTimeout(500)
+    if ((await currentId()) !== id) throw new Error('Alt+Left: not back on the same finding')
+  })
+
   await step('flow: ignore 3 of the same rule -> prompt -> only this camp', async () => {
     await go('befunde', 'flow-disable')
     await page.waitForSelector('.triage-item')

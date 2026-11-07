@@ -5,8 +5,26 @@ scouts). It reads camps planned in [eCamp v3](https://github.com/ecamp/ecamp3) w
 eCamp login, checks them against versioned J+S / PBS rule packs, and helps the coach write feedback.
 There is **no backend of our own**: Rust talks to the eCamp API; co-co's own data lives in IndexedDB.
 
-Product spec and status page: `docs/spec/co-co-spec.html` (published as a Claude artifact).
+Product spec and status page: `docs/spec/co-co-spec.html`, published as the Claude artifact
+https://claude.ai/artifact/LapapyFcaJDqyD4yMME3Bz (see "Working agreements" below).
 Decisions: `docs/adr/`. Module map and invariants: `docs/architecture.md`. Read those before larger work.
+
+## Working agreements (maintainer, do not skip)
+
+- **Keep the spec artifact current.** Every feature, milestone or behaviour change also updates
+  `docs/spec/co-co-spec.html` (status badges, milestone cards, feature `DONE` set, open points) **and
+  republishes it** to the artifact URL above with the Artifact tool (`action: read` the live version
+  first, merge, then publish with `url`). A change is not done while the artifact is stale.
+- **Implementation via cheap subagents.** The main session plans, writes the shared contract (types,
+  command signatures, stubs) and verifies. The coding itself goes to cheaper subagents (Sonnet) that work
+  in parallel on disjoint files. Reviews may use a stronger model. The main session re-runs the checks
+  itself before reporting; it does not trust "all green" from an agent.
+- **"Start it locally" means the Windows app**, not `npm run dev`/Vite: in `apps/desktop` run
+  `npx tauri build --no-bundle` and launch `src-tauri/target/release/co-co.exe`.
+- **UI harness port:** other worktrees/sessions often keep a Vite server on port 1420 that serves
+  *their* code, so `test:ui` silently tests the wrong app. Run it on a free port, e.g.
+  `UI_PORT=1431 npm run test:ui -w apps/desktop`, and never kill other sessions' servers.
+- The maintainer writes in German; answer in German. Code, comments and docs stay English, UI German.
 
 ## Stack and layout
 
@@ -34,7 +52,7 @@ npm run dev                                  # tauri dev (Vite on :1420 + deskto
 npm run typecheck                            # vue-tsc
 npm test                                     # vitest (domain + helpers, Node env)
 npm run build:vite -w apps/desktop           # vue-tsc + vite production build
-npm run test:ui -w apps/desktop              # Edge UI harness, screenshots to e2e-ui/shots/
+UI_PORT=1431 npm run test:ui -w apps/desktop # Edge UI harness on a free port, screenshots to e2e-ui/shots/
 npm run test:live -w apps/desktop            # opt-in live test, needs ECAMP_E2E_URL/USER/PASSWORD env vars
 # Rust (in apps/desktop/src-tauri)
 cargo test --workspace
@@ -80,6 +98,10 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
 - Instances: prod `https://app.ecamp3.ch`, dev `https://dev.ecamp3.ch`; `{instance}/environment.js`
   gives API root, cookie prefix and feature flags. Cloudflare rejects non-browser User-Agents
   (relevant for Node-based tests).
+
+## MiData API gotchas (see `docs/contracts/midata-api.md`)
+
+- Check every MiData query against https://db.scout.ch/api/openapi.json (see `docs/contracts/midata-api.md`); include/filter names are validated and unknown ones return HTTP 400.
 
 ## Environment notes
 

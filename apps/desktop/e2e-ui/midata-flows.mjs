@@ -29,6 +29,12 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
     const pick = page.getByTestId('midata-pick')
     if (await pick.count()) {
       await pick.click()
+      await page.getByTestId('midata-event-4101').waitFor({ timeout: 5000 })
+      await page.waitForTimeout(300)
+      await shot(page, 'flow-midata-picker')
+      const pt = await page.getByTestId('midata-picker').innerText()
+      if (!/Abteilung Musterhausen/.test(pt) || !/Region Beispiel/.test(pt)) throw new Error('organisation names missing in picker')
+      if (!/passt zu den Lagerdaten/.test(pt) || !/überschneidet sich/.test(pt)) throw new Error('overlap chips missing in picker')
       await page.getByTestId('midata-event-4101').click({ timeout: 5000 })
       await page.waitForTimeout(500)
     }

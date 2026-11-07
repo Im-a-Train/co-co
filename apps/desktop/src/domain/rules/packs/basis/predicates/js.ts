@@ -20,6 +20,9 @@ import {
   midataEvidence,
   midataSourceText,
   midataStand,
+  ndsEvidence,
+  ndsSourceText,
+  ndsStand,
   plural,
   type KeywordSet,
 } from './util'
@@ -192,16 +195,21 @@ export const jsDl01: RulePredicate = (ctx) => {
   if (!dl) return []
   const t = today(ctx)
   const on = ctx.coachInputs?.ndsRegisteredOn ?? null
+  const stand = ndsStand(ctx, ['ndsRegistered', 'ndsRegisteredOn'])
+  const src = stand ? { evidence: [ndsEvidence(stand)] } : {}
+  const q = stand ? ` (${ndsSourceText(stand)})` : ''
   if (dl.done) {
-    if (on && on > dl.due) {
-      return [campHit(ctx, { detail: `Anmeldung erfolgte am ${formatDateDe(on)}, Frist war ${formatDateDe(dl.due)}` })]
+    // An NDS-adopted date is only the approval date («bewilligt am»); registration happened on or before it, so lateness cannot be concluded.
+    const fromNds = !!ctx.coachInputs?.ndsFields?.ndsRegisteredOn
+    if (on && on > dl.due && !fromNds) {
+      return [campHit(ctx, { detail: `Anmeldung erfolgte am ${formatDateDe(on)}, Frist war ${formatDateDe(dl.due)}${q}` }, src)]
     }
     return []
   }
-  if (t > dl.due) return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)} überschritten, Anmeldung nicht bestätigt` })]
+  if (t > dl.due) return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)} überschritten, Anmeldung nicht bestätigt${q}` }, src)]
   if (daysBetween(t, dl.due) <= 14) {
     const left = daysBetween(t, dl.due)
-    return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)} (noch ${left} ${plural(left, 'Tag', 'Tage')})` }, { severity: 'hint' })]
+    return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)} (noch ${left} ${plural(left, 'Tag', 'Tage')})${q}` }, { severity: 'hint', ...src })]
   }
   return []
 }
@@ -213,14 +221,17 @@ export const jsDl02: RulePredicate = (ctx) => {
   if (!dl || !start) return []
   const t = today(ctx)
   const on = ctx.coachInputs?.ndsClosedOn ?? null
+  const stand = ndsStand(ctx, ['ndsClosed'])
+  const src = stand ? { evidence: [ndsEvidence(stand)] } : {}
+  const q = stand ? ` (${ndsSourceText(stand)})` : ''
   if (dl.done) {
-    if (on && on > dl.due) return [campHit(ctx, { detail: `Abschluss erfolgte am ${formatDateDe(on)}, Frist war ${formatDateDe(dl.due)}` })]
+    if (on && on > dl.due) return [campHit(ctx, { detail: `Abschluss erfolgte am ${formatDateDe(on)}, Frist war ${formatDateDe(dl.due)}${q}` }, src)]
     return []
   }
   const lastDay = addDays(dl.due, -30)
-  if (t > dl.due) return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)} überschritten, Abschluss nicht bestätigt` })]
+  if (t > dl.due) return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)} überschritten, Abschluss nicht bestätigt${q}` }, src)]
   if (t >= lastDay && daysBetween(t, dl.due) <= 14) {
-    return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)}` }, { severity: 'hint' })]
+    return [campHit(ctx, { detail: `Frist am ${formatDateDe(dl.due)}${q}` }, { severity: 'hint', ...src })]
   }
   return []
 }
