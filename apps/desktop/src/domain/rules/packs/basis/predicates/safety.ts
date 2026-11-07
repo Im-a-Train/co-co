@@ -1,13 +1,17 @@
 /** Safety heuristics (group 'safety'). Keyword based on German title/location/storyboard/safety text. Pure. */
 import type { ActivityFact, DocumentRecord, Evidence, RuleContext, RuleHit, RulePredicate, SafetyCheckKey } from '@/domain/types'
+import { leadersByNormName, normalizeName } from '@/domain/midata'
 import { gpxWithPace } from '@/domain/documents'
 import { minutesBetween, sortedDays, wallDate, wallMinutes } from '../../../jsDays'
 import {
   activityEvidence,
   activityText,
   containsPhrase,
+  formatStand,
   hasKeyword,
   matchKeywords,
+  midataEvidence,
+  midataSourceText,
   MOUNTAIN,
   NIGHT,
   OUTDOOR,
@@ -28,11 +32,25 @@ export const safeWater01: RulePredicate = (ctx) => {
     const missing: string[] = []
     if (a.responsibleIris.length === 0) missing.push('keine verantwortliche Person')
     if (a.content.safetyText.trim() === '') missing.push('keine Sicherheitsüberlegungen')
+    const evidence: Evidence[] = [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)]
+    const md = ctx.midata
+    if (md && a.responsibleIris.length > 0) {
+      // Match eCamp responsibles with MiData leaders by normalised name; only judged if at least one matches.
+      const leadersByName = leadersByNormName(md.leaders)
+      const matched = a.responsibleIris
+        .map((iri) => ctx.facts.collaborators.find((c) => c.iri === iri))
+        .flatMap((c) => (c ? (leadersByName.get(normalizeName(c.displayName)) ?? []) : []))
+      if (matched.length > 0 && !matched.some((l) => l.qualifications.wasser || l.qualifications.slrg)) {
+        const stand = formatStand(md.fetchedAt)
+        missing.push(`keine verantwortliche Person mit Wasser-/SLRG-Qualifikation (${midataSourceText(stand)})`)
+        evidence.push(midataEvidence(stand))
+      }
+    }
     if (missing.length === 0) continue
     hits.push({
       targets: [a.iri],
       params: { title: a.title, missing: missing.join(' und '), keywords: found.slice(0, 3).join(', ') },
-      evidence: [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)],
+      evidence,
     })
   }
   return hits

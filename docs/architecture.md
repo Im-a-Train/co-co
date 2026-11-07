@@ -37,6 +37,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `backup/` | Export / import of all Dexie tables (versioned JSON) | `exportAll`, `importAll`, `validateExport` |
 | `zones/` | Data zones, redaction, **aiGateway** (only AI path), AI features | `redact`, `aiGateway.send`, features |
 | `cockpit/` | Pure helpers for KPIs and the week grid | `buildGrid`, `jsDayBars`, … |
+| `midata/` | Event link resolution, `midata` table store, rule facts from the aggregate | `resolveEventLink`, `getMidataRecord`, `saveMidataAggregate` |
 | `storage/` | Dexie database `coco` and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
 
 ## Composables (`src/composables/`)
@@ -52,13 +53,14 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `useFeedback(campIri)` | feedback CRUD, post as eCamp comment | feedback view, triage |
 | `useDocuments(campIri)` | ingest, watched folders, drag-drop, search | documents view, activity drawer, rules |
 | `useRounds(campIri)` | review status, rounds, diff since last round | runden, Übersicht, Meine Lager |
+| `useMidata(campIri)` | connection status, per-camp link + aggregate, explicit refresh, event search, probe | MiData card, adopt dialog, settings, rules |
 | `useAi` | AI enabled + key present (`ready`), settings | AI buttons, settings |
 
 ## Storage (IndexedDB via Dexie)
 
 Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleState`), `coachInputs`,
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
-`documents`, `watchedFolders`, `aiLog`. Schema changes: add a new Dexie version with an upgrade,
+`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`.
 
 ## Key flows
@@ -86,8 +88,29 @@ never edit an existing one. Backup covers every table in `TABLE_NAMES`.
 - `build.rs` lists every command (`COMMANDS`) so the ACL applies; `capabilities/default.json` grants
   them to the `main` window only.
 
-## Planned: MiData (M7)
+## MiData (M7, red zone, read-only)
 
-Design in `docs/spec/co-co-spec.html` (section «MiData connection»): a separate Rust module that
-reads MiData (hitobito JSON:API) and hands only aggregates (counts, age band, qualification yes/no)
-to the UI. Red zone: never to AI, stored only as aggregates.
+Decision: [ADR 0006](adr/0006-midata-red-zone.md). Design: `docs/spec/co-co-spec.html` (section
+«MiData connection»).
+
+- **Rust:** `src-tauri/src/midata.rs` has its own reqwest client, cookie jar, login window
+  (`midata-login`, no capability) and keychain token store (service `co-co-midata`), separate from
+  eCamp. Seven `midata_*` commands ([contract](contracts/commands.md)). Event `midata://status`.
+- **Pure logic:** `coco-core::midata` (base URL check, JSON:API paging, `reduce_aggregate`, leader
+  qualification mapping, classic-export probe). Unit-tested with invented fixtures.
+- **UI layer:** `domain/midata/` (event link resolution, store for the `midata` table, rule facts),
+  `composables/useMidata.ts` (+ `midataSignal.ts`), `components/midata/` (`MidataCard`,
+  `MidataEventPicker`, `MidataAdoptDialog`, `MidataBadge`, `QualificationMatrix`), Settings →
+  MiData (connect, token, diagnose).
+- **Storage:** Dexie v2 table `midata` (key `campIri`): aggregate + event link + `fetchedAt`, tagged
+  `red-derived`. `CoachInputs.midataFields` records which fields the coach accepted from MiData.
+  Backup export can omit it (`omitRedDerived`); `aiGateway` refuses it.
+- **Rules:** `RuleContext.midata` feeds JS-CAMP-02, JS-LL-01, BP-WOLF-01, BP-WATER-01 and
+  CMP-CAMP-01 (coach match); new CMP-MD-01 (hint) compares dates and location with eCamp. Findings
+  say «Quelle: MiData, Stand <Datum>».
+
+Data flow: coach clicks «Aktualisieren» → `useMidata.refresh` → `midata_fetch_aggregate` (Rust
+fetches raw JSON:API, reduces, drops raw data) → `MidataAggregate` → `midata` table → `useFindings`
+builds `RuleContext.midata` → rules. «Aus MiData übernehmen» shows MiData value next to the current
+value; each accepted field is written to coach inputs and badged «MiData». Never refreshed in the
+background.

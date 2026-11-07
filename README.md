@@ -6,7 +6,7 @@ J+S and PBS rules, and helps the coach give structured feedback to the camp lead
 of its own: the app talks directly to the eCamp API and keeps its data on the local machine.
 
 Status: **M0–M6 built** (login, cockpit + rules, feedback, documents, rounds + backup, optional AI,
-findings triage). Next: **M7 MiData** (designed). Spec and live status: [`docs/spec/co-co-spec.html`](docs/spec/co-co-spec.html).
+findings triage). **M7 MiData** built (live spike M7-0 pending, see `docs/m7-spike-protocol.md`). Spec and live status: [`docs/spec/co-co-spec.html`](docs/spec/co-co-spec.html).
 
 ## Features
 
@@ -92,11 +92,11 @@ Download the latest installer as the artifact `co-co-windows-x64` of a green run
 - Session cookies, passwords and the API key stay in Rust / the OS keychain; the UI only sees cookie names.
 - The UI has no direct network access (strict CSP); API calls are limited to the logged-in instance.
 - eCamp is only written to for comments.
-- AI is opt-in; requests go through one gateway with redaction and a preview. MiData/NDS data (planned)
+- AI is opt-in; requests go through one gateway with redaction and a preview. MiData/NDS data (red zone)
   never reaches AI.
 
 Details: [ADRs](docs/adr/) – 0001 Tauri, 0002 Vue/Vuetify, 0003 login via webview cookies, 0004 no
-backend, 0005 data zones and AI.
+backend, 0005 data zones and AI, 0006 MiData red zone.
 
 ## Licence
 

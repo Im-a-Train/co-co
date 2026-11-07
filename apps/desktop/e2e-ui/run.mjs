@@ -10,10 +10,11 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import { midataFlows } from './midata-flows.mjs'
 import { triageFlows } from './triage-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-const PORT = 1420
+const PORT = Number(process.env.UI_PORT || 1420)
 const BASE = `http://localhost:${PORT}/?mock=1`
 const SHOTS = process.env.UI_SHOTS_DIR || join(root, 'e2e-ui', 'shots')
 const CAMP = '70ca971c992f'
@@ -32,7 +33,7 @@ let server = null
 async function ensureServer() {
   if (await isUp()) return
   const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-  server = spawn(cmd, ['run', 'dev:vite'], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32' })
+  server = spawn(cmd, ['run', 'dev:vite', ...(PORT === 1420 ? [] : ['--', '--port', String(PORT)])], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32' })
   for (let i = 0; i < 120; i++) {
     if (await isUp()) return
     await new Promise((r) => setTimeout(r, 500))
@@ -51,7 +52,7 @@ function record(ok, name, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' - ' + detail : ''}`)
 }
 
-const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
+const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata)\.[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
 
 async function shot(page, name) {
   const file = join(SHOTS, `${name}.png`)
@@ -85,6 +86,8 @@ async function main() {
   const page = await ctx.newPage()
   pageRef = page
   page.on('console', (msg) => {
+    // Vuetify's v-slide-group (camp tabs) warns when the page height changes while its scroll animation runs.
+    if (/Scroll target is not reachable/.test(msg.text())) return
     if (msg.type() === 'error' || (msg.type() === 'warning' && /Vue warn|intlify/.test(msg.text())))
       problems.push(`[${currentLabel}] console ${msg.type()}: ${msg.text().slice(0, 300)}`)
   })
@@ -149,6 +152,7 @@ async function main() {
   })
 
   await triageFlows({ page, step, go, shot, BASE })
+  await midataFlows({ page, step, go, shot, BASE })
 
   await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')

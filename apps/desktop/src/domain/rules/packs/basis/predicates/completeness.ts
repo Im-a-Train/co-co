@@ -1,7 +1,23 @@
 /** Completeness rules (group 'completeness'). Pure predicates of RuleContext. */
 import type { RuleContext, RuleHit, RulePredicate } from '@/domain/types'
+import { datesDiffer, locationDiffers, midataDateRange } from '@/domain/midata'
 import { addDays, daysBetween } from '../../../deadlines'
-import { activityEvidence, activityText, classOfActivity, hasKeyword, isJsActivity, MOUNTAIN, normalize, OUTDOOR, ROPE, WATER } from './util'
+import {
+  activityEvidence,
+  activityText,
+  classOfActivity,
+  formatDateDe,
+  formatStand,
+  hasKeyword,
+  isJsActivity,
+  midataEvidence,
+  midataSourceText,
+  MOUNTAIN,
+  normalize,
+  OUTDOOR,
+  ROPE,
+  WATER,
+} from './util'
 
 const MAX_EVIDENCE = 25
 
@@ -74,14 +90,46 @@ export function coachNameMatches(coachName: string, userName: string): boolean {
 }
 
 export const cmpCamp01: RulePredicate = (ctx) => {
+  const details: string[] = []
+  const evidence: RuleHit['evidence'] = []
   const coach = (ctx.facts.camp.coachName ?? '').trim()
-  if (!coach) return [{ targets: [ctx.facts.camp.iri], params: { detail: 'Im Lager ist kein Coach eingetragen' } }]
-  if (!ctx.userDisplayName) return []
-  if (coachNameMatches(coach, ctx.userDisplayName)) return []
+  if (!coach) details.push('Im Lager ist kein Coach eingetragen')
+  else if (ctx.userDisplayName && !coachNameMatches(coach, ctx.userDisplayName)) {
+    details.push(`Eingetragen ist «${coach}», angemeldet ist «${ctx.userDisplayName}»`)
+  }
+  if (ctx.midata?.coachMatch === false) {
+    const stand = formatStand(ctx.midata.fetchedAt)
+    details.push(`Im MiData-Anlass ist eine andere Person als Coach (Berater) eingetragen (${midataSourceText(stand)})`)
+    evidence.push(midataEvidence(stand))
+  }
+  if (details.length === 0) return []
+  return [{ targets: [ctx.facts.camp.iri], params: { detail: details.join('; ') }, ...(evidence.length ? { evidence } : {}) }]
+}
+
+// CMP-MD-01 ----------------------------------------------------------------------------------
+
+/** eCamp camp dates vs. MiData event dates (earliest start, latest finish, date part only). */
+export const cmpMd01: RulePredicate = (ctx) => {
+  const md = ctx.midata
+  const { start, end } = ctx.facts.camp
+  if (!md || !start || !end) return []
+  const range = midataDateRange(md, start, end)
+  const datesOff = datesDiffer(md, start, end)
+  const a = ctx.facts.camp.address
+  const placeOff = locationDiffers(md.location, [a?.city, a?.name])
+  if (!datesOff && !placeOff) return []
+  const stand = formatStand(md.fetchedAt)
+  const diffs: string[] = []
+  if (datesOff && range)
+    diffs.push(
+      `Lagerdaten in eCamp (${formatDateDe(start)}–${formatDateDe(end)}) und MiData (${formatDateDe(range.start)}–${formatDateDe(range.end)}) stimmen nicht überein`,
+    )
+  if (placeOff) diffs.push(`Lagerort in eCamp («${a?.city ?? a?.name}») und MiData («${md.location}») stimmen nicht überein`)
   return [
     {
       targets: [ctx.facts.camp.iri],
-      params: { detail: `Eingetragen ist «${coach}», angemeldet ist «${ctx.userDisplayName}»` },
+      params: { _message: `${diffs.join('; ')} (${midataSourceText(stand)})`, stand },
+      evidence: [midataEvidence(stand)],
     },
   ]
 }

@@ -85,3 +85,7 @@ export const jsDay01: RulePredicate = (ctx) =>
 - Keyword heuristics (`predicates/util.ts`): `stem` = contains, `=word` = exact (+ e/en/n/s), `^stem` = prefix, `$stem` = suffix.
 - Heuristic thresholds that are NOT from an official source (marked `heuristic`/`conflict`/`best-practice`): JS-STAFF-01
   (>= 2 Leitende, <= 10 Teilnehmende pro Leitende), BP-SLEEP-01 hours per Stufe, BP-REST-01 (60 min gap, 07-22 h), BP-VAR-01.
+
+## MiData (M7)
+
+Predicates may read `ctx.midata` (aggregate only, red-derived; null when not connected). Rules relying on coach inputs adopted from MiData append `Quelle: MiData, Stand dd.mm.yyyy` (via `coachInputs.midataFields`, helpers in `predicates/util.ts`). CMP-MD-01 compares eCamp and MiData camp dates.

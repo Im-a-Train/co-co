@@ -1,0 +1,142 @@
+{
+  "midata": {
+    "badge": {
+      "label": "MiData",
+      "tooltip": "Aus MiData übernommen, Stand {date}"
+    },
+    "redZone": "Rote Zone · nur Zahlen",
+    "settings": {
+      "title": "MiData",
+      "intro": "MiData (db.scout.ch) wird nur lesend angefragt, nur auf deinen Wunsch und nur über die App, nie über den Browser.",
+      "redZoneText": "Rote Zone: Die Daten aus MiData bleiben auf diesem Gerät. Nur Zahlen und Ja/Nein-Angaben (zum Beispiel Anzahl Teilnehmende, Altersspanne, Leitende mit Ausbildung) gelangen in co-co, nie an die KI. Geburtsdaten und vollständige Namen verlassen die App-Schicht nicht.",
+      "baseUrl": "MiData-Adresse",
+      "baseUrlHint": "Standard: https://db.scout.ch",
+      "status": {
+        "title": "Verbindung",
+        "session": "verbunden per Anmeldung",
+        "token": "verbunden per Token",
+        "none": "nicht verbunden",
+        "cookies": "Cookies: {names}"
+      },
+      "login": "Bei MiData anmelden",
+      "loginHint": "Öffnet ein Anmeldefenster. Das Passwort sieht nur MiData.",
+      "tokenTitle": "Alternative: Service-Token einfügen",
+      "tokenLabel": "Service-Token",
+      "tokenSave": "Token speichern",
+      "tokenHint": "Der Token liegt im Schlüsselbund des Betriebssystems. Die Person, die den Token ausgestellt hat, ist für den Datenschutz verantwortlich.",
+      "logout": "Abmelden",
+      "personId": "Meine MiData-Personen-Nr.",
+      "personIdHint": "Die Zahl in der Adresse deines MiData-Profils. Wird für die Coach-Prüfung gebraucht.",
+      "saved": "Gespeichert.",
+      "notInApp": "Nur in der Desktop-App verfügbar.",
+      "diag": {
+        "title": "Diagnose (M7-0)",
+        "intro": "Prüft, was MiData für einen Anlass preisgibt. Es werden nur Statuscodes und Feldnamen angezeigt.",
+        "eventId": "Anlass-Nr.",
+        "groupId": "Gruppen-Nr. (optional)",
+        "run": "Prüfen",
+        "auth": "Anmeldeart",
+        "event": "Anlass",
+        "participations": "Teilnahmen",
+        "participationsReadable": "Teilnahmen lesbar",
+        "birthday": "Geburtsdatum lesbar",
+        "qualifications": "Qualifikationen",
+        "classic": "Klassischer Export",
+        "pbsFields": "PBS-Felder",
+        "attributes": "Feldnamen im Export",
+        "none": "keine"
+      }
+    },
+    "card": {
+      "title": "MiData",
+      "notConnected": "MiData ist nicht verbunden.",
+      "toSettings": "Zu den Einstellungen",
+      "noFacts": "Lager wird noch geladen …",
+      "link": {
+        "ecamp": "Verknüpft mit MiData-Anlass {id} (aus eCamp)",
+        "manual": "Verknüpft mit MiData-Anlass {id} (von dir gewählt)",
+        "none": "Noch kein MiData-Anlass gewählt."
+      },
+      "pick": "Anlass wählen",
+      "changeEvent": "Anlass ändern",
+      "refresh": "Aus MiData laden",
+      "refreshHint": "Wird nur auf Knopfdruck geladen, nie im Hintergrund.",
+      "stand": "Stand MiData: {date}",
+      "noData": "Noch keine Daten geladen.",
+      "adopt": "Aus MiData übernehmen",
+      "unlink": "Verknüpfung und MiData-Daten löschen",
+      "noDates": "Das Lager hat in eCamp keine Zeiträume; ohne Daten kann MiData nicht abgefragt werden.",
+      "loadFailed": "MiData konnte nicht geladen werden",
+      "summary": {
+        "participants": "Teilnehmende",
+        "jsAge": "im J+S-Alter",
+        "ages": "Alter",
+        "agesRange": "{min}–{max} Jahre",
+        "leaders": "Leitende",
+        "coach": "Coach",
+        "coachYes": "Du bist als Coach des Anlasses eingetragen.",
+        "coachNo": "Du bist nicht als Coach des Anlasses eingetragen.",
+        "coachUnknown": "Coach-Prüfung nicht möglich (Personen-Nr. fehlt oder unbekannt).",
+        "withoutBirthday": "{n} ohne Geburtsdatum",
+        "event": "Anlass",
+        "location": "Ort"
+      }
+    },
+    "picker": {
+      "title": "MiData-Anlass wählen",
+      "intro": "Lager in MiData, die in den Daten deines eCamp-Lagers stattfinden.",
+      "loading": "Anlässe werden geladen …",
+      "empty": "Keine Lager im Zeitraum gefunden.",
+      "failed": "Anlässe konnten nicht geladen werden",
+      "noDates": "ohne Datum"
+    },
+    "adopt": {
+      "title": "Aus MiData übernehmen",
+      "intro": "Wähle pro Angabe, ob der MiData-Wert in deine Lager-Angaben übernommen wird.",
+      "field": "Angabe",
+      "current": "Aktueller Wert",
+      "midata": "MiData",
+      "accept": "Übernehmen",
+      "same": "gleich",
+      "empty": "leer",
+      "apply": "Übernehmen ({n})",
+      "values": {
+        "yes": "ja",
+        "no": "nein",
+        "unknown": "unbekannt"
+      }
+    },
+    "matrix": {
+      "title": "Qualifikationen der Leitenden",
+      "intro": "Aus MiData, gültig am Lagerbeginn. Zugeordnet zu den Verantwortlichen sicherheitsrelevanter Aktivitäten.",
+      "leader": "Leitende:r",
+      "role": "Rolle",
+      "coverage": "Abdeckung",
+      "noLeaders": "Keine Leitenden in MiData gefunden.",
+      "has": "vorhanden",
+      "hasNot": "fehlt",
+      "quals": {
+        "lagerleiter": "Lagerleiter",
+        "leiterLsT": "LS/T",
+        "wasser": "Wasser",
+        "berg": "Berg",
+        "winter": "Winter",
+        "slrg": "SLRG"
+      },
+      "activities": {
+        "title": "Sicherheitsrelevante Aktivitäten",
+        "none": "Keine sicherheitsrelevanten Aktivitäten erkannt.",
+        "area": {
+          "wasser": "Wasser",
+          "berg": "Berg",
+          "winter": "Winter"
+        },
+        "requires": "braucht {quals}",
+        "noResponsible": "keine Verantwortlichen",
+        "ok": "qualifiziert",
+        "warn": "keine qualifizierte Person verantwortlich",
+        "unknown": "nicht zuordenbar"
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@
  * Dexie/IndexedDB. A CocoDb is adapted with `storeFromDb`.
  */
 import { TABLE_NAMES, type CocoDb } from '../storage/db'
+import { MIDATA_FIELDS } from '../midata'
 import { EXPORT_FORMAT, EXPORT_VERSION, type CocoExport } from '../types'
 
 export type ImportMode = 'replace' | 'merge'
@@ -74,9 +75,32 @@ const PRIMARY_KEY: Record<string, string> = {
   midata: 'campIri',
 }
 
-export async function exportFromStore(store: BackupStore, now: Date = new Date()): Promise<CocoExport> {
+export interface ExportOptions {
+  /** Leave out red-derived data (the `midata` table). */
+  omitRedDerived?: boolean
+}
+
+/** Tables holding red-derived data (omitted with `omitRedDerived`). */
+export const RED_DERIVED_TABLES: readonly string[] = ['midata']
+
+/** Removes values adopted from MiData (red-derived) from a coachInputs row, plus the badge map. */
+function stripMidataFields(row: unknown): unknown {
+  const r = row as Record<string, unknown>
+  const badges = r.midataFields
+  if (!badges || typeof badges !== 'object') return row
+  const out: Record<string, unknown> = { ...r }
+  for (const f of MIDATA_FIELDS) if (f in badges) out[f] = null
+  delete out.midataFields
+  return out
+}
+
+export async function exportFromStore(store: BackupStore, now: Date = new Date(), options: ExportOptions = {}): Promise<CocoExport> {
   const tables: Record<string, unknown[]> = {}
-  for (const name of TABLE_NAMES) tables[name] = (await store[name]?.toArray()) ?? []
+  for (const name of TABLE_NAMES) {
+    if (options.omitRedDerived && RED_DERIVED_TABLES.includes(name)) continue
+    const rows = (await store[name]?.toArray()) ?? []
+    tables[name] = options.omitRedDerived && name === 'coachInputs' ? rows.map(stripMidataFields) : rows
+  }
   return {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
@@ -86,9 +110,9 @@ export async function exportFromStore(store: BackupStore, now: Date = new Date()
   }
 }
 
-export async function exportAll(db?: CocoDb, now?: Date): Promise<CocoExport> {
+export async function exportAll(db?: CocoDb, now?: Date, options?: ExportOptions): Promise<CocoExport> {
   const d = db ?? (await import('../storage/db')).getDb()
-  return exportFromStore(storeFromDb(d), now)
+  return exportFromStore(storeFromDb(d), now, options)
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -166,8 +190,15 @@ export async function importIntoStore(store: BackupStore, data: CocoExport, mode
   const skippedTables = Object.keys(data.tables).filter((n) => !(TABLE_NAMES as readonly string[]).includes(n))
   for (const name of TABLE_NAMES) {
     const incoming = sanitizeRows(name, data.tables[name])
-    if (!incoming) continue
     const table = store[name]
+    if (!incoming) {
+      // Replace means replace: red-derived tables absent from the file (v1 export, omitRedDerived) are emptied too.
+      if (mode === 'replace' && table && RED_DERIVED_TABLES.includes(name)) {
+        await table.clear()
+        written[name] = 0
+      }
+      continue
+    }
     if (!table) continue
     if (mode === 'replace') {
       await table.clear()

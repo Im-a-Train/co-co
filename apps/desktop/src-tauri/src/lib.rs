@@ -16,6 +16,8 @@ mod session;
 
 #[cfg(test)]
 mod live_tests;
+#[cfg(test)]
+mod midata_live_tests;
 
 use session::AppState;
 use tauri::Manager;

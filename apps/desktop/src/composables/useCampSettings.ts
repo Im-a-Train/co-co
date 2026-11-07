@@ -6,7 +6,8 @@
 import { computed, ref, shallowRef, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import { classOf, guessCategories, mappingFromGuesses } from '@/domain/campFacts'
 import { getCoachInputs, getMapping, saveCoachInputs, saveMapping } from '@/domain/campFacts/store'
-import type { CampFacts, CategoryClass, CategoryMapping, CoachInputs, Iri } from '@/domain/types'
+import { dropEditedMidataFields } from '@/domain/midata'
+import type { CampFacts, CategoryClass, CategoryMapping, CoachInputs, Iri, MidataField } from '@/domain/types'
 import { useCampFacts } from './useCampFacts'
 
 export interface CampSettingsHandle {
@@ -20,7 +21,8 @@ export interface CampSettingsHandle {
   load(): Promise<void>
   classOf(categoryIri: Iri | null): CategoryClass
   saveMapping(mapping: CategoryMapping): Promise<void>
-  saveCoachInputs(inputs: CoachInputs): Promise<void>
+  /** `opts.adopted`: MiData fields accepted in this save (they keep their badge). */
+  saveCoachInputs(inputs: CoachInputs, opts?: { adopted?: readonly MidataField[] }): Promise<void>
 }
 
 const version = ref(0)
@@ -84,8 +86,13 @@ export function useCampSettings(campIri: MaybeRefOrGetter<Iri>): CampSettingsHan
     load,
     classOf: (categoryIri) => classOf(mapping.value, categoryIri),
     saveMapping: persistMapping,
-    async saveCoachInputs(next) {
-      const saved = { ...next, updatedAt: new Date().toISOString() }
+    async saveCoachInputs(next, opts) {
+      // A manual edit removes the MiData badge; fields just adopted keep theirs.
+      const cleaned = dropEditedMidataFields(inputs.value[next.campIri] ?? null, next)
+      const adopted = opts?.adopted ?? []
+      const midataFields = { ...(cleaned.midataFields ?? {}) }
+      for (const f of adopted) if (next.midataFields?.[f]) midataFields[f] = next.midataFields[f]
+      const saved = { ...cleaned, midataFields, updatedAt: new Date().toISOString() }
       await saveCoachInputs(saved)
       inputs.value = { ...inputs.value, [saved.campIri]: saved }
       version.value += 1

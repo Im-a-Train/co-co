@@ -325,6 +325,8 @@ export interface MidataLeader {
   /** Yellow zone: nickname (or first name), never the full name. */
   nickname: string
   roleLabel: string
+  /** Main leader (Hauptleitung); absent in aggregates stored before this field existed. */
+  mainLeader?: boolean
   qualifications: Record<MidataQualKey, boolean>
 }
 
@@ -570,6 +572,8 @@ export interface FeedbackItem {
   activityIri?: Iri
   kind: FeedbackKind
   text: string
+  /** Text quotes MiData (red-derived): refused by the AI gateway. */
+  redDerived?: boolean
   ruleId?: string
   findingId?: string
   roundId?: string

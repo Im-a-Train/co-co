@@ -1,0 +1,23 @@
+{"data":[
+ {"id":"1","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"101"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"2","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"102"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"3","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"103"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"4","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"104"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"5","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"105"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"6","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"106"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"7","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"107"}},"roles":{"data":[{"type":"event_roles","id":"r1"}]}}},
+ {"id":"10","type":"event_participations","relationships":{"person":{"data":{"type":"people","id":"110"}},"roles":{"data":[{"type":"event_roles","id":"r2"}]}}}
+],
+ "included":[
+ {"id":"101","type":"people","attributes":{"first_name":"Anna","last_name":"Zehnder","nickname":"Pixel","birthday":"2014-07-18"}},
+ {"id":"102","type":"people","attributes":{"first_name":"Ben","last_name":"Aebischer","nickname":null,"birthday":"2014-07-19"}},
+ {"id":"103","type":"people","attributes":{"first_name":"Cleo","last_name":"Gerber","birthday":"2012-02-29"}},
+ {"id":"104","type":"people","attributes":{"first_name":"Dario","last_name":"Wyss","birthday":"2005-01-01"}},
+ {"id":"105","type":"people","attributes":{"first_name":"Eli","last_name":"Moser","birthday":"2022-05-05"}},
+ {"id":"106","type":"people","attributes":{"first_name":"Fina","last_name":"Baumgartner","birthday":null}},
+ {"id":"107","type":"people","attributes":{"first_name":"Gian","last_name":"Rohrer","birthday":"2016-03-03"}},
+ {"id":"110","type":"people","attributes":{"first_name":"Hanna","last_name":"Brunner","nickname":"Fuchs","birthday":"1990-04-04"}},
+ {"id":"r1","type":"event_roles","attributes":{"type":"Event::Role::Participant","label":"Teilnehmer/-in"}},
+ {"id":"r2","type":"event_roles","attributes":{"type":"Event::Camp::Role::Leader","label":"Hauptleitung"}}
+],
+ "links":{"next":"https://db.example.test/api/event_participations?page[number]=2"}}

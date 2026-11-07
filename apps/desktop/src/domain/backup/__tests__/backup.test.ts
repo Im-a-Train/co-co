@@ -45,6 +45,7 @@ const PK: Record<string, string> = {
   documents: 'id',
   watchedFolders: 'id',
   aiLog: 'id',
+  midata: 'campIri',
 }
 function makeStore(): BackupStore {
   return Object.fromEntries(TABLE_NAMES.map((n) => [n, memTable(PK[n]!)]))
@@ -130,6 +131,54 @@ describe('backup', () => {
     expect(code(() => validateExport({ ...base, tables: { feedback: [1] } }))).toBe('badRecord')
     expect(code(() => validateExport({ ...base, tables: { reviews: [{ status: 'neu' }] } }))).toBe('badRecord')
     expect(code(() => validateExport({ ...base, tables: { aiLog: [{ at: 'x' }] } }))).toBeNull()
+  })
+
+  it('omitRedDerived leaves out the midata table, default keeps it', async () => {
+    const s = makeStore()
+    await s.midata!.bulkPut([{ campIri: '/api/camps/1', zone: 'red-derived' }])
+    const all = await exportFromStore(s)
+    expect(all.tables.midata).toHaveLength(1)
+    const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
+    expect('midata' in lean.tables).toBe(false)
+    expect(Object.keys(lean.tables).sort()).toEqual(TABLE_NAMES.filter((n) => n !== 'midata').sort())
+  })
+
+  it('replace-import of an export without the midata table (v1 / omitted) empties local midata; merge keeps it', async () => {
+    const dst = makeStore()
+    await dst.midata!.bulkPut([{ campIri: '/api/camps/9', zone: 'red-derived' }])
+    const data = validateExport({
+      format: 'co-co-export',
+      version: 1,
+      exportedAt: '2026-01-01T00:00:00Z',
+      tables: { feedback: [{ id: 'f' }] },
+    })
+    const rep = await importIntoStore(dst, data, 'replace')
+    expect(rep.written.midata).toBe(0)
+    expect(await dst.midata!.toArray()).toHaveLength(0)
+    await dst.midata!.bulkPut([{ campIri: '/api/camps/9', zone: 'red-derived' }])
+    await importIntoStore(dst, data, 'merge')
+    expect(await dst.midata!.toArray()).toHaveLength(1)
+  })
+
+  it('omitRedDerived strips values adopted from MiData from coachInputs', async () => {
+    const s = makeStore()
+    await s.coachInputs!.bulkPut([
+      { campIri: '/c/1', participantsCount: 12, minAge: 9, leadersCount: 4, midataFields: { participantsCount: 'x', minAge: 'x' } },
+    ])
+    const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
+    const row = lean.tables.coachInputs[0] as Record<string, unknown>
+    expect(row.participantsCount).toBeNull()
+    expect(row.minAge).toBeNull()
+    expect(row.leadersCount).toBe(4)
+    expect('midataFields' in row).toBe(false)
+  })
+
+  it('imports an export that contains midata', async () => {
+    const src = makeStore()
+    await src.midata!.bulkPut([{ campIri: '/api/camps/1', zone: 'red-derived' }])
+    const dst = makeStore()
+    const rep = await importIntoStore(dst, parseExport(JSON.stringify(await exportFromStore(src))), 'merge')
+    expect(rep.written.midata).toBe(1)
   })
 
   it('exportFileName uses local date', () => {

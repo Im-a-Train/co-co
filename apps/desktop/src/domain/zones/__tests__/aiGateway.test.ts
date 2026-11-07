@@ -31,6 +31,22 @@ beforeEach(() => {
   complete.mockResolvedValue({ text: 'ok', inputTokens: 10, outputTokens: 5 })
 })
 
+describe('aiGateway red-derived marker', () => {
+  it('refuses any part containing a serialized MiData aggregate, whatever its zone', async () => {
+    const json = JSON.stringify({ zone: 'red-derived', eventId: '1' })
+    for (const zone of ['green', 'yellow'] as const) {
+      await expect(send(req({ parts: [{ zone, value: `Daten: ${json}`, redacted: true }] }))).rejects.toThrow(/Rote Daten/)
+    }
+    await expect(send(req({ parts: [{ zone: 'green', value: '{ "zone" : "red-derived" }' }] }))).rejects.toThrow(/Rote Daten/)
+    expect(complete).not.toHaveBeenCalled()
+  })
+  it('refuses sentences quoting MiData as source', async () => {
+    const value = 'Keine SLRG-Qualifikation (Quelle: MiData, Stand 01.06.2026)'
+    await expect(send(req({ parts: [{ zone: 'yellow', value, redacted: true }] }))).rejects.toThrow(/Rote Daten/)
+    expect(complete).not.toHaveBeenCalled()
+  })
+})
+
 describe('aiGateway.send', () => {
   it('sends a valid request and logs metadata only', async () => {
     const res = await send(req({ maxTokens: 99999 }))

@@ -10,7 +10,19 @@ import {
   trainingFreeDays,
   type JsDayReport,
 } from '../../../jsDays'
-import { activityEvidence, campEvidence, campHit, formatDateDe, jsApplies, matchKeywords, plural, type KeywordSet } from './util'
+import {
+  activityEvidence,
+  campEvidence,
+  campHit,
+  formatDateDe,
+  jsApplies,
+  matchKeywords,
+  midataEvidence,
+  midataSourceText,
+  midataStand,
+  plural,
+  type KeywordSet,
+} from './util'
 
 const report = (ctx: RuleContext): JsDayReport => computeJsDays(ctx.facts, ctx.mapping)
 
@@ -39,11 +51,20 @@ export const jsCamp01: RulePredicate = (ctx) => {
 
 export const jsCamp02: RulePredicate = (ctx) => {
   if (!jsApplies(ctx)) return []
-  const n = ctx.coachInputs?.participantsJsAgeCount ?? ctx.coachInputs?.participantsCount ?? null
+  const jsAge = ctx.coachInputs?.participantsJsAgeCount ?? null
+  const n = jsAge ?? ctx.coachInputs?.participantsCount ?? null
   if (n === null) {
     return [campHit(ctx, { detail: 'Angabe fehlt (bitte unter «Angaben» erfassen)' }, { severity: 'hint' })]
   }
-  return n >= 12 ? [] : [campHit(ctx, { detail: `nur ${n} angegeben, nötig sind mindestens 12` })]
+  if (n >= 12) return []
+  const stand = midataStand(ctx, jsAge !== null ? ['participantsJsAgeCount'] : ['participantsCount'])
+  return [
+    campHit(
+      ctx,
+      { detail: `nur ${n} angegeben, nötig sind mindestens 12${stand ? ` (${midataSourceText(stand)})` : ''}` },
+      stand ? { evidence: [midataEvidence(stand)] } : {},
+    ),
+  ]
 }
 
 // JS-DAY-01 ----------------------------------------------------------------------------------
@@ -227,6 +248,16 @@ export const jsLl01: RulePredicate = (ctx) => {
   if (!jsApplies(ctx)) return []
   const v = ctx.coachInputs?.lagerleiterAttested ?? null
   if (v === true) return []
+  const stand = v === false ? midataStand(ctx, ['lagerleiterAttested']) : null
+  if (stand) {
+    return [
+      campHit(
+        ctx,
+        { detail: `in MiData wurde keine Leitung mit «Zusatz Lagerleiter» gefunden (${midataSourceText(stand)})` },
+        { evidence: [midataEvidence(stand)] },
+      ),
+    ]
+  }
   return [
     campHit(ctx, {
       detail: v === null ? 'noch nicht bestätigt (Angabe fehlt)' : 'nicht bestätigt',

@@ -36,11 +36,55 @@ function session() {
   }
 }
 
+
+// ---- MiData (M7) mock: invented aggregate, no real persons -------------------------------------
+const Q = (lagerleiter: boolean, leiterLsT: boolean, wasser: boolean, berg: boolean, winter: boolean, slrg: boolean) => ({
+  lagerleiter,
+  leiterLsT,
+  wasser,
+  berg,
+  winter,
+  slrg,
+})
+function midataAggregate(eventId: string, campStart: string, campEnd: string, coachPersonId: string | null) {
+  return {
+    zone: 'red-derived' as const,
+    baseUrl: 'https://db.scout.ch',
+    eventId,
+    eventName: 'Sommerlager Musterstufe',
+    eventDates: [{ startAt: campStart, finishAt: campEnd }],
+    location: 'Musterhausen',
+    maximumParticipants: 30,
+    participantsCount: 24,
+    participantsJsAgeCount: 23,
+    participantsWithoutBirthday: 1,
+    minAge: 9,
+    maxAge: 14,
+    ageBands: [
+      { from: 9, to: 10, count: 8 },
+      { from: 11, to: 12, count: 10 },
+      { from: 13, to: 14, count: 6 },
+    ],
+    leadersCount: 5,
+    leaders: [
+      { nickname: 'Falk', roleLabel: 'Lagerleiter', mainLeader: true, qualifications: Q(true, true, false, true, false, false) },
+      { nickname: 'Otter', roleLabel: 'Leiter', qualifications: Q(false, true, true, false, false, true) },
+      { nickname: 'Mungo', roleLabel: 'Leiter', qualifications: Q(false, true, false, true, true, false) },
+      { nickname: 'Kiwi', roleLabel: 'Leiterin', qualifications: Q(false, false, false, false, false, false) },
+      { nickname: 'Pixel', roleLabel: 'Hilfsleitung', qualifications: Q(false, false, false, false, false, false) },
+    ],
+    coachMatch: coachPersonId ? coachPersonId === '4711' : null,
+    fetchedAt: new Date().toISOString(),
+  }
+}
+
 export function installMockTauri(): void {
   ;(globalThis as unknown as { isTauri: boolean }).isTauri = true
   mockWindows('main')
   const api = createDevCampApi()
   let aiKey = false
+  let midataConnected = true
+  let midataMethod: 'session' | 'token' = 'session'
   mockIPC(
     async (cmd, args) => {
       const a = (args ?? {}) as Record<string, unknown>
@@ -104,6 +148,43 @@ export function installMockTauri(): void {
           return `C:/mock/${String(a.defaultName)}`
         case 'open_text_file':
           return null
+        case 'midata_status':
+          return {
+            connected: midataConnected,
+            baseUrl: midataConnected ? 'https://db.scout.ch' : null,
+            method: midataConnected ? midataMethod : null,
+            cookieNames: midataConnected && midataMethod === 'session' ? ['_session_id'] : [],
+          }
+        case 'midata_open_login':
+          midataConnected = true
+          midataMethod = 'session'
+          return null
+        case 'midata_set_token':
+          midataConnected = true
+          midataMethod = 'token'
+          return { connected: true, baseUrl: String(a.baseUrl ?? 'https://db.scout.ch'), method: 'token', cookieNames: [] }
+        case 'midata_logout':
+          midataConnected = false
+          return null
+        case 'midata_find_events':
+          return [
+            { id: '4101', name: 'Sommerlager Musterstufe', startAt: String(a.from), finishAt: String(a.to), location: 'Musterhausen' },
+            { id: '4102', name: 'Pfingstlager Beispielabteilung', startAt: String(a.from), finishAt: String(a.from), location: 'Beispieldorf' },
+          ]
+        case 'midata_fetch_aggregate':
+          return midataAggregate(String(a.eventId), String(a.campStart), String(a.campEnd), (a.coachPersonId as string | null) ?? null)
+        case 'midata_probe':
+          return {
+            authMethod: midataMethod,
+            eventStatus: 200,
+            participationsStatus: 200,
+            participationsReadable: true,
+            peopleBirthdayReadable: true,
+            qualificationsStatus: 200,
+            classicJsonStatus: 200,
+            pbsFieldsPresent: ['coach_id', 'expected_participants_pio'],
+            classicAttributeNames: ['name', 'motto', 'location', 'maximum_participants', 'state'],
+          }
         case 'ai_has_key':
           return aiKey
         case 'ai_set_key':

@@ -125,6 +125,13 @@ function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null
 }
 
+/** Non-empty string, or a finite number turned into a string; else null. */
+function idLike(v: unknown): string | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+  if (typeof v === 'string' && v.trim()) return v.trim()
+  return null
+}
+
 function dateOnly(iso: string): string {
   return iso.slice(0, 10)
 }
@@ -541,6 +548,8 @@ export async function loadCampFacts(
       city: str(campRes, 'addressCity'),
     },
     isPrototype: campRes.isPrototype === true,
+    hitobitoEventId: idLike(campRes.hitobitoEventId),
+    hitobitoProvider: idLike(campRes.hitobitoProvider),
     start: periods.length ? periods[0].start : null,
     end: periods.length ? periods.map((p) => p.end).sort().at(-1)! : null,
   }

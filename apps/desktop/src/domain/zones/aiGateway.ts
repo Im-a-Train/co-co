@@ -44,6 +44,9 @@ export class AiRefusedError extends Error {
   }
 }
 
+/** Marker of a serialized MiData aggregate (JSON, any whitespace). */
+const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*MiData/
+
 /** Pure validation of zone rules; throws AiRefusedError. Exported for tests. */
 export function assertSendable(request: AiGatewayRequest): void {
   if (!request.confirmed) throw new AiRefusedError('Die Vorschau wurde nicht bestätigt.')
@@ -52,6 +55,10 @@ export function assertSendable(request: AiGatewayRequest): void {
     if (p.zone === 'red') throw new AiRefusedError('Rote Daten dürfen nie an die KI gesendet werden.')
     if (p.zone === 'yellow' && p.redacted !== true)
       throw new AiRefusedError('Gelbe Daten müssen vor dem Senden anonymisiert werden.')
+  }
+  // Defensive: a serialized MidataAggregate must never be sent, whatever zone a caller claims.
+  for (const p of [request.system, ...request.parts]) {
+    if (RED_DERIVED_MARKER.test(p.value)) throw new AiRefusedError('Rote Daten dürfen nie an die KI gesendet werden.')
   }
   for (const p of request.parts) {
     if (p.zone === 'yellow' && containsPii(p.value))

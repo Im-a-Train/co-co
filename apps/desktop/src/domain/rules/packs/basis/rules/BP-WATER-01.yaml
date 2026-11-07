@@ -3,7 +3,7 @@ version: 1.0.0
 group: best-practice
 title: "1 SLRG-Qualifizierte pro 12 Teilnehmende"
 description: "Bei Wasseraktivitäten kommt eine Person mit SLRG-Qualifikation auf höchstens 12 Teilnehmende."
-message: "Wasseraktivitäten geplant, SLRG-Qualifizierte: {have} (empfohlen: 1 pro 12 Teilnehmende, also {needed} bei {participants})"
+message: "Wasseraktivitäten geplant, SLRG-Qualifizierte: {have} (empfohlen: 1 pro 12 Teilnehmende, also {needed} bei {participants}){src}"
 severity: hint
 confidence: best-practice
 scope: camp

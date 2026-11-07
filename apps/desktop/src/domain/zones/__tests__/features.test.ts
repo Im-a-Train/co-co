@@ -63,6 +63,11 @@ describe('previews', () => {
     expect(p.previewText).toContain('Leiter A soll [E-Mail] melden')
   })
 
+  it('rephrase refuses MiData-derived feedback (red zone)', () => {
+    const item = { id: 'f', campIri: '/api/camps/1', scope: 'camp', kind: 'must', text: 'Niemand hat SLRG (Quelle: MiData, Stand 01.06.2026)', redDerived: true, status: 'draft' } as unknown as FeedbackItem
+    expect(() => rephraseFeedback(item, facts)).toThrow(/MiData/)
+    expect(() => rephraseFeedback({ ...item, redDerived: undefined }, facts)).toThrow(/MiData/)
+  })
   it('summary requires aiAllowed', () => {
     const doc = { campIri: '/api/camps/1', text: 'Notfall 144', zone: 'yellow', aiAllowed: false } as unknown as DocumentRecord
     expect(() => summariseDocument(doc, facts)).toThrow()

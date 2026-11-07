@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { predicates as p } from '../packs/basis/predicates'
 import { hasKeyword, matchKeywords, MOUNTAIN, NIGHT, ROPE, WATER } from '../packs/basis/predicates/util'
 import type { DocCheckItem, GpxStats, SafetyCheckKey } from '@/domain/types'
-import { CAT_LA, CAT_LS, CAT_NONE, FactsBuilder, makeCoachInputs, makeCtx, makeDoc } from './factory'
+import { CAT_LA, CAT_LS, CAT_NONE, FactsBuilder, makeCoachInputs, makeCtx, makeDoc, makeMidata } from './factory'
 
 const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
@@ -259,5 +259,54 @@ describe('BP-VAR-01', () => {
     const few = new FactsBuilder({ days: 3 })
     few.entry(few.activity('x', CAT_LS), 2, '09:00', '10:00')
     expect(p['BP-VAR-01'](makeCtx(few.facts))).toEqual([])
+  })
+})
+
+describe('MiData in safety / best practice rules', () => {
+  const stand = '2031-01-01T10:00:00.000Z'
+  const leader = (nickname: string, quals: Partial<Record<'wasser' | 'slrg', boolean>> = {}) => ({
+    nickname,
+    roleLabel: 'Leitung',
+    qualifications: { lagerleiter: false, leiterLsT: false, wasser: false, berg: false, winter: false, slrg: false, ...quals },
+  })
+  const waterCamp = () => {
+    const b = new FactsBuilder()
+    b.facts.collaborators.push({
+      iri: '/api/camp_collaborations/cc1', userIri: null, role: 'manager', status: 'established', displayName: 'Blitz',
+      nickname: 'Blitz', firstname: null, surname: null, abbreviation: null, isCurrentUser: false,
+    })
+    b.activity('Baden im See', CAT_LA, { content: { safetyText: 'Aufsicht' } })
+    return b
+  }
+
+  it('SAFE-WATER-01 flags matched responsibles without water qualification (source MiData)', () => {
+    const b = waterCamp()
+    const hits = p['SAFE-WATER-01'](makeCtx(b.facts, { midata: makeMidata({ leaders: [leader('blitz')] }) }))
+    expect(hits).toHaveLength(1)
+    expect(hits[0].params?.missing).toContain('Quelle: MiData, Stand 01.01.2031')
+  })
+  it('SAFE-WATER-01 is satisfied by a qualified matched responsible', () => {
+    const b = waterCamp()
+    expect(p['SAFE-WATER-01'](makeCtx(b.facts, { midata: makeMidata({ leaders: [leader('Blitz', { slrg: true })] }) }))).toEqual([])
+  })
+  it('SAFE-WATER-01 ignores unmatched responsibles and missing MiData', () => {
+    const b = waterCamp()
+    expect(p['SAFE-WATER-01'](makeCtx(b.facts, { midata: makeMidata({ leaders: [leader('Anderer')] }) }))).toEqual([])
+    expect(p['SAFE-WATER-01'](makeCtx(b.facts, { midata: null }))).toEqual([])
+  })
+  it('BP-WOLF-01 / BP-WATER-01 carry the MiData source', () => {
+    const f = waterCamp().facts
+    const wolf = p['BP-WOLF-01'](
+      makeCtx(f, {
+        coachInputs: makeCoachInputs({ stufe: 'woelfe', participantsCount: 20, leadersCount: 2, midataFields: { leadersCount: stand } }),
+      }),
+    )
+    expect(wolf[0].params?.src).toBe(' (Quelle: MiData, Stand 01.01.2031)')
+    const water = p['BP-WATER-01'](
+      makeCtx(f, { coachInputs: makeCoachInputs({ participantsCount: 30, slrgCount: 1, midataFields: { slrgCount: stand } }) }),
+    )
+    expect(water[0].params?.src).toBe(' (Quelle: MiData, Stand 01.01.2031)')
+    const manual = p['BP-WATER-01'](makeCtx(f, { coachInputs: makeCoachInputs({ participantsCount: 30, slrgCount: 1 }) }))
+    expect(manual[0].params?.src).toBe('')
   })
 })
