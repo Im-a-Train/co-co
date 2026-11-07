@@ -1,0 +1,14 @@
+id: CMP-CON-01
+version: 1.0.0
+group: completeness
+title: "Lagerdaten in MiData und NDS abgleichen"
+description: "Die Lagerdaten (Datum) in MiData und NDS stimmen überein."
+message: "Lagerdaten in MiData und NDS stimmen nicht überein"
+severity: hint
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+tags: [vollstaendigkeit, midata, nds]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

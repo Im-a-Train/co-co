@@ -231,6 +231,8 @@ export function installMockTauri(): void {
           }
         case 'api_patch_comment':
           return { id: 'mockcomment1', _links: {}, ...(a.patch as object) }
+        case 'open_ecamp_url':
+          return null
         case 'pick_files':
           return Object.keys(files)
         case 'pick_folder':

@@ -1,0 +1,14 @@
+id: CMP-CON-08
+version: 1.0.0
+group: completeness
+title: "Höchstzahl Teilnehmende in MiData"
+description: "Die Zahl der Angemeldeten in MiData überschreitet die Höchstzahl nicht."
+message: "Mehr Teilnehmende in MiData als die Höchstzahl erlaubt"
+severity: hint
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+tags: [vollstaendigkeit, midata]
+source:
+  title: "J+S Lager"
+  url: https://www.jugendundsport.ch/de/lager

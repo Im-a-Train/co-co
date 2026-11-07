@@ -14,6 +14,7 @@
     "allow-logout",
     "allow-api-post-comment",
     "allow-api-patch-comment",
+    "allow-open-ecamp-url",
     "allow-pick-files",
     "allow-pick-folder",
     "allow-read-document",

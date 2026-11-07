@@ -103,6 +103,26 @@ pub async fn api_post_comment<R: Runtime>(
     crate::api::post_comment(&app, &state, &body).await
 }
 
+/// Opens an eCamp web-UI URL in the system browser. Only URLs on the current session's
+/// instance origin with a path below `/camps/` (validated in `coco_core::origin`).
+#[tauri::command]
+pub async fn open_ecamp_url<R: Runtime>(
+    app: AppHandle<R>,
+    webview: Webview<R>,
+    state: State<'_, AppState>,
+    url: String,
+) -> AppResult<()> {
+    ensure_main(&webview)?;
+    use crate::error::AppError;
+    use tauri_plugin_opener::OpenerExt;
+    let session = state.current().await.ok_or(AppError::NotLoggedIn)?;
+    let url = coco_core::origin::validate_ecamp_web_url(&url, &session.instance.base)?;
+    app.opener()
+        .open_url(url.as_str(), None::<&str>)
+        .map_err(|_| AppError::Unexpected("Der Browser konnte nicht geöffnet werden".into()))?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn api_patch_comment<R: Runtime>(
     app: AppHandle<R>,

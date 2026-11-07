@@ -182,3 +182,37 @@ describe('itemFromFinding', () => {
     expect(it2.activityIri).toBeUndefined()
   })
 })
+
+
+describe('eCamp links', () => {
+  const url = 'https://dev.ecamp3.ch/camps/c1/Berge/program/activity/a1/s1/Postenlauf'
+  const lctx = { ...ctx, activityUrls: { '/api/activities/a1': url } }
+  const items = [
+    item({ id: '1', kind: 'must', scope: 'activity', activityIri: '/api/activities/a1', text: 'Bitte Sicherheit ergänzen.' }),
+    item({ id: '2', kind: 'kudos', text: 'Tolles Programm!' }),
+  ]
+  it('plain and email append an indented eCamp line', () => {
+    for (const ch of ['plain', 'email'] as const) {
+      const r = renderFeedback(items, ch, lctx)
+      expect(r.body).toContain(`- 1.2 Postenlauf: Bitte Sicherheit ergänzen.\n  eCamp: ${url}`)
+      expect(r.body.match(/eCamp:/g)).toHaveLength(1)
+    }
+  })
+  it('whatsapp appends the raw URL on its own line', () => {
+    const r = renderFeedback(items, 'whatsapp', lctx)
+    expect(r.body).toContain(`⚠️ *1.2 Postenlauf*: Bitte Sicherheit ergänzen.\n   ${url}`)
+    expect(r.body).not.toContain('eCamp:')
+  })
+  it('includeLinks=false and missing URL render without link', () => {
+    expect(renderFeedback(items, 'plain', { ...lctx, includeLinks: false }).body).not.toContain('http')
+    expect(renderFeedback(items, 'plain', ctx).body).not.toContain('http')
+    expect(renderFeedback(items, 'plain', { ...lctx, activityUrls: {} }).body).not.toContain('http')
+  })
+  it('camp-scope items never get a link', () => {
+    const r = renderFeedback([item({ id: 'c', activityIri: '/api/activities/a1', text: 'Lager' })], 'plain', lctx)
+    expect(r.body).not.toContain('http')
+  })
+  it('eCamp comments stay without the link', () => {
+    expect(toCommentHtmlParts('Bitte Sicherheit ergänzen.')).toEqual(['Bitte Sicherheit ergänzen.'])
+  })
+})

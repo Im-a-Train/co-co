@@ -69,6 +69,18 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     await go('feedback', 'flow-feedback-from-triage')
     const t = await text()
     if (/Noch kein Feedback/i.test(t)) throw new Error('feedback list empty')
+    // Add an activity item through the form (triage creates camp-scope items only).
+    await page.getByRole('button', { name: /aktivitäts-punkt/i }).click()
+    await page.locator('.v-field', { hasText: 'Aktivität wählen' }).first().click()
+    await page.locator('.v-overlay--active .v-list-item').first().click()
+    await page.locator('textarea').first().fill('Bitte Sicherheitskonzept ergänzen.')
+    await page.getByRole('button', { name: /^speichern$/i }).click()
+    await page.waitForSelector('[data-test="open-ecamp"]', { timeout: 5000 })
+    const body = await page.locator('.v-sheet').first().innerText().catch(() => '')
+    if (!(await page.locator('[data-test="open-ecamp"]').count())) throw new Error('"In eCamp öffnen" button missing')
+    if (!/in ecamp öffnen/i.test(await text())) throw new Error('button label missing')
+    if (!/\/program\/activity\//.test(body)) throw new Error('preview lacks eCamp link: ' + body.slice(0, 200))
+    await shot(page, 'flow-feedback-links')
   })
 
   await step('flow: triage position survives tab switch and back/forward', async () => {

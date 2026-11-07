@@ -9,6 +9,7 @@ import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useFeedback } from '@/composables/useFeedback'
 import { KIND_ORDER } from '@/domain/feedback'
+import { activityUrlMap } from '@/domain/ecampLinks'
 import type { FeedbackKind, FeedbackScope } from '@/domain/types'
 
 const { t } = useI18n()
@@ -23,10 +24,12 @@ const activityTitles = computed<Record<string, string>>(() =>
 const activityOptions = computed(() =>
   (facts.value?.activities ?? []).map((a) => ({ title: a.title, value: a.iri })).sort((a, b) => a.title.localeCompare(b.title, 'de')),
 )
+const activityUrls = computed(() => activityUrlMap(facts.value))
 const coachName = computed(() => facts.value?.collaborators.find((c) => c.isCurrentUser)?.displayName ?? null)
 const renderContext = computed(() => ({
   campTitle: facts.value?.camp.title ?? '',
   activityTitles: activityTitles.value,
+  activityUrls: activityUrls.value,
   coachName: coachName.value,
 }))
 
@@ -118,6 +121,7 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
             :key="item.id"
             :item="item"
             :activity-title="item.activityIri ? activityTitles[item.activityIri] : undefined"
+            :activity-url="item.scope === 'activity' && item.activityIri ? activityUrls[item.activityIri] : undefined"
             :lint="fb.lint.value.filter((l) => l.itemId === item.id)"
             :facts="facts"
             :posting="postingId === item.id"

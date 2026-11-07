@@ -29,6 +29,7 @@ General rules
 | Command | Args | Returns | Notes |
 | --- | --- | --- | --- |
 | `api_post_comment` | `campIri: string`, `activityIri: string`, `textHtml: string` | created comment (HAL JSON object) | `POST /api/comments` only. Body `{ camp, activity, textHtml }`, `Content-Type: application/json`, `Accept: application/hal+json`. Rejects when `textHtml` > 1024 chars or empty, or when it contains HTML other than `<br>` (text must be escaped by the caller). Both IRIs must match `^/api/(camps\|activities)/[A-Za-z0-9]+$`. |
+| `open_ecamp_url` | `url: string` | `null` | Opens an eCamp web-UI URL in the system browser (tauri-plugin-opener, called from Rust only; the frontend has no opener permission). Requires a session. URL must be absolute https (http only for a loopback instance), same origin as the session instance, no userinfo, path starting with `/camps/`, no `.`/`..` segments, no control characters or backslashes, length <= 2048. |
 | `api_patch_comment` | `commentIri: string`, `patch: object` | updated comment (HAL JSON) | `PATCH /api/comments/{id}` only, `Content-Type: application/merge-patch+json`. `commentIri` must match `^/api/comments/[A-Za-z0-9]+$`. The upstream `Comment.php` has **no** Patch operation, but newer instances do (dev has `resolvedAt`/`resolvedBy`). So an HTTP 405/404 rejects with a clear message ("Kommentar kann auf dieser eCamp-Version nicht geändert werden"), and the frontend treats it as unsupported. Only the key `resolved` is forwarded; any other key is rejected. |
 
 ## M3: files and documents

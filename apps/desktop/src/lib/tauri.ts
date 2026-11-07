@@ -158,6 +158,9 @@ export const commands = {
   apiPatchComment: (commentIri: string, patch: JsonObject) =>
     call<JsonObject>('api_patch_comment', { commentIri, patch }),
 
+  /** Opens an eCamp web URL (same origin as the current session, path below /camps/) in the system browser. */
+  openEcampUrl: (url: string) => call<void>('open_ecamp_url', { url }),
+
   // M3: files + documents (paths are only readable when allowed: picked, dropped, or in a watched folder)
   pickFiles: (filters?: FileFilter[]) => call<string[]>('pick_files', { filters: filters ?? null }),
   pickFolder: () => call<string | null>('pick_folder'),
