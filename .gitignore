@@ -33,3 +33,4 @@ Thumbs.db
 .claude/settings.local.json
 e2e-ui/shots/
 apps/desktop/e2e-ui/shots/
+apps/desktop/src-tauri/target-*/
