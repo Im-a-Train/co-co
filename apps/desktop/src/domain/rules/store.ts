@@ -6,10 +6,9 @@ export function listOverrides(campIri: Iri): Promise<Override[]> {
   return getDb().overrides.where('campIri').equals(campIri).toArray()
 }
 
-/** Creates (or replaces, same findingId) an override with a mandatory non-empty reason. */
+/** Creates (or replaces, same findingId) an override (Ignorieren); the reason is optional. */
 export async function addOverride(campIri: Iri, findingId: string, ruleId: string, reason: string): Promise<Override> {
   const trimmed = reason.trim()
-  if (!trimmed) throw new Error('Für eine Übersteuerung ist eine Begründung nötig')
   const db = getDb()
   return db.transaction('rw', db.overrides, async () => {
     const existing = await db.overrides.where('findingId').equals(findingId).and((o) => o.campIri === campIri).toArray()

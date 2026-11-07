@@ -3,10 +3,31 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import RuleCard from '@/components/rules/RuleCard.vue'
+import { useRuleState } from '@/composables/useRuleState'
+import { campsWithDisabled, isGloballyDisabled } from '@/domain/rules/ruleState'
+import { disableRuleStored, enableRuleStored } from '@/domain/rules/ruleStateStore'
 import { loadBundledPacks } from '@/domain/rules/packs'
 import type { Rule, RuleGroup, RulePack, Severity } from '@/domain/types'
 
 const { t } = useI18n()
+const { state: ruleState } = useRuleState()
+const stateError = ref<string | null>(null)
+
+/** Disabled state of one rule: everywhere, and in how many camps. */
+function disabledInfo(ruleId: string) {
+  const all = isGloballyDisabled(ruleState.value, ruleId)
+  const camps = campsWithDisabled(ruleState.value, ruleId)
+  return { all, camps, any: all || camps > 0 }
+}
+async function toggle(ruleId: string, action: 'enable' | 'disableAll') {
+  try {
+    if (action === 'enable') await enableRuleStored(ruleId)
+    else await disableRuleStored(ruleId, null)
+    stateError.value = null
+  } catch (e) {
+    stateError.value = e instanceof Error ? e.message : String(e)
+  }
+}
 
 const SEVERITY_COLOR: Record<Severity, string> = { must: 'error', should: 'warning', hint: 'info' }
 const GROUPS: RuleGroup[] = ['js', 'completeness', 'safety', 'best-practice']
@@ -61,6 +82,8 @@ function fmt(iso: string): string {
       {{ t('rules.catalog.loadFailed') }}: {{ loadError }}
     </v-alert>
 
+    <v-alert v-if="stateError" type="error" variant="tonal" density="compact" class="mb-4" :text="stateError" />
+
     <div class="d-flex flex-wrap align-center ga-3 mb-4">
       <v-text-field
         v-model="search"
@@ -105,10 +128,35 @@ function fmt(iso: string): string {
                     {{ t(`severity.${rule.meta.severity}`) }}
                   </v-chip>
                   <code class="text-caption flex-shrink-0">{{ rule.meta.id }}</code>
-                  <span class="text-body-2">{{ rule.meta.title }}</span>
+                  <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta.id).all }">{{ rule.meta.title }}</span>
+                  <v-chip v-if="disabledInfo(rule.meta.id).all" size="x-small" color="grey" label data-testid="rule-disabled">
+                    {{ t('rules.catalog.state.disabledAll') }}
+                  </v-chip>
+                  <v-chip v-else-if="disabledInfo(rule.meta.id).camps" size="x-small" color="grey" label data-testid="rule-disabled">
+                    {{ t('rules.catalog.state.disabledCamps', { count: disabledInfo(rule.meta.id).camps }, disabledInfo(rule.meta.id).camps) }}
+                  </v-chip>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
+                <div class="mb-3">
+                  <v-btn
+                    v-if="disabledInfo(rule.meta.id).any"
+                    size="small"
+                    variant="tonal"
+                    prepend-icon="mdi-check-circle-outline"
+                    :text="t('rules.catalog.state.enable')"
+                    data-testid="rule-enable"
+                    @click="toggle(rule.meta.id, 'enable')"
+                  />
+                  <v-btn
+                    v-else
+                    size="small"
+                    variant="text"
+                    prepend-icon="mdi-cancel"
+                    :text="t('rules.catalog.state.disableAll')"
+                    @click="toggle(rule.meta.id, 'disableAll')"
+                  />
+                </div>
                 <RuleCard :rule="rule" />
               </v-expansion-panel-text>
             </v-expansion-panel>

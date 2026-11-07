@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { safeExternalUrl, severityColor } from '@/domain/cockpit'
 import type { Finding } from '@/domain/types'
 
-const props = defineProps<{ finding: Finding; compact?: boolean }>()
+const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean }>()
 const emit = defineEmits<{
   feedback: [finding: Finding]
   override: [finding: Finding]
@@ -70,7 +70,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.source') }}: {{ finding.source?.title }}
         </a>
         <v-spacer />
-        <template v-if="!compact">
+        <template v-if="!compact && !hideActions">
           <v-btn
             v-if="!finding.override"
             size="small"
@@ -89,6 +89,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           />
         </template>
         <v-btn
+          v-if="!hideActions"
           size="small"
           variant="tonal"
           color="primary"

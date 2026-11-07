@@ -7,7 +7,7 @@ import { campIdFromIri } from '@/domain/iri'
 import { buildGrid } from '@/domain/cockpit'
 import type { Finding, Iri } from '@/domain/types'
 import ActivityDrawer from '@/components/cockpit/ActivityDrawer.vue'
-import { createFeedbackFromFinding } from '@/components/cockpit/feedbackAction'
+import { triageLocation } from '@/domain/triage'
 import WeekGrid from '@/components/cockpit/WeekGrid.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 
@@ -32,8 +32,8 @@ function select(iri: Iri) {
   drawer.value = true
 }
 
-async function feedback(f: Finding) {
-  error.value = await createFeedbackFromFinding(router, campIri.value, f)
+function feedback(f: Finding) {
+  void router.push(triageLocation(campIri.value, f.id, { editor: true }))
 }
 
 function openDocument(documentId: string | null) {

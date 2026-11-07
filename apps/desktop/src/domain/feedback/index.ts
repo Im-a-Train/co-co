@@ -220,7 +220,9 @@ function uuid(): string {
 /** New draft item prefilled from a finding (kind 'must' for must findings, else 'suggestion'). */
 export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new Date()): FeedbackItem {
   const isMust = finding.severity === 'must'
-  const params = { title: finding.title, message: finding.message }
+  // Rule messages often lack final punctuation; the template appends a question right after it.
+  const message = finding.message.trim()
+  const params = { title: finding.title, message: /[.!?…:)]$/.test(message) ? message : `${message}.` }
   const text = tr(isMust ? 'feedback.fromFinding.must' : 'feedback.fromFinding.other', params)
   const activityIri = finding.scope === 'activity' ? finding.targets[0] : undefined
   const iso = now.toISOString()

@@ -7,7 +7,7 @@
     "filters": {
       "search": "Suchen",
       "groups": "Bereich",
-      "showOverridden": "Übersteuerte anzeigen",
+      "showOverridden": "Ignorierte anzeigen",
       "activity": "Nur Aktivität: {title}",
       "clearActivity": "Filter entfernen"
     },
@@ -25,21 +25,67 @@
     "aiTag": "KI-Einschätzung",
     "createFeedback": "Feedback erstellen",
     "feedbackFailed": "Das Feedback konnte nicht erstellt werden: {error}",
-    "override": "Übersteuern",
-    "removeOverride": "Übersteuerung aufheben",
-    "overridden": "Übersteuert",
-    "overrideReason": "Begründung: {reason}",
+    "override": "Ignorieren",
+    "removeOverride": "Nicht mehr ignorieren",
+    "overridden": "Ignoriert",
+    "overrideReason": "Grund: {reason}",
     "dialog": {
-      "title": "Befund übersteuern",
-      "text": "Der Befund bleibt gespeichert, zählt aber nicht mehr in den Kennzahlen. Eine Begründung ist Pflicht.",
-      "reason": "Begründung",
-      "reasonRequired": "Bitte eine Begründung angeben.",
-      "confirm": "Übersteuern"
+      "title": "Befund ignorieren",
+      "text": "Der Befund bleibt gespeichert, zählt aber nicht mehr in den Kennzahlen. Ein Grund ist freiwillig.",
+      "reason": "Grund (optional)",
+      "confirm": "Ignorieren"
     },
     "ai": {
       "title": "KI-Sicherheitsprüfung (optional)"
     },
     "notReady": "Die Regel-Auswertung ist noch nicht verfügbar.",
-    "actionFailed": "Aktion fehlgeschlagen: {error}"
+    "actionFailed": "Aktion fehlgeschlagen: {error}",
+    "mode": {
+      "triage": "Befunde durchgehen",
+      "list": "Liste"
+    },
+    "triage": {
+      "title": "Befunde durchgehen",
+      "progress": "{done} von {total} bearbeitet",
+      "status": {
+        "open": "Offen",
+        "feedback": "Feedback erstellt",
+        "ignored": "Ignoriert"
+      },
+      "listLabel": "Befunde",
+      "activity": "Betroffene Aktivität",
+      "noActivity": "Dieser Befund betrifft keine einzelne Aktivität.",
+      "editor": "Feedback",
+      "editorOpen": "Feedback-Editor öffnen",
+      "kind": "Art",
+      "scope": "Bezug",
+      "text": "Text",
+      "saveNext": "Feedback speichern & weiter",
+      "ignoreNext": "Ignorieren & weiter",
+      "skip": "Überspringen",
+      "ignoreReason": "Grund (optional)",
+      "openInGrid": "Im Raster öffnen",
+      "openFeedback": "Feedback ansehen",
+      "hasFeedback": "Für diesen Befund gibt es schon Feedback.",
+      "isIgnored": "Dieser Befund ist ignoriert.",
+      "allDone": "Alle Befunde sind bearbeitet.",
+      "none": "Keine Befunde zum Durchgehen.",
+      "hint": "Tastatur: J oder ↓ weiter, K oder ↑ zurück, F Feedback speichern, I ignorieren, Esc Editor schliessen"
+    },
+    "disablePrompt": {
+      "text": "Du hast «{title}» schon {count}-mal ignoriert. Regel deaktivieren?",
+      "camp": "Nur für dieses Lager",
+      "all": "Für alle Lager",
+      "no": "Nein, danke"
+    },
+    "disabledNote": "{count} Regel für dieses Lager deaktiviert | {count} Regeln für dieses Lager deaktiviert",
+    "disabledManage": "Wieder aktivieren",
+    "disabledDialog": {
+      "title": "Deaktivierte Regeln",
+      "scopeCamp": "Nur dieses Lager",
+      "scopeAll": "Alle Lager",
+      "enable": "Aktivieren",
+      "close": "Schliessen"
+    }
   }
 }

@@ -8,7 +8,7 @@
         "must": "Muss-Befunde",
         "should": "Soll-Befunde",
         "hint": "Hinweise",
-        "overridden": "{count} übersteuert",
+        "overridden": "{count} ignoriert",
         "validDays": "Gültige J+S-Tage",
         "validDaysOf": "{valid} von {total}",
         "validDaysMissing": "J+S-Tage nicht berechenbar",

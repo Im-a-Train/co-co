@@ -45,6 +45,13 @@
         "version": "Regelversion {version}",
         "tags": "Stichwörter",
         "mustGuard": "Konfidenz begrenzt den Schweregrad: nie «Muss»"
+      },
+      "state": {
+        "disabledAll": "Deaktiviert (alle Lager)",
+        "disabledCamps": "In {count} Lager deaktiviert | In {count} Lagern deaktiviert",
+        "enable": "Wieder aktivieren",
+        "disableAll": "Für alle Lager deaktivieren",
+        "disabledTag": "deaktiviert"
       }
     },
     "deadlines": {

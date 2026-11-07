@@ -1,0 +1,912 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>co-co Coach Cockpit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: long-form plan with a sticky section nav; mockups sit in framed "screens" that scroll sideways on phones */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --surface-2:#e8ece6; --ink:#17201b; --muted:#5b6760; --line:#d3dad2;
+  --accent:#c8321f;          /* signal red, J+S-ish */
+  --forest:#1f5a3c;          /* scout green */
+  --forest-soft:#dcebe1;
+  --blocker:#c8321f; --blocker-bg:#fbe5e1;
+  --warn:#a86a00; --warn-bg:#fdf0d5;
+  --hint:#2c5d9e; --hint-bg:#e1ebf8;
+  --ok:#227a47; --ok-bg:#dff2e6;
+  --cat-ls:#2f7d5b; --cat-la:#3f6fb5; --cat-lp:#8a6bb8; --cat-es:#9aa39d;
+  --map-bg:#eef1e6; --contour:#c6ccb4; --water:#9cc3de;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111613; --surface:#18201b; --surface-2:#212b25; --ink:#e6ece7; --muted:#9aa8a0; --line:#2f3b34;
+  --accent:#ff6a52; --forest:#7fcf9f; --forest-soft:#1d3426;
+  --blocker:#ff7a66; --blocker-bg:#3a1c17; --warn:#f0b54a; --warn-bg:#3a2c12; --hint:#86b2ec; --hint-bg:#18263a; --ok:#6fd496; --ok-bg:#16301f;
+  --cat-ls:#3f9a72; --cat-la:#5486d0; --cat-lp:#9b80cb; --cat-es:#5d6862;
+  --map-bg:#1a211c; --contour:#34402f; --water:#2b5675; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#111613; --surface:#18201b; --surface-2:#212b25; --ink:#e6ece7; --muted:#9aa8a0; --line:#2f3b34;
+  --accent:#ff6a52; --forest:#7fcf9f; --forest-soft:#1d3426;
+  --blocker:#ff7a66; --blocker-bg:#3a1c17; --warn:#f0b54a; --warn-bg:#3a2c12; --hint:#86b2ec; --hint-bg:#18263a; --ok:#6fd496; --ok-bg:#16301f;
+  --cat-ls:#3f9a72; --cat-la:#5486d0; --cat-lp:#9b80cb; --cat-es:#5d6862;
+  --map-bg:#1a211c; --contour:#34402f; --water:#2b5675; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.1;margin:0}
+h2{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.01em}
+h3{font-size:20px;font-weight:700}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-size:.86em}
+.eyebrow{font:600 12px/1 var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:18px;color:var(--muted);max-width:68ch}
+a{color:var(--forest)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* hero */
+header.hero{padding-block:56px 36px;position:relative;overflow:hidden}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+.hero .wrap{position:relative;display:grid;gap:20px}
+.hero h1{font-size:clamp(40px,7vw,84px);font-weight:800;letter-spacing:-.025em;max-width:14ch}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{font:600 12px/1 var(--f-body);padding:7px 10px;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.badge b{color:var(--forest)}
+
+/* nav */
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-block:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px}
+nav.toc a{white-space:nowrap;text-decoration:none;color:var(--muted);font-weight:600;font-size:13px;padding:6px 10px;border-radius:6px}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+
+section{padding-block:56px;border-bottom:1px solid var(--line)}
+section > .wrap{display:grid;gap:24px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:8px;align-content:start;min-width:0}
+.card h3{font-size:17px}
+.card p,.card li{color:var(--muted);font-size:14px}
+.card ul{margin:0;padding-left:18px}
+
+/* timeline strip */
+.journey{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.journey div{padding:14px;border-right:1px solid var(--line);display:grid;gap:4px;align-content:start}
+.journey div:last-child{border-right:0}
+.journey .t{font:600 12px var(--f-mono);color:var(--accent)}
+.journey b{font-size:14px}
+.journey span{font-size:12.5px;color:var(--muted)}
+
+/* approach heads */
+.approach-head{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start}
+.approach-letter{font:800 64px/0.9 var(--f-display);color:var(--accent)}
+.approach-head .tag{font-size:17px;color:var(--muted);max-width:70ch;margin-top:6px}
+.proscons{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.proscons ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.pc-pro h4{color:var(--ok)} .pc-con h4{color:var(--blocker)}
+h4{margin:0 0 6px;font:700 13px var(--f-body);letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- mockup frame ---------- */
+.screen-scroll{overflow-x:auto;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
+.screen{min-width:980px;background:var(--surface);font-size:12.5px;line-height:1.45}
+.chrome{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}
+.chrome .url{margin-left:10px;flex:1;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font:12px var(--f-mono);color:var(--muted)}
+.caption{font-size:13px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;font:600 11px/1 var(--f-body);padding:4px 7px;border-radius:99px;white-space:nowrap}
+.p-block{background:var(--blocker-bg);color:var(--blocker)} .p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-hint{background:var(--hint-bg);color:var(--hint)} .p-ok{background:var(--ok-bg);color:var(--ok)}
+.p-neutral{background:var(--surface-2);color:var(--muted)}
+.rid{font:600 11px var(--f-mono);color:var(--muted)}
+.sev{border-left:3px solid var(--line);padding:8px 10px;background:var(--surface);display:grid;gap:3px}
+.sev.b{border-left-color:var(--blocker)} .sev.w{border-left-color:var(--warn)} .sev.h{border-left-color:var(--hint)} .sev.k{border-left-color:var(--ok)}
+.sev .t{font-weight:600;color:var(--ink)} .sev .s{color:var(--muted);font-size:11.5px}
+.btn{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--f-body);padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--forest);border-color:var(--forest);color:var(--surface)}
+
+/* Mock A */
+.mA{display:grid;grid-template-columns:200px 1fr}
+.mA aside{background:var(--surface-2);border-right:1px solid var(--line);padding:14px 10px;display:grid;gap:3px;align-content:start}
+.mA aside .logo{font:800 15px var(--f-display);padding:0 8px 10px}
+.mA aside a{display:flex;justify-content:space-between;padding:6px 8px;border-radius:6px;color:var(--ink);text-decoration:none}
+.mA aside a.on{background:var(--surface);font-weight:600}
+.mA aside .rp{margin-top:14px;padding:8px;border:1px dashed var(--line);border-radius:6px;font-size:11px;color:var(--muted)}
+.mA main{padding:14px 18px;display:grid;gap:12px;min-width:0}
+.crumb{color:var(--muted)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line)}
+.tabs span{padding:6px 10px;color:var(--muted)} .tabs span.on{color:var(--ink);font-weight:600;border-bottom:2px solid var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:4px}
+.kpi .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .v{font:800 22px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11px;color:var(--muted)}
+.ring{display:flex;align-items:center;gap:10px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:34px;position:relative}
+.bars i{flex:1;background:var(--cat-ls);border-radius:2px 2px 0 0;display:block}
+.bars i.bad{background:var(--blocker)}
+.bars .th{position:absolute;left:0;right:0;border-top:1px dashed var(--muted)}
+.mA-body{display:grid;grid-template-columns:1.35fr 1fr;gap:12px}
+.week{border:1px solid var(--line);border-radius:8px;padding:8px;display:grid;gap:6px}
+.week-head{display:flex;justify-content:space-between;align-items:center}
+.week-grid{display:grid;grid-template-columns:34px repeat(8,1fr);gap:3px}
+.week-grid .dh{font-size:10.5px;color:var(--muted);text-align:center;font-weight:600}
+.week-grid .dh b{display:block;font:700 11px var(--f-mono)}
+.col{position:relative;height:300px;background:repeating-linear-gradient(to bottom,var(--surface-2) 0 1px,transparent 1px 37.5px);border-radius:4px}
+.hours{position:relative;height:300px;font:10px var(--f-mono);color:var(--muted)}
+.hours span{position:absolute;right:2px;transform:translateY(-50%)}
+.blk{position:absolute;left:2px;right:2px;border-radius:3px;padding:2px 3px;font-size:9.5px;line-height:1.15;color:#fff;overflow:hidden}
+.blk.ls{background:var(--cat-ls)} .blk.la{background:var(--cat-la)} .blk.lp{background:var(--cat-lp)} .blk.es{background:var(--cat-es)}
+.blk.flag{box-shadow:0 0 0 2px var(--blocker) inset}
+.blk.flagw{box-shadow:0 0 0 2px var(--warn) inset}
+.gap{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,var(--blocker) 0 2px,transparent 2px 5px);opacity:.8}
+.daymeter{display:grid;grid-template-columns:34px repeat(8,1fr);gap:3px;font:600 10px var(--f-mono);text-align:center}
+.daymeter span.bad{color:var(--blocker)} .daymeter span.okk{color:var(--ok)} .daymeter span.mut{color:var(--muted)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.findings{display:grid;gap:6px;align-content:start}
+.fgroup{font:700 10.5px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;margin-top:4px}
+.qmatrix{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.qmatrix table{border-collapse:collapse;width:100%;font-size:11.5px}
+.qmatrix th,.qmatrix td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+.qmatrix th{background:var(--surface-2);font-weight:600;color:var(--muted)}
+
+/* Mock B */
+.mB-top{display:grid;gap:8px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.mB-top h5{margin:0;font:700 17px var(--f-display)}
+.prmeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted)}
+.prstate{background:var(--warn);color:var(--surface);padding:4px 9px;border-radius:99px;font-weight:700;font-size:11px}
+.mB{display:grid;grid-template-columns:230px 1fr 260px}
+.tree{border-right:1px solid var(--line);padding:10px;display:grid;gap:2px;align-content:start;font-size:12px}
+.tree .day{font-weight:700;margin-top:6px}
+.tree .it{display:flex;justify-content:space-between;gap:6px;padding:3px 6px;border-radius:4px;color:var(--muted)}
+.tree .it.on{background:var(--hint-bg);color:var(--ink)}
+.tree .m{font:700 10px var(--f-mono)} .m.add{color:var(--ok)} .m.mod{color:var(--warn)} .m.del{color:var(--blocker)}
+.diffpane{padding:12px 14px;display:grid;gap:10px;align-content:start;min-width:0}
+.dcard{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.dcard-h{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-2);font-weight:600;gap:8px}
+.sb{display:grid;grid-template-columns:52px 1fr 1fr 70px;font-size:11.5px}
+.sb > div{padding:5px 8px;border-bottom:1px solid var(--line)}
+.sb .hd{font-weight:600;color:var(--muted);background:var(--surface)}
+.row-del > div{background:var(--blocker-bg)} .row-add > div{background:var(--ok-bg)}
+.row-del > div:first-child::before{content:"− ";color:var(--blocker);font-weight:700}
+.row-add > div:first-child::before{content:"+ ";color:var(--ok);font-weight:700}
+.thread{margin:8px 10px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.msg{padding:8px 10px;display:grid;gap:4px;border-bottom:1px solid var(--line)}
+.msg:last-child{border-bottom:0}
+.who{display:flex;gap:6px;align-items:center;font-weight:600}
+.av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--surface)}
+.sugg{border:1px solid var(--ok);border-radius:6px;overflow:hidden;font-size:11.5px}
+.sugg .sh{background:var(--ok-bg);color:var(--ok);padding:4px 8px;font-weight:700;display:flex;justify-content:space-between}
+.sugg .sl{padding:4px 8px;font-family:var(--f-mono);font-size:11px}
+.sugg .sl.d{background:var(--blocker-bg)} .sugg .sl.a{background:var(--ok-bg)}
+.ai-chip{font:600 10px var(--f-mono);padding:2px 6px;border-radius:4px;background:var(--hint-bg);color:var(--hint)}
+.checks{border-left:1px solid var(--line);padding:10px;display:grid;gap:8px;align-content:start}
+.mergebox{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:6px}
+.chk{display:flex;gap:6px;align-items:flex-start;font-size:11.5px}
+.chk b{font-family:var(--f-mono);font-size:11px;width:14px;flex:none}
+.chk .x{color:var(--blocker)} .chk .e{color:var(--warn)} .chk .o{color:var(--ok)}
+.verdict{display:grid;gap:4px;font-size:12px}
+.verdict label{display:flex;gap:6px;align-items:center}
+
+/* Mock C */
+.mC{display:grid;grid-template-columns:400px 1fr}
+.chat{border-right:1px solid var(--line);padding:12px;display:grid;gap:10px;align-content:start;background:var(--surface)}
+.bubble{padding:9px 11px;border-radius:10px;max-width:92%}
+.bubble.me{background:var(--forest);color:var(--surface);justify-self:end;border-bottom-right-radius:2px}
+.plan{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:11px/1.6 var(--f-mono);color:var(--muted);background:var(--surface-2)}
+.plan b{color:var(--ok)}
+.answer{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.answer .ah{padding:8px 10px;background:var(--warn-bg);color:var(--warn);font-weight:700}
+.answer ul{list-style:none;margin:0;padding:8px 10px;display:grid;gap:7px}
+.answer li{display:grid;gap:3px}
+.answer .src{display:flex;gap:6px;flex-wrap:wrap}
+.chatin{display:flex;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--muted);align-items:center;justify-content:space-between}
+.mcp{display:flex;gap:5px;flex-wrap:wrap}
+.canvas{display:grid;grid-template-rows:auto 1fr auto;min-width:0}
+.ctabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.ctabs span{padding:4px 9px;border-radius:6px;color:var(--muted);font-weight:600}
+.ctabs span.on{background:var(--surface-2);color:var(--ink)}
+.map{position:relative;background:var(--map-bg);min-height:330px}
+.map svg{display:block;width:100%;height:100%}
+.maplegend{position:absolute;left:10px;bottom:10px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:10.5px;display:grid;gap:2px}
+.mapcard{position:absolute;right:10px;top:10px;width:220px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:5px;font-size:11.5px}
+.kv{display:flex;justify-content:space-between;gap:8px} .kv span:first-child{color:var(--muted)} .kv span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+.profile{border-top:1px solid var(--line);padding:6px 10px}
+.phone-row{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start}
+.phone{width:290px;border:8px solid var(--ink);border-radius:30px;background:var(--surface);overflow:hidden;font-size:12px}
+.phone .stat{background:var(--warn-bg);color:var(--warn);font-weight:600;font-size:10.5px;padding:6px 10px}
+.phone .ph{padding:10px;display:grid;gap:8px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface-2);border-radius:8px;padding:2px;font-size:10.5px;text-align:center}
+.seg span{padding:5px 0;border-radius:6px;color:var(--muted)} .seg span.on{background:var(--surface);color:var(--ink);font-weight:700}
+.now{border:1px solid var(--line);border-radius:10px;padding:9px;display:grid;gap:4px}
+.qbtn{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.qbtn span{border:1px solid var(--line);border-radius:8px;text-align:center;padding:8px 2px;font-weight:600;font-size:11px}
+.g33{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:10px}
+.g33 span{border-radius:5px;padding:5px;background:var(--surface-2)}
+.g33 span.o{background:var(--ok-bg);color:var(--ok)} .g33 span.w{background:var(--warn-bg);color:var(--warn)}
+
+/* compare table */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table.cmp{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+table.cmp th,table.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.cmp thead th{background:var(--surface-2);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+table.cmp td:first-child{font-weight:600;white-space:nowrap}
+.dots{letter-spacing:2px;color:var(--accent);font-weight:700}
+.dots s{color:var(--line);text-decoration:none}
+
+/* features */
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.filters button{font:600 13px var(--f-body);padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.feat-groups{display:grid;gap:28px}
+.fg h3{display:flex;gap:10px;align-items:baseline;margin-bottom:10px}
+.fg h3 small{font:500 13px var(--f-body);color:var(--muted)}
+.feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:10px}
+.feat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:6px;align-content:start}
+.feat h4{text-transform:none;letter-spacing:0;font:700 15px var(--f-display);margin:0}
+.feat p{font-size:13.5px;color:var(--muted)}
+.feat .tags{display:flex;gap:5px;flex-wrap:wrap}
+.t-mvp{background:var(--ok-bg);color:var(--ok)} .t-p2{background:var(--hint-bg);color:var(--hint)} .t-p3{background:var(--warn-bg);color:var(--warn)}
+.t-ai{background:var(--surface-2);color:var(--ink)}
+.t-done{background:var(--ok);color:var(--surface)} .t-wip{background:var(--warn);color:var(--surface)}
+.feat.is-done{border-color:var(--ok)} .feat.is-done h4::before{content:"✓ ";color:var(--ok)}
+
+/* rules */
+.rulecode{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.rulecode pre{margin:0;padding:16px;font:12.5px/1.55 var(--f-mono);color:var(--ink)}
+.rulecode .c{color:var(--muted)} .rulecode .k{color:var(--forest);font-weight:600} .rulecode .s{color:var(--hint)}
+table.rules td:nth-child(2){white-space:normal}
+
+/* arch */
+.arch{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto;padding:12px}
+.arch svg{display:block;min-width:820px;width:100%;height:auto}
+.arch text{font-family:var(--f-body);fill:var(--ink)}
+.arch .sub{fill:var(--muted);font-size:11px}
+
+/* roadmap */
+.road{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;counter-reset:ph}
+.road .card{border-top:4px solid var(--forest)}
+.road .card:nth-child(2){border-top-color:var(--hint)} .road .card:nth-child(3){border-top-color:var(--warn)}
+.callout{border:1px solid var(--accent);background:var(--blocker-bg);border-radius:10px;padding:16px;display:grid;gap:6px}
+.callout b{color:var(--accent)}
+footer{padding-block:32px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+/* ---- v2 additions ---- */
+.decisions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px}
+.dec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
+.dec .k{font:600 11px var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.dec .v{font:700 16px var(--f-display)}
+.dec .n{font-size:13px;color:var(--muted)}
+.zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.zone{border-radius:10px;padding:16px;display:grid;gap:8px;align-content:start;border:1px solid var(--line);background:var(--surface)}
+.zone.g{border-top:5px solid var(--ok)} .zone.y{border-top:5px solid var(--warn)} .zone.r{border-top:5px solid var(--blocker)}
+.zone ul{margin:0;padding-left:18px;font-size:14px;color:var(--muted);display:grid;gap:3px}
+.zone .ai{font:700 13px var(--f-body)}
+.zone.g .ai{color:var(--ok)} .zone.y .ai{color:var(--warn)} .zone.r .ai{color:var(--blocker)}
+/* composer mock */
+.mF{display:grid;grid-template-columns:1fr 380px}
+.fitems{padding:12px 14px;display:grid;gap:8px;align-content:start;border-right:1px solid var(--line);min-width:0}
+.fitem{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px;background:var(--surface)}
+.fitem .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.fitem .scope{font:600 11px var(--f-mono);color:var(--muted)}
+.fitem .acts{display:flex;gap:6px;flex-wrap:wrap}
+.k-kudos{background:var(--ok-bg);color:var(--ok)} .k-must{background:var(--blocker-bg);color:var(--blocker)} .k-sugg{background:var(--hint-bg);color:var(--hint)} .k-q{background:var(--warn-bg);color:var(--warn)}
+.preview{padding:12px;display:grid;gap:8px;align-content:start;background:var(--surface-2)}
+.wa{background:var(--surface);border-radius:10px;padding:10px 12px;font-size:12px;white-space:pre-wrap;line-height:1.45;border:1px solid var(--line)}
+.addbar{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}
+/* docs mock */
+.mD{display:grid;grid-template-columns:300px 1fr}
+.dleft{border-right:1px solid var(--line);padding:12px;display:grid;gap:8px;align-content:start}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);display:grid;gap:4px}
+.doc{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:6px;border-radius:6px;align-items:center}
+.doc.on{background:var(--hint-bg)}
+.doc .ic{width:28px;height:34px;border-radius:4px;display:grid;place-items:center;font:700 9px var(--f-mono);color:var(--surface)}
+.doc .meta{font-size:11px;color:var(--muted)}
+.dright{padding:12px 14px;display:grid;gap:10px;align-content:start;min-width:0}
+.checkl{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.ci{display:flex;gap:6px;align-items:flex-start;font-size:12px;padding:6px 8px;border-radius:6px;background:var(--surface-2)}
+.ci b{font-family:var(--f-mono);width:14px;flex:none}
+.ci.o b{color:var(--ok)} .ci.x b{color:var(--blocker)} .ci.w b{color:var(--warn)}
+.snip{font:11.5px/1.5 var(--f-mono);background:var(--surface-2);border-radius:6px;padding:8px 10px;color:var(--muted)}
+.snip mark{background:var(--warn-bg);color:var(--ink)}
+.snip .red{background:var(--ink);color:var(--ink);border-radius:2px}
+.ms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.ms .card .eyebrow{color:var(--accent)}
+.tree-code{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.tree-code pre{margin:0;padding:16px;font:12.5px/1.6 var(--f-mono)}
+.tree-code .c{color:var(--muted)}
+details.rs{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details.rs summary{cursor:pointer;padding:12px 14px;font:700 16px var(--f-display);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+details.rs summary span{font:500 13px var(--f-body);color:var(--muted)}
+details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px 10px}
+</style>
+
+<header class="hero">
+  <canvas id="topo" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M5 built, M6 in progress</span>
+    <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
+    <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
+    <div class="badges">
+      <span class="badge">Repo: <b>Im-a-Train/co-co</b> (private, empty)</span>
+      <span class="badge">Shell: <b>Tauri 2</b></span>
+      <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
+      <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
+      <span class="badge">Language: <b>German</b>, ready for more</span>
+      <span class="badge">Status: <b>M0–M5 built</b> · CI green · M6 triage in progress</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections"><div class="wrap">
+  <a href="#decisions">Decisions</a><a href="#zones">Data zones</a><a href="#login">Login</a><a href="#cockpit">Cockpit</a><a href="#feedback">Feedback</a><a href="#docs">Documents</a><a href="#rules">Rule set</a><a href="#arch">Architecture</a><a href="#features">Features</a><a href="#midata">MiData</a><a href="#roadmap">Milestones</a><a href="#open">Open points</a>
+</div></nav>
+
+<!-- DECISIONS -->
+<section id="decisions"><div class="wrap">
+  <span class="eyebrow">Locked in</span>
+  <h2>Decisions from the grilling</h2>
+  <div class="decisions">
+    <div class="dec"><span class="k">Direction</span><span class="v">Approach A · Cockpit</span><span class="n">Rule engine first. The PR-style rounds and the AI co-coach from the first draft become later layers.</span></div>
+    <div class="dec"><span class="k">Runtime</span><span class="v">Tauri 2 desktop</span><span class="n">Windows, macOS and Linux, about 10 MB. Unsigned builds on GitHub Releases at first.</span></div>
+    <div class="dec"><span class="k">UI</span><span class="v">Vue 3 + Vuetify + vue-i18n</span><span class="n">Same stack as eCamp's frontend, which keeps a later upstream contribution possible.</span></div>
+    <div class="dec"><span class="k">Backend</span><span class="v">None</span><span class="n">co-co talks only to the eCamp API. Its own data stays in IndexedDB, with a JSON export for backup.</span></div>
+    <div class="dec"><span class="k">eCamp instances</span><span class="v">Configurable</span><span class="n">ecamp3.ch by default; dev or self-hosted instances can be added, each with its own login.</span></div>
+    <div class="dec"><span class="k">Categories</span><span class="v">Auto-guess + confirm</span><span class="n">co-co guesses LS/LA/LP/ES from the short names and the J+S fields; you confirm the mapping once per camp.</span></div>
+    <div class="dec"><span class="k">Workflow</span><span class="v">Rounds + snapshots</span><span class="n">Neu → In Review → Änderungen angefragt → Bewilligt (mit Auflagen), with a diff since your last round.</span></div>
+    <div class="dec"><span class="k">Feedback</span><span class="v">eCamp comment + clipboard</span><span class="n">Per camp or per activity. Copy as WhatsApp- or e-mail-formatted text.</span></div>
+    <div class="dec"><span class="k">Documents</span><span class="v">Drop + watched folders</span><span class="n">Safety-concept checklist, GPX analysis, linking documents to activities, full-text search.</span></div>
+    <div class="dec"><span class="k">Rules</span><span class="v">YAML + TS predicates</span><span class="n">4 groups: J+S core, completeness, safety heuristics, PBS best practice. Unit-tested on sample camps.</span></div>
+    <div class="dec"><span class="k">AI</span><span class="v">Optional Claude, own key</span><span class="n">Off by default. Text passes local redaction first, and you see a preview before anything is sent.</span></div>
+    <div class="dec"><span class="k">Later, not v1</span><span class="v">MiData · NDS</span><span class="n">The architecture keeps a red zone ready for them: data stays on the device and never reaches the AI.</span></div>
+  </div>
+</div></section>
+
+<!-- ZONES -->
+<section id="zones"><div class="wrap">
+  <span class="eyebrow">Privacy by architecture</span>
+  <h2>Three data zones, enforced in code</h2>
+  <p class="lede">Every piece of data carries a zone label from the moment it is loaded. The AI gateway is the only module that can send text to Claude. It refuses red data outright, and it accepts yellow data only after redaction and a preview you confirm. Rules never need names: red-zone data reaches the rule engine only as aggregates such as counts, age bands and yes/no qualification facts.</p>
+  <div class="zones">
+    <div class="zone g"><h3>Green · co-co's own data</h3><ul><li>Rule packs, rule results, category mappings</li><li>Review status, rounds, snapshot hashes</li><li>Feedback drafts with no names in them</li></ul><span class="ai">AI: allowed</span></div>
+    <div class="zone y"><h3>Yellow · camp content</h3><ul><li>eCamp program, storyboards, safety considerations</li><li>Leader names and nicknames (responsibles, collaborators)</li><li>Dropped documents (safety concepts, hike plans)</li></ul><span class="ai">AI: only with opt-in, after redaction (names → «Leiter A», phone numbers, e-mail addresses, AHV numbers and addresses removed) and a preview</span></div>
+    <div class="zone r"><h3>Red · MiData / NDS (later)</h3><ul><li>Participant lists, birth dates, AHV numbers, health data</li><li>Leader qualifications with personal details</li><li>Kept in a separate encrypted store, read-only</li></ul><span class="ai">AI: never. Only aggregates (e.g. «28 TN, 10–14 J.», «Otter: SLRG Modul See gültig ✓») reach the rule engine.</span></div>
+  </div>
+  <div class="grid3">
+    <div class="card"><h3>How it is enforced</h3><p>Data objects are wrapped as <span class="mono">Zoned&lt;T&gt;</span>. The single <span class="mono">aiGateway.send()</span> function accepts only green data or yellow data that has been redacted. A lint rule bans imports of the AI client anywhere else.</p></div>
+    <div class="card"><h3>Documents default to yellow</h3><p>A safety concept usually contains phone numbers and names. Each document carries the flag «Für KI freigegeben», which is off by default. The text analysis without AI always runs locally.</p></div>
+    <div class="card"><h3>Secrets</h3><p>The Claude API key and the eCamp refresh cookies are kept in the OS keychain (Tauri Stronghold or keyring), never in IndexedDB.</p></div>
+  </div>
+</div></section>
+
+<!-- LOGIN -->
+<section id="login"><div class="wrap">
+  <span class="eyebrow">Same account, standalone app</span>
+  <h2>How login works without a backend</h2>
+  <div class="grid2">
+    <div class="card"><h3>The flow</h3><ul>
+      <li><b>1.</b> You choose an instance, e.g. <span class="mono">ecamp3.ch</span>. co-co opens that instance's normal login page in a separate Tauri window, so password, PBS MiData, Cevi.DB, Jubla and Google logins all work.</li>
+      <li><b>2.</b> After login, co-co reads the JWT cookies (<span class="mono">jwt_hp</span>, <span class="mono">jwt_s</span>, <span class="mono">refresh_token</span>) from that window's cookie store.</li>
+      <li><b>3.</b> All API calls go through the Rust side (<span class="mono">tauri-plugin-http</span>) with those cookies. Requests leave as first-party requests, so SameSite=strict is not a problem.</li>
+      <li><b>4.</b> The token is refreshed through <span class="mono">/token/refresh</span> at half its lifetime, as eCamp's own frontend does.</li>
+    </ul></div>
+    <div class="card"><h3>Why not a plain web app?</h3><p>The eCamp cookies are SameSite=strict and tied to the eCamp host. A web app on another domain would need a proxy server, which is a backend. Tauri avoids that because its native HTTP client is not a browser.</p>
+      <h3 style="margin-top:8px">Risk: spike first (M0)</h3><p>Reading cookies from a Tauri webview depends on the platform and Tauri version. co-co can't run MiData OAuth on its own: eCamp's server is the OAuth client (redirect URI and secret belong to eCamp), so a MiData token alone is useless to the eCamp API. The plan therefore has three levels:</p>
+      <ul>
+        <li><b>Plan A · webview cookies.</b> Read <span class="mono">jwt_hp</span>, <span class="mono">jwt_s</span> and <span class="mono">refresh_token</span> from the login window. Covers every login type.</li>
+        <li><b>Plan B · intercept the callback.</b> Rust starts <span class="mono">GET /auth/pbsmidata</span> and keeps any state cookie. The provider login runs in the webview. Tauri's navigation hook catches the redirect to <span class="mono">…/auth/pbsmidata/callback?code&amp;state</span> before it loads, and Rust replays it to eCamp, which answers with <span class="mono">Set-Cookie</span>. Covers MiData, Cevi.DB, Jubla and Google without reading webview cookies.</li>
+        <li><b>Plan C · password only.</b> <span class="mono">POST /authentication_token</span>, cookies taken from the response. Doesn't help accounts that only use an OAuth provider.</li>
+      </ul>
+      <p>Plan B open questions: where eCamp keeps the OAuth state (it must be visible to the Rust client), and whether the callback can be stopped before the webview spends the one-time code. M0 decides which plan ships.</p></div>
+  </div>
+</div></section>
+
+<!-- COCKPIT MOCK -->
+<section id="cockpit"><div class="wrap">
+  <span class="eyebrow">Mockup 1 · Main screen</span>
+  <h2>Cockpit for one camp</h2>
+  <div class="screen-scroll"><div class="screen">
+    <div class="chrome"><i></i><i></i><i></i><span class="url">co-co · ecamp3.ch · Sommerlager 2026 Pfadi Wartensee</span></div>
+    <div class="mA">
+      <aside>
+        <div class="logo">co-co</div>
+        <a href="#cockpit" class="on">Meine Lager <span class="pill p-block">3</span></a>
+        <a href="#cockpit">Fristen</a><a href="#feedback">Feedback</a><a href="#docs">Dokumente</a><a href="#rules">Regeln</a><a href="#cockpit">Einstellungen</a>
+        <div class="rp"><b>Instanz</b><br>ecamp3.ch ✓ angemeldet<br>dev.ecamp3.ch</div>
+        <div class="rp"><b>Regelpaket</b><br>co-co Basis 2026.1<br>J+S · Vollständigkeit · Sicherheit · PBS</div>
+        <div class="rp"><b>KI</b>: aus</div>
+      </aside>
+      <main>
+        <div class="crumb">Meine Lager / <b>Sommerlager 2026 Pfadi Wartensee</b> · Zeltlager · Pfadistufe · 11.–18.07. · LL Fiona · <span class="pill p-warn">Runde 2 · In Review</span></div>
+        <div class="tabs"><span class="on">Übersicht</span><span>Programm-Raster</span><span>Befunde 12</span><span>Dokumente 4</span><span>Feedback 6</span><span>Runden</span></div>
+        <div class="kpis">
+          <div class="kpi"><span class="l">Befunde</span><span class="v" style="color:var(--blocker)">2 · 4 · 6</span><span class="d">Muss · Soll · Hinweis</span></div>
+          <div class="kpi"><span class="l">Gültige J+S-Tage</span><span class="v">6 / 8</span><span class="d">Di unter 4 h · An-/Abreise zusammen</span></div>
+          <div class="kpi"><span class="l">J+S-Zeit / Tag</span><div class="bars"><span class="th" style="bottom:22px"></span><i style="height:40%"></i><i style="height:80%"></i><i style="height:90%"></i><i class="bad" style="height:52%"></i><i style="height:15%"></i><i style="height:95%"></i><i style="height:88%"></i><i style="height:40%"></i></div><span class="d">gestrichelt = 4 h</span></div>
+          <div class="kpi"><span class="l">Seit Runde 1</span><span class="v">+6 ~14 −1</span><span class="d">Blöcke neu · geändert · gelöscht</span></div>
+          <div class="kpi"><span class="l">Kategorien</span><span class="v" style="font-size:16px">LS · LA · LP · ES</span><span class="d">Zuordnung bestätigt ✓ 06.11.</span></div>
+        </div>
+        <div class="mA-body">
+          <div class="week">
+            <div class="week-head"><b>Lagertag-Rechner</b><span class="legend"><span><i style="background:var(--cat-ls)"></i>LS</span><span><i style="background:var(--cat-la)"></i>LA</span><span><i style="background:var(--cat-lp)"></i>LP</span><span><i style="background:var(--cat-es)"></i>Essen</span><span><i style="background:var(--blocker)"></i>Sozialzeit &lt; 30′</span></span></div>
+            <div class="week-grid" id="weekgrid"></div>
+            <div class="daymeter" id="daymeter"></div>
+          </div>
+          <div class="findings">
+            <div class="fgroup"><span>Muss · 2</span><span>J+S</span></div>
+            <div class="sev b"><span class="rid">JS-DAY-01 · Leitfaden Sportarten</span><span class="t">Di 14.07.: nur 3 h 15 J+S-Zeit (mind. 4 h)</span><span class="s">4.1 Seiltechnik · 4.2 Kartenlesen → <u>Feedback erstellen</u></span></div>
+            <div class="sev b"><span class="rid">JS-DAY-03 · Sozialzeit</span><span class="t">Mo: nur 15′ zwischen 3.1 und 3.2</span><span class="s">mind. 30′ Sozialzeit zwischen J+S-Einheiten</span></div>
+            <div class="fgroup"><span>Soll · 4</span><span>Sicherheit · Vollständigkeit</span></div>
+            <div class="sev w"><span class="rid">SAFE-WATER-01</span><span class="t">«Baden im Sihlsee»: keine Wasser-Qualifikation zugeordnet</span><span class="s">Erkannt durch Stichwort «Baden», «See»</span></div>
+            <div class="sev w"><span class="rid">SAFE-MTN-01 · Dokument</span><span class="t">Wanderung Pragelpass: GPX gefunden, Zeitberechnung fehlt</span><span class="s">Aus «Wanderung_Pragel_v2.gpx» (Ordner Dropbox/SoLa26)</span></div>
+            <div class="sev w"><span class="rid">CMP-ACT-03</span><span class="t">3 Outdoor-Aktivitäten ohne Sicherheitsüberlegungen</span></div>
+            <div class="fgroup"><span>Hinweise &amp; Lob</span><span></span></div>
+            <div class="sev h"><span class="rid">BP-SLEEP-01 · Heuristik</span><span class="t">Do: Nachtgeländespiel bis 23:30, Tagwache 07:00</span></div>
+            <div class="sev k"><span class="rid">LOB</span><span class="t">Alle LA-Blöcke mit Themenbereich · Schlechtwettervariante an jedem Outdoor-Tag</span></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div></div>
+  <p class="caption">The UI is German by default. Every finding has a «Feedback erstellen» action that turns it into a draft feedback item (see Mockup 2). Findings from dropped documents show which file they came from.</p>
+</div></section>
+
+<!-- FEEDBACK MOCK -->
+<section id="feedback"><div class="wrap">
+  <span class="eyebrow">Mockup 2 · Feedback composer</span>
+  <h2>Feedback on the camp or on one activity, sent your way</h2>
+  <p class="lede">Each feedback item has a <b>scope</b> (the whole camp, or one activity) and a <b>kind</b> (Lob, Muss, Anregung, Frage). Items attached to an activity can be posted straight to it as an eCamp comment. All items together make up one structured message that you copy into WhatsApp or an e-mail.</p>
+  <div class="screen-scroll"><div class="screen">
+    <div class="chrome"><i></i><i></i><i></i><span class="url">co-co · Sommerlager 2026 Pfadi Wartensee · Feedback · Runde 2</span></div>
+    <div class="mF">
+      <div class="fitems">
+        <div class="addbar"><span class="btn">+ Allgemein (Lager)</span><span class="btn">+ Zu Aktivität…</span><span class="btn">+ Aus Befund</span><span style="margin-left:auto">Vorlage: <b>Programmbesprechung</b> ▾</span></div>
+        <div class="fitem"><div class="top"><span class="pill k-kudos">Lob</span><span class="scope">Lager · allgemein</span></div><div>Das Thema «Expedition Atlantis» zieht sich super durch alle Blöcke, und jeder LA-Block hat einen Themenbereich.</div></div>
+        <div class="fitem"><div class="top"><span class="pill k-must">Muss</span><span class="scope">Tag 4 · Di 14.07.</span><span class="rid">JS-DAY-01</span></div><div>Am Dienstag kommt ihr nur auf 3 h 15 J+S-Zeit. Für einen gültigen Lagertag braucht es mind. 4 h. Könnt ihr den Kartenlesen-Block verlängern oder einen kurzen LS-Block am Abend ergänzen?</div><div class="acts"><span class="pill p-neutral">Entwurf</span></div></div>
+        <div class="fitem"><div class="top"><span class="pill k-must">Muss</span><span class="scope">Aktivität · LS 5.2 Baden im Sihlsee</span><span class="rid">SAFE-WATER-01</span></div><div>Wer übernimmt die Wasseraufsicht? Bitte eine Person mit passender Wasser-Qualifikation als verantwortlich eintragen.</div><div class="acts"><span class="btn primary">Als eCamp-Kommentar posten</span><span class="pill p-neutral">nur Nachricht</span></div></div>
+        <div class="fitem"><div class="top"><span class="pill k-sugg">Anregung</span><span class="scope">Aktivität · LS 4.1 Seiltechnik</span></div><div>Endbremse vor dem Bach einplanen und die Kinder einzeln fahren lassen.</div><div class="acts"><span class="pill p-ok">✓ in eCamp gepostet · 06.11. 21:40</span></div></div>
+        <div class="fitem"><div class="top"><span class="pill k-q">Frage</span><span class="scope">Lager · allgemein</span></div><div>Habt ihr die Krisenkärtli schon verteilt?</div></div>
+      </div>
+      <div class="preview">
+        <div class="ctabs" style="padding:0;border:0"><span class="on">WhatsApp</span><span>E-Mail</span><span>Nur Text</span></div>
+        <div class="wa">Hoi Fiona und Leitungsteam 👋
+
+danke fürs Dossier, Runde 2 ist ein grosser Schritt!
+
+*Was super ist* 💚
+• Das Thema «Expedition Atlantis» zieht sich durch alle Blöcke
+
+*Muss vor der Bewilligung* ❗
+• *Di 14.07.:* nur 3 h 15 J+S-Zeit, es braucht mind. 4 h
+• *Baden im Sihlsee:* Wasseraufsicht mit Qualifikation eintragen
+
+*Anregungen* 💡
+• Seiltechnik: Endbremse vor dem Bach
+
+*Frage* ❓
+• Sind die Krisenkärtli schon verteilt?
+
+Details stehen als Kommentare in eCamp. Gruess, Falk</div>
+        <span class="btn primary" style="justify-content:center">In Zwischenablage kopieren</span>
+        <span class="caption">Names come from eCamp. This text never goes to the AI unless you turn on the optional «Umformulieren mit KI», which redacts names first.</span>
+      </div>
+    </div>
+  </div></div>
+  <div class="grid3">
+    <div class="card"><h3>eCamp comment caveats</h3><p>Posting uses <span class="mono">POST /comments</span> with the camp and activity IRIs. It works whenever you are an established guest on the camp. Whether leaders <i>see</i> comments depends on the instance's <span class="mono">FEATURE_COMMENTS</span> flag, so co-co always offers the clipboard message as well. Comments are limited to 1024 characters; longer items are split or shortened.</p></div>
+    <div class="card"><h3>Templates (German, i18n)</h3><p>«Grobprogramm», «Programmbesprechung», «Auflagen», «Nach dem Lagerbesuch», «Abschluss». Each has a WhatsApp variant (*bold*, emoji bullets) and an e-mail variant with a subject line. They live in <span class="mono">locales/de/feedback/*.md</span>.</p></div>
+    <div class="card"><h3>Feedback-Kultur built in</h3><p>Lob always comes first, «Muss» items cite a rule, and a lint step warns when a «Muss» item contains no question or no next step.</p></div>
+  </div>
+</div></section>
+
+<!-- DOCS MOCK -->
+<section id="docs"><div class="wrap">
+  <span class="eyebrow">Mockup 3 · Ad-hoc documents</span>
+  <h2>Drop it in, or watch the folder</h2>
+  <p class="lede">The Lagerleitung shares PDFs, Word files and GPX tracks over Dropbox or a network share. You can drop them onto a camp or an activity, or link a camp to a local folder (for example a synced Dropbox folder) that co-co watches. All extraction and checking runs locally.</p>
+  <div class="screen-scroll"><div class="screen">
+    <div class="chrome"><i></i><i></i><i></i><span class="url">co-co · Sommerlager 2026 Pfadi Wartensee · Dokumente</span></div>
+    <div class="mD">
+      <div class="dleft">
+        <div class="drop"><b>Dateien hierher ziehen</b><span>PDF · DOCX · GPX · TXT · Bilder</span></div>
+        <div class="rp" style="font-size:11.5px;color:var(--muted)">👁 Überwachter Ordner<br><span class="mono">~/Dropbox/Pfadi/SoLa26/</span><br>zuletzt geprüft vor 2 min · 4 Dateien</div>
+        <div class="doc on"><span class="ic" style="background:var(--blocker)">PDF</span><div><b>Sicherheitskonzept_SoLa26.pdf</b><div class="meta">→ Lager · 7 Seiten · 🔒 KI gesperrt</div></div></div>
+        <div class="doc"><span class="ic" style="background:var(--forest)">GPX</span><div><b>Wanderung_Pragel_v2.gpx</b><div class="meta">→ LS 6.1 Wanderung Pragelpass (auto)</div></div></div>
+        <div class="doc"><span class="ic" style="background:var(--hint)">DOC</span><div><b>Seilbahn_Detailplan.docx</b><div class="meta">→ LS 4.1 Seiltechnik (bestätigen?)</div></div></div>
+        <div class="doc"><span class="ic" style="background:var(--muted)">PDF</span><div><b>Mietvertrag_Lagerplatz.pdf</b><div class="meta">nicht zugeordnet</div></div></div>
+        <div class="chatin"><span>🔍 Volltextsuche in Dokumenten + eCamp…</span></div>
+      </div>
+      <div class="dright">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="font:700 15px var(--f-display)">Sicherheitskonzept_SoLa26.pdf · Checkliste</b><span style="display:flex;gap:6px"><span class="pill p-ok">6 erfüllt</span><span class="pill p-block">2 fehlen</span><span class="pill p-warn">1 prüfen</span></span></div>
+        <div class="checkl">
+          <div class="ci o"><b>✓</b>Notfallnummern 144 · 1414 · 117 · 118</div>
+          <div class="ci o"><b>✓</b>Nächstes Spital (Schwyz) mit Adresse</div>
+          <div class="ci x"><b>✕</b>Pfadi-Helpline / Krisenkontakt KV</div>
+          <div class="ci o"><b>✓</b>Notfallapotheke &amp; verantwortliche Person</div>
+          <div class="ci x"><b>✕</b>Evakuation / Notunterkunft</div>
+          <div class="ci o"><b>✓</b>Schlechtwetter- / Unwetter-Plan</div>
+          <div class="ci w"><b>!</b>3x3-Methode erwähnt, aber nur für 1 Aktivität</div>
+          <div class="ci o"><b>✓</b>Lageradresse &amp; Koordinaten</div>
+        </div>
+        <div class="snip">S. 3 · «… im Notfall <mark>144</mark> alarmieren, Rega <mark>1414</mark>. Kontaktperson Lager: <span class="red">Fiona Muster 079 xxx</span> …»</div>
+        <div class="grid2" style="gap:10px">
+          <div class="mapcard" style="position:static;width:auto"><b>GPX · Wanderung_Pragel_v2</b>
+            <div class="kv"><span>Distanz / Aufstieg</span><span>9.8 km / 440 m</span></div>
+            <div class="kv"><span>Leistungskilometer</span><span>14.2 Lkm</span></div>
+            <div class="kv"><span>Zeit bei 3.5 Lkm/h</span><span>4 h 05</span></div>
+            <div class="kv"><span>Höchster Punkt</span><span>1548 m</span></div>
+            <div class="kv"><span>eCamp-Zeitfenster</span><span>08:30–16:30 ✓</span></div>
+          </div>
+          <div class="card" style="padding:10px"><b>Aktionen</b><span class="btn">Befund → Feedback</span><span class="btn">Zuordnung ändern</span><span class="btn">«Für KI freigeben» (Vorschau der Schwärzung)</span></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div class="grid3">
+    <div class="card"><h3>Extraction (local)</h3><p>PDF via pdf.js, DOCX via mammoth, GPX via DOMParser. Scanned PDFs get optional OCR with tesseract.js. The text and a MiniSearch index are stored in IndexedDB; the original files stay where they are.</p></div>
+    <div class="card"><h3>Linking</h3><p>Files are matched to activities by file name, activity title and dates. A confident match is linked automatically; anything else is shown to you as «bestätigen?». A linked document satisfies rules such as «Wanderung hat Detailplan».</p></div>
+    <div class="card"><h3>Watched folders</h3><p>Tauri's <span class="mono">fs</span> watch API, limited to folders you choose (Tauri capability scope). co-co re-checks a file when its content hash changes, and the camp's rule results update.</p></div>
+  </div>
+</div></section>
+
+<!-- RULES -->
+<section id="rules"><div class="wrap">
+  <span class="eyebrow">Ships with v1</span>
+  <h2>Basic rule set «co-co Basis 2026.1»</h2>
+  <p class="lede">Only rules confirmed on the official J+S pages may be «Muss». Rules with conflicting or unverified sources run as «Soll» and say so. Best practice and heuristics are «Hinweis».</p>
+  <div class="filters" role="group" aria-label="Rule groups" id="rulefilter">
+    <button type="button" data-g="all" aria-pressed="true">Alle</button>
+    <button type="button" data-g="JS" aria-pressed="false">J+S Kern</button>
+    <button type="button" data-g="CMP" aria-pressed="false">Vollständigkeit</button>
+    <button type="button" data-g="SAFE" aria-pressed="false">Sicherheit</button>
+    <button type="button" data-g="BP" aria-pressed="false">PBS Best Practice</button>
+  </div>
+  <div class="tbl"><table class="cmp rules"><thead><tr><th>ID</th><th>Check</th><th>Data</th><th>Severity</th><th>Source</th></tr></thead><tbody id="ruletable"></tbody></table></div>
+  <div class="grid2">
+    <div class="rulecode"><pre><span class="c"># packages/rules/packs/basis/js/day-min-hours.yaml</span>
+<span class="k">id:</span> <span class="s">JS-DAY-01</span>
+<span class="k">group:</span> js
+<span class="k">severity:</span> must            <span class="c"># must | should | hint</span>
+<span class="k">confidence:</span> verified      <span class="c"># unverified ⇒ max. should</span>
+<span class="k">valid:</span> { from: 2025-01-01, to: 2026-12-31 }
+<span class="k">scope:</span> day
+<span class="k">check:</span> ./day-min-hours.ts   <span class="c"># pure fn(CampFacts) ⇒ Finding[]</span>
+<span class="k">params:</span> { minMinutes: 240, minUnits: 2 }
+<span class="k">source:</span>
+  <span class="k">title:</span> Leitfaden Sportarten
+  <span class="k">url:</span> https://www.jugendundsport.ch/de/lager
+<span class="k">i18n:</span> rules.JS-DAY-01         <span class="c"># locales/de/rules.json</span>
+<span class="k">feedback:</span> feedback/day-too-short <span class="c"># Vorlage pro Sprache</span>
+<span class="k">fixtures:</span> [ok-8days, tue-short]</pre></div>
+    <div class="rulecode"><pre><span class="c">// day-min-hours.ts</span>
+<span class="k">export default</span> defineRule(({ facts, params, t }) =&gt;
+  facts.days
+    .filter(d =&gt; !d.isTravelDayPair)
+    .map(d =&gt; ({ d, js: jsUnits(d, facts.mapping) }))
+    .filter(({ js }) =&gt;
+      sum(js, 'minutes') &lt; params.minMinutes ||
+      js.length &lt; params.minUnits)
+    .map(({ d, js }) =&gt; finding({
+      at: { day: d.id },
+      evidence: js.map(u =&gt; u.scheduleEntryIri),
+      message: t('rules.JS-DAY-01.msg', {
+        day: d.label, h: fmtH(sum(js, 'minutes')) }),
+    }))
+)</pre></div>
+  </div>
+</div></section>
+
+<!-- ARCH -->
+<section id="arch"><div class="wrap">
+  <span class="eyebrow">How it fits together</span>
+  <h2>Architecture</h2>
+  <div class="arch">
+    <svg viewBox="0 0 980 380" role="img" aria-label="co-co architecture: Tauri app with Vue UI, rule engine, document pipeline and IndexedDB; Rust side handles HTTP to eCamp and file watching; optional AI gateway with redaction; MiData and NDS reserved as red zone">
+      <rect x="20" y="20" width="640" height="340" rx="12" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="38" y="46" font-weight="700" font-size="14">co-co (Tauri 2, on your machine)</text>
+      <g fill="var(--surface)" stroke="var(--line)">
+        <rect x="40" y="62" width="600" height="56" rx="8"/>
+        <rect x="40" y="132" width="190" height="96" rx="8"/><rect x="245" y="132" width="190" height="96" rx="8"/><rect x="450" y="132" width="190" height="96" rx="8"/>
+        <rect x="40" y="242" width="290" height="100" rx="8"/><rect x="350" y="242" width="290" height="100" rx="8"/>
+      </g>
+      <text x="56" y="86" font-weight="700" font-size="13">Vue 3 + Vuetify UI · vue-i18n (de)</text><text class="sub" x="56" y="104">Cockpit · Raster · Befunde · Feedback-Composer · Dokumente · Runden</text>
+      <text x="56" y="156" font-weight="700" font-size="13">CampFacts loader</text><text class="sub" x="56" y="174">HAL → normalised facts</text><text class="sub" x="56" y="190">category mapping</text><text class="sub" x="56" y="206">snapshot + diff</text>
+      <text x="261" y="156" font-weight="700" font-size="13">Rule engine</text><text class="sub" x="261" y="174">YAML + TS predicates</text><text class="sub" x="261" y="190">versioned packs</text><text class="sub" x="261" y="206">runs in a web worker</text>
+      <text x="466" y="156" font-weight="700" font-size="13">Document pipeline</text><text class="sub" x="466" y="174">pdf.js · mammoth · GPX</text><text class="sub" x="466" y="190">MiniSearch index</text><text class="sub" x="466" y="206">checklists · linker</text>
+      <text x="56" y="266" font-weight="700" font-size="13">Rust side (Tauri plugins)</text><text class="sub" x="56" y="284">http: eCamp API with cookies (no CORS)</text><text class="sub" x="56" y="300">fs watch (scoped) · keychain</text><text class="sub" x="56" y="316">login window per instance</text>
+      <text x="366" y="266" font-weight="700" font-size="13">Storage</text><text class="sub" x="366" y="284">IndexedDB (Dexie): reviews, feedback,</text><text class="sub" x="366" y="300">  mappings, doc text, snapshots</text><text class="sub" x="366" y="316">JSON export / import for backup</text>
+      <g fill="var(--surface)" stroke="var(--line)">
+        <rect x="700" y="40" width="260" height="80" rx="10"/>
+        <rect x="700" y="146" width="260" height="90" rx="10" stroke="var(--warn)" stroke-dasharray="5 4"/>
+        <rect x="700" y="262" width="260" height="98" rx="10" stroke="var(--blocker)" stroke-dasharray="5 4"/>
+      </g>
+      <text x="716" y="66" font-weight="700" font-size="13">eCamp API (any instance)</text><text class="sub" x="716" y="84">read camps as guest</text><text class="sub" x="716" y="100">POST /comments</text>
+      <text x="716" y="170" font-weight="700" font-size="13">Claude API (optional)</text><text class="sub" x="716" y="188">your own key · off by default</text><text class="sub" x="716" y="204">only via the AI gateway</text><text class="sub" x="716" y="220">redaction + preview first</text>
+      <text x="716" y="286" font-weight="700" font-size="13">MiData · NDS (later)</text><text class="sub" x="716" y="304">red zone · separate store</text><text class="sub" x="716" y="320">aggregates only to rules</text><text class="sub" x="716" y="336">never to AI</text>
+      <g stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ar2)">
+        <path d="M330 290 C 600 290 640 120 700 85"/>
+        <path d="M640 180 L 700 190"/>
+      </g>
+      <path d="M700 310 L 660 310" stroke="var(--blocker)" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+      <line x1="830" y1="236" x2="830" y2="262" stroke="var(--blocker)" stroke-width="3"/><text x="838" y="254" font-size="11" fill="var(--blocker)" font-weight="700">✕ blocked</text>
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="grid2">
+    <div class="tree-code"><pre><span class="c"># github.com/Im-a-Train/co-co (pnpm monorepo)</span>
+apps/
+  desktop/            <span class="c"># Tauri 2 shell + Vue 3 app</span>
+    src-tauri/        <span class="c"># Rust: http, fs-watch, keychain, login window</span>
+    src/              <span class="c"># views, stores (Pinia), components</span>
+packages/
+  ecamp-client/       <span class="c"># HAL client, auth, CampFacts, snapshot/diff</span>
+  rules/              <span class="c"># engine + packs/basis/*.yaml|ts + fixtures</span>
+  docs/               <span class="c"># extraction, checklists, GPX, linker, search</span>
+  feedback/           <span class="c"># model, templates, renderers (WA/Mail/Text)</span>
+  zones/              <span class="c"># Zoned&lt;T&gt;, redaction, aiGateway</span>
+locales/de/           <span class="c"># ui.json, rules.json, feedback/*.md</span>
+fixtures/camps/       <span class="c"># anonymised sample camps for tests</span>
+docs/adr/             <span class="c"># decision records (from this page)</span></pre></div>
+    <div class="card"><h3>Stack</h3><ul>
+      <li>Tauri 2, plugins: http, fs (watch), dialog, store/stronghold, updater (later)</li>
+      <li>Vue 3, Vite, Vuetify 3, Pinia, vue-i18n, TypeScript</li>
+      <li>Dexie (IndexedDB), MiniSearch, pdf.js, mammoth, tesseract.js (optional)</li>
+      <li>Vitest for rules and fixtures; Playwright against a local eCamp (docker compose)</li>
+      <li>GitHub Actions: lint, test, Tauri build for Windows, macOS and Linux → Releases</li>
+    </ul><h3 style="margin-top:6px">Later upstream path</h3><p>The rule engine and CampFacts are framework-free packages. They could move into eCamp as a «Coach» view, and the rules could even run inside eCamp's own UI as a self-check for leaders.</p></div>
+  </div>
+</div></section>
+
+<!-- FEATURES -->
+<section id="features"><div class="wrap">
+  <span class="eyebrow">Scope</span>
+  <h2>Feature list</h2>
+  <div class="filters" role="group" aria-label="Filter features by milestone">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="v1" aria-pressed="false">v1</button>
+    <button type="button" data-f="next" aria-pressed="false">Next</button>
+    <button type="button" data-f="later" aria-pressed="false">Later</button>
+    <button type="button" data-f="ai" aria-pressed="false">Optional AI</button>
+    <button type="button" data-f="done" aria-pressed="false">✓ Done</button>
+    <button type="button" data-f="open" aria-pressed="false">Open / in progress</button>
+  </div>
+  <div class="feat-groups" id="featgroups"></div>
+</div></section>
+
+<!-- MIDATA -->
+<section id="midata"><div class="wrap">
+  <span class="eyebrow">Design · M7 · red zone</span>
+  <h2>MiData connection</h2>
+  <p class="lede">MiData (db.scout.ch, PBS's hitobito) knows who is actually in the camp: participants, leaders and their qualifications. co-co uses it read-only to fill the «Lager-Angaben» and to back the rules that today depend on what the coach types in. Personal data stays in a red zone: only counts and yes/no facts reach the app's UI and storage, and nothing from MiData ever reaches the AI.</p>
+  <div class="grid2">
+    <div class="card"><h3>What the API offers</h3><p>Verified from <span class="mono">db.scout.ch/api/openapi.json</span> (Hitobito JSON:API v1) on 07.11.2026:</p><ul>
+      <li><span class="mono">GET /api/events</span>: filters <span class="mono">type</span>, <span class="mono">group_id</span>, <span class="mono">after_or_on</span>/<span class="mono">before_or_on</span>, <span class="mono">advisor_id</span>, <span class="mono">kind_id</span>; includes <span class="mono">dates</span>, <span class="mono">kind</span>, <span class="mono">contact</span>. Attributes: name, motto, location, description, maximum_participants, advisor_id.</li>
+      <li><span class="mono">GET /api/event_participations</span> with event roles (<span class="mono">type</span>, <span class="mono">label</span>), so participants and leaders can be told apart.</li>
+      <li><span class="mono">GET /api/people</span>: birthday, gender, nickname, primary group.</li>
+      <li><span class="mono">GET /api/qualifications</span> + <span class="mono">qualification_kinds</span>: label, validity, start_at/finish_at per person.</li>
+      <li>Pagination <span class="mono">page[number]/page[size]</span>, sparse fieldsets <span class="mono">fields[...]</span>.</li>
+      <li>Auth in the spec: service token (<span class="mono">X-TOKEN</span>) or session cookie (<span class="mono">_session_id</span>). Per the hitobito docs, OAuth bearer tokens (scopes <span class="mono">api</span>, <span class="mono">events</span>, <span class="mono">people</span>, <span class="mono">groups</span>) work as well: access tokens last 2 h, and refresh tokens last 7 days and can be used once.</li>
+    </ul></div>
+    <div class="card"><h3>What it does not offer</h3><ul>
+      <li><b>The PBS camp fields are not in JSON:API v1</b>: coach, expected participants per Stufe, Lagermeldung («camp submitted»), J+S safety flags, canton. Spike M7-0 checks whether the classic JSON export (<span class="mono">/groups/{id}/events/{id}.json</span>) exposes them. If not, they stay as coach input.</li>
+      <li><b>NDS has no API.</b> NDS registration and closing stay manual checkboxes in the Angaben.</li>
+      <li>Whether a coach's MiData role may read the participations of a camp they coach is unverified, and the spike checks it.</li>
+    </ul><h3 style="margin-top:8px">The link to eCamp already exists</h3><p>eCamp camps carry <span class="mono">hitobitoEventId</span> and <span class="mono">hitobitoProvider</span> (set when a camp is created from MiData). co-co uses that link directly. For camps without it, the coach picks the event from <span class="mono">/api/events?filter[type][eq]=Event::Camp</span> within the camp dates, once per camp.</p></div>
+  </div>
+  <h3>Lager-Angaben ← MiData</h3>
+  <div class="tbl"><table class="cmp">
+    <thead><tr><th>Angabe / rule</th><th>MiData source</th><th>Zone</th><th>What co-co keeps</th></tr></thead>
+    <tbody>
+      <tr><td>Dates, location, motto</td><td>event + <span class="mono">include=dates</span></td><td><span class="pill p-warn">yellow</span></td><td>Compared with the eCamp periods; a finding if they differ</td></tr>
+      <tr><td>Participants (JS-CAMP-02)</td><td>participations with a participant role</td><td><span class="pill p-block">red → aggregate</span></td><td>Count only</td></tr>
+      <tr><td>Age range 5–20, Stufe mix</td><td><span class="mono">people.birthday</span> of the participants at camp start</td><td><span class="pill p-block">red → aggregate</span></td><td>Min/max age and count per age band; birthdays never leave the Rust side</td></tr>
+      <tr><td>Leaders, ratio, Wölfe 1:6 (BP-WOLF-01)</td><td>participations with leader roles</td><td><span class="pill p-block">red → aggregate</span></td><td>Counts</td></tr>
+      <tr><td>Zusatz Lagerleiter (JS-LL-01), LS/T, water/mountain modules (SAFE-WATER-01, BP-WATER-01)</td><td>qualifications + kinds valid on the camp dates, for people with leader roles</td><td><span class="pill p-block">red → aggregate</span></td><td>Per leader: nickname (yellow) + yes/no per required qualification</td></tr>
+      <tr><td>Coach (CMP-CAMP-01)</td><td>event <span class="mono">advisor_id</span> vs. logged-in person</td><td><span class="pill p-ok">green</span></td><td>Match yes/no</td></tr>
+      <tr><td>Max. participants</td><td><span class="mono">maximum_participants</span></td><td><span class="pill p-ok">green</span></td><td>Number</td></tr>
+      <tr><td>Lagermeldung, expected participants per Stufe</td><td>PBS fields, not in JSON:API</td><td>–</td><td>Spike M7-0, otherwise manual</td></tr>
+      <tr><td>NDS registration / closing</td><td>not in MiData</td><td>–</td><td>Manual checkboxes (done today)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="grid3">
+    <div class="card"><h3>Auth option 1: login window (spike first)</h3><p>Same pattern as the eCamp login that already works: open the db.scout.ch login in a separate Tauri window, take the session cookie into the Rust side, and call the JSON:API from there. The spec lists session auth, and no app registration is needed. Open questions: how long the session lasts, and whether PBS is fine with this use.</p></div>
+    <div class="card"><h3>Auth option 2: official OAuth app</h3><p>The clean long-term route, but a PBS Bundesebene admin must register the app. The hitobito docs require https redirect URIs on production (no localhost loopback) and don't mention PKCE. A client secret can't be kept secret in a desktop binary. Needs a conversation with PBS: a public client, a loopback exception, or a tiny redirect relay.</p></div>
+    <div class="card"><h3>Auth option 3: service token (pilot)</h3><p>An Abteilung or Kantonalverband admin creates a read-only <span class="mono">X-TOKEN</span> (people, events and participants for that layer and below). The coach pastes it once, and co-co stores it in the OS keychain. Good for a pilot, but the token isn't tied to one person, so whoever issues it carries the data-protection responsibility.</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Red-zone architecture</h3><ul>
+      <li>Its own Rust module <span class="mono">midata</span>, with its own HTTP client and its own cookie/token store in the keychain, separate from eCamp.</li>
+      <li>Raw responses are parsed and reduced in Rust. Only a <span class="mono">MidataAggregate</span> crosses to the UI: participant count, min/max age, count per age band, leaders as nickname + qualification yes/no, coach match, and a «Stand MiData» timestamp.</li>
+      <li>IndexedDB keeps only the aggregate, tagged <span class="mono">red-derived</span>. The AI gateway refuses it, and a backup export can leave it out.</li>
+      <li>Refreshed only when the coach asks, never in the background.</li>
+    </ul></div>
+    <div class="card"><h3>In the app</h3><ul>
+      <li>Lager-Angaben gets an «Aus MiData übernehmen» button. It shows, field by field, the MiData value next to the current one, and the coach accepts each field. Accepted fields get a small «MiData» badge.</li>
+      <li>Rules JS-CAMP-02, JS-LL-01, BP-WOLF-01 and BP-WATER-01 then rely on the MiData facts, and the finding says «Quelle: MiData, Stand …».</li>
+      <li>A qualification matrix (leaders × required qualifications for the camp's safety-relevant activities) replaces typing them in by hand.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<!-- ROADMAP -->
+<section id="roadmap"><div class="wrap">
+  <span class="eyebrow">Order of work</span>
+  <h2>Milestones</h2>
+  <div class="ms">
+    <div class="card"><span class="eyebrow">M0 · ✓ done (Plan A works)</span><h3>Login go/no-go</h3><ul><li>Tauri login window for ecamp3.ch, then read the cookies (Plan A)</li><li>MiData OAuth via callback interception and replay from Rust (Plan B)</li><li>Password login as last resort (Plan C)</li><li>One authenticated <span class="mono">GET /camps</span> from Rust, plus token refresh</li><li>Decide: A, B or C</li></ul></div>
+    <div class="card"><span class="eyebrow">M1 · ✓ done</span><h3>Cockpit + rules</h3><ul><li>Instance settings, camp list (camps where you are a guest)</li><li>CampFacts, category guess and confirmation</li><li>Rule engine plus the basic pack with fixtures</li><li>Cockpit, grid, findings list in German</li></ul></div>
+    <div class="card"><span class="eyebrow">M2 · ✓ done</span><h3>Feedback</h3><ul><li>Feedback items (camp or activity × kind)</li><li>Finding → draft</li><li>Post as eCamp comment</li><li>WhatsApp, e-mail and text renderers → clipboard</li></ul></div>
+    <div class="card"><span class="eyebrow">M3 · ✓ done</span><h3>Documents</h3><ul><li>Drop, then extract and index</li><li>Watched folders</li><li>Safety-concept checklist, GPX analysis, linker</li><li>Full-text search</li></ul></div>
+    <div class="card"><span class="eyebrow">M4 · ✓ done</span><h3>Rounds + backup</h3><ul><li>Status workflow, snapshots, diff since the last round</li><li>JSON export and import</li><li>First GitHub Release</li></ul></div>
+    <div class="card"><span class="eyebrow">M5 · ✓ done</span><h3>Optional AI</h3><ul><li>Zones, redaction and a preview before sending</li><li>Claude: rephrase feedback, summarise a document, soft review of safety considerations</li><li>Key stored in the OS keychain</li></ul></div>
+    <div class="card"><span class="eyebrow">M6 · in progress</span><h3>Triage + coach feedback</h3><ul><li>«Befunde durchgehen»: finding, activity and feedback editor side by side</li><li>Keys J/K, F, I; auto-advance to the next open finding</li><li>Fix «Feedback erstellen» in the Übersicht</li><li>«Übersteuern» renamed to «Ignorieren»; offer to disable a rule after repeated ignoring</li></ul></div>
+    <div class="card"><span class="eyebrow">M7 · designed</span><h3>MiData (read-only)</h3><ul><li>M7-0: auth spike (session vs. token) + check the PBS camp fields</li><li>M7-1: Rust MiData module returning aggregates only</li><li>M7-2: «Aus MiData übernehmen» in Lager-Angaben</li><li>M7-3: qualification matrix + rules</li></ul></div>
+  </div>
+</div></section>
+
+<!-- OPEN -->
+<section id="open"><div class="wrap">
+  <span class="eyebrow">Still to settle</span>
+  <h2>Open points and risks</h2>
+  <div class="grid3">
+    <div class="card"><h3>Login spike ✓</h3><p>Resolved 07.11.2026 on Windows 11 with Plan A: PBS MiData login in the Tauri window works and the HttpOnly cookies are readable. macOS and Linux are still to be tried; Plan B and Plan C stay as fallbacks there.</p></div>
+    <div class="card"><h3>Comments visible ✓</h3><p>Yes: app.ecamp3.ch has <span class="mono">FEATURE_COMMENTS</span> enabled. Posting and deleting a comment was verified on dev.ecamp3.ch.</p></div>
+    <div class="card"><h3>Rule confirmation</h3><p>The leader ratio, the training-free days and the 2027 Bewegungszeit stay «Soll / Quelle unsicher» until PBS or BASPO confirms them.</p></div>
+    <div class="card"><h3>IndexedDB durability</h3><p>The webview's storage can be wiped by an uninstall or a profile reset. co-co reminds you to export a backup after each review round.</p></div>
+    <div class="card"><h3>OAuth callback</h3><p>eCamp does not validate the callback URL (a possible open redirect). Report it to the eCamp team; co-co doesn't rely on it.</p></div>
+    <div class="card"><h3>Licence</h3><p>eCamp is AGPL-3.0. Choose an AGPL-compatible licence for co-co now if you plan to contribute it upstream later.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">Sources: <a href="https://github.com/ecamp/ecamp3" target="_blank" rel="noopener">ecamp/ecamp3</a> · <a href="https://www.jugendundsport.ch/de/leitfaden-coach" target="_blank" rel="noopener">Leitfaden Coach</a> · <a href="https://www.jugendundsport.ch/de/lager" target="_blank" rel="noopener">J+S Lager</a> · <a href="https://www.jugendundsport.ch/de/lagersport-trekking" target="_blank" rel="noopener">Lagersport/Trekking</a> · <a href="https://hering.scout.ch/de" target="_blank" rel="noopener">Hering</a> · <a href="https://pfadi.swiss/de/apps/midata/" target="_blank" rel="noopener">MiData</a> · <a href="https://www.jugendundsport.ch/de/nationale-datenbank-sport-nds" target="_blank" rel="noopener">NDS</a>. Mockup data is invented. The first draft (three approaches A/B/C) is superseded by this spec.</div></footer>
+
+<script>
+(function(){
+  const c=document.getElementById('topo'); if(!c) return;
+  function draw(){
+    const r=c.getBoundingClientRect(), d=window.devicePixelRatio||1;
+    c.width=r.width*d; c.height=r.height*d; const x=c.getContext('2d'); x.scale(d,d);
+    x.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--contour').trim()||'#ccc'; x.lineWidth=1;
+    [[r.width*.82,r.height*.35],[r.width*.62,r.height*.9]].forEach(([px,py],pi)=>{
+      for(let k=1;k<16;k++){ x.beginPath();
+        for(let a=0;a<=Math.PI*2+.01;a+=.06){ const w=1+.13*Math.sin(a*3+k*.7+pi)+.07*Math.cos(a*5+k*.3), rr=k*22*w;
+          const X=px+Math.cos(a)*rr*1.5, Y=py+Math.sin(a)*rr*.8; a===0?x.moveTo(X,Y):x.lineTo(X,Y); }
+        x.stroke(); }
+    });
+  }
+  draw(); let t; addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(draw,150)});
+})();
+
+(function(){
+  const H=300, start=7, span=16, pos=h=>((h-start)/span*H);
+  const days=['Sa 11.','So 12.','Mo 13.','Di 14.','Mi 15.','Do 16.','Fr 17.','Sa 18.'];
+  const B=[
+    [[14,15,'lp','Ankunft'],[15,17,'la','LA Lagerbau'],[18.5,19.5,'es',''],[20,21,'lp','Eröffnung']],
+    [[8,8.75,'es',''],[9,11.5,'ls','LS Geländespiel Tiefsee'],[12,13,'es',''],[14,16,'la','LA Karte & Kompass'],[18.5,19.5,'es','']],
+    [[8,8.75,'es',''],[9,11,'ls','3.1 Postenlauf'],[11.25,13,'ls','3.2 Geländespiel','flag'],[13,13.75,'es',''],[15,17,'la','LA Pioniertechnik'],[18.5,19.5,'es','']],
+    [[8,8.75,'es',''],[9.5,11,'ls','4.1 Seiltechnik','flagw'],[12,13,'es',''],[14,15.75,'la','4.2 Kartenlesen'],[18.5,19.5,'es','']],
+    [[8.5,9.25,'es',''],[14,15.5,'ls','5.2 Baden Sihlsee','flagw'],[18.5,19.5,'es','']],
+    [[7.5,8.25,'es',''],[8.5,16.5,'ls','6.1 Wanderung Pragelpass','flagw'],[18.5,19.5,'es',''],[21,23,'la','Nachtgeländespiel']],
+    [[8.5,9.25,'es',''],[9.5,12,'ls','Lagerolympiade'],[12,13,'es',''],[14,16,'la','LA Feuerstelle'],[19,22,'lp','Lagerfeuer']],
+    [[8,8.75,'es',''],[9,11,'la','Abbau'],[11.5,12.5,'lp','Abreise']],
+  ];
+  const meter=['2h ⊕','4h30','5h45','3h15','1h30','8h','4h30','2h ⊕'], cls=['mut','okk','okk','bad','mut','okk','okk','mut'];
+  const g=document.getElementById('weekgrid'), m=document.getElementById('daymeter'); if(!g) return;
+  let html='<div></div>'+days.map(d=>`<div class="dh"><b>${d.split(' ')[0]}</b>${d.split(' ')[1]}</div>`).join('');
+  let hrs='<div class="hours">'; for(let h=8;h<=22;h+=2) hrs+=`<span style="top:${pos(h)}px">${h}</span>`; html+=hrs+'</div>';
+  B.forEach((list,i)=>{ let col='<div class="col">';
+    if(i===2) col+=`<div class="gap" style="top:${pos(11)}px;height:${pos(11.25)-pos(11)}px"></div>`;
+    list.forEach(([a,b,c,t,f])=>{ col+=`<div class="blk ${c} ${f||''}" style="top:${pos(a)}px;height:${Math.max(pos(b)-pos(a)-1,9)}px">${t}</div>`; });
+    html+=col+'</div>'; });
+  g.innerHTML=html;
+  m.innerHTML='<span class="mut">J+S</span>'+meter.map((v,i)=>`<span class="${cls[i]}">${v}</span>`).join('');
+})();
+
+/* rules table */
+(function(){
+  const S={must:['p-block','Muss'],should:['p-warn','Soll'],hint:['p-hint','Hinweis']};
+  const R=[
+    ['JS-CAMP-01','Camp lasts ≥ 4 consecutive days (the LS/T 3-day exception needs confirming by hand)','Period.start/end','must','J+S Lager · verified'],
+    ['JS-CAMP-02','≥ 12 participants aged 5–20 (entered by hand until MiData)','Coach input','must','J+S Lager · verified'],
+    ['JS-DAY-01','Valid camp day: ≥ 2 J+S units, ≥ 4 h in total','ScheduleEntry + mapping','must','Leitfaden Sportarten · verified'],
+    ['JS-DAY-02','Each J+S unit ≥ 30 min','ScheduleEntry','must','Leitfaden Sportarten · verified'],
+    ['JS-DAY-03','≥ 30 min Sozialzeit between J+S units','ScheduleEntry','must','J+S Lager · verified'],
+    ['JS-DAY-04','Arrival and departure days count as one day if together ≥ 4 h','ScheduleEntry','must','Leitfaden Sportarten · verified'],
+    ['JS-DAY-05','Each J+S unit starts with a warm-up (Einstimmen) in its storyboard','Storyboard text','should','Leitfaden Sportarten · keyword match'],
+    ['JS-DL-01','NDS registration ≥ 30 days before camp start (deadline + status)','Period.start + Coach','must','Leitfaden Coach · verified'],
+    ['JS-DL-02','NDS closing ≤ 30 days after the last J+S activity','Period.end + Coach','must','Leitfaden Coach · verified'],
+    ['JS-DL-03','Leihmaterial ≥ 5 weeks ahead; Landeskarten 3 weeks (5 weeks June–August)','Period.start','should','Leitfaden Coach · verified'],
+    ['JS-LL-01','At least one leader holds the Zusatz «Lagerleiter» (you attest it)','Coach input','must','Leitfaden Sportarten · verified'],
+    ['JS-STAFF-01','Leader ratio: sources contradict each other','Coach input','should','unverified · conflict'],
+    ['JS-FREE-01','Number of training-free days: the source contradicts itself','Day calculation','should','unverified · conflict'],
+    ['JS-BWZ-27','Preview from 2027: ≥ 2 h Bewegungszeit per day','ysPhysicalActivityDurationMinutes','hint','PBS/Hering · unverified'],
+    ['CMP-ACT-01','Activity without responsibles','ActivityResponsible','should','Completeness'],
+    ['CMP-ACT-02','LS/LA block without a storyboard or detailed program','ContentNode Storyboard','should','Completeness'],
+    ['CMP-ACT-03','Outdoor or LS activity without safety considerations','SafetyConsiderations','should','Completeness'],
+    ['CMP-LA-01','LA block without a Themenbereich','LAThematicArea','should','Completeness'],
+    ['CMP-DAY-01','Day without a day lead (Tagesverantwortliche)','DayResponsible','should','Completeness'],
+    ['CMP-CAMP-01','Coach name empty or different from your profile','Camp.coachName','hint','Completeness'],
+    ['CMP-PROG-01','Activities not labelled «fertig geplant» from T−21','ActivityProgressLabel','hint','Completeness'],
+    ['SAFE-WATER-01','Water keywords (baden, See, Fluss, Kanu…) → water qualification assigned and safety considerations present','Text + responsibles','should','Merkblatt LS/T · heuristic'],
+    ['SAFE-MTN-01','Hike or mountain keywords → time calculation, alternative route and map (document or GPX)','Text + documents','should','Merkblatt LS/T · heuristic'],
+    ['SAFE-MTN-02','GPX: estimated time fits the eCamp time slot','GPX + ScheduleEntry','should','J+S Zeitberechnung'],
+    ['SAFE-ROPE-01','Seiltechnik/Pioniertechnik → safety considerations of at least minimum length that mention anchoring and the brake','Text','should','J+S Seiltechnik · heuristic'],
+    ['SAFE-NIGHT-01','Night activity → safety considerations and a late start next morning','ScheduleEntry + text','hint','PBS · heuristic'],
+    ['SAFE-WX-01','Outdoor day without a bad-weather variant','Text','should','PBS best practice'],
+    ['SAFE-DOC-01','Safety concept document: emergency numbers, hospital, crisis contact, evacuation, 3x3','Document text','should','cudesch Sicherheit · checklist'],
+    ['BP-REST-01','At least one free or rest block per day','ScheduleEntry + mapping','hint','PBS best practice'],
+    ['BP-SLEEP-01','Sleep window by Stufe (Wölfe ~10 h, Pfadi ~9 h)','ScheduleEntry','hint','Heuristic, labelled'],
+    ['BP-WOLF-01','Wolfsstufe: about 1 leader per 6 children','Coach input','hint','PBS Wolfsstufe'],
+    ['BP-WATER-01','Water: 1 person with an SLRG module per 12 participants','Coach input','hint','cudesch Sicherheit'],
+    ['BP-VAR-01','Variety: LS themes and Pfadi methods spread across the week','Categories + text','hint','Pfadiprofil'],
+  ];
+  const tb=document.getElementById('ruletable'); if(!tb) return;
+  tb.innerHTML=R.map(([id,c,d,s,src])=>`<tr data-g="${id.split('-')[0]}"><td class="mono">${id}</td><td>${c}</td><td class="mono" style="font-size:12px;color:var(--muted)">${d}</td><td><span class="pill ${S[s][0]}">${S[s][1]}</span></td><td style="font-size:13px;color:var(--muted)">${src}</td></tr>`).join('');
+  const bs=document.querySelectorAll('#rulefilter button');
+  bs.forEach(b=>b.addEventListener('click',()=>{ bs.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    tb.querySelectorAll('tr').forEach(tr=>{ tr.hidden = !(b.dataset.g==='all'||tr.dataset.g===b.dataset.g); }); }));
+})();
+
+/* features */
+(function(){
+  const G=[
+    ['Review cockpit','',[
+      ['Multi-instance login','ecamp3.ch, dev or self-hosted instances; MiData OAuth through the eCamp login window.','v1'],
+      ['My camps','Every camp where you are a guest, with status, open findings and the next deadline.','v1'],
+      ['Category guess + confirm','LS/LA/LP/ES guessed from short names and J+S fields; you confirm once per camp.','v1'],
+      ['Lagertag calculator + grid','Valid J+S days, Sozialzeit gaps and the arrival/departure rule, computed live.','v1'],
+      ['Befunde-Triage','Step through findings with the affected activity shown inline; save feedback or ignore with one key and jump to the next open finding. The position survives switching to Raster or Feedback.','v1'],
+      ['Rule disabling','After a rule has been ignored repeatedly, co-co offers to turn it off for this camp or for all camps; re-enable in the rule catalogue.','v1'],
+      ['Findings with sources','Muss/Soll/Hinweis/Lob, each with its rule ID, source link, evidence and a jump to eCamp.','v1'],
+      ['Ignorieren with a reason','«Ignorieren» (formerly «Übersteuern») hides a finding, with an optional reason, and keeps that for later rounds.','v1'],
+      ['Rounds + diff','Snapshot per round; shows what changed since you last looked.','next'],
+      ['Deadline overview','NDS T−30/T+30, Leihmaterial, Landeskarten, Lagerbewilligung, across all your camps.','next'],
+      ['Lagerbewilligung A/B/C','Digital PBS checklists, pre-filled by the rules.','later'],
+    ]],
+    ['Feedback','',[
+      ['Camp or activity feedback','Kinds: Lob, Muss, Anregung, Frage. Drafts can be created from findings.','v1'],
+      ['Post as eCamp comment','Activity items go straight to the activity (POST /comments), and the posted status is tracked.','v1'],
+      ['WhatsApp / e-mail / text message','Structured template, copied to the clipboard.','v1'],
+      ['Templates per review moment','Grobprogramm, Programmbesprechung, Auflagen, Lagerbesuch, Abschluss.','v1'],
+      ['Auflagen tracking','A Muss item becomes an Auflage; the rule re-runs after the leader edits; you confirm.','next'],
+      ['Rephrase with AI','Polishes tone and length after names are redacted, with a preview.','later','ai'],
+    ]],
+    ['Documents','',[
+      ['Drag & drop','PDF, DOCX, GPX, TXT and images onto a camp or activity.','v1'],
+      ['Watched folders','A synced Dropbox, OneDrive or SMB folder per camp, re-checked when a file changes.','v1'],
+      ['Safety-concept checklist','Emergency numbers, hospital, crisis contact, evacuation, 3x3, bad weather.','v1'],
+      ['GPX analysis','Distance, ascent, Leistungskilometer, estimated time vs. the eCamp slot, highest point.','v1'],
+      ['Document ↔ activity linking','Automatic when the match is confident; otherwise you confirm.','v1'],
+      ['Full-text search','Across documents and eCamp content.','v1'],
+      ['OCR for scans','tesseract.js, locally.','next'],
+      ['AI document summary','Only for documents released for AI, after redaction.','later','ai'],
+    ]],
+    ['Platform','',[
+      ['German UI, i18n-ready','vue-i18n; UI, rule texts and templates in locales/de.','v1'],
+      ['JSON backup','Export and import all co-co data; a reminder after each round.','v1'],
+      ['Data zones','Green/yellow/red labels and an AI gateway with redaction.','next'],
+      ['Auto-update + signing','When other coaches start using it.','later'],
+      ['MiData (read-only, red zone)','Fills Lager-Angaben from MiData: participant counts, age band, leader qualifications, coach match. Only aggregates; see the MiData section.','next'],
+      ['NDS status','Manual status flags at first (there is no public API); later an export in the NDS program template.','later'],
+      ['Upstream to eCamp','Rule engine as a package; a coach view or leader self-check inside eCamp.','later'],
+    ]],
+  ];
+  const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
+  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status']);
+  const WIP=new Set(['Befunde-Triage','Ignorieren with a reason','Rule disabling']);
+  const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';
+  const root=document.getElementById('featgroups'); if(!root) return;
+  root.innerHTML=G.map(([t,s,items])=>`<div class="fg"><h3>${t} <small>${items.filter(([n])=>st(n)==='done').length} of ${items.length} done</small></h3><div class="feats">${items.map(([n,d,p,ai])=>`<article class="feat ${st(n)==='done'?'is-done':''}" data-p="${p}" data-ai="${ai?1:0}" data-st="${st(n)}"><h4>${n}</h4><p>${d}</p><div class="tags">${st(n)==='done'?'<span class="pill t-done">Done</span>':st(n)==='wip'?'<span class="pill t-wip">In progress</span>':''}<span class="pill ${lab[p][0]}">${lab[p][1]}</span>${ai?'<span class="pill t-ai">AI</span>':''}</div></article>`).join('')}</div></div>`).join('');
+  const btns=document.querySelectorAll('#features .filters button');
+  btns.forEach(b=>b.addEventListener('click',()=>{ btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    const f=b.dataset.f;
+    document.querySelectorAll('.feat').forEach(el=>{ el.hidden=!(f==='all'||(f==='ai'?el.dataset.ai==='1':f==='done'?el.dataset.st==='done':f==='open'?el.dataset.st!=='done':el.dataset.p===f)); });
+    document.querySelectorAll('.fg').forEach(g=>{ g.hidden=!g.querySelector('.feat:not([hidden])'); });
+  }));
+})();
+</script>
+
+</body></html>

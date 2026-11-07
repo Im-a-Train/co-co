@@ -10,6 +10,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import { triageFlows } from './triage-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const PORT = 1420
@@ -147,13 +148,16 @@ async function main() {
       throw new Error('drawer not open')
   })
 
-  await step('flow: create feedback from finding', async () => {
+  await triageFlows({ page, step, go, shot, BASE })
+
+  await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')
-    const b = page.getByRole('button', { name: /feedback/i }).first()
-    await b.click({ timeout: 5000 })
+    await page.getByTestId('mode-list').click()
+    await page.waitForTimeout(500)
+    await shot(page, 'flow-findings-list')
+    await page.getByRole('button', { name: /feedback erstellen/i }).first().click({ timeout: 5000 })
     await page.waitForURL(/feedback/, { timeout: 5000 })
     await page.waitForTimeout(800)
-    await shot(page, 'flow-feedback-created')
     const txt = await page.evaluate(() => document.body.innerText)
     if (/Noch kein Feedback|keine Einträge/i.test(txt)) throw new Error('feedback list still empty')
   })

@@ -116,7 +116,12 @@ export function compareFindings(a: Finding, b: Finding): number {
   )
 }
 
-export function evaluate(packs: RulePack[], ctx: RuleContext): Finding[] {
+export interface EvaluateOptions {
+  /** Rule ids that are switched off (by the coach, per camp or globally): skipped entirely. */
+  disabledRuleIds?: ReadonlySet<string>
+}
+
+export function evaluate(packs: RulePack[], ctx: RuleContext, opts: EvaluateOptions = {}): Finding[] {
   const campDate: IsoDate = ctx.facts.camp.start ?? ctx.now.toISOString().slice(0, 10)
   const seen = new Set<string>()
   const findings: Finding[] = []
@@ -124,6 +129,7 @@ export function evaluate(packs: RulePack[], ctx: RuleContext): Finding[] {
     if (!isValidOn(pack, campDate)) continue
     for (const rule of pack.rules) {
       if (!isValidOn(rule.meta, campDate)) continue
+      if (opts.disabledRuleIds?.has(rule.meta.id)) continue
       let produced: Finding[]
       try {
         produced = evaluateRule(rule, pack, ctx)

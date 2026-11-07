@@ -2,6 +2,9 @@
 /** /lager/:campId/uebersicht: KPIs (findings, valid J+S days, J+S time per day, changes since last round, mapping status). */
 import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { triageLocation } from '@/domain/triage'
+import type { Finding } from '@/domain/types'
 import { useRounds } from '@/composables/useRounds'
 import { campIdFromIri } from '@/domain/iri'
 import {
@@ -19,6 +22,7 @@ import KpiTile from '@/components/cockpit/KpiTile.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 
 const { t } = useI18n()
+const router = useRouter()
 const { campIri, factsHandle, settings, findingsHandle } = useCockpit()
 const { facts } = factsHandle
 const { counts, jsDays, findings, evaluating } = findingsHandle
@@ -29,6 +33,10 @@ watch(campIri, () => void loadRounds())
 const delta = computed(() => roundDeltaParams(rounds.value, diffSinceLastRound.value))
 
 const params = computed(() => ({ campId: campIdFromIri(campIri.value) }))
+/** "Feedback erstellen" on a top finding: open the triage at that finding with the editor focused. */
+function startFeedback(f: Finding) {
+  void router.push(triageLocation(campIri.value, f.id, { editor: true }))
+}
 const bars = computed(() => jsDayBars(jsDays.value))
 const threshold = computed(() => {
   const max = Math.max(360, ...bars.value.map((b) => b.minutes))
@@ -178,7 +186,7 @@ const inputsMissing = computed(() => !settings.coachInputs.value)
       <v-progress-linear v-if="evaluating" indeterminate class="mb-2" />
       <div v-if="!top.length" class="text-body-2 text-medium-emphasis">{{ t('cockpit.overview.top.none') }}</div>
       <div class="d-flex flex-column ga-2">
-        <FindingCard v-for="f in top" :key="f.id" :finding="f" compact />
+        <FindingCard v-for="f in top" :key="f.id" :finding="f" compact @feedback="startFeedback" />
       </div>
     </template>
   </div>

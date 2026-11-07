@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { findingsForActivity, formatClock, formatDate, minutesOfDay, responsibleNames, dateOf } from '@/domain/cockpit'
+import { findingsForActivity } from '@/domain/cockpit'
 import { getDb } from '@/domain/storage/db'
 import type { CampFacts, CategoryClass, DocumentRecord, Finding, Iri } from '@/domain/types'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
+import ActivityPreview from './ActivityPreview.vue'
 import FindingCard from './FindingCard.vue'
 
 const props = defineProps<{
@@ -26,9 +27,6 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const activity = computed(() => props.facts?.activities.find((a) => a.iri === props.activityIri) ?? null)
-const category = computed(() => props.facts?.categories.find((c) => c.iri === activity.value?.categoryIri) ?? null)
-const entries = computed(() => props.facts?.scheduleEntries.filter((e) => e.activityIri === props.activityIri) ?? [])
-const people = computed(() => (props.activityIri && props.facts ? responsibleNames(props.facts, props.activityIri) : []))
 const own = computed(() => (props.activityIri ? findingsForActivity(props.findings, props.activityIri) : []))
 
 const docs = ref<DocumentRecord[]>([])
@@ -47,9 +45,6 @@ watch(
   { immediate: true },
 )
 
-function entryTime(e: { start: string; end: string }): string {
-  return `${formatDate(dateOf(e.start))} ${formatClock(minutesOfDay(e.start))}–${formatClock(minutesOfDay(e.end))}`
-}
 </script>
 
 <template>
@@ -62,24 +57,11 @@ function entryTime(e: { start: string; end: string }): string {
   >
     <div v-if="activity" class="pa-4">
       <div class="d-flex align-start ga-2">
-        <div class="text-h6 flex-grow-1">{{ activity.title }}</div>
+        <div class="flex-grow-1" />
         <v-btn icon="mdi-close" variant="text" size="small" :aria-label="t('common.close')" @click="emit('update:modelValue', false)" />
       </div>
 
-      <v-list density="compact" class="px-0">
-        <v-list-item v-for="e in entries" :key="e.iri" prepend-icon="mdi-clock-outline" :title="entryTime(e)" :subtitle="e.number ?? undefined" />
-        <v-list-item v-if="category" prepend-icon="mdi-shape-outline" :title="`${category.short} ${category.name}`" :subtitle="t(`categoryClass.${classOf(category.iri)}`)">
-          <template #append><span class="d-inline-block rounded-circle" :style="{ width: '14px', height: '14px', background: category.color }" /></template>
-        </v-list-item>
-        <v-list-item v-if="activity.location" prepend-icon="mdi-map-marker-outline" :title="activity.location" />
-        <v-list-item prepend-icon="mdi-account-group-outline" :title="people.length ? people.join(', ') : t('cockpit.drawer.noResponsibles')" :subtitle="t('cockpit.drawer.responsibles')" />
-      </v-list>
-
-      <div class="text-subtitle-2 mt-3">{{ t('cockpit.drawer.storyboard') }}</div>
-      <div class="text-body-2 text-pre-wrap mb-3">{{ activity.content.storyboardText || t('cockpit.drawer.empty') }}</div>
-
-      <div class="text-subtitle-2">{{ t('cockpit.drawer.safety') }}</div>
-      <div class="text-body-2 text-pre-wrap mb-3">{{ activity.content.safetyText || t('cockpit.drawer.empty') }}</div>
+      <ActivityPreview :facts="facts" :activity-iri="activityIri" :class-of="classOf" />
 
       <div class="text-subtitle-2">{{ t('cockpit.drawer.documents') }}</div>
       <div v-if="docs.length" class="d-flex flex-wrap ga-1 mb-3">
