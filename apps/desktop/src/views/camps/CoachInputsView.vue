@@ -5,12 +5,15 @@ import { useI18n } from 'vue-i18n'
 import { fromTri, INPUT_RULES, normalizeInputs, parseCount, STUFEN, toTri, validateInputs, type TriState } from '@/components/camps/inputsForm'
 import MidataBadge from '@/components/midata/MidataBadge.vue'
 import MidataCard from '@/components/midata/MidataCard.vue'
+import NdsBadge from '@/components/nds/NdsBadge.vue'
+import NdsCard from '@/components/nds/NdsCard.vue'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useCampSettings } from '@/composables/useCampSettings'
+import { adoptNdsFields } from '@/composables/useNds'
 import { emptyCoachInputs } from '@/domain/campFacts/store'
 import { adoptFields } from '@/domain/midata'
 import { loadBundledPacks } from '@/domain/rules/packs'
-import type { CoachInputs, MidataAggregate, MidataField } from '@/domain/types'
+import type { CoachInputs, MidataAggregate, MidataField, NdsAggregate, NdsField } from '@/domain/types'
 
 const { t } = useI18n()
 const { campIri } = useCampRoute()
@@ -70,14 +73,21 @@ function withoutBadge(key: string): CoachInputs['midataFields'] {
   const { [key as MidataField]: _drop, ...rest } = draft.value.midataFields ?? {}
   return rest
 }
+/** Same for NDS badges (only present once something was adopted from NDS). */
+function withoutNdsBadge(key: string): Pick<CoachInputs, 'ndsFields'> {
+  if (!draft.value.ndsFields) return {}
+  const { [key as NdsField]: _drop, ...rest } = draft.value.ndsFields
+  return { ndsFields: rest }
+}
+const ndsBadgeOf = (key: string): string | null => draft.value.ndsFields?.[key as NdsField] ?? null
 const badgeOf = (key: string): string | null => draft.value.midataFields?.[key as MidataField] ?? null
 
 function setNum(key: 'participantsCount' | 'participantsJsAgeCount' | 'minAge' | 'maxAge' | 'leadersCount' | 'slrgCount', v: string | null): void {
-  draft.value = { ...draft.value, [key]: parseCount(v), midataFields: withoutBadge(key) }
+  draft.value = { ...draft.value, [key]: parseCount(v), midataFields: withoutBadge(key), ...withoutNdsBadge(key) }
   saved.value = false
 }
 function setField<K extends keyof CoachInputs>(key: K, v: CoachInputs[K]): void {
-  draft.value = { ...draft.value, [key]: v, midataFields: withoutBadge(key) }
+  draft.value = { ...draft.value, [key]: v, midataFields: withoutBadge(key), ...withoutNdsBadge(key) }
   saved.value = false
 }
 
@@ -86,12 +96,21 @@ function onAdopt(fields: MidataField[], agg: MidataAggregate): void {
   void save(fields)
 }
 
-async function save(adopted?: MidataField[]): Promise<void> {
+function onAdoptNds(fields: NdsField[], agg: NdsAggregate): void {
+  draft.value = adoptNdsFields(draft.value, agg, fields, new Date().toISOString())
+  void save(undefined, fields)
+}
+
+async function save(adopted?: MidataField[], adoptedNds?: NdsField[]): Promise<void> {
   if (errors.value.length > 0) return
   saving.value = true
   saveError.value = null
   try {
-    await settings.saveCoachInputs(normalizeInputs(draft.value), { adopted })
+    const toSave = normalizeInputs(draft.value)
+    await settings.saveCoachInputs(toSave, { adopted })
+    // Saving drops badges of fields that changed against the stored inputs; fields adopted from NDS in
+    // this save keep theirs by saving once more (values now equal the stored ones, so badges survive).
+    if (adoptedNds?.length && toSave.ndsFields) await settings.saveCoachInputs(toSave, { adopted })
     resetDraft()
     saved.value = true
   } catch (e) {
@@ -130,6 +149,7 @@ const flagFields = [
 
     <v-form v-else @submit.prevent="save()">
       <MidataCard :camp-iri="campIri" :inputs="draft" @adopt="onAdopt" />
+      <NdsCard :camp-iri="campIri" :inputs="draft" @adopt="onAdoptNds" />
 
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1">{{ t('camps.inputs.sections.general') }}</v-card-title>
@@ -210,6 +230,7 @@ const flagFields = [
                 :data-testid="`input-${f.key}`"
                 @update:model-value="(v) => setField(f.key, v === true)"
               />
+              <NdsBadge v-if="ndsBadgeOf(f.key)" :since="ndsBadgeOf(f.key)!" />
             </v-col>
             <v-col v-if="f.date" cols="12" sm="5">
               <v-text-field
@@ -220,7 +241,9 @@ const flagFields = [
                 density="comfortable"
                 hide-details
                 @update:model-value="(v: string) => setField(f.date, v || null)"
-              />
+              >
+                <template v-if="ndsBadgeOf(f.date)" #append-inner><NdsBadge :since="ndsBadgeOf(f.date)!" /></template>
+              </v-text-field>
             </v-col>
           </v-row>
         </v-card-text>

@@ -9,6 +9,7 @@ import BackupSection from '@/components/settings/BackupSection.vue'
 import DiagnosticsSection from '@/components/settings/DiagnosticsSection.vue'
 import InstancesSection from '@/components/settings/InstancesSection.vue'
 import MidataSection from '@/components/settings/MidataSection.vue'
+import NdsSection from '@/components/settings/NdsSection.vue'
 
 const { t } = useI18n()
 </script>
@@ -27,6 +28,10 @@ const { t } = useI18n()
     <section id="midata" class="mb-8">
       <h2 class="text-h6 mb-2">{{ t('midata.settings.title') }}</h2>
       <MidataSection />
+    </section>
+    <section id="nds" class="mb-8">
+      <h2 class="text-h6 mb-2">{{ t('nds.settings.title') }}</h2>
+      <NdsSection />
     </section>
     <section id="backup" class="mb-8">
       <h2 class="text-h6 mb-2">{{ t('settings.sections.backup') }}</h2>

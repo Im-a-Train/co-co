@@ -1,5 +1,5 @@
 /** Shared helpers of the basic rule pack predicates. Pure. */
-import type { ActivityFact, CampFacts, Evidence, MidataField, RuleContext, RuleHit, Severity } from '@/domain/types'
+import type { ActivityFact, CampFacts, Evidence, MidataField, NdsField, RuleContext, RuleHit, Severity } from '@/domain/types'
 import { categoryClassOf, isJsClass } from '../../../jsDays'
 
 // ---------------------------------------------------------------------------------------------
@@ -199,4 +199,28 @@ export function midataSourceText(stand: string): string {
 /** Evidence entry naming the MiData source. */
 export function midataEvidence(stand: string): Evidence {
   return { kind: 'text', label: midataSourceText(stand) }
+}
+
+// ---------------------------------------------------------------------------------------------
+// NDS (M8) helpers. Red-derived data: only the aggregate is available here.
+// ---------------------------------------------------------------------------------------------
+
+/** «Stand» date (dd.mm.yyyy) of the first of `fields` that was adopted from NDS, else null. */
+export function ndsStand(ctx: RuleContext, fields: NdsField[]): string | null {
+  const map = ctx.coachInputs?.ndsFields
+  if (!map) return null
+  for (const f of fields) {
+    const ts = map[f]
+    if (ts) return formatStand(ts)
+  }
+  return null
+}
+
+export function ndsSourceText(stand: string): string {
+  return `Quelle: NDS, Stand ${stand}`
+}
+
+/** Evidence entry naming the NDS source. */
+export function ndsEvidence(stand: string): Evidence {
+  return { kind: 'text', label: ndsSourceText(stand) }
 }

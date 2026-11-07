@@ -1,0 +1,7 @@
+{"content":[
+{"businessId":"1","activityType":"FIRST_CAMP_DAY","activityState":"ATTENDANCE_CHECKED","activityDate":"2026-07-18"},
+{"businessId":"2","activityType":"CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES","activityState":"ATTENDANCE_CHECKED","activityDate":"2026-07-19"},
+{"businessId":"3","activityType":"CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES","activityState":"ATTENDANCE_OPEN","activityDate":"2026-07-20"},
+{"businessId":"4","activityType":"LAST_CAMP_DAY","activityState":"MYSTERY_STATE","activityDate":"2026-07-25T00:00:00"},
+{"businessId":"5"}
+],"totalElements":5,"totalPages":1}

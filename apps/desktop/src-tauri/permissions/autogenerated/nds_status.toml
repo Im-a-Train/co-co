@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-nds-status"
+description = "Enables the nds_status command without any pre-configured scope."
+commands.allow = ["nds_status"]
+
+[[permission]]
+identifier = "deny-nds-status"
+description = "Denies the nds_status command without any pre-configured scope."
+commands.deny = ["nds_status"]

@@ -16,9 +16,11 @@ import { disabledRuleIds, disablePromptCount, isGloballyDisabled } from '@/domai
 import { disableRuleStored, enableRuleStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
 import { useRuleState } from '@/composables/useRuleState'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
-import type { AppSettings, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, Override, RulePack } from '@/domain/types'
+import type { AppSettings, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
 import { getMidataRecord } from '@/domain/midata/store'
 import { midataVersion } from '@/composables/midataSignal'
+import { getNdsRecord } from '@/domain/nds/store'
+import { ndsVersion } from '@/composables/ndsSignal'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampSettings } from '@/composables/useCampSettings'
 
@@ -79,6 +81,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const documents = shallowRef<DocumentRecord[]>([])
   const appSettings = shallowRef<AppSettings>(DEFAULT_APP_SETTINGS)
   const midata = shallowRef<MidataAggregate | null>(null)
+  const nds = shallowRef<NdsAggregate | null>(null)
   const evalError = ref<string | null>(null)
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
@@ -124,6 +127,24 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     { immediate: true },
   )
 
+  // NDS aggregate (red-derived; same pattern, re-read when the UI bumps ndsVersion).
+  watch(
+    [iri, ndsVersion],
+    async ([value]) => {
+      if (!value) {
+        nds.value = null
+        return
+      }
+      try {
+        const record = await getNdsRecord(value)
+        if (iri.value === value) nds.value = record?.aggregate ?? null
+      } catch {
+        nds.value = null
+      }
+    },
+    { immediate: true },
+  )
+
   // Make sure mapping + coach inputs get loaded once the facts are there.
   watch(
     () => factsHandle.facts.value,
@@ -143,6 +164,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
         mapping: settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null,
         coachInputs: settingsHandle.coachInputs.value,
         midata: midata.value,
+        nds: nds.value,
         documents: documents.value,
         settings: appSettings.value,
         now: new Date(),

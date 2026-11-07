@@ -63,6 +63,12 @@ describe('previews', () => {
     expect(p.previewText).toContain('Leiter A soll [E-Mail] melden')
   })
 
+  it('rephrase refuses NDS-derived feedback (red zone)', () => {
+    const item = { id: 'f', campIri: '/api/camps/1', scope: 'camp', kind: 'must', text: 'AWK offen (Quelle: NDS, Stand 01.06.2026)', status: 'draft' } as unknown as FeedbackItem
+    expect(() => rephraseFeedback(item, facts)).toThrow(/NDS/)
+    expect(() => rephraseFeedback({ ...item, text: 'x', redDerived: true }, facts)).toThrow(/NDS/)
+  })
+
   it('rephrase refuses MiData-derived feedback (red zone)', () => {
     const item = { id: 'f', campIri: '/api/camps/1', scope: 'camp', kind: 'must', text: 'Niemand hat SLRG (Quelle: MiData, Stand 01.06.2026)', redDerived: true, status: 'draft' } as unknown as FeedbackItem
     expect(() => rephraseFeedback(item, facts)).toThrow(/MiData/)

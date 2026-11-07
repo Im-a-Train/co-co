@@ -1,0 +1,5249 @@
+openapi: "3.1.0"
+info:
+  title: "NDS (Nationale Datenbank Sport) – internal web API (reverse engineered, read-only)"
+  version: "capture-2026-11-07"
+  description: |-
+      Unofficial description of the backend used by the NDS web UI (www.nds.baspo.admin.ch), derived from redacted browser captures.
+      Not the official partner "Standard-API" (api.baspo.admin.ch/nds/api, Kaderbildung only).
+      
+      **Caveats**
+      - Schemas reflect only what was observed: optional/required is unknown, fields seen only as `null` have unknown type, enums list observed values only.
+      - Only read operations are included.
+      - Using this API outside the official UI may violate the NDS terms of use; obtain BASPO approval before integrating.
+      
+      **Authentication**: browser session. Login via AGOV → Keycloak (`GET /perorgfin/oauth2/authorization/keycloak?clientRoute=…`), which sets the `SESSION` cookie. `cookiesession1` is a load-balancer cookie, `LANG` the UI language. No bearer token or CSRF header was observed on read requests.
+servers:
+  - url: "https://www.nds.baspo.admin.ch"
+    description: "Production (web UI backend)"
+security:
+  - sessionCookie: []
+tags:
+  - name: "cadre"
+    description: "Kaderbildung (cadre education): course plan, education structure, personal trainings and further education."
+  - name: "document"
+    description: "Documents attached to offers, camps, organisations."
+  - name: "frontend"
+    description: "Static UI texts (i18n)."
+  - name: "material"
+    description: "Rental material orders (Leihmaterial) for camps/courses."
+  - name: "perorgfin"
+    description: "Persons, organisations, finance (bank accounts, financial transactions). Also hosts the Keycloak OAuth2 login entry point."
+  - name: "personal"
+    description: "Per-user UI settings: table configs, start page, maintenance info."
+  - name: "workflow"
+    description: "Person tasks and notifications."
+  - name: "youthtraining"
+    description: "J+S Jugendausbildung: offers (Angebote), camps (Lager), courses, activities, participants, attendance."
+paths:
+  "/cadre/admin/education/cadreEducationCourseType/{cadreEducationCourseTypeId}/publishedCourseTypeInfo":
+    get:
+      tags:
+        - "cadre"
+      operationId: "getCadreAdminEducationCadreEducationCourseTypePublishedCourseTypeInfo"
+      summary: "education › cadreEducationCourseType › publishedCourseTypeInfo"
+      parameters:
+        - name: "cadreEducationCourseTypeId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/CadreAdminEducationCadreEducationCourseTypePublishedCourseTypeInfoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/cadre/education/educationStructure/":
+    get:
+      tags:
+        - "cadre"
+      operationId: "getCadreEducationEducationStructure"
+      summary: "education › educationStructure"
+      parameters:
+        - name: "educationField"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/CadreEducationEducationStructureResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 3
+  "/cadre/education/educationStructure/{educationStructureId}/all":
+    get:
+      tags:
+        - "cadre"
+      operationId: "getCadreEducationEducationStructureAll"
+      summary: "education › educationStructure › all"
+      parameters:
+        - name: "educationStructureId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/CadreEducationEducationStructureAllResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/cadre/education/educationStructure/{educationStructureId}/version/":
+    get:
+      tags:
+        - "cadre"
+      operationId: "getCadreEducationEducationStructureVersion"
+      summary: "education › educationStructure › version"
+      parameters:
+        - name: "educationStructureId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/CadreEducationEducationStructureVersionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/cadre/education/educationStructure/canExport":
+    get:
+      tags:
+        - "cadre"
+      operationId: "getCadreEducationEducationStructureCanExport"
+      summary: "education › educationStructure › canExport"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "boolean"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/cadre/graphql/admin":
+    post:
+      tags:
+        - "cadre"
+      operationId: "graphqlCadre"
+      summary: "GraphQL endpoint of the cadre service"
+      description: "Apollo-style GraphQL over POST. Observed operations: `PersonalCurrentTrainingAndFurtherEducationList`, `PersonalTrainingAndFurtherEducationList`, `JsCoachAndEsaCoursePlan`. Documents in operations.graphql. Pagination via `chunk { size, page, sort[{name, direction}] }`, results as `{content, totalElements, totalPages, number, size}`."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/PersonalCurrentTrainingAndFurtherEducationListRequest"
+                - $ref: "#/components/schemas/PersonalTrainingAndFurtherEducationListRequest"
+                - $ref: "#/components/schemas/JsCoachAndEsaCoursePlanRequest"
+              discriminator:
+                propertyName: "operationName"
+      responses:
+        "200":
+          description: "GraphQL result (errors are reported in `errors`, HTTP status stays 200)"
+          content:
+            "application/json":
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PersonalCurrentTrainingAndFurtherEducationListResponse"
+                  - $ref: "#/components/schemas/PersonalTrainingAndFurtherEducationListResponse"
+                  - $ref: "#/components/schemas/JsCoachAndEsaCoursePlanResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-graphql-operations:
+        - "PersonalCurrentTrainingAndFurtherEducationList"
+        - "PersonalTrainingAndFurtherEducationList"
+        - "JsCoachAndEsaCoursePlan"
+  "/document/admin/document/document/{documentId}/url":
+    get:
+      tags:
+        - "document"
+      operationId: "getDocumentAdminUrl"
+      summary: "document › url"
+      parameters:
+        - name: "documentId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "download"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json": {}
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/document/admin/document/document/contextType/OFFER/contextId/{contextId}/documentTypes":
+    get:
+      tags:
+        - "document"
+      operationId: "getDocumentAdminContextTypeOFFERContextIdDocumentTypes"
+      summary: "document › contextType › OFFER › contextId › documentTypes"
+      parameters:
+        - name: "contextId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/document/admin/document/document/contextType/ORGANISATION/contextId/{contextId}/documentTypes":
+    get:
+      tags:
+        - "document"
+      operationId: "getDocumentAdminContextTypeORGANISATIONContextIdDocumentTypes"
+      summary: "document › contextType › ORGANISATION › contextId › documentTypes"
+      parameters:
+        - name: "contextId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/document/admin/document/document/contextType/YOUT_CAMP/contextId/{contextId}/documentTypes":
+    get:
+      tags:
+        - "document"
+      operationId: "getDocumentAdminContextTypeYOUT_CAMPContextIdDocumentTypes"
+      summary: "document › contextType › YOUT_CAMP › contextId › documentTypes"
+      parameters:
+        - name: "contextId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/document/graphql/admin":
+    post:
+      tags:
+        - "document"
+      operationId: "graphqlDocument"
+      summary: "GraphQL endpoint of the document service"
+      description: "Apollo-style GraphQL over POST. Observed operations: `DocumentListByContextTypeAndContextId`. Documents in operations.graphql. Pagination via `chunk { size, page, sort[{name, direction}] }`, results as `{content, totalElements, totalPages, number, size}`."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/DocumentListByContextTypeAndContextIdRequest"
+              discriminator:
+                propertyName: "operationName"
+      responses:
+        "200":
+          description: "GraphQL result (errors are reported in `errors`, HTTP status stays 200)"
+          content:
+            "application/json":
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/DocumentListByContextTypeAndContextIdResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-graphql-operations:
+        - "DocumentListByContextTypeAndContextId"
+  "/frontend/{frontendApp}/staticText/":
+    get:
+      tags:
+        - "frontend"
+      operationId: "getFrontendStaticText"
+      summary: "staticText"
+      description: "Localized static UI texts; filter by `language` and key `pattern`."
+      parameters:
+        - name: "frontendApp"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "language"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "pattern"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    key:
+                      type: "string"
+                    value:
+                      type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 7
+  "/material/admin/rentalMaterial/order/{orderId}":
+    get:
+      tags:
+        - "material"
+      operationId: "getMaterialAdminRentalMaterialOrder"
+      summary: "rentalMaterial › order"
+      parameters:
+        - name: "orderId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/MaterialAdminRentalMaterialOrderResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/material/graphql/admin":
+    post:
+      tags:
+        - "material"
+      operationId: "graphqlMaterial"
+      summary: "GraphQL endpoint of the material service"
+      description: "Apollo-style GraphQL over POST. Observed operations: `rentalMaterialOrderListForCamp`. Documents in operations.graphql. Pagination via `chunk { size, page, sort[{name, direction}] }`, results as `{content, totalElements, totalPages, number, size}`."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/RentalMaterialOrderListForCampRequest"
+              discriminator:
+                propertyName: "operationName"
+      responses:
+        "200":
+          description: "GraphQL result (errors are reported in `errors`, HTTP status stays 200)"
+          content:
+            "application/json":
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/RentalMaterialOrderListForCampResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-graphql-operations:
+        - "rentalMaterialOrderListForCamp"
+  "/perorgfin/admin/financialtransaction/financialtransaction/availableFlsOptions/":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminFinancialtransactionAvailableFlsOptions"
+      summary: "financialtransaction › availableFlsOptions"
+      description: "Permission flags for the logged-in user (what the UI may show/do)."
+      parameters:
+        - name: "organisation"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/perorgfin/admin/financialtransaction/financialtransaction/organisation/{organisationId}/availableOptions":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminFinancialtransactionOrganisationAvailableOptions"
+      summary: "financialtransaction › organisation › availableOptions"
+      description: "Permission flags for the logged-in user (what the UI may show/do)."
+      parameters:
+        - name: "organisationId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/perorgfin/admin/organisation/organisation/{organisationId}/expand":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminOrganisationExpand"
+      summary: "organisation › expand"
+      description: "Fully expanded entity including nested persons and addresses."
+      parameters:
+        - name: "organisationId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/PerorgfinAdminOrganisationExpandResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 3
+  "/perorgfin/admin/organisation/organisation/{organisationId}/possibleTypesForUploadInTabDocument":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminOrganisationPossibleTypesForUploadInTabDocument"
+      summary: "organisation › possibleTypesForUploadInTabDocument"
+      parameters:
+        - name: "organisationId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/perorgfin/admin/organisation/organisation/{organisationId}/requiredDocumentTypes":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminOrganisationRequiredDocumentTypes"
+      summary: "organisation › requiredDocumentTypes"
+      parameters:
+        - name: "organisationId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  requiredDocumentTypes:
+                    type: "array"
+                    items:
+                      type: "string"
+                      enum:
+                        - "BANK_ACCOUNT_VERIFICATION"
+                        - "STATUTES"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/perorgfin/admin/organisation/organisation/availableOptions":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminOrganisationAvailableOptions"
+      summary: "organisation › availableOptions"
+      description: "Permission flags for the logged-in user (what the UI may show/do)."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  type: "string"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 3
+  "/perorgfin/admin/person/person/availableOptions":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinAdminPersonAvailableOptions"
+      summary: "person › availableOptions"
+      description: "Permission flags for the logged-in user (what the UI may show/do)."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/PerorgfinAdminPersonAvailableOptionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/perorgfin/graphql/admin":
+    post:
+      tags:
+        - "perorgfin"
+      operationId: "graphqlPerorgfin"
+      summary: "GraphQL endpoint of the perorgfin service"
+      description: "Apollo-style GraphQL over POST. Observed operations: `OrganisationList`, `BankAccountOrganisationList`, `List`, `organisationOfferList`, `userRequestOrganisationDetailsList`, `personAssignmentJSCoachesListForOrganisation`, `organisationCourseCadre`, `FinancialTransactionList`. Documents in operations.graphql. Pagination via `chunk { size, page, sort[{name, direction}] }`, results as `{content, totalElements, totalPages, number, size}`."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/OrganisationListRequest"
+                - $ref: "#/components/schemas/BankAccountOrganisationListRequest"
+                - $ref: "#/components/schemas/ListRequest"
+                - $ref: "#/components/schemas/OrganisationOfferListRequest"
+                - $ref: "#/components/schemas/UserRequestOrganisationDetailsListRequest"
+                - $ref: "#/components/schemas/PersonAssignmentJSCoachesListForOrganisationRequest"
+                - $ref: "#/components/schemas/OrganisationCourseCadreRequest"
+                - $ref: "#/components/schemas/FinancialTransactionListRequest"
+              discriminator:
+                propertyName: "operationName"
+      responses:
+        "200":
+          description: "GraphQL result (errors are reported in `errors`, HTTP status stays 200)"
+          content:
+            "application/json":
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/OrganisationListResponse"
+                  - $ref: "#/components/schemas/BankAccountOrganisationListResponse"
+                  - $ref: "#/components/schemas/ListResponse"
+                  - $ref: "#/components/schemas/OrganisationOfferListResponse"
+                  - $ref: "#/components/schemas/UserRequestOrganisationDetailsListResponse"
+                  - $ref: "#/components/schemas/PersonAssignmentJSCoachesListForOrganisationResponse"
+                  - $ref: "#/components/schemas/OrganisationCourseCadreResponse"
+                  - $ref: "#/components/schemas/FinancialTransactionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-graphql-operations:
+        - "OrganisationList"
+        - "BankAccountOrganisationList"
+        - "List"
+        - "organisationOfferList"
+        - "userRequestOrganisationDetailsList"
+        - "personAssignmentJSCoachesListForOrganisation"
+        - "organisationCourseCadre"
+        - "FinancialTransactionList"
+  "/perorgfin/organisationrequest/organisationrequest/widget/availableOptions":
+    get:
+      tags:
+        - "perorgfin"
+      operationId: "getPerorgfinOrganisationrequestWidgetAvailableOptions"
+      summary: "organisationrequest › widget › availableOptions"
+      description: "Permission flags for the logged-in user (what the UI may show/do)."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  showWidget:
+                    type: "boolean"
+                  showInfobox:
+                    type: "boolean"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/personal/maintenance/maintenanceInfo/":
+    get:
+      tags:
+        - "personal"
+      operationId: "getPersonalMaintenanceMaintenanceInfo"
+      summary: "maintenance › maintenanceInfo"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/PersonalMaintenanceMaintenanceInfoResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/personal/startpage/settings/":
+    get:
+      tags:
+        - "personal"
+      operationId: "getPersonalStartpageSettings"
+      summary: "startpage › settings"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  widgetSettings:
+                    type: "array"
+                    items:
+                      $ref: "#/components/schemas/WidgetSettings"
+                  quickLinkSettings:
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        quickLinkType:
+                          type: "string"
+                          enum:
+                            - "CADRE_EDUCATION_PLAN_COACH"
+                            - "CADRE_EDUCATION_PLAN_ESA"
+                            - "CADRE_EDUCATION_SCHEDULE"
+                            - "CADRE_PERSONAL_COURSES"
+                            - "JS_OFFERS"
+                        active:
+                          type: "boolean"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/personal/tableConfig":
+    get:
+      tags:
+        - "personal"
+      operationId: "getPersonalTableConfig"
+      summary: "tableConfig"
+      description: "Saved table layout of the logged-in user for a UI route."
+      parameters:
+        - name: "identifier"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "route"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/PersonalTableConfigResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "404":
+          description: "Observed status 404"
+          content:
+            "text/xml": {}
+      x-observed-calls: 14
+  "/workflow/graphql/admin":
+    post:
+      tags:
+        - "workflow"
+      operationId: "graphqlWorkflow"
+      summary: "GraphQL endpoint of the workflow service"
+      description: "Apollo-style GraphQL over POST. Observed operations: `PersonTaskList`, `PersonNotificationList`. Documents in operations.graphql. Pagination via `chunk { size, page, sort[{name, direction}] }`, results as `{content, totalElements, totalPages, number, size}`."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/PersonTaskListRequest"
+                - $ref: "#/components/schemas/PersonNotificationListRequest"
+              discriminator:
+                propertyName: "operationName"
+      responses:
+        "200":
+          description: "GraphQL result (errors are reported in `errors`, HTTP status stays 200)"
+          content:
+            "application/json":
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/PersonTaskListResponse"
+                  - $ref: "#/components/schemas/PersonNotificationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-graphql-operations:
+        - "PersonTaskList"
+        - "PersonNotificationList"
+  "/workflow/task/personTask/listData":
+    get:
+      tags:
+        - "workflow"
+      operationId: "getWorkflowTaskPersonTaskListData"
+      summary: "task › personTask › listData"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  action_readTasksAllPersons:
+                    type: "boolean"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/workflow/task/personTask/openTasks":
+    get:
+      tags:
+        - "workflow"
+      operationId: "getWorkflowTaskPersonTaskOpenTasks"
+      summary: "task › personTask › openTasks"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "integer"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/workflow/task/personTask/unreadNotifications":
+    get:
+      tags:
+        - "workflow"
+      operationId: "getWorkflowTaskPersonTaskUnreadNotifications"
+      summary: "task › personTask › unreadNotifications"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "integer"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 1
+  "/youthtraining/graphql/admin":
+    post:
+      tags:
+        - "youthtraining"
+      operationId: "graphqlYouthtraining"
+      summary: "GraphQL endpoint of the youthtraining service"
+      description: "Apollo-style GraphQL over POST. Observed operations: `OfferList`, `CampList`, `SupervisorsListForCamp`, `ParticipantsListForCamp`, `ActivityListForCamp`, `RegaSupervisorsListForCamp`, `RegaParticipantsListForCamp`, `MyOfferItemsInExecution`. Documents in operations.graphql. Pagination via `chunk { size, page, sort[{name, direction}] }`, results as `{content, totalElements, totalPages, number, size}`."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/OfferListRequest"
+                - $ref: "#/components/schemas/CampListRequest"
+                - $ref: "#/components/schemas/SupervisorsListForCampRequest"
+                - $ref: "#/components/schemas/ParticipantsListForCampRequest"
+                - $ref: "#/components/schemas/ActivityListForCampRequest"
+                - $ref: "#/components/schemas/RegaSupervisorsListForCampRequest"
+                - $ref: "#/components/schemas/RegaParticipantsListForCampRequest"
+                - $ref: "#/components/schemas/MyOfferItemsInExecutionRequest"
+              discriminator:
+                propertyName: "operationName"
+      responses:
+        "200":
+          description: "GraphQL result (errors are reported in `errors`, HTTP status stays 200)"
+          content:
+            "application/json":
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/OfferListResponse"
+                  - $ref: "#/components/schemas/CampListResponse"
+                  - $ref: "#/components/schemas/SupervisorsListForCampResponse"
+                  - $ref: "#/components/schemas/ParticipantsListForCampResponse"
+                  - $ref: "#/components/schemas/ActivityListForCampResponse"
+                  - $ref: "#/components/schemas/RegaSupervisorsListForCampResponse"
+                  - $ref: "#/components/schemas/RegaParticipantsListForCampResponse"
+                  - $ref: "#/components/schemas/MyOfferItemsInExecutionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-graphql-operations:
+        - "OfferList"
+        - "CampList"
+        - "SupervisorsListForCamp"
+        - "ParticipantsListForCamp"
+        - "ActivityListForCamp"
+        - "RegaSupervisorsListForCamp"
+        - "RegaParticipantsListForCamp"
+        - "MyOfferItemsInExecution"
+  "/youthtraining/offer/camp/{campId}/details":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingOfferCampDetails"
+      summary: "offer › camp › details"
+      parameters:
+        - name: "campId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/YouthtrainingOfferCampDetailsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/youthtraining/offer/camp/{campId}/groupSizeInformation":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingOfferCampGroupSizeInformation"
+      summary: "offer › camp › groupSizeInformation"
+      parameters:
+        - name: "campId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/YouthtrainingOfferCampGroupSizeInformationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/youthtraining/offer/camp/{campId}/statistics":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingOfferCampStatistics"
+      summary: "offer › camp › statistics"
+      parameters:
+        - name: "campId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+                properties:
+                  planned:
+                    $ref: "#/components/schemas/Planned"
+                  actual:
+                    $ref: "#/components/schemas/Actual"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/youthtraining/offer/offer/{offerId}":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingOffer"
+      summary: "offer"
+      parameters:
+        - name: "offerId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/YouthtrainingOfferResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/youthtraining/offer/offer/{offerId}/details":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingOfferDetails"
+      summary: "offer › details"
+      parameters:
+        - name: "offerId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/YouthtrainingOfferDetailsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 2
+  "/youthtraining/offer/offer/availableOptions":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingOfferAvailableOptions"
+      summary: "offer › availableOptions"
+      description: "Permission flags for the logged-in user (what the UI may show/do)."
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/YouthtrainingOfferAvailableOptionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 3
+  "/youthtraining/startpage/myActivitiesOfToday/":
+    get:
+      tags:
+        - "youthtraining"
+      operationId: "getYouthtrainingStartpageMyActivitiesOfToday"
+      summary: "startpage › myActivitiesOfToday"
+      parameters:
+        - $ref: "#/components/parameters/DefaultLanguage"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "application/json":
+              schema:
+                type: "array"
+                items: {}
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+      x-observed-calls: 3
+components:
+  securitySchemes:
+    sessionCookie:
+      type: "apiKey"
+      in: "cookie"
+      name: "SESSION"
+      description: "Spring Session cookie obtained through the AGOV/Keycloak login flow."
+  parameters:
+    DefaultLanguage:
+      name: "default-language"
+      in: "header"
+      required: false
+      description: "UI language sent by the web client (de/fr/it)."
+      schema:
+        type: "string"
+        enum:
+          - "de"
+          - "fr"
+          - "it"
+  responses:
+    Unauthenticated:
+      description: "No or expired session (browser is redirected to the Keycloak login)."
+  schemas:
+    ActivityListForCamp:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ActivityListForCampItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    ActivityListForCampItem:
+      type: "object"
+      properties:
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        activityType:
+          type: "string"
+          enum:
+            - "CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES"
+            - "FIRST_CAMP_DAY"
+            - "LAST_CAMP_DAY"
+        activityState:
+          type: "string"
+          enum:
+            - "ATTENDANCE_CHECKED"
+        activityDate:
+          type: "string"
+          format: "date"
+        dayOfWeek:
+          type: "string"
+          enum:
+            - "FRIDAY"
+            - "MONDAY"
+            - "SATURDAY"
+            - "SUNDAY"
+            - "THURSDAY"
+            - "TUESDAY"
+            - "WEDNESDAY"
+        duration:
+          type:
+            - "string"
+            - "null"
+        time:
+          description: "Only null observed in captures; actual type unknown."
+        location:
+          type: "string"
+        overlapCount:
+          type: "integer"
+        _availableOptions:
+          $ref: "#/components/schemas/ActivityListForCampOptions"
+    ActivityListForCampOptions:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        edit:
+          type: "boolean"
+        setToNotDone:
+          type: "boolean"
+        setFromNotDoneToAttendanceOpen:
+          type: "boolean"
+    ActivityListForCampRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "ActivityListForCamp"
+        query:
+          type: "string"
+          description: "GraphQL document `ActivityListForCamp`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/ActivityListForCampVariables"
+    ActivityListForCampResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            activityListForCamp:
+              $ref: "#/components/schemas/ActivityListForCamp"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    ActivityListForCampVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        campBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    Actual:
+      type: "object"
+      properties:
+        coachAuthorizedForContribution:
+          type: "boolean"
+        numberOfJsInstructors:
+          type: "integer"
+        numberOfPhysisInstructors:
+          type: "integer"
+        numberOfAdolescents:
+          type: "integer"
+        numberOfChildren:
+          type: "integer"
+        totalNumberOfParticipants:
+          type: "integer"
+        numberOfChildrenCampDays:
+          type: "integer"
+        numberOfAdolescentCampDays:
+          type: "integer"
+        numberOfCampDays:
+          type: "integer"
+        totalNumberOfActivities:
+          type: "integer"
+        totalNumberOfParticipantCampDays:
+          type: "integer"
+        totalNumberOfInstructors:
+          type: "integer"
+    Address:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        addressType:
+          type: "string"
+          enum:
+            - "OFFICIAL"
+            - "PRIVATE"
+        addressLine1:
+          type:
+            - "string"
+            - "null"
+        street:
+          type:
+            - "string"
+            - "null"
+        houseNumber:
+          type:
+            - "string"
+            - "null"
+        postOfficeBoxNumber:
+          type:
+            - "string"
+            - "null"
+        postOfficeBoxText:
+          type:
+            - "string"
+            - "null"
+        swissZipCode:
+          type: "string"
+          pattern: "^-?\\d+$"
+        foreignZipCode:
+          type:
+            - "string"
+            - "null"
+        town:
+          type: "string"
+        district:
+          type: "string"
+        canton:
+          anyOf:
+            - $ref: "#/components/schemas/Canton"
+            - type: "null"
+            - type: "object"
+              properties:
+                name:
+                  $ref: "#/components/schemas/LocalizedString"
+        country:
+          $ref: "#/components/schemas/Country"
+        zipCode:
+          type: "string"
+          pattern: "^-?\\d+$"
+        resolvedFromRegister:
+          type: "boolean"
+        sapAddressId:
+          type: "string"
+        streetHouseNumber:
+          type: "string"
+      x-merged-from-occurrences: 20
+    AvailableStockKeepingUnits:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        articleNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        size:
+          $ref: "#/components/schemas/ResolvedLocalizedString"
+        rentalMaterialTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        displayImage:
+          $ref: "#/components/schemas/DisplayImage"
+    BankAccount:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        systemId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        name:
+          type: "string"
+        iban:
+          type: "string"
+        owner:
+          type: "string"
+        bType:
+          type: "string"
+          pattern: "^-?\\d+$"
+        bankAccountStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        activityFieldYouthTrainingDefault:
+          type: "boolean"
+        organisationBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    BankAccountOrganisationList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/BankAccountOrganisationListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    BankAccountOrganisationListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        name:
+          type: "string"
+        iban:
+          type: "string"
+        bankAccountStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+            - "ARCHIVED"
+        activityFieldYouthTrainingDefault:
+          type: "boolean"
+        activityFieldYouthSportLeadingCadreDefault:
+          type: "boolean"
+        activityFieldAdultLeadingCadreDefault:
+          type: "boolean"
+        remark:
+          description: "Only null observed in captures; actual type unknown."
+        bankAccountAdditionalReceivers:
+          type: "array"
+          items: {}
+        systemId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        owner:
+          type: "string"
+        bType:
+          type: "string"
+          pattern: "^-?\\d+$"
+    BankAccountOrganisationListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "BankAccountOrganisationList"
+        query:
+          type: "string"
+          description: "GraphQL document `BankAccountOrganisationList`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/BankAccountOrganisationListVariables"
+    BankAccountOrganisationListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            bankAccountOrganisationList:
+              $ref: "#/components/schemas/BankAccountOrganisationList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    BankAccountOrganisationListVariables:
+      type: "object"
+      properties:
+        organisationBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        filter:
+          type: "object"
+          properties: {}
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+    CadreAdminEducationCadreEducationCourseTypePublishedCourseTypeInfoResponse:
+      type: "object"
+      properties:
+        name:
+          $ref: "#/components/schemas/LocalizedString"
+        sports:
+          $ref: "#/components/schemas/Sport"
+        additionalSports:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "array"
+              items: {}
+        disciplines:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/LocalizedString"
+        educationLevel:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              $ref: "#/components/schemas/LocalizedString"
+        courseDurationInDays:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "object"
+              properties:
+                min:
+                  type: "integer"
+                max:
+                  description: "Only null observed in captures; actual type unknown."
+        goal:
+          type: "object"
+          properties:
+            standardText:
+              $ref: "#/components/schemas/LocalizedString"
+            data:
+              description: "Only null observed in captures; actual type unknown."
+        courseOrModuleContent:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "object"
+              properties:
+                publishedContent:
+                  description: "Only null observed in captures; actual type unknown."
+        qualification:
+          type: "object"
+          properties:
+            standardText:
+              $ref: "#/components/schemas/LocalizedString"
+            data:
+              description: "Only null observed in captures; actual type unknown."
+        recommendations:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "object"
+              properties:
+                recommendationNextLevel:
+                  type: "boolean"
+        recognitions:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/LocalizedString"
+        supplements:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "array"
+              items: {}
+        supplementExtension:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "array"
+              items: {}
+        generalParticipationRequirement:
+          type: "object"
+          properties:
+            standardText:
+              $ref: "#/components/schemas/LocalizedString"
+            data:
+              description: "Only null observed in captures; actual type unknown."
+        specificParticipationRequirement:
+          type: "object"
+          properties:
+            standardText:
+              $ref: "#/components/schemas/LocalizedString"
+            data:
+              type: "object"
+              properties:
+                publishedFreeText:
+                  description: "Only null observed in captures; actual type unknown."
+                recognitions:
+                  type: "array"
+                  items: {}
+        usagePermission:
+          type: "object"
+          properties:
+            standardText:
+              $ref: "#/components/schemas/LocalizedString"
+            data:
+              description: "Only null observed in captures; actual type unknown."
+        mandatoryFurtherEducation:
+          type: "object"
+          properties:
+            standardText:
+              $ref: "#/components/schemas/LocalizedString"
+            data:
+              description: "Only null observed in captures; actual type unknown."
+        comment:
+          type: "object"
+          properties:
+            standardText:
+              description: "Only null observed in captures; actual type unknown."
+            data:
+              type: "object"
+              properties:
+                publishedComment:
+                  description: "Only null observed in captures; actual type unknown."
+    CadreEducationEducationStructureAllResponse:
+      type: "object"
+      properties:
+        educationLevel:
+          type: "string"
+          pattern: "^-?\\d+$"
+        name:
+          $ref: "#/components/schemas/LocalizedString"
+        levelOrder:
+          type: "integer"
+        amountMandatoryElectiveModulesToVisit:
+          type: "integer"
+        maxAmountMandatoryElectiveModules:
+          type: "integer"
+        courseTypes:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CourseTypes"
+        containsInterdisciplinaryModules:
+          type: "boolean"
+    CadreEducationEducationStructureResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        title:
+          $ref: "#/components/schemas/LocalizedString"
+        activeDateRange:
+          $ref: "#/components/schemas/DateRange"
+        sport:
+          $ref: "#/components/schemas/Sport"
+        educationField:
+          type: "string"
+          enum:
+            - "ESA"
+            - "JS_COACH"
+            - "JS_LEADER_AND_EXPERT"
+        activeState:
+          type: "string"
+          enum:
+            - "ACTIVE"
+    CadreEducationEducationStructureVersionResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        title:
+          $ref: "#/components/schemas/LocalizedString"
+        activeDateRange:
+          $ref: "#/components/schemas/DateRange"
+        sport:
+          description: "Only null observed in captures; actual type unknown."
+        educationField:
+          type: "string"
+          enum:
+            - "ESA"
+            - "JS_COACH"
+        activeState:
+          type: "string"
+          enum:
+            - "ACTIVE"
+    Camp:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        offerItemNumber:
+          type: "integer"
+        groupName:
+          type: "string"
+        sports:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Sport"
+        plannedParticipantCount:
+          type: "integer"
+        actualParticipantCount:
+          type: "integer"
+        actualInstructorCount:
+          type: "integer"
+        coach:
+          $ref: "#/components/schemas/Person"
+        grantingBody:
+          $ref: "#/components/schemas/Organisation"
+        organisation:
+          $ref: "#/components/schemas/Organisation"
+        offerItemState:
+          type: "string"
+          enum:
+            - "WAITING_FOR_ASSESSMENT"
+        offerState:
+          type: "string"
+          enum:
+            - "WAITING_FOR_ASSESSMENT"
+        offerNumber:
+          type: "integer"
+        offerBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        mapOrderAllowed:
+          type: "boolean"
+        involvedPersonCount:
+          type: "integer"
+        organisationName:
+          $ref: "#/components/schemas/ResolvedLocalizedString"
+        courseType:
+          type: "string"
+          enum:
+            - "JA"
+        participantCount:
+          type: "integer"
+        instructorCount:
+          type: "integer"
+        executingOrganisation:
+          description: "Only null observed in captures; actual type unknown."
+        personTaskPlaceholders:
+          $ref: "#/components/schemas/PersonTaskPlaceholders"
+        title:
+          $ref: "#/components/schemas/LocalizedString"
+    CampAgenda:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        createdOn:
+          type: "string"
+          format: "date-time"
+        documentType:
+          type: "string"
+          enum:
+            - "YOUTHTRAINING_CAMP_AGENDA"
+        mimeType:
+          type: "string"
+          enum:
+            - "PDF"
+        fileName:
+          type: "string"
+        contextId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        contextType:
+          type: "string"
+          enum:
+            - "YOUT_CAMP"
+        documentStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+    CampList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CampListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    CampListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        offerItemNumber:
+          type: "integer"
+        groupName:
+          type: "string"
+        mainSport:
+          type: "object"
+          properties:
+            title:
+              $ref: "#/components/schemas/LocalizedString"
+        sports:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              title:
+                $ref: "#/components/schemas/LocalizedString"
+        targetAudienceGroup:
+          type: "string"
+          enum:
+            - "YOUTH_TRAINING"
+        duration:
+          $ref: "#/components/schemas/DateRange"
+        offerItemState:
+          type: "string"
+          enum:
+            - "WAITING_FOR_ASSESSMENT"
+        totalCampSubsidies:
+          type: "number"
+        activityContribution:
+          type: "integer"
+        _availableOptions:
+          $ref: "#/components/schemas/CampListOptions"
+    CampListOptions:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        requestApproval:
+          type: "boolean"
+        approveLateSubmission:
+          type: "boolean"
+        cancel:
+          type: "boolean"
+        undoCancel:
+          type: "boolean"
+        addInvolvement:
+          type: "boolean"
+        finishAttendanceCheck:
+          type: "boolean"
+        startCorrectionOfAttendanceCheck:
+          type: "boolean"
+        resetInExecution:
+          type: "boolean"
+    CampListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "CampList"
+        query:
+          type: "string"
+          description: "GraphQL document `CampList`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/CampListVariables"
+    CampListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            campList:
+              $ref: "#/components/schemas/CampList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    CampListVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        offerBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        campBusinessId:
+          description: "Only null observed in captures; actual type unknown."
+    Canton:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        shortform:
+          type: "string"
+        name:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedString"
+            - $ref: "#/components/schemas/ResolvedLocalizedString"
+        region:
+          type: "string"
+          enum:
+            - "NORTH_WEST_SWISS"
+      x-merged-from-occurrences: 13
+    Chunk:
+      type: "object"
+      properties:
+        size:
+          type: "integer"
+        page:
+          type: "integer"
+        sort:
+          type: "array"
+          items:
+            type:
+              - "object"
+              - "null"
+            properties:
+              name:
+                type: "string"
+              direction:
+                type: "string"
+                enum:
+                  - "ASC"
+                  - "DESC"
+      x-merged-from-occurrences: 23
+    Country:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        iso3:
+          type: "string"
+          enum:
+            - "CHE"
+        iso2:
+          type: "string"
+        name:
+          $ref: "#/components/schemas/LocalizedString"
+        important:
+          type: "boolean"
+        importantRank:
+          type: "integer"
+        switzerland:
+          type: "boolean"
+        liechtenstein:
+          type: "boolean"
+      x-merged-from-occurrences: 15
+    Course:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        executingOrganisation:
+          type: "object"
+          properties:
+            businessId:
+              type: "string"
+              pattern: "^-?\\d+$"
+        cadreEducationCourseType:
+          type: "object"
+          properties:
+            educationField:
+              type: "string"
+              enum:
+                - "JS_COACH"
+                - "JS_LEADER_AND_EXPERT"
+            name:
+              $ref: "#/components/schemas/LocalizedString"
+        courseParts:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              duration:
+                $ref: "#/components/schemas/DateRange"
+        courseNumber:
+          type: "string"
+        sportsOrderedDe:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              title:
+                type: "object"
+                properties:
+                  de:
+                    type: "string"
+        sportsOrderedFr:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              title:
+                type: "object"
+                properties:
+                  fr:
+                    type: "string"
+        sportsOrderedIt:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              title:
+                type: "object"
+                properties:
+                  it:
+                    type: "string"
+        firstCoursePart:
+          type: "object"
+          properties:
+            address:
+              type: "object"
+              properties:
+                town:
+                  type: "string"
+    CourseTypes:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        name:
+          $ref: "#/components/schemas/LocalizedString"
+        courseType:
+          type: "string"
+          enum:
+            - "NO_TYPE"
+        rankOrder:
+          type: "integer"
+        characteristic:
+          description: "Only null observed in captures; actual type unknown."
+        targetAudienceGroup:
+          description: "Only null observed in captures; actual type unknown."
+        moduleType:
+          type:
+            - "string"
+            - "null"
+          enum:
+            - "MANDATORY"
+    DateRange:
+      type: "object"
+      properties:
+        first:
+          type: "string"
+        last:
+          type:
+            - "string"
+            - "null"
+      x-merged-from-occurrences: 28
+    DisplayImage:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        fileName:
+          type: "string"
+        mimeType:
+          type: "string"
+          enum:
+            - "image/jpeg"
+        size:
+          type: "integer"
+        creationDate:
+          type: "string"
+          format: "date"
+        urlConformFileName:
+          type: "string"
+      x-merged-from-occurrences: 2
+    DocumentContexts:
+      type: "object"
+      properties:
+        primaryContextType:
+          type: "string"
+          enum:
+            - "FINANCIAL_TRANSACTION"
+            - "OFFER"
+            - "ORGANISATION"
+            - "ORGANISATION_BANK_ACCOUNT"
+        primaryContextId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        documentTypes:
+          type: "array"
+          items:
+            type: "string"
+        contextType:
+          type: "string"
+          enum:
+            - "OFFER"
+            - "ORGANISATION"
+        contextId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    DocumentListByContextTypeAndContextId:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/DocumentListByContextTypeAndContextIdItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    DocumentListByContextTypeAndContextIdItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        mimeType:
+          type: "string"
+          enum:
+            - "PDF"
+            - "WORD_DOCX"
+        documentType:
+          type: "string"
+          enum:
+            - "BANK_ACCOUNT_VERIFICATION"
+            - "STATUTES"
+            - "YOUTHTRAINING_DECREE_ON_ORGANISATION"
+            - "YOUTHTRAINING_OFFER"
+        primaryContextType:
+          type: "string"
+          enum:
+            - "OFFER"
+            - "ORGANISATION"
+            - "ORGANISATION_BANK_ACCOUNT"
+        createdOn:
+          type: "string"
+          format: "date-time"
+        createdBy:
+          description: "Only null observed in captures; actual type unknown."
+        modifiedOn:
+          description: "Only null observed in captures; actual type unknown."
+        modifiedBy:
+          description: "Only null observed in captures; actual type unknown."
+        archivedOn:
+          description: "Only null observed in captures; actual type unknown."
+        archivedBy:
+          description: "Only null observed in captures; actual type unknown."
+        deletedOn:
+          description: "Only null observed in captures; actual type unknown."
+        deletedBy:
+          description: "Only null observed in captures; actual type unknown."
+        fileName:
+          type: "string"
+        fileSize:
+          type: "integer"
+        documentStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        _availableOptions:
+          $ref: "#/components/schemas/DocumentListByContextTypeAndContextIdOptions"
+    DocumentListByContextTypeAndContextIdOptions:
+      type: "object"
+      properties:
+        edit:
+          type: "boolean"
+        delete:
+          type: "boolean"
+    DocumentListByContextTypeAndContextIdRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "DocumentListByContextTypeAndContextId"
+        query:
+          type: "string"
+          description: "GraphQL document `DocumentListByContextTypeAndContextId`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/DocumentListByContextTypeAndContextIdVariables"
+    DocumentListByContextTypeAndContextIdResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            documentListByContextTypeAndContextId:
+              $ref: "#/components/schemas/DocumentListByContextTypeAndContextId"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    DocumentListByContextTypeAndContextIdVariables:
+      type: "object"
+      properties:
+        filter:
+          type: "object"
+          properties: {}
+        documentContextAttributes:
+          type: "object"
+          properties:
+            documentContexts:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/DocumentContexts"
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+    Email:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        email:
+          type: "string"
+          format: "email"
+        validated:
+          type: "boolean"
+        validatedOn:
+          description: "Only null observed in captures; actual type unknown."
+        emailValidations:
+          type: "array"
+          items: {}
+    FinancialTransactionList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/FinancialTransactionListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    FinancialTransactionListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        transactionNumber:
+          type:
+            - "string"
+            - "null"
+          pattern: "^-?\\d+$"
+        transactionGroup:
+          description: "Only null observed in captures; actual type unknown."
+        bookingText:
+          type: "string"
+        accountingSAPReceipt:
+          description: "Only null observed in captures; actual type unknown."
+        sapBusinessPartnerId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        organisation:
+          $ref: "#/components/schemas/Organisation"
+        person:
+          description: "Only null observed in captures; actual type unknown."
+        offer:
+          type: "string"
+          pattern: "^-?\\d+$"
+        offerStartDate:
+          type: "string"
+          format: "date"
+        totalAmountChf:
+          type: "string"
+          pattern: "^-?\\d+$"
+        transactionStatus:
+          type: "string"
+          enum:
+            - "CLOSED"
+            - "CONFIRMED"
+        orderNumber:
+          description: "Only null observed in captures; actual type unknown."
+        valueDate:
+          type: "string"
+          format: "date"
+        lastModified:
+          description: "Only null observed in captures; actual type unknown."
+        receiptNumber:
+          description: "Only null observed in captures; actual type unknown."
+        invoiceText:
+          description: "Only null observed in captures; actual type unknown."
+        bankAccountName:
+          type:
+            - "string"
+            - "null"
+        bankAccountIBAN:
+          type:
+            - "string"
+            - "null"
+        bankAccountBankType:
+          type:
+            - "string"
+            - "null"
+        bankAccountOwner:
+          type:
+            - "string"
+            - "null"
+        costCenterName:
+          description: "Only null observed in captures; actual type unknown."
+        userGroup:
+          type:
+            - "string"
+            - "null"
+          enum:
+            - "NG3"
+        activityField:
+          type:
+            - "string"
+            - "null"
+          enum:
+            - "YOUTH_TRAINING"
+        paymentType:
+          description: "Only null observed in captures; actual type unknown."
+        sapNotification:
+          description: "Only null observed in captures; actual type unknown."
+        justification:
+          description: "Only null observed in captures; actual type unknown."
+        transactionLock:
+          description: "Only null observed in captures; actual type unknown."
+        sapFeedback:
+          description: "Only null observed in captures; actual type unknown."
+        remark:
+          description: "Only null observed in captures; actual type unknown."
+        processor:
+          description: "Only null observed in captures; actual type unknown."
+        glAccountNumber:
+          description: "Only null observed in captures; actual type unknown."
+        validTransaction:
+          description: "Only null observed in captures; actual type unknown."
+        sapOrderType:
+          description: "Only null observed in captures; actual type unknown."
+        clearanceReceiptNumber:
+          type:
+            - "string"
+            - "null"
+          pattern: "^-?\\d+$"
+        invoiceNumber:
+          description: "Only null observed in captures; actual type unknown."
+        sapDeliveryDate:
+          type:
+            - "string"
+            - "null"
+          format: "date"
+        reclaimReason:
+          description: "Only null observed in captures; actual type unknown."
+        sapPaymentCondition:
+          description: "Only null observed in captures; actual type unknown."
+        _availableOptions:
+          $ref: "#/components/schemas/FinancialTransactionListOptions"
+    FinancialTransactionListOptions:
+      type: "object"
+      properties:
+        cancel:
+          type: "boolean"
+        update:
+          type: "boolean"
+        showTransaction:
+          type: "boolean"
+        createInvoice:
+          type: "boolean"
+        createPaymentOrder:
+          type: "boolean"
+        financialTransactionStatus:
+          type: "boolean"
+        sync:
+          type: "boolean"
+        block:
+          type: "boolean"
+        unblock:
+          type: "boolean"
+        clearTransaction:
+          type: "boolean"
+    FinancialTransactionListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "FinancialTransactionList"
+        query:
+          type: "string"
+          description: "GraphQL document `FinancialTransactionList`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/FinancialTransactionListVariables"
+    FinancialTransactionListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            financialTransactionList:
+              $ref: "#/components/schemas/FinancialTransactionList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    FinancialTransactionListVariables:
+      type: "object"
+      properties:
+        organisationBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+    JsCoachAndEsaCoursePlan:
+      type: "object"
+      properties:
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/JsCoachAndEsaCoursePlanItem"
+    JsCoachAndEsaCoursePlanItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        cadreEducationCourseType:
+          type: "object"
+          properties:
+            cadreEducationCourseTypeGroup:
+              type: "object"
+              properties:
+                educationLevel:
+                  type: "object"
+                  properties:
+                    name:
+                      type: "object"
+                      properties:
+                        de:
+                          type: "string"
+            name:
+              type: "object"
+              properties:
+                de:
+                  type: "string"
+        courseNumber:
+          type: "string"
+        topic:
+          $ref: "#/components/schemas/LocalizedString"
+        firstCoursePart:
+          type: "object"
+          properties:
+            address:
+              type:
+                - "object"
+                - "null"
+              properties:
+                town:
+                  type: "string"
+        courseParts:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              duration:
+                $ref: "#/components/schemas/DateRange"
+        asynchronousLearningTime:
+          description: "Only null observed in captures; actual type unknown."
+        registrationDeadline:
+          type: "string"
+          format: "date"
+        registrationStatus:
+          type: "string"
+          enum:
+            - "OPEN_PLACES"
+            - "REGISTRATION_COMPLETED"
+            - "WAITING_LIST"
+        registrationComment:
+          $ref: "#/components/schemas/LocalizedString"
+        courseLanguages:
+          type: "array"
+          items:
+            type: "string"
+    JsCoachAndEsaCoursePlanRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "JsCoachAndEsaCoursePlan"
+        query:
+          type: "string"
+          description: "GraphQL document `JsCoachAndEsaCoursePlan`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/JsCoachAndEsaCoursePlanVariables"
+    JsCoachAndEsaCoursePlanResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            jsCoachAndEsaCoursePlan:
+              $ref: "#/components/schemas/JsCoachAndEsaCoursePlan"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    JsCoachAndEsaCoursePlanVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties:
+            cadreEducationCourseType:
+              type: "object"
+              properties:
+                selected:
+                  type: "string"
+                  pattern: "^-?\\d+$"
+                  enum:
+                    - "3530062091238098692"
+        educationField:
+          type: "string"
+          enum:
+            - "ESA"
+            - "JS_COACH"
+    ListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "List"
+        query:
+          type: "string"
+          description: "GraphQL document `List`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/ListVariables"
+    ListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            relatedParentOrganisationList:
+              $ref: "#/components/schemas/RelatedParentOrganisationList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    ListVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        organisation:
+          type: "string"
+          pattern: "^-?\\d+$"
+        activityField:
+          type: "string"
+          enum:
+            - "YOUTH_TRAINING"
+    LocalizedString:
+      type:
+        - "object"
+        - "null"
+      properties:
+        de:
+          type:
+            - "string"
+            - "null"
+        fr:
+          type:
+            - "string"
+            - "null"
+        it:
+          type:
+            - "string"
+            - "null"
+        standardText:
+          description: "Only null observed in captures; actual type unknown."
+        data:
+          $ref: "#/components/schemas/LocalizedString"
+        resolvedLocalizedString:
+          $ref: "#/components/schemas/LocalizedString"
+        resolvedDe:
+          type: "string"
+        resolvedFr:
+          type: "string"
+        resolvedIt:
+          type: "string"
+      x-merged-from-occurrences: 112
+    MaterialAdminRentalMaterialOrderResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        camp:
+          $ref: "#/components/schemas/Camp"
+        youthTrainingCourse:
+          description: "Only null observed in captures; actual type unknown."
+        cadreEducationCourse:
+          description: "Only null observed in captures; actual type unknown."
+        orderNumber:
+          type: "integer"
+        orderDate:
+          type: "string"
+          format: "date"
+        orderState:
+          type: "string"
+          enum:
+            - "FINISHED"
+        responsiblePerson:
+          $ref: "#/components/schemas/Person"
+        dispatchmentType:
+          type: "string"
+          enum:
+            - "SHIPMENT"
+        contactPerson:
+          type: "string"
+        dispatchmentDate:
+          type: "string"
+          format: "date"
+        returnDate:
+          type: "string"
+          format: "date"
+        destinationName:
+          type: "string"
+        destinationAddress:
+          description: "Only null observed in captures; actual type unknown."
+        destination:
+          $ref: "#/components/schemas/Address"
+        note:
+          type: "string"
+        orderWeight:
+          type: "integer"
+        orderWeightLastChangedDate:
+          type: "string"
+          format: "date"
+        deductionAmountOfMoney:
+          type: "number"
+        rentalMaterialMissingAtCompletion:
+          type: "boolean"
+        dunningLetterCreationDate:
+          description: "Only null observed in captures; actual type unknown."
+        organisation:
+          $ref: "#/components/schemas/Organisation"
+        _availableOptions:
+          $ref: "#/components/schemas/MaterialAdminRentalMaterialOrderResponseOptions"
+        orderItems:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/OrderItems"
+    MaterialAdminRentalMaterialOrderResponseOptions:
+      type: "object"
+      properties:
+        displayRentalMaterialCreateButton:
+          type: "boolean"
+        displayTeachingMaterialCreateButton:
+          type: "boolean"
+        delete:
+          type: "boolean"
+        edit:
+          type: "boolean"
+        cancel:
+          type: "boolean"
+        submit:
+          type: "boolean"
+        showDetails:
+          type: "boolean"
+        approveAndRejectByGrantingBody:
+          type: "boolean"
+        confirmAndRejectByLba:
+          type: "boolean"
+        finish:
+          type: "boolean"
+        updateOrderWeight:
+          type: "boolean"
+        reportDamageOrMissingOrderItems:
+          type: "boolean"
+        dun:
+          type: "boolean"
+    MyOfferItemsInExecution:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items: {}
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    MyOfferItemsInExecutionRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "MyOfferItemsInExecution"
+        query:
+          type: "string"
+          description: "GraphQL document `MyOfferItemsInExecution`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties: {}
+    MyOfferItemsInExecutionResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            myOfferItemsInExecution:
+              $ref: "#/components/schemas/MyOfferItemsInExecution"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    OfferList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/OfferListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    OfferListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        assistantInstructor1418AnalysisBid:
+          description: "Only null observed in captures; actual type unknown."
+        offerNumber:
+          type: "integer"
+        duration:
+          $ref: "#/components/schemas/DateRange"
+        offerState:
+          type: "string"
+          enum:
+            - "PARTIALLY_PAYED"
+            - "PAYED_CH"
+            - "WAITING_FOR_ASSESSMENT"
+        offerGroup:
+          type: "string"
+          enum:
+            - "NG3"
+        coach:
+          $ref: "#/components/schemas/Person"
+        courseCount:
+          type: "integer"
+        campCount:
+          type: "integer"
+        organisation:
+          type: "object"
+          properties:
+            name:
+              type: "object"
+              properties:
+                resolvedLocalizedString:
+                  $ref: "#/components/schemas/LocalizedString"
+    OfferListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "OfferList"
+        query:
+          type: "string"
+          description: "GraphQL document `OfferList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties: {}
+    OfferListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            offerList:
+              $ref: "#/components/schemas/OfferList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    OrderItems:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        stockKeepingUnit:
+          $ref: "#/components/schemas/StockKeepingUnit"
+        quantity:
+          type: "integer"
+        equipmentWeight:
+          description: "Only null observed in captures; actual type unknown."
+        numberOfFaultyArticles:
+          description: "Only null observed in captures; actual type unknown."
+        numberOfMissingArticles:
+          description: "Only null observed in captures; actual type unknown."
+        damageDescription:
+          type: "string"
+        damageImages:
+          type: "array"
+          items: {}
+        availableStockKeepingUnits:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/AvailableStockKeepingUnits"
+        imageFileName:
+          type: "string"
+        imageUrl:
+          type: "string"
+          format: "uri"
+        packageSize:
+          type: "integer"
+    Organisation:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        referenceId:
+          type: "string"
+          enum:
+            - ""
+            - "BEWBE"
+        name:
+          anyOf:
+            - $ref: "#/components/schemas/ResolvedLocalizedString"
+            - $ref: "#/components/schemas/LocalizedString"
+        shortName:
+          $ref: "#/components/schemas/ResolvedLocalizedString"
+        organisationType:
+          type: "string"
+          enum:
+            - "ASSOCIATION"
+            - "CANTONAL_SPORTS_SERVICES_YOUTH_AND_SPORT"
+            - "SPORT_AND_YOUTH_ORGANISATION"
+        manager:
+          $ref: "#/components/schemas/Person"
+        correspondenceAddress:
+          $ref: "#/components/schemas/Address"
+        courseAbbreviationForCadreEducationJs:
+          type: "string"
+        courseAbbreviationForCadreEducationEsa:
+          type: "string"
+        activityFields:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "CADRE"
+              - "ESA"
+              - "YOUTH_TRAINING"
+        legalForm:
+          type:
+            - "string"
+            - "null"
+          enum:
+            - "CLUB"
+            - "PUBLIC_CORPORATIONS"
+        phone:
+          type:
+            - "string"
+            - "null"
+        website:
+          type:
+            - "string"
+            - "null"
+        communicationLanguage:
+          type: "string"
+        organisationStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        migrationStatus:
+          type: "string"
+          enum:
+            - "MIGRATED_AS_ACTIVE_COMPLETE"
+        legalSeat:
+          $ref: "#/components/schemas/Address"
+        sportsYouthTraining:
+          type: "array"
+          items:
+            anyOf:
+              - $ref: "#/components/schemas/Sport"
+              - type: "null"
+        userGroupsYouthTraining:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "NG3"
+              - "NG4"
+              - "NG5"
+        statusYouthTraining:
+          type: "string"
+          enum:
+            - "ACTIVE"
+            - "INACTIVE"
+        grantingBody:
+          anyOf:
+            - $ref: "#/components/schemas/Organisation"
+            - type: "null"
+        organisationNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        vendorNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        email:
+          type: "string"
+          format: "email"
+        specificGuidelinesYT:
+          type: "boolean"
+        sapBusinessPartnerId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        authorizedForPrePayment:
+          type: "boolean"
+      x-merged-from-occurrences: 10
+    OrganisationCourseCadre:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/OrganisationCourseCadreItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    OrganisationCourseCadreItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        person:
+          $ref: "#/components/schemas/Person"
+        userGroups:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/UserGroups"
+        lastActivity:
+          type: "string"
+          format: "date"
+        isActive:
+          type: "boolean"
+        hasOmittedRecognitions:
+          type: "boolean"
+        needsFurtherEducationCurrentYear:
+          type: "boolean"
+        needsFurtherEducationNextYear:
+          type: "boolean"
+        plannedFurtherEducation:
+          type: "array"
+          items: {}
+    OrganisationCourseCadreRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "organisationCourseCadre"
+        query:
+          type: "string"
+          description: "GraphQL document `organisationCourseCadre`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/OrganisationCourseCadreVariables"
+    OrganisationCourseCadreResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            organisationCourseCadre:
+              $ref: "#/components/schemas/OrganisationCourseCadre"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    OrganisationCourseCadreVariables:
+      type: "object"
+      properties:
+        organisationBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        filter:
+          type: "object"
+          properties:
+            personStatus:
+              type: "object"
+              properties:
+                selected:
+                  type: "string"
+                  enum:
+                    - "ACTIVE"
+            isActive:
+              type: "object"
+              properties:
+                expected:
+                  type: "boolean"
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+    OrganisationList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/OrganisationListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    OrganisationListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        organisationStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        statusYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        statusYouthTraining:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        statusAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        name:
+          $ref: "#/components/schemas/LocalizedString"
+        shortName:
+          $ref: "#/components/schemas/LocalizedString"
+        organisationType:
+          type: "string"
+          enum:
+            - "SPORT_AND_YOUTH_ORGANISATION"
+        legalSeat:
+          $ref: "#/components/schemas/Address"
+        activityFields:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "YOUTH_TRAINING"
+    OrganisationListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "OrganisationList"
+        query:
+          type: "string"
+          description: "GraphQL document `OrganisationList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties:
+                organisationStatus:
+                  type: "object"
+                  properties:
+                    selected:
+                      type: "string"
+                      enum:
+                        - "ACTIVE"
+    OrganisationListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            organisationList:
+              $ref: "#/components/schemas/OrganisationList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    OrganisationOfferList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/OrganisationOfferListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    OrganisationOfferListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        offerNumber:
+          type: "integer"
+        duration:
+          $ref: "#/components/schemas/DateRange"
+        creationDate:
+          type: "string"
+          format: "date"
+        offerGroup:
+          type: "string"
+          enum:
+            - "NG3"
+        offerState:
+          type: "string"
+          enum:
+            - "PAYED_CH"
+            - "UNFINISHED_BY_BATCH"
+    OrganisationOfferListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "organisationOfferList"
+        query:
+          type: "string"
+          description: "GraphQL document `organisationOfferList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            organisationBusinessId:
+              type: "string"
+              pattern: "^-?\\d+$"
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+    OrganisationOfferListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            organisationOfferList:
+              $ref: "#/components/schemas/OrganisationOfferList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    ParticipantsListForCamp:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ParticipantsListForCampItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    ParticipantsListForCampItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        targetAudienceGroup:
+          type: "string"
+          enum:
+            - "YOUTH_TRAINING"
+        eligibleForSubsidies:
+          type: "boolean"
+        person:
+          $ref: "#/components/schemas/Person"
+        _availableOptions:
+          $ref: "#/components/schemas/ParticipantsListForCampOptions"
+    ParticipantsListForCampOptions:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        displayPersonDetails:
+          type: "boolean"
+    ParticipantsListForCampRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "ParticipantsListForCamp"
+        query:
+          type: "string"
+          description: "GraphQL document `ParticipantsListForCamp`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/ParticipantsListForCampVariables"
+    ParticipantsListForCampResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            participantsListForCamp:
+              $ref: "#/components/schemas/ParticipantsListForCamp"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    ParticipantsListForCampVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        campBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    PerorgfinAdminOrganisationExpandResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        name:
+          $ref: "#/components/schemas/ResolvedLocalizedString"
+        shortName:
+          $ref: "#/components/schemas/ResolvedLocalizedString"
+        activityFields:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "YOUTH_TRAINING"
+        legalForm:
+          type: "string"
+          enum:
+            - "CLUB"
+        organisationType:
+          type: "string"
+          enum:
+            - "SPORT_AND_YOUTH_ORGANISATION"
+        manager:
+          $ref: "#/components/schemas/Person"
+        phone:
+          description: "Only null observed in captures; actual type unknown."
+        website:
+          type: "string"
+        email:
+          $ref: "#/components/schemas/Email"
+        uidNr:
+          description: "Only null observed in captures; actual type unknown."
+        communicationLanguage:
+          type: "string"
+        organisationStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        legalSeat:
+          $ref: "#/components/schemas/Address"
+        correspondenceAddress:
+          $ref: "#/components/schemas/Address"
+        association:
+          type: "boolean"
+        referenceId:
+          description: "Only null observed in captures; actual type unknown."
+        grantingBody:
+          $ref: "#/components/schemas/Organisation"
+        sportsYouthTraining:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Sport"
+        sportsYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        disciplinesAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        organisationNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        offerGroupsYouthTraining:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "NG3"
+        adminEmailYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        additionalAdminEmailYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        adminEmailAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        additionalAdminEmailAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        useDefaultAdminEmailYouthSportLeadingCadre:
+          type: "boolean"
+        useDefaultAdminEmailAdultLeadingCadre:
+          type: "boolean"
+        authorizedForPaymentYouthTraining:
+          type: "boolean"
+        compensationAuthorisedYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        courseContractionYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        benefitAuthorisedYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        courseContractionAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        benefitAuthorisedAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        acquisitionStatusBaseData:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        acquisitionStatusYouthTraining:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        acquisitionStatusYouthSportLeadingCadre:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        acquisitionStatusAdultLeadingCadre:
+          type: "string"
+          enum:
+            - "PENDING"
+        statusBaseData:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        statusYouthTraining:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        statusYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        statusAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        trainingAreaEsaEnabledAdultLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        trainingAreaJsEnabledYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        trainingAreaJsCoachEnabledYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        trainingAreaOtherEnabledYouthSportLeadingCadre:
+          description: "Only null observed in captures; actual type unknown."
+        customerNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        vendorNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        useAllSportsYouthTraining:
+          type: "boolean"
+        useAllSportsYouthSportLeadingCadre:
+          type: "boolean"
+        useAllDisciplinesAdultLeadingCadre:
+          type: "boolean"
+        acquisitionStatusFinance:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        statusFinance:
+          description: "Only null observed in captures; actual type unknown."
+        acquisitionStatusPersons:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        statusPersons:
+          description: "Only null observed in captures; actual type unknown."
+        specificGuidelinesYT:
+          description: "Only null observed in captures; actual type unknown."
+        specificGuidelinesYSLC:
+          description: "Only null observed in captures; actual type unknown."
+        specificGuidelinesALC:
+          description: "Only null observed in captures; actual type unknown."
+        acquisitionStatusDocuments:
+          type: "string"
+          enum:
+            - "COMPLETED"
+        statusDocuments:
+          description: "Only null observed in captures; actual type unknown."
+        contractParnershipYSLC:
+          description: "Only null observed in captures; actual type unknown."
+        contractParnershipALC:
+          description: "Only null observed in captures; actual type unknown."
+        externalCourseManagement:
+          description: "Only null observed in captures; actual type unknown."
+        migrationStatus:
+          type: "string"
+          enum:
+            - "MIGRATED_AS_ACTIVE_COMPLETE"
+        activationDateYT:
+          description: "Only null observed in captures; actual type unknown."
+        activationDateYSLC:
+          description: "Only null observed in captures; actual type unknown."
+        activationDateALC:
+          description: "Only null observed in captures; actual type unknown."
+        sapBusinessPartnerId:
+          description: "Only null observed in captures; actual type unknown."
+        organisationReadOnly:
+          type: "boolean"
+        typeBaspo:
+          type: "boolean"
+        grantingBodyBaspo:
+          type: "boolean"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        courseTypeAssignmentYouthSportLeadingCadre:
+          type: "array"
+          items: {}
+        courseTypeAssignmentAdultLeadingCadre:
+          type: "array"
+          items: {}
+        additionOptions:
+          type: "array"
+          items:
+            type: "string"
+    PerorgfinAdminPersonAvailableOptionsResponse:
+      type: "object"
+      properties:
+        list:
+          type: "boolean"
+        delete:
+          type: "boolean"
+        create:
+          type: "boolean"
+        update:
+          type: "boolean"
+        createWithoutRegisterSearch:
+          type: "boolean"
+        merge:
+          type: "boolean"
+        mergeActive:
+          type: "boolean"
+        displayAhvn13Allowed:
+          type: "boolean"
+        displayFirstNameAllowed:
+          type: "boolean"
+        displayLastNameAllowed:
+          type: "boolean"
+        displayBirthDateAllowed:
+          type: "boolean"
+        displayPeidAllowed:
+          type: "boolean"
+        displayPersonStatusAllowed:
+          type: "boolean"
+        displayWarnedAllowed:
+          type: "boolean"
+        showBankAccountAllowed:
+          type: "boolean"
+        editBankAccountAllowed:
+          type: "boolean"
+        showFinancialTransactionsAllowed:
+          type: "boolean"
+        createGrantedRecognitionAllowed:
+          type: "boolean"
+        createPersonSupplementAllowed:
+          type: "boolean"
+        updatePersonSupplementAllowed:
+          type: "boolean"
+        deletePersonSupplementAllowed:
+          type: "boolean"
+        showPersonAttributeAllowed:
+          type: "boolean"
+        createPersonAttributeAllowed:
+          type: "boolean"
+        createPersonAttributeWithPrivateFlagAllowed:
+          type: "boolean"
+        updatePersonAttributeAllowed:
+          type: "boolean"
+        deletePersonAttributeAllowed:
+          type: "boolean"
+        warnPersonAllowed:
+          type: "boolean"
+        suspendPersonAllowed:
+          type: "boolean"
+        showUserAccountsAllowed:
+          type: "boolean"
+        updateDateOfDeathAllowed:
+          type: "boolean"
+        downloadBiographyAllowed:
+          type: "boolean"
+        showAdminCreateUserGroup:
+          type: "boolean"
+        updateSocialInsuranceNumberAllowed:
+          type: "boolean"
+        updatePeidAllowed:
+          type: "boolean"
+        showBiographyAllowed:
+          type: "boolean"
+        showCurrentCoursesAllowed:
+          type: "boolean"
+        syncWithRegistryAllowed:
+          type: "boolean"
+        updateReactivateAllowed:
+          type: "boolean"
+        setActiveAllowed:
+          type: "boolean"
+        setInactiveAllowed:
+          type: "boolean"
+        showEligibleForSubsidiesAllowed:
+          type: "boolean"
+        updateEligibleForSubsidiesAllowed:
+          type: "boolean"
+        displayAdvancedPersonSearchTab:
+          type: "boolean"
+        displayAdvancedPersonSearchRecognitions:
+          type: "boolean"
+        displayAdvancedPersonSearchYouthTraining:
+          type: "boolean"
+        displayAdvancedPersonSearchCadreEducation:
+          type: "boolean"
+        displaySapMdgTab:
+          type: "boolean"
+        updateSapMdgAllowed:
+          type: "boolean"
+        createGlobalTemplate:
+          type: "boolean"
+        editPersonAttributeAllowed:
+          type: "boolean"
+    Person:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        personNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        firstName:
+          type: "string"
+        lastName:
+          type: "string"
+        status:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        businessAddress:
+          description: "Only null observed in captures; actual type unknown."
+        officialAddress:
+          anyOf:
+            - $ref: "#/components/schemas/Address"
+            - type: "null"
+        address:
+          description: "Only null observed in captures; actual type unknown."
+        zipCodeAndTown:
+          description: "Only null observed in captures; actual type unknown."
+        personAddress:
+          $ref: "#/components/schemas/Address"
+        phoneNumber:
+          type: "string"
+        emailAddress:
+          type: "string"
+          format: "email"
+        ahvn13:
+          type: "string"
+          pattern: "^756\\.?\\d{4}\\.?\\d{4}\\.?\\d{2}$"
+          description: "AHV/AVS number (AHVN13). Sensitive: systematic use restricted by AHVG Art. 153c ff."
+        firstNameNormalized:
+          type: "string"
+        lastNameNormalized:
+          type: "string"
+        birthDate:
+          type: "string"
+          format: "date"
+        gender:
+          type: "string"
+          enum:
+            - "FEMALE"
+        peid:
+          description: "Only null observed in captures; actual type unknown."
+        language:
+          type: "string"
+        nationalities:
+          type: "array"
+          items:
+            type: "string"
+        privateAddress:
+          $ref: "#/components/schemas/Address"
+        motherLanguage:
+          type: "string"
+        correspondenceLanguage:
+          type: "string"
+        birthName:
+          description: "Only null observed in captures; actual type unknown."
+        secondLanguage:
+          description: "Only null observed in captures; actual type unknown."
+        profession:
+          description: "Only null observed in captures; actual type unknown."
+        specialInformation:
+          type: "boolean"
+        privateEmail:
+          type: "string"
+          format: "email"
+        privatePhone:
+          type: "string"
+        businessEmail:
+          description: "Only null observed in captures; actual type unknown."
+        businessPhone:
+          description: "Only null observed in captures; actual type unknown."
+        officialEmail:
+          description: "Only null observed in captures; actual type unknown."
+        officialPhone:
+          description: "Only null observed in captures; actual type unknown."
+        reasonEmptySocialInsuranceNumber:
+          description: "Only null observed in captures; actual type unknown."
+        personStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        dateOfDeath:
+          description: "Only null observed in captures; actual type unknown."
+        reasonPersonLocked:
+          description: "Only null observed in captures; actual type unknown."
+        reasonPersonSuspended:
+          description: "Only null observed in captures; actual type unknown."
+        customerNumber:
+          description: "Only null observed in captures; actual type unknown."
+        vendorNumber:
+          description: "Only null observed in captures; actual type unknown."
+        personSupplements:
+          type: "array"
+          items: {}
+        createdByUser:
+          description: "Only null observed in captures; actual type unknown."
+        warned:
+          description: "Only null observed in captures; actual type unknown."
+        generalTermsAndConditionsVersion:
+          type: "integer"
+        lastModificationDate:
+          type: "string"
+          format: "date"
+        markedForDeletion:
+          type: "boolean"
+        markedForDeletionSince:
+          description: "Only null observed in captures; actual type unknown."
+        expertContractValidUntil:
+          description: "Only null observed in captures; actual type unknown."
+        expertContractModificationDate:
+          description: "Only null observed in captures; actual type unknown."
+        suspendedOrLockedSince:
+          description: "Only null observed in captures; actual type unknown."
+        lastRegisterMatching:
+          description: "Only null observed in captures; actual type unknown."
+        successfulBatchRegisterMatching:
+          description: "Only null observed in captures; actual type unknown."
+        previousPersonStatus:
+          description: "Only null observed in captures; actual type unknown."
+        eligibleForSubsidies:
+          description: "Only null observed in captures; actual type unknown."
+        sapBusinessPartnerId:
+          description: "Only null observed in captures; actual type unknown."
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        fullName:
+          type: "string"
+      x-merged-from-occurrences: 15
+    PersonalCurrentTrainingAndFurtherEducationList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items: {}
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    PersonalCurrentTrainingAndFurtherEducationListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "PersonalCurrentTrainingAndFurtherEducationList"
+        query:
+          type: "string"
+          description: "GraphQL document `PersonalCurrentTrainingAndFurtherEducationList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties: {}
+    PersonalCurrentTrainingAndFurtherEducationListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            personalCurrentTrainingAndFurtherEducationList:
+              $ref: "#/components/schemas/PersonalCurrentTrainingAndFurtherEducationList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    PersonalMaintenanceMaintenanceInfoResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        title:
+          $ref: "#/components/schemas/LocalizedString"
+        text:
+          $ref: "#/components/schemas/LocalizedString"
+        validity:
+          $ref: "#/components/schemas/DateRange"
+    PersonalTableConfigResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        userAccount:
+          $ref: "#/components/schemas/UserAccount"
+        route:
+          type: "string"
+        identifier:
+          type: "string"
+        config:
+          type: "string"
+    PersonalTrainingAndFurtherEducationList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/PersonalTrainingAndFurtherEducationListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    PersonalTrainingAndFurtherEducationListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        course:
+          $ref: "#/components/schemas/Course"
+        participationStatus:
+          type: "string"
+          enum:
+            - "CONFIRMED"
+        additionalCourseInformationSpecified:
+          description: "Only null observed in captures; actual type unknown."
+    PersonalTrainingAndFurtherEducationListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "PersonalTrainingAndFurtherEducationList"
+        query:
+          type: "string"
+          description: "GraphQL document `PersonalTrainingAndFurtherEducationList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties: {}
+    PersonalTrainingAndFurtherEducationListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            personalTrainingAndFurtherEducationList:
+              $ref: "#/components/schemas/PersonalTrainingAndFurtherEducationList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    PersonAssignmentJSCoachesListForOrganisation:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/PersonAssignmentJSCoachesListForOrganisationItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    PersonAssignmentJSCoachesListForOrganisationItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        person:
+          $ref: "#/components/schemas/Person"
+        userGroups:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name:
+                type: "object"
+                properties:
+                  resolvedLocalizedString:
+                    $ref: "#/components/schemas/LocalizedString"
+        hasOmittedRecognitions:
+          type: "boolean"
+        needsFurtherEducationCurrentYear:
+          type: "boolean"
+        needsFurtherEducationNextYear:
+          type: "boolean"
+        plannedFurtherEducation:
+          type: "array"
+          items: {}
+    PersonAssignmentJSCoachesListForOrganisationRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "personAssignmentJSCoachesListForOrganisation"
+        query:
+          type: "string"
+          description: "GraphQL document `personAssignmentJSCoachesListForOrganisation`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/PersonAssignmentJSCoachesListForOrganisationVariables"
+    PersonAssignmentJSCoachesListForOrganisationResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            personAssignmentJSCoachesListForOrganisation:
+              $ref: "#/components/schemas/PersonAssignmentJSCoachesListForOrganisation"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    PersonAssignmentJSCoachesListForOrganisationVariables:
+      type: "object"
+      properties:
+        organisationBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        filter:
+          type: "object"
+          properties:
+            personStatus:
+              type: "object"
+              properties:
+                selected:
+                  type: "string"
+                  enum:
+                    - "ACTIVE"
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+    PersonNotificationList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/PersonNotificationListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    PersonNotificationListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        _availableOptions:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/PersonNotificationListOptions"
+        title:
+          $ref: "#/components/schemas/LocalizedString"
+        correlation:
+          type: "object"
+          properties:
+            correlationTitle:
+              $ref: "#/components/schemas/LocalizedString"
+        assigneeTeam:
+          type: "object"
+          properties:
+            teamType:
+              type: "string"
+              enum:
+                - "JS_COACH"
+        assignee:
+          description: "Only null observed in captures; actual type unknown."
+        creationDate:
+          type: "string"
+          format: "date-time"
+        readStatus:
+          type: "string"
+          enum:
+            - "UNREAD"
+    PersonNotificationListOptions:
+      type: "object"
+      properties:
+        option:
+          type: "string"
+        allowed:
+          type: "boolean"
+    PersonNotificationListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "PersonNotificationList"
+        query:
+          type: "string"
+          description: "GraphQL document `PersonNotificationList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties:
+                readStatus:
+                  type: "object"
+                  properties:
+                    selected:
+                      type: "string"
+                      enum:
+                        - "UNREAD"
+    PersonNotificationListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            personNotificationList:
+              $ref: "#/components/schemas/PersonNotificationList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    PersonTaskList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items: {}
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    PersonTaskListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "PersonTaskList"
+        query:
+          type: "string"
+          description: "GraphQL document `PersonTaskList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+            filter:
+              type: "object"
+              properties:
+                processingStatus:
+                  type: "object"
+                  properties:
+                    selected:
+                      type: "string"
+                      enum:
+                        - "OPEN"
+    PersonTaskListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            personTaskList:
+              $ref: "#/components/schemas/PersonTaskList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    PersonTaskPlaceholders:
+      type: "object"
+      properties:
+        KursID:
+          type: "integer"
+        AngebotsBid:
+          type: "string"
+          pattern: "^-?\\d+$"
+        Gruppenname:
+          type: "string"
+        Angebots-Nr.:
+          type: "integer"
+        Lager-Nr.:
+          type: "integer"
+        LagerBid:
+          type: "string"
+          pattern: "^-?\\d+$"
+    Planned:
+      type: "object"
+      properties:
+        coachAuthorizedForContribution:
+          type: "boolean"
+        numberOfJsInstructors:
+          type: "integer"
+        numberOfPhysisInstructors:
+          type: "integer"
+        numberOfAdolescents:
+          type: "integer"
+        numberOfChildren:
+          type: "integer"
+        totalNumberOfParticipants:
+          type: "integer"
+        numberOfChildrenCampDays:
+          type: "integer"
+        numberOfAdolescentCampDays:
+          type: "integer"
+        numberOfCampDays:
+          type: "integer"
+        totalNumberOfActivities:
+          type: "integer"
+        totalNumberOfParticipantCampDays:
+          type: "integer"
+        totalNumberOfInstructors:
+          type: "integer"
+    RegaParticipantsListForCamp:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/RegaParticipantsListForCampItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    RegaParticipantsListForCampItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        person:
+          $ref: "#/components/schemas/Person"
+        transmittedToRega:
+          type: "boolean"
+    RegaParticipantsListForCampRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "RegaParticipantsListForCamp"
+        query:
+          type: "string"
+          description: "GraphQL document `RegaParticipantsListForCamp`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/RegaParticipantsListForCampVariables"
+    RegaParticipantsListForCampResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            regaParticipantsListForCamp:
+              $ref: "#/components/schemas/RegaParticipantsListForCamp"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    RegaParticipantsListForCampVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        campBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    RegaSupervisorsListForCamp:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/RegaSupervisorsListForCampItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    RegaSupervisorsListForCampItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        person:
+          $ref: "#/components/schemas/Person"
+        transmittedToRega:
+          type: "boolean"
+    RegaSupervisorsListForCampRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "RegaSupervisorsListForCamp"
+        query:
+          type: "string"
+          description: "GraphQL document `RegaSupervisorsListForCamp`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/RegaSupervisorsListForCampVariables"
+    RegaSupervisorsListForCampResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            regaSupervisorsListForCamp:
+              $ref: "#/components/schemas/RegaSupervisorsListForCamp"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    RegaSupervisorsListForCampVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        campBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    RelatedParentOrganisationList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/RelatedParentOrganisationListItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    RelatedParentOrganisationListItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        hierarchyType:
+          type: "string"
+          enum:
+            - "VERB_J_S_JA"
+        parentOrganisation:
+          type: "object"
+          properties:
+            name:
+              type: "object"
+              properties:
+                resolvedLocalizedString:
+                  $ref: "#/components/schemas/LocalizedString"
+    RentalMaterialOrderListForCamp:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/RentalMaterialOrderListForCampItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    RentalMaterialOrderListForCampItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        orderNumber:
+          type: "integer"
+        orderDate:
+          type: "string"
+          format: "date"
+        orderState:
+          type: "string"
+          enum:
+            - "FINISHED"
+        dispatchmentType:
+          type: "string"
+          enum:
+            - "SHIPMENT"
+        dispatchmentDate:
+          type: "string"
+          format: "date"
+        returnDate:
+          type: "string"
+          format: "date"
+    RentalMaterialOrderListForCampRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "rentalMaterialOrderListForCamp"
+        query:
+          type: "string"
+          description: "GraphQL document `rentalMaterialOrderListForCamp`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/RentalMaterialOrderListForCampVariables"
+    RentalMaterialOrderListForCampResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            rentalMaterialOrderListForCamp:
+              $ref: "#/components/schemas/RentalMaterialOrderListForCamp"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    RentalMaterialOrderListForCampVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        campBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    ResolvedLocalizedString:
+      type: "object"
+      properties:
+        de:
+          type:
+            - "string"
+            - "null"
+        fr:
+          type:
+            - "string"
+            - "null"
+        it:
+          type:
+            - "string"
+            - "null"
+        resolvedDe:
+          type:
+            - "string"
+            - "null"
+        resolvedFr:
+          type:
+            - "string"
+            - "null"
+        resolvedIt:
+          type:
+            - "string"
+            - "null"
+      x-merged-from-occurrences: 21
+    Sport:
+      type:
+        - "object"
+        - "null"
+      properties:
+        standardText:
+          description: "Only null observed in captures; actual type unknown."
+        data:
+          type: "array"
+          items: {}
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        referenceId:
+          type: "string"
+          enum:
+            - "SPA_AIKIDO"
+            - "SPA_AKROBATIKTURNEN"
+            - "SPA_ALLROUND"
+            - "SPA_AMERICAN_FOOTBALL"
+            - "SPA_ARTISTIC_SWIMMING"
+            - "SPA_BADMINTON"
+            - "SPA_BAHNRADSPORT"
+            - "SPA_BASKETBALL"
+            - "SPA_BIATHLON"
+            - "SPA_BMX"
+            - "SPA_BOGENSCHIESSEN"
+            - "SPA_EINRAD"
+            - "SPA_EISKUNSTLAUF"
+            - "SPA_FAUSTBALL"
+            - "SPA_FECHTEN"
+            - "SPA_FUSSBALL"
+            - "SPA_GERAETETURNEN"
+            - "SPA_GEWEHR"
+            - "SPA_GOLF"
+            - "SPA_GYMNASTIK_UND_TANZ"
+            - "SPA_HANDBALL"
+            - "SPA_HORNUSSEN"
+            - "SPA_INLINE_HOCKEY"
+            - "SPA_JUDO"
+            - "SPA_JU_JITSU"
+            - "SPA_KANUSPORT"
+            - "SPA_KARATE"
+            - "SPA_KICKBOXINGLIGHT"
+            - "SPA_KORBBALL"
+            - "SPA_KUNSTRADFAHREN"
+            - "SPA_KUNSTTURNEN"
+            - "SPA_LAGERSPORT_TREKKING"
+            - "SPA_LANDHOCKEY"
+            - "SPA_LEICHTATHLETIK"
+            - "SPA_LIGHT_CONTACT_BOXING"
+            - "SPA_MOUNTAINBIKE"
+            - "SPA_NATIONALTURNEN"
+            - "SPA_ORIENTIERUNGSLAUF"
+            - "SPA_PARKOUR"
+            - "SPA_PISTOLE"
+            - "SPA_RADBALL"
+            - "SPA_RADQUER"
+            - "SPA_REITEN"
+            - "SPA_RETTUNGSSCHWIMMEN"
+            - "SPA_RHOENRAD"
+            - "SPA_RHYTHMISCHE_GYMNASTIK"
+            - "SPA_RINGEN"
+            - "SPA_ROCKNROLL"
+            - "SPA_ROLLHOCKEY"
+            - "SPA_RUDERN"
+            - "SPA_RUGBY"
+            - "SPA_SCHULSPORT"
+            - "SPA_SCHWIMMEN"
+            - "SPA_SCHWINGEN"
+            - "SPA_SEGELN"
+            - "SPA_SKITOUREN"
+            - "SPA_SQUASH"
+            - "SPA_STRASSENRADSPORT"
+            - "SPA_STREETHOCKEY"
+            - "SPA_TANZEN_STANDARD_LATEIN"
+            - "SPA_TCHOUKBALL"
+            - "SPA_TENNIS"
+            - "SPA_TISCHTENNIS"
+            - "SPA_TURNEN"
+            - "SPA_UNIHOCKEY"
+            - "SPA_VOLTIGE"
+            - "SPA_WASSERBALL"
+            - "SPA_WASSERSPRINGEN"
+            - "SPA_WINDSURFEN"
+            - "SPA_WUSHUKUNGFU"
+        title:
+          $ref: "#/components/schemas/LocalizedString"
+        validitySquadTraining:
+          $ref: "#/components/schemas/DateRange"
+        squadTrainingActive:
+          type: "boolean"
+        validityYouthTraining:
+          $ref: "#/components/schemas/DateRange"
+        offerGroups:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "NG1"
+              - "NG2"
+              - "NG3"
+              - "NG4"
+              - "NG5"
+              - "NG7"
+        riskActivity:
+          type:
+            - "object"
+            - "null"
+          properties:
+            validityRiskActivity:
+              $ref: "#/components/schemas/DateRange"
+            riskActivityQuestion:
+              type: "string"
+              enum:
+                - "RISK_ACTIVITY_QUESTION_ONE"
+                - "RISK_ACTIVITY_QUESTION_THREE"
+                - "RISK_ACTIVITY_QUESTION_TWO"
+        allRound:
+          type: "boolean"
+        lagerSportTrekking:
+          type: "boolean"
+        name:
+          $ref: "#/components/schemas/LocalizedString"
+        riskActivitiesPossible:
+          type: "boolean"
+      x-merged-from-occurrences: 11
+    StockKeepingUnit:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        articleNumber:
+          type: "string"
+          pattern: "^-?\\d+$"
+        size:
+          $ref: "#/components/schemas/ResolvedLocalizedString"
+        rentalMaterialTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        displayImage:
+          $ref: "#/components/schemas/DisplayImage"
+    SupervisorsListForCamp:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/SupervisorsListForCampItem"
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    SupervisorsListForCampItem:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        involvementType:
+          type: "string"
+          enum:
+            - "ASSISTANT_INSTRUCTOR"
+            - "INSTRUCTOR"
+        person:
+          $ref: "#/components/schemas/Person"
+        _availableOptions:
+          $ref: "#/components/schemas/SupervisorsListForCampOptions"
+    SupervisorsListForCampOptions:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        displayPersonDetails:
+          type: "boolean"
+    SupervisorsListForCampRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "SupervisorsListForCamp"
+        query:
+          type: "string"
+          description: "GraphQL document `SupervisorsListForCamp`, see operations.graphql"
+        variables:
+          $ref: "#/components/schemas/SupervisorsListForCampVariables"
+    SupervisorsListForCampResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            supervisorsListForCamp:
+              $ref: "#/components/schemas/SupervisorsListForCamp"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    SupervisorsListForCampVariables:
+      type: "object"
+      properties:
+        chunk:
+          $ref: "#/components/schemas/Chunk"
+        filter:
+          type: "object"
+          properties: {}
+        campBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    UserAccount:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        person:
+          type: "object"
+          properties:
+            businessId:
+              type: "string"
+              pattern: "^-?\\d+$"
+            fullName:
+              type: "string"
+        lastLogin:
+          type: "string"
+          format: "date-time"
+        userAccountType:
+          type: "string"
+          enum:
+            - "VOLUNTEER_ACCOUNT"
+        userAccountStatus:
+          type: "string"
+          enum:
+            - "ACTIVE"
+        idpAccountId:
+          type: "string"
+          pattern: "^-?\\d+$"
+    UserGroups:
+      type: "object"
+      properties:
+        de:
+          type: "string"
+        fr:
+          type: "string"
+        it:
+          type: "string"
+        resolvedDe:
+          type: "string"
+        resolvedFr:
+          type: "string"
+        resolvedIt:
+          type: "string"
+        resolvedLocalizedString:
+          $ref: "#/components/schemas/LocalizedString"
+    UserRequestOrganisationDetailsList:
+      type: "object"
+      properties:
+        content:
+          type: "array"
+          items: {}
+        totalElements:
+          type: "integer"
+        totalPages:
+          type: "integer"
+        number:
+          type: "integer"
+        size:
+          type: "integer"
+    UserRequestOrganisationDetailsListRequest:
+      type: "object"
+      required:
+        - "operationName"
+        - "query"
+        - "variables"
+      properties:
+        operationName:
+          const: "userRequestOrganisationDetailsList"
+        query:
+          type: "string"
+          description: "GraphQL document `userRequestOrganisationDetailsList`, see operations.graphql"
+        variables:
+          type: "object"
+          properties:
+            organisationBusinessId:
+              type: "string"
+              pattern: "^-?\\d+$"
+            chunk:
+              $ref: "#/components/schemas/Chunk"
+    UserRequestOrganisationDetailsListResponse:
+      type: "object"
+      properties:
+        errors:
+          type: "array"
+          items: {}
+        data:
+          type: "object"
+          properties:
+            userRequestOrganisationDetailsList:
+              $ref: "#/components/schemas/UserRequestOrganisationDetailsList"
+        extensions:
+          description: "Only null observed in captures; actual type unknown."
+        dataPresent:
+          type: "boolean"
+    WidgetSettings:
+      type: "object"
+      properties:
+        widgetType:
+          type: "string"
+          enum:
+            - "CADRE_MY_PERSONS_TRAINING_AND_FURTHER_EDUCATION"
+            - "CADRE_PERSONAL_COURSE_CADRE_ASSIGNMENT"
+            - "CADRE_PERSONAL_TRAINING_AND_FURTHER_EDUCATION"
+            - "JS_ACTIVITIES"
+            - "JS_CAMPS_COURSES"
+            - "JS_INFO"
+            - "NOTIFICATIONS"
+            - "PERS_INSTRUCTORS_IN_ORGANISATION"
+            - "QUICK_LINKS"
+            - "TASKS"
+        active:
+          type: "boolean"
+        permitted:
+          type: "boolean"
+    YouthtrainingOfferAvailableOptionsResponse:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        create:
+          type: "boolean"
+        approveDirectly:
+          type: "boolean"
+        displaySuspicions:
+          type: "boolean"
+        displayMarkers:
+          type: "boolean"
+        resetInAssessment:
+          type: "boolean"
+        displayAdditionalFilters:
+          type: "boolean"
+        evaluationGrantPayout:
+          type: "boolean"
+        evaluationRejectPayout:
+          type: "boolean"
+        startProcessSetToExecution:
+          type: "boolean"
+    YouthtrainingOfferCampDetailsResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        offerBusinessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        groupName:
+          type: "string"
+        offerItemNumber:
+          type: "integer"
+        mainSport:
+          $ref: "#/components/schemas/Sport"
+        sports:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Sport"
+        targetAudienceGroup:
+          type: "string"
+          enum:
+            - "YOUTH_TRAINING"
+        duration:
+          $ref: "#/components/schemas/DateRange"
+        offerItemState:
+          type: "string"
+          enum:
+            - "WAITING_FOR_ASSESSMENT"
+        approvalTimestamp:
+          type: "string"
+          format: "date-time"
+        riskActivitiesPlanned:
+          type: "boolean"
+        riskActivityAnswer1:
+          description: "Only null observed in captures; actual type unknown."
+        riskActivityAnswer2:
+          description: "Only null observed in captures; actual type unknown."
+        riskActivityAnswer3:
+          type: "boolean"
+        minimalRequirementsCheckResultMessages:
+          description: "Only null observed in captures; actual type unknown."
+        overnightStay:
+          type: "boolean"
+        campAgenda:
+          $ref: "#/components/schemas/CampAgenda"
+        sportSpecificHints:
+          type: "array"
+          items: {}
+        _availableOptions:
+          type: "object"
+          additionalProperties:
+            type: "boolean"
+        instructionAttendanceCheckLink:
+          $ref: "#/components/schemas/LocalizedString"
+        documentTemplateAttendanceCheckLink:
+          $ref: "#/components/schemas/LocalizedString"
+    YouthtrainingOfferCampGroupSizeInformationResponse:
+      type: "object"
+      properties:
+        participantCount:
+          type: "integer"
+        maxGroupSizes:
+          type: "object"
+          properties:
+            firstGroupMaxSize:
+              type: "integer"
+            furtherGroupsMaxSize:
+              type: "integer"
+        coveredSports:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Sport"
+        coveredNormalizedTargetAudienceGroups:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+              - "YOUTH_TRAINING"
+    YouthtrainingOfferDetailsResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        offerNumber:
+          type: "integer"
+        offerGroup:
+          type: "string"
+          enum:
+            - "NG3"
+        organisation:
+          $ref: "#/components/schemas/Organisation"
+        association:
+          $ref: "#/components/schemas/Organisation"
+        changeAssociation:
+          type: "boolean"
+        coach:
+          $ref: "#/components/schemas/Person"
+        bankAccount:
+          $ref: "#/components/schemas/BankAccount"
+        authorizedForPrePayment:
+          description: "Only null observed in captures; actual type unknown."
+        offerState:
+          type: "string"
+          enum:
+            - "WAITING_FOR_ASSESSMENT"
+        duration:
+          $ref: "#/components/schemas/DateRange"
+        grantingBody:
+          $ref: "#/components/schemas/Organisation"
+        eligibleForSubsidies:
+          description: "Only null observed in captures; actual type unknown."
+        cancelReason:
+          description: "Only null observed in captures; actual type unknown."
+        organisationManager:
+          $ref: "#/components/schemas/Person"
+        assessmentRequestDate:
+          type: "string"
+          format: "date"
+        hasHandicapRegistration:
+          type: "boolean"
+        hasLateSubmittedOfferItemsWithUnfinishedApproval:
+          type: "boolean"
+        hasLateSubmittedOfferItems:
+          type: "boolean"
+        hasOfferItemsInCorrection:
+          type: "boolean"
+        courseCount:
+          type: "integer"
+        campCount:
+          type: "integer"
+        sports:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Sport"
+        evaluationState:
+          description: "Only null observed in captures; actual type unknown."
+        evaluator:
+          description: "Only null observed in captures; actual type unknown."
+        approvalTimestamp:
+          type: "string"
+          format: "date-time"
+        unblockingTimestamp:
+          description: "Only null observed in captures; actual type unknown."
+        suspicious:
+          description: "Only null observed in captures; actual type unknown."
+        durationInWeeks:
+          type: "integer"
+        finishBy:
+          description: "Only null observed in captures; actual type unknown."
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        title:
+          type: "string"
+          pattern: "^-?\\d+$"
+        markers:
+          description: "Only null observed in captures; actual type unknown."
+        _availableOptions:
+          $ref: "#/components/schemas/YouthtrainingOfferDetailsResponseOptions"
+        showAssociationChangedMessage:
+          type: "boolean"
+        rentalMaterialWasOrdered:
+          type: "boolean"
+    YouthtrainingOfferDetailsResponseOptions:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        edit:
+          type: "boolean"
+        requestApproval:
+          type: "boolean"
+        approveDirectly:
+          type: "boolean"
+        approveLateSubmission:
+          type: "boolean"
+        initiateApproval:
+          type: "boolean"
+        approveAfterCheck:
+          type: "boolean"
+        requestAssessment:
+          type: "boolean"
+        displayRequestAssessment:
+          type: "boolean"
+        startAssessment:
+          type: "boolean"
+        reject:
+          type: "boolean"
+        addCourse:
+          type: "boolean"
+        addCourseInPast:
+          type: "boolean"
+        addCamp:
+          type: "boolean"
+        addCampInPast:
+          type: "boolean"
+        displayCourses:
+          type: "boolean"
+        displayCamps:
+          type: "boolean"
+        lateSubmission:
+          type: "boolean"
+        selectMultipleSportsForCamp:
+          type: "boolean"
+        cancel:
+          type: "boolean"
+        undoCancel:
+          type: "boolean"
+        displayAssessmentMetrics:
+          type: "boolean"
+        displaySafetyTab:
+          type: "boolean"
+        displayExperts:
+          type: "boolean"
+        addExpert:
+          type: "boolean"
+        removeExpert:
+          type: "boolean"
+        unblockOffers:
+          type: "boolean"
+        updatePaymentOrderAddendum:
+          type: "boolean"
+        initiatePayment:
+          type: "boolean"
+        addAddition:
+          type: "boolean"
+        addDeduction:
+          type: "boolean"
+        displayPaymentTab:
+          type: "boolean"
+        displayDetailsTab:
+          type: "boolean"
+        displayDocumentsTab:
+          type: "boolean"
+        updateBankAccount:
+          type: "boolean"
+        updateName:
+          type: "boolean"
+        updateOrganisation:
+          type: "boolean"
+        updateAssociation:
+          type: "boolean"
+        updateOrganisationManager:
+          type: "boolean"
+        updateCoach:
+          type: "boolean"
+        updateAuthorizedForPrePayment:
+          type: "boolean"
+        displayAuthorizedForPrePayment:
+          type: "boolean"
+        report:
+          type: "boolean"
+        reassignToGrantingBody:
+          type: "boolean"
+        displayTotalCampSubsidies:
+          type: "boolean"
+        displayActivityCampContribution:
+          type: "boolean"
+        displayTotalCourseSubsidies:
+          type: "boolean"
+        displayActivityCourseContribution:
+          type: "boolean"
+        exportAttendances:
+          type: "boolean"
+        displayOfferComments:
+          type: "boolean"
+        addOfferComment:
+          type: "boolean"
+        displaySuspicions:
+          type: "boolean"
+        resetInAssessment:
+          type: "boolean"
+        createHandicapRegistration:
+          type: "boolean"
+        displayHandicapRegistrations:
+          type: "boolean"
+        displayMetricActivitiesOnNationalHolidays:
+          type: "boolean"
+        evaluationRead:
+          type: "boolean"
+        evaluationCreate:
+          type: "boolean"
+        evaluationGrant:
+          type: "boolean"
+        evaluationReject:
+          type: "boolean"
+        evaluationDelete:
+          type: "boolean"
+        evaluationForwardForPayout:
+          type: "boolean"
+        evaluationGrantPayout:
+          type: "boolean"
+        evaluationRejectPayout:
+          type: "boolean"
+        displayProtocolTab:
+          type: "boolean"
+    YouthtrainingOfferResponse:
+      type: "object"
+      properties:
+        businessId:
+          type: "string"
+          pattern: "^-?\\d+$"
+        offerNumber:
+          type: "integer"
+        offerState:
+          type: "string"
+          enum:
+            - "WAITING_FOR_ASSESSMENT"
+        duration:
+          $ref: "#/components/schemas/DateRange"
+        hasHandicapRegistration:
+          type: "boolean"
+        hasLateSubmittedOfferItemsWithUnfinishedApproval:
+          type: "boolean"
+        hasLateSubmittedOfferItems:
+          type: "boolean"
+        hasOfferItemsInCorrection:
+          type: "boolean"
+        courseCount:
+          type: "integer"
+        campCount:
+          type: "integer"
+        sports:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Sport"
+        evaluationState:
+          description: "Only null observed in captures; actual type unknown."
+        evaluator:
+          description: "Only null observed in captures; actual type unknown."
+        approvalTimestamp:
+          type: "string"
+          format: "date-time"
+        unblockingTimestamp:
+          description: "Only null observed in captures; actual type unknown."
+        durationInWeeks:
+          type: "integer"
+        rowTitle:
+          $ref: "#/components/schemas/LocalizedString"
+        title:
+          type: "string"
+          pattern: "^-?\\d+$"
+        markers:
+          description: "Only null observed in captures; actual type unknown."
+        _availableOptions:
+          $ref: "#/components/schemas/YouthtrainingOfferResponseOptions"
+    YouthtrainingOfferResponseOptions:
+      type: "object"
+      properties:
+        delete:
+          type: "boolean"
+        edit:
+          type: "boolean"
+        requestApproval:
+          type: "boolean"
+        approveDirectly:
+          type: "boolean"
+        approveLateSubmission:
+          type: "boolean"
+        initiateApproval:
+          type: "boolean"
+        approveAfterCheck:
+          type: "boolean"
+        requestAssessment:
+          type: "boolean"
+        displayRequestAssessment:
+          type: "boolean"
+        startAssessment:
+          type: "boolean"
+        reject:
+          type: "boolean"
+        addCourse:
+          type: "boolean"
+        addCourseInPast:
+          type: "boolean"
+        addCamp:
+          type: "boolean"
+        addCampInPast:
+          type: "boolean"
+        displayCourses:
+          type: "boolean"
+        displayCamps:
+          type: "boolean"
+        lateSubmission:
+          type: "boolean"
+        selectMultipleSportsForCamp:
+          type: "boolean"
+        cancel:
+          type: "boolean"
+        undoCancel:
+          type: "boolean"
+        displayAssessmentMetrics:
+          type: "boolean"
+        displaySafetyTab:
+          type: "boolean"
+        displayExperts:
+          type: "boolean"
+        addExpert:
+          type: "boolean"
+        removeExpert:
+          type: "boolean"
+        unblockOffers:
+          type: "boolean"
+        updatePaymentOrderAddendum:
+          type: "boolean"
+        initiatePayment:
+          type: "boolean"
+        addAddition:
+          type: "boolean"
+        addDeduction:
+          type: "boolean"
+        displayPaymentTab:
+          type: "boolean"
+        displayDetailsTab:
+          type: "boolean"
+        displayDocumentsTab:
+          type: "boolean"
+        updateBankAccount:
+          type: "boolean"
+        updateName:
+          type: "boolean"
+        updateOrganisation:
+          type: "boolean"
+        updateAssociation:
+          type: "boolean"
+        updateOrganisationManager:
+          type: "boolean"
+        updateCoach:
+          type: "boolean"
+        updateAuthorizedForPrePayment:
+          type: "boolean"
+        displayAuthorizedForPrePayment:
+          type: "boolean"
+        report:
+          type: "boolean"
+        reassignToGrantingBody:
+          type: "boolean"
+        displayTotalCampSubsidies:
+          type: "boolean"
+        displayActivityCampContribution:
+          type: "boolean"
+        displayTotalCourseSubsidies:
+          type: "boolean"
+        displayActivityCourseContribution:
+          type: "boolean"
+        exportAttendances:
+          type: "boolean"
+        displayOfferComments:
+          type: "boolean"
+        addOfferComment:
+          type: "boolean"
+        displaySuspicions:
+          type: "boolean"
+        resetInAssessment:
+          type: "boolean"
+        createHandicapRegistration:
+          type: "boolean"
+        displayHandicapRegistrations:
+          type: "boolean"
+        displayMetricActivitiesOnNationalHolidays:
+          type: "boolean"
+        evaluationRead:
+          type: "boolean"
+        evaluationCreate:
+          type: "boolean"
+        evaluationGrant:
+          type: "boolean"
+        evaluationReject:
+          type: "boolean"
+        evaluationDelete:
+          type: "boolean"
+        evaluationForwardForPayout:
+          type: "boolean"
+        evaluationGrantPayout:
+          type: "boolean"
+        evaluationRejectPayout:
+          type: "boolean"
+        displayProtocolTab:
+          type: "boolean"

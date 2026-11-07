@@ -1,0 +1,1287 @@
+# NDS GraphQL operations observed in the web UI (read-only).
+# Inline literals were masked as "<str>" / <num> during redaction.
+
+
+# ==== POST /cadre/graphql/admin ====
+
+query JsCoachAndEsaCoursePlan($educationField: EducationField!, $chunk: Chunk, $filter: CoursePlanCadreEducationCourseFilter) {
+  jsCoachAndEsaCoursePlan(
+    educationField: $educationField
+    filter: $filter
+    chunk: $chunk
+  ) {
+    totalElements
+    totalPages
+    number
+    size
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      cadreEducationCourseType {
+        cadreEducationCourseTypeGroup {
+          educationLevel {
+            name {
+              de
+              __typename
+            }
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      cadreEducationCourseType {
+        name {
+          de
+          __typename
+        }
+        __typename
+      }
+      courseNumber
+      topic {
+        de
+        fr
+        it
+        __typename
+      }
+      firstCoursePart {
+        address {
+          town
+          __typename
+        }
+        __typename
+      }
+      courseParts {
+        duration {
+          first
+          last
+          __typename
+        }
+        __typename
+      }
+      asynchronousLearningTime {
+        duration
+        __typename
+      }
+      asynchronousLearningTime {
+        remark {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      registrationDeadline
+      registrationStatus
+      registrationComment {
+        de
+        fr
+        it
+        __typename
+      }
+      courseLanguages
+      __typename
+    }
+    __typename
+  }
+}
+
+query PersonalCurrentTrainingAndFurtherEducationList($chunk: Chunk) {
+  personalCurrentTrainingAndFurtherEducationList(chunk: $chunk) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      course {
+        businessId
+        __typename
+      }
+      course {
+        cadreEducationCourseType {
+          name {
+            de
+            fr
+            it
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      course {
+        courseNumber
+        __typename
+      }
+      course {
+        courseParts {
+          duration {
+            first
+            last
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      course {
+        firstCoursePart {
+          address {
+            town
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      course {
+        courseStatus
+        __typename
+      }
+      participationStatus
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query PersonalTrainingAndFurtherEducationList($chunk: Chunk) {
+  personalTrainingAndFurtherEducationList(chunk: $chunk) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      course {
+        businessId
+        executingOrganisation {
+          businessId
+          __typename
+        }
+        __typename
+      }
+      course {
+        cadreEducationCourseType {
+          educationField
+          __typename
+        }
+        __typename
+      }
+      course {
+        cadreEducationCourseType {
+          name {
+            de
+            fr
+            it
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      course {
+        courseParts {
+          duration {
+            first
+            last
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      course {
+        courseNumber
+        __typename
+      }
+      course {
+        sportsOrderedDe {
+          title {
+            de
+            __typename
+          }
+          __typename
+        }
+        sportsOrderedFr {
+          title {
+            fr
+            __typename
+          }
+          __typename
+        }
+        sportsOrderedIt {
+          title {
+            it
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      course {
+        firstCoursePart {
+          address {
+            town
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      participationStatus
+      additionalCourseInformationSpecified
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+
+# ==== POST /document/graphql/admin ====
+
+query DocumentListByContextTypeAndContextId($filter: DocumentFilter, $documentContextAttributes: DocumentContextAttributes!, $chunk: Chunk) {
+  documentListByContextTypeAndContextId(
+    filter: $filter
+    documentContextAttributes: $documentContextAttributes
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      mimeType
+      documentType
+      primaryContextType
+      createdOn
+      createdBy
+      modifiedOn
+      modifiedBy
+      archivedOn
+      archivedBy
+      deletedOn
+      deletedBy
+      fileName
+      fileSize
+      documentStatus
+      _availableOptions {
+        edit
+        delete
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+
+# ==== POST /material/graphql/admin ====
+
+query rentalMaterialOrderListForCamp($campBusinessId: ID!, $chunk: Chunk, $filter: SpecificOrderFilter) {
+  rentalMaterialOrderListForCamp(
+    campBusinessId: $campBusinessId
+    chunk: $chunk
+    filter: $filter
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      orderNumber
+      orderDate
+      orderState
+      dispatchmentType
+      dispatchmentDate
+      returnDate
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+
+# ==== POST /perorgfin/graphql/admin ====
+
+query BankAccountOrganisationList($organisationBusinessId: ID!, $filter: BankAccountFilter, $chunk: Chunk) {
+  bankAccountOrganisationList(
+    organisationBusinessId: $organisationBusinessId
+    filter: $filter
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      name
+      iban
+      bankAccountStatus
+      activityFieldYouthTrainingDefault
+      activityFieldYouthSportLeadingCadreDefault
+      activityFieldAdultLeadingCadreDefault
+      remark
+      bankAccountAdditionalReceivers {
+        ...bankAccountAdditionalReceiversNameFields
+        __typename
+      }
+      systemId
+      owner
+      bType
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment bankAccountAdditionalReceiversNameFields on BankAccountAdditionalReceivers {
+  firstName
+  lastName
+  email
+  __typename
+}
+
+query FinancialTransactionList($personBusinessId: ID, $organisationBusinessId: ID, $chunk: Chunk, $filter: FinancialTransactionFilter) {
+  financialTransactionList(
+    personBusinessId: $personBusinessId
+    organisationBusinessId: $organisationBusinessId
+    chunk: $chunk
+    filter: $filter
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      transactionNumber
+      transactionGroup
+      bookingText
+      accountingSAPReceipt
+      sapBusinessPartnerId
+      organisation {
+        ...organisationNameFields
+        __typename
+      }
+      person {
+        ...personNameFields
+        __typename
+      }
+      offer
+      offerStartDate
+      totalAmountChf
+      transactionStatus
+      orderNumber
+      valueDate
+      lastModified
+      receiptNumber
+      invoiceText
+      bankAccountName
+      bankAccountIBAN
+      bankAccountBankType
+      bankAccountOwner
+      costCenterName
+      userGroup
+      activityField
+      paymentType
+      sapNotification
+      justification
+      transactionLock
+      sapFeedback
+      remark
+      processor
+      glAccountNumber
+      validTransaction
+      sapOrderType
+      clearanceReceiptNumber
+      invoiceNumber
+      sapDeliveryDate
+      reclaimReason
+      sapPaymentCondition
+      _availableOptions {
+        cancel
+        update
+        showTransaction
+        createInvoice
+        createPaymentOrder
+        financialTransactionStatus
+        sync
+        block
+        unblock
+        clearTransaction
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment organisationNameFields on Organisation {
+  businessId
+  name {
+    ...optionalLocalizedStringFields
+    __typename
+  }
+  organisationStatus
+  __typename
+}
+fragment optionalLocalizedStringFields on OptionalLocalizedString {
+  de
+  fr
+  it
+  resolvedLocalizedString {
+    ...localizedStringFields
+    __typename
+  }
+  __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+fragment personNameFields on Person {
+  firstName
+  lastName
+  __typename
+}
+
+query List($organisation: ID!, $activityField: ActivityField!, $chunk: Chunk) {
+  relatedParentOrganisationList(
+    organisation: $organisation
+    activityField: $activityField
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      hierarchyType
+      parentOrganisation {
+        name {
+          resolvedLocalizedString {
+            de
+            fr
+            it
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query organisationCourseCadre($organisationBusinessId: ID, $filter: OrganisationCourseCadreFilter, $chunk: Chunk) {
+  organisationCourseCadre(
+    organisationBusinessId: $organisationBusinessId
+    filter: $filter
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      person {
+        businessId
+        personNumber
+        lastName
+        firstName
+        birthDate
+        ahvn13
+        peid
+        personStatus
+        __typename
+      }
+      userGroups {
+        ...atLeastOneLocalizedStringFields
+        __typename
+      }
+      lastActivity
+      isActive
+      hasOmittedRecognitions
+      needsFurtherEducationCurrentYear
+      needsFurtherEducationNextYear
+      plannedFurtherEducation {
+        courseNumber
+        courseBusinessId
+        participationStatus
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment atLeastOneLocalizedStringFields on AtLeastOneLocalizedString {
+  de
+  fr
+  it
+  resolvedDe
+  resolvedFr
+  resolvedIt
+  resolvedLocalizedString {
+    ...localizedStringFields
+    __typename
+  }
+  __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+query OrganisationList($chunk: Chunk, $filter: OrganisationFilter) {
+  organisationList(chunk: $chunk, filter: $filter) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      organisationStatus
+      statusYouthSportLeadingCadre
+      statusYouthTraining
+      statusAdultLeadingCadre
+      name {
+        de
+        fr
+        it
+        resolvedLocalizedString {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      shortName {
+        de
+        fr
+        it
+        resolvedLocalizedString {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      organisationType
+      legalSeat {
+        zipCode
+        __typename
+      }
+      legalSeat {
+        town
+        __typename
+      }
+      legalSeat {
+        canton {
+          name {
+            de
+            fr
+            it
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      activityFields
+      organisationStatus
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query organisationOfferList($organisationBusinessId: ID, $chunk: Chunk) {
+  organisationOfferList(
+    organisationBusinessId: $organisationBusinessId
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      offerNumber
+      duration {
+        ...dateRangeFields
+        __typename
+      }
+      creationDate
+      offerGroup
+      offerState
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment dateRangeFields on DateRange {
+  first
+  last
+  __typename
+}
+
+query personAssignmentJSCoachesListForOrganisation($organisationBusinessId: ID!, $filter: OrganisationJsCoachFilter, $chunk: Chunk) {
+  personAssignmentJSCoachesListForOrganisation(
+    organisationBusinessId: $organisationBusinessId
+    filter: $filter
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      person {
+        ...personMainDetailsFields
+        __typename
+      }
+      userGroups {
+        ...userGroupNameFields
+        __typename
+      }
+      hasOmittedRecognitions
+      needsFurtherEducationCurrentYear
+      needsFurtherEducationNextYear
+      plannedFurtherEducation {
+        courseNumber
+        courseBusinessId
+        participationStatus
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment personMainDetailsFields on Person {
+  businessId
+  ...personNameFields
+  ahvn13
+  peid
+  personNumber
+  birthDate
+  personStatus
+  __typename
+}
+fragment personNameFields on Person {
+  firstName
+  lastName
+  __typename
+}
+fragment userGroupNameFields on UserGroup {
+  name {
+    resolvedLocalizedString {
+      ...localizedStringFields
+      __typename
+    }
+    __typename
+  }
+  __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+query userRequestOrganisationDetailsList($organisationBusinessId: ID, $chunk: Chunk) {
+  userRequestOrganisationDetailsList(
+    organisationBusinessId: $organisationBusinessId
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      person {
+        businessId
+        personNumber
+        lastName
+        firstName
+        birthDate
+        ahvn13
+        peid
+        personStatus
+        privateEmail
+        officialEmail
+        businessEmail
+        __typename
+      }
+      userGroups {
+        ...userGroupNameFields
+        __typename
+      }
+      userAccountType
+      userRequestStatus
+      userAccountPresent
+      email
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment userGroupNameFields on UserGroup {
+  name {
+    resolvedLocalizedString {
+      ...localizedStringFields
+      __typename
+    }
+    __typename
+  }
+  __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+
+# ==== POST /workflow/graphql/admin ====
+
+query PersonNotificationList($chunk: Chunk, $filter: PersonNotificationFilter) {
+  personNotificationList(chunk: $chunk, filter: $filter) {
+    content {
+      businessId
+      _availableOptions {
+        option
+        allowed
+        __typename
+      }
+      title {
+        de
+        fr
+        it
+        __typename
+      }
+      correlation {
+        correlationTitle {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      assigneeTeam {
+        teamType
+        __typename
+      }
+      assignee {
+        lastName
+        firstName
+        __typename
+      }
+      creationDate
+      readStatus
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query PersonTaskList($chunk: Chunk, $filter: PersonTaskFilter) {
+  personTaskList(chunk: $chunk, filter: $filter) {
+    content {
+      businessId
+      _availableOptions {
+        option
+        allowed
+        __typename
+      }
+      title {
+        de
+        fr
+        it
+        __typename
+      }
+      correlation {
+        correlationTitle {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      assigneeTeam {
+        teamType
+        __typename
+      }
+      assignee {
+        lastName
+        firstName
+        __typename
+      }
+      creationDate
+      processingStatus
+      dueDate
+      escalationDate
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+
+# ==== POST /youthtraining/graphql/admin ====
+
+query ActivityListForCamp($campBusinessId: ID!, $chunk: Chunk, $filter: ActivityFilter) {
+  activityListForCamp(
+    campBusinessId: $campBusinessId
+    chunk: $chunk
+    filter: $filter
+  ) {
+    content {
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      ...activityFields
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment activityFields on Activity {
+  businessId
+  activityType
+  activityState
+  activityDate
+  dayOfWeek
+  duration
+  time
+  location
+  overlapCount
+  _availableOptions {
+    delete
+    edit
+    setToNotDone
+    setFromNotDoneToAttendanceOpen
+    __typename
+  }
+  __typename
+}
+
+query CampList($offerBusinessId: ID!, $campBusinessId: ID, $chunk: Chunk) {
+  campList(
+    offerBusinessId: $offerBusinessId
+    campBusinessId: $campBusinessId
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      offerItemNumber
+      groupName
+      mainSport {
+        title {
+          ...localizedStringFields
+          __typename
+        }
+        __typename
+      }
+      sports {
+        title {
+          ...localizedStringFields
+          __typename
+        }
+        __typename
+      }
+      targetAudienceGroup
+      duration {
+        ...mandatoryDateRangeFields
+        __typename
+      }
+      offerItemState
+      totalCampSubsidies
+      activityContribution
+      _availableOptions {
+        delete
+        requestApproval
+        approveLateSubmission
+        cancel
+        undoCancel
+        addInvolvement
+        finishAttendanceCheck
+        startCorrectionOfAttendanceCheck
+        resetInExecution
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+fragment mandatoryDateRangeFields on MandatoryDateRange {
+  first
+  last
+  __typename
+}
+
+query MyOfferItemsInExecution($chunk: Chunk) {
+  myOfferItemsInExecution(chunk: $chunk) {
+    content {
+      businessId
+      offerBusinessId
+      campBusinessId
+      courseBusinessId
+      organisationName {
+        de
+        fr
+        it
+        resolvedDe
+        resolvedFr
+        resolvedIt
+        __typename
+      }
+      offerNumber
+      groupName
+      duration {
+        first
+        last
+        __typename
+      }
+      openAttendanceCheckCount
+      overlapCount
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query OfferList($chunk: Chunk, $filter: OfferFilter) {
+  offerList(chunk: $chunk, filter: $filter) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      assistantInstructor1418AnalysisBid
+      offerNumber
+      duration {
+        ...mandatoryDateRangeFields
+        __typename
+      }
+      offerState
+      offerGroup
+      coach {
+        ...coachNameFields
+        __typename
+      }
+      courseCount
+      campCount
+      organisation {
+        name {
+          resolvedLocalizedString {
+            ...localizedStringFields
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment mandatoryDateRangeFields on MandatoryDateRange {
+  first
+  last
+  __typename
+}
+fragment coachNameFields on Person {
+  firstName
+  lastName
+  __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+query ParticipantsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
+  participantsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      targetAudienceGroup
+      eligibleForSubsidies
+      person {
+        businessId
+        personNumber
+        firstName
+        lastName
+        birthDate
+        privateAddress {
+          businessId
+          streetHouseNumber
+          zipCode
+          town
+          __typename
+        }
+        __typename
+      }
+      _availableOptions {
+        delete
+        displayPersonDetails
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query RegaParticipantsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
+  regaParticipantsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
+    content {
+      ...regaParticipantInvolvementFields
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment regaParticipantInvolvementFields on RegaParticipantInvolvement {
+  businessId
+  person {
+    businessId
+    personNumber
+    firstName
+    lastName
+    birthDate
+    privateAddress {
+      businessId
+      streetHouseNumber
+      zipCode
+      town
+      __typename
+    }
+    __typename
+  }
+  transmittedToRega
+  __typename
+}
+
+query RegaSupervisorsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
+  regaSupervisorsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
+    content {
+      ...regaSupervisorInvolvementFields
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment regaSupervisorInvolvementFields on RegaSupervisorInvolvement {
+  businessId
+  person {
+    businessId
+    personNumber
+    firstName
+    lastName
+    birthDate
+    privateAddress {
+      businessId
+      streetHouseNumber
+      zipCode
+      town
+      __typename
+    }
+    __typename
+  }
+  transmittedToRega
+  __typename
+}
+
+query SupervisorsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
+  supervisorsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      involvementType
+      person {
+        businessId
+        personNumber
+        firstName
+        lastName
+        birthDate
+        privateAddress {
+          businessId
+          streetHouseNumber
+          zipCode
+          town
+          __typename
+        }
+        __typename
+      }
+      _availableOptions {
+        delete
+        displayPersonDetails
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}

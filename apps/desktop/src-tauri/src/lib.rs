@@ -12,12 +12,15 @@ mod files;
 mod instance;
 mod login_window;
 mod midata;
+mod nds;
 mod session;
 
 #[cfg(test)]
 mod live_tests;
 #[cfg(test)]
 mod midata_live_tests;
+#[cfg(test)]
+mod nds_live_tests;
 
 use session::AppState;
 use tauri::Manager;
@@ -29,6 +32,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .manage(midata::MidataState::new().expect("MiData-HTTP-Client konnte nicht erstellt werden"))
+        .manage(nds::NdsState::new().expect("NDS-HTTP-Client konnte nicht erstellt werden"))
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             app.manage(files::FileState::load(&dir));
@@ -71,6 +75,12 @@ pub fn run() {
             midata::midata_find_events,
             midata::midata_fetch_aggregate,
             midata::midata_probe,
+            nds::nds_status,
+            nds::nds_open_login,
+            nds::nds_logout,
+            nds::nds_find_camps,
+            nds::nds_fetch_aggregate,
+            nds::nds_probe,
         ])
         .run(tauri::generate_context!())
         .expect("error while running co-co");

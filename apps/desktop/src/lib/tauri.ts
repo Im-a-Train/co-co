@@ -134,6 +134,11 @@ import type { MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus } f
 
 export const EVENT_MIDATA_STATUS = 'midata://status'
 
+// M8: NDS (red zone). Only aggregates / summaries / names + status codes cross the IPC boundary.
+export type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
+import type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
+export const EVENT_NDS_STATUS = 'nds://status'
+
 export const commands = {
   // M0
   discoverInstance: (baseUrl: string) => call<InstanceInfo>('discover_instance', { baseUrl }),
@@ -187,6 +192,15 @@ export const commands = {
     call<MidataAggregate>('midata_fetch_aggregate', { eventId, campStart, campEnd, coachPersonId }),
   /** M7-0 spike: what the current auth can read (status codes + field names only). */
   midataProbe: (eventId: string, groupId: string | null) => call<MidataProbe>('midata_probe', { eventId, groupId }),
+  // M8: NDS (read-only, unofficial web API). Refreshed only on explicit user action.
+  ndsStatus: () => call<NdsStatus>('nds_status'),
+  /** Opens the NDS login window (no IPC); emits EVENT_NDS_STATUS when the SESSION cookie is captured. */
+  ndsOpenLogin: () => call<void>('nds_open_login'),
+  ndsLogout: () => call<void>('nds_logout'),
+  ndsFindCamps: (from: string, to: string) => call<NdsCampSummary[]>('nds_find_camps', { from, to }),
+  ndsFetchAggregate: (offerBusinessId: string, campBusinessId: string) =>
+    call<NdsAggregate>('nds_fetch_aggregate', { offerBusinessId, campBusinessId }),
+  ndsProbe: (campBusinessId: string) => call<NdsProbe>('nds_probe', { campBusinessId }),
 }
 
 /** Decodes DocumentBytes.bytesBase64. */
@@ -217,6 +231,11 @@ export async function onSession(handler: (session: SessionInfo) => void): Promis
 export async function onMidataStatus(handler: (status: MidataStatus) => void): Promise<UnlistenFn> {
   if (!isTauri()) return noop
   return listen<MidataStatus>(EVENT_MIDATA_STATUS, (e) => handler(e.payload))
+}
+
+export async function onNdsStatus(handler: (status: NdsStatus) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<NdsStatus>(EVENT_NDS_STATUS, (e) => handler(e.payload))
 }
 
 export async function onAuthLog(handler: (log: AuthLogEvent) => void): Promise<UnlistenFn> {

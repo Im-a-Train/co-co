@@ -328,7 +328,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
 <header class="hero">
   <canvas id="topo" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M7 built (M7-0 spike pending)</span>
+    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M8 built (M7-0 spike pending)</span>
     <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
     <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
     <div class="badges">
@@ -337,13 +337,13 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
       <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
       <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
       <span class="badge">Language: <b>German</b>, ready for more</span>
-      <span class="badge">Status: <b>M0–M7 built (M7-0 spike pending)</b></span>
+      <span class="badge">Status: <b>M0–M8 built (M7-0 spike pending)</b></span>
     </div>
   </div>
 </header>
 
 <nav class="toc" aria-label="Sections"><div class="wrap">
-  <a href="#decisions">Decisions</a><a href="#zones">Data zones</a><a href="#login">Login</a><a href="#cockpit">Cockpit</a><a href="#feedback">Feedback</a><a href="#docs">Documents</a><a href="#rules">Rule set</a><a href="#arch">Architecture</a><a href="#features">Features</a><a href="#midata">MiData</a><a href="#roadmap">Milestones</a><a href="#open">Open points</a>
+  <a href="#decisions">Decisions</a><a href="#zones">Data zones</a><a href="#login">Login</a><a href="#cockpit">Cockpit</a><a href="#feedback">Feedback</a><a href="#docs">Documents</a><a href="#rules">Rule set</a><a href="#arch">Architecture</a><a href="#features">Features</a><a href="#midata">MiData</a><a href="#nds">NDS</a><a href="#roadmap">Milestones</a><a href="#open">Open points</a>
 </div></nav>
 
 <!-- DECISIONS -->
@@ -732,6 +732,13 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       <li>A qualification matrix (leaders × required qualifications for the camp's safety-relevant activities) replaces typing them in by hand.</li>
     </ul></div>
   </div>
+</div></section>
+
+<!-- NDS -->
+<section id="nds"><div class="wrap">
+  <span class="eyebrow">Design · M8 · red zone · built</span>
+  <h2>NDS connection</h2>
+  <p class="lede">NDS (Nationale Datenbank Sport) has no public API. co-co reads the web app's own endpoints read-only with the coach's AGOV session (cookie in the OS keychain, Rust only). Only aggregates reach the UI: registration and approval dates, state codes, participant and activity counts, open attendance checks, rental orders. Names, birth dates, AHV numbers and addresses never leave Rust. Suggestions («bewilligt am», closed) are derived only from known state codes; unknown codes are shown raw. See ADR 0007.</p>
 </div></section>
 
 <!-- ROADMAP -->

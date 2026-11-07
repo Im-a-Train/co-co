@@ -8,7 +8,7 @@
     "exported": "Backup gespeichert: {path}",
     "import": "Backup importieren",
     "remind": "Nach jeder Runde ans Backup erinnern",
-    "omitMidata": "MiData-Daten (rote Zone) nicht exportieren",
+    "omitMidata": "MiData- und NDS-Daten (rote Zone) nicht exportieren",
     "reminder": {
       "text": "Runde gespeichert. Exportiere jetzt ein Backup, damit der Stand nicht verloren geht.",
       "action": "Jetzt exportieren",

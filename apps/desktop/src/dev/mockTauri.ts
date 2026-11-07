@@ -93,6 +93,43 @@ function midataAggregate(eventId: string, campStart: string, campEnd: string, co
   }
 }
 
+// ---- NDS (M8) mock: invented aggregate, no real persons ----------------------------------------
+function ndsAggregate(offerBusinessId: string, campBusinessId: string) {
+  const counts = (n: number) => ({
+    children: n - 6,
+    adolescents: 6,
+    totalParticipants: n,
+    totalInstructors: 5,
+    jsInstructors: 4,
+    campDays: 7,
+    totalActivities: 14,
+  })
+  return {
+    offerBusinessId,
+    campBusinessId,
+    offerNumber: '999001',
+    start: '2026-07-12',
+    end: '2026-07-18',
+    offerState: 'WAITING_FOR_ASSESSMENT',
+    offerItemState: 'WAITING_FOR_ASSESSMENT',
+    approvedOn: '2026-05-03',
+    statistics: { planned: counts(26), actual: counts(24), coachAuthorizedForContribution: true },
+    supervisorCounts: { HEAD_OF_CAMP: 1, JS_INSTRUCTOR: 4 },
+    participantCount: 24,
+    participantCountsByAudience: { CHILD: 18, ADOLESCENT: 6 },
+    activities: {
+      total: 14,
+      byState: { ATTENDANCE_CHECKED: 12, ATTENDANCE_OPEN: 2 },
+      byType: { FIRST_CAMP_DAY: 1, CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES: 5, LAST_CAMP_DAY: 1 },
+      lastActivityDate: '2026-07-18',
+      attendanceOpenCount: 2,
+    },
+    campAgendaUploaded: true,
+    rentalOrders: [{ orderState: 'FINISHED', dispatchmentDate: '2026-07-08', returnDate: '2026-07-20' }],
+    fetchedAt: new Date().toISOString(),
+  }
+}
+
 export function installMockTauri(): void {
   ;(globalThis as unknown as { isTauri: boolean }).isTauri = true
   mockWindows('main')
@@ -100,6 +137,7 @@ export function installMockTauri(): void {
   let aiKey = false
   let midataConnected = true
   let midataMethod: 'session' | 'token' = 'session'
+  let ndsConnected = true
   mockIPC(
     async (cmd, args) => {
       const a = (args ?? {}) as Record<string, unknown>
@@ -196,6 +234,50 @@ export function installMockTauri(): void {
             classicJsonStatus: 200,
             pbsFieldsPresent: ['coach_id', 'expected_participants_pio'],
             classicAttributeNames: ['name', 'motto', 'location', 'maximum_participants', 'state'],
+          }
+        case 'nds_status':
+          return { connected: ndsConnected, cookieNames: ndsConnected ? ['SESSION', 'cookiesession1', 'LANG'] : [] }
+        case 'nds_open_login':
+          ndsConnected = true
+          return null
+        case 'nds_logout':
+          ndsConnected = false
+          return null
+        case 'nds_find_camps':
+          return [
+            {
+              offerBusinessId: 'offer-9001',
+              campBusinessId: 'camp-9001',
+              offerNumber: '999001',
+              offerItemNumber: '1',
+              groupName: 'Musterstufe',
+              start: String(a.from),
+              end: String(a.to),
+              offerState: 'WAITING_FOR_ASSESSMENT',
+              offerItemState: 'WAITING_FOR_ASSESSMENT',
+            },
+            {
+              offerBusinessId: 'offer-9002',
+              campBusinessId: 'camp-9002',
+              offerNumber: '999002',
+              offerItemNumber: '2',
+              groupName: 'Beispielabteilung',
+              start: String(a.from),
+              end: String(a.from),
+              offerState: 'SOME_NEW_STATE',
+              offerItemState: null,
+            },
+          ]
+        case 'nds_fetch_aggregate':
+          return ndsAggregate(String(a.offerBusinessId), String(a.campBusinessId))
+        case 'nds_probe':
+          return {
+            connected: ndsConnected,
+            endpoints: [
+              { name: 'camp details', status: 200, fieldsPresent: ['offerItemState', 'approvalTimestamp', 'duration'], fieldsMissing: ['riskActivitiesPlanned'] },
+              { name: 'camp statistics', status: 200, fieldsPresent: ['numberOfChildren', 'totalNumberOfParticipants'], fieldsMissing: [] },
+              { name: 'activities', status: 200, fieldsPresent: ['activityType', 'activityState', 'activityDate'], fieldsMissing: [] },
+            ],
           }
         case 'ai_has_key':
           return aiKey

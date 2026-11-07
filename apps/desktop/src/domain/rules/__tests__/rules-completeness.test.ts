@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { predicates as p } from '../packs/basis/predicates'
 import { coachNameMatches } from '../packs/basis/predicates/completeness'
-import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCtx, makeMidata, mappingOf } from './factory'
+import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, makeMidata, makeNds, mappingOf } from './factory'
 
 const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
@@ -117,6 +117,47 @@ describe('CMP-CAMP-01 with MiData', () => {
     const f = new FactsBuilder().facts
     expect(p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: true }) }))).toEqual([])
     expect(p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: null }) }))).toEqual([])
+  })
+})
+
+describe('CMP-NDS rules', () => {
+  const f = new FactsBuilder({ start: '2031-07-12', days: 5 }).facts
+  const after = new Date('2031-08-01T12:00:00Z')
+  const counts = (n: number | null) => ({ children: null, adolescents: null, totalParticipants: n, totalInstructors: null, jsInstructors: null, campDays: null, totalActivities: null })
+  const withPlanned = (n: number | null) => makeNds({ statistics: { planned: counts(n), actual: counts(null), coachAuthorizedForContribution: null } })
+
+  it('CMP-NDS-01 is silent without NDS and with equal dates, hints on difference', () => {
+    expect(p['CMP-NDS-01'](makeCtx(f))).toEqual([])
+    expect(p['CMP-NDS-01'](makeCtx(f, { nds: makeNds() }))).toEqual([])
+    expect(p['CMP-NDS-01'](makeCtx(f, { nds: makeNds({ start: null }) }))).toEqual([])
+    const hits = p['CMP-NDS-01'](makeCtx(f, { nds: makeNds({ end: '2031-07-18' }) }))
+    expect(hits).toHaveLength(1)
+    expect(String(hits[0].params?._message)).toContain('12.07.2031–16.07.2031')
+    expect(String(hits[0].params?._message)).toContain('12.07.2031–18.07.2031')
+    expect(String(hits[0].params?._message)).toContain('Quelle: NDS, Stand 01.01.2031')
+  })
+
+  it('CMP-NDS-02 flags open AWK only after the camp end', () => {
+    const nds = makeNds({ activities: { total: 5, byState: {}, byType: {}, lastActivityDate: null, attendanceOpenCount: 2 } })
+    expect(p['CMP-NDS-02'](makeCtx(f, { nds }))).toEqual([]) // now = 2031-01-01, before the camp
+    const hits = p['CMP-NDS-02'](makeCtx(f, { nds, now: after }))
+    expect(hits).toHaveLength(1)
+    expect(String(hits[0].params?._message)).toContain('2 Aktivitäten')
+    expect(p['CMP-NDS-02'](makeCtx(f, { nds: makeNds(), now: after }))).toEqual([])
+    expect(p['CMP-NDS-02'](makeCtx(f, { now: after }))).toEqual([])
+  })
+
+  it('CMP-NDS-03 compares NDS planned participants with MiData, else the coach input (>20 %)', () => {
+    expect(p['CMP-NDS-03'](makeCtx(f))).toEqual([])
+    expect(p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(null), midata: makeMidata() }))).toEqual([])
+    expect(p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(22), midata: makeMidata({ participantsCount: 20 }) }))).toEqual([])
+    const hits = p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(30), midata: makeMidata({ participantsCount: 20 }) }))
+    expect(hits).toHaveLength(1)
+    expect(String(hits[0].params?._message)).toContain('MiData')
+    const own = p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(30), coachInputs: makeCoachInputs({ participantsCount: 20 }) }))
+    expect(own).toHaveLength(1)
+    expect(String(own[0].params?._message)).toContain('Angabe des Coachs')
+    expect(p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(30) }))).toEqual([])
   })
 })
 
