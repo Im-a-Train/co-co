@@ -130,7 +130,7 @@ export const EVENT_DOCS_DROPPED = 'docs://dropped'
 
 // M7: MiData (red zone). Only aggregates / summaries / names + status codes cross the IPC boundary.
 export type { MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus } from '@/domain/types'
-import type { MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus } from '@/domain/types'
+import type { MidataAggregate, MidataEventSummary, MidataProbe, MidataQualKey, MidataStatus } from '@/domain/types'
 
 export const EVENT_MIDATA_STATUS = 'midata://status'
 
@@ -188,8 +188,13 @@ export const commands = {
   /** Camp events (Event::Camp, all visible organisations) overlapping [from, to] (YYYY-MM-DD), ranked by overlap with the camp. */
   midataFindEvents: (from: string, to: string, campStart: string | null, campEnd: string | null) =>
     call<MidataEventSummary[]>('midata_find_events', { from, to, campStart, campEnd }),
-  midataFetchAggregate: (eventId: string, campStart: string, campEnd: string, coachPersonId: string | null) =>
-    call<MidataAggregate>('midata_fetch_aggregate', { eventId, campStart, campEnd, coachPersonId }),
+  midataFetchAggregate: (
+    eventId: string,
+    campStart: string,
+    campEnd: string,
+    coachPersonId: string | null,
+    qualMapping: Record<string, MidataQualKey[]> | null,
+  ) => call<MidataAggregate>('midata_fetch_aggregate', { eventId, campStart, campEnd, coachPersonId, qualMapping }),
   /** M7-0 spike: what the current auth can read (status codes + field names only). */
   midataProbe: (eventId: string, groupId: string | null) => call<MidataProbe>('midata_probe', { eventId, groupId }),
   // M8: NDS (read-only, unofficial web API). Refreshed only on explicit user action.

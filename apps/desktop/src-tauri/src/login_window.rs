@@ -21,6 +21,9 @@ use std::time::{Duration, Instant};
 use coco_core::cookies::{dedupe_by_name, select_auth_cookies, RawCookie};
 use coco_core::jwt::decode_jwt_hp;
 use coco_core::instance::{base_url_string, normalize_base_url};
+use coco_core::midata::{person_id_from_path, pick_session_cookie, DEFAULT_MIDATA_BASE_URL};
+use url::Url;
+use crate::midata::{adopt_session_cookies, MidataState};
 use coco_core::login::{is_allowed_login_navigation, is_post_login_url, redact_url};
 use coco_core::refresh::now_secs;
 use coco_core::types::AuthLog;
@@ -49,6 +52,8 @@ struct LoginAttempt {
     last_names: StdMutex<Option<Vec<String>>>,
     /// `AppState::logout_epoch` when the window was opened.
     epoch: u64,
+    /// Last `/people/<id>` seen on a foreign (MiData) origin: (origin, person id). Never logged.
+    midata_person: StdMutex<Option<(String, String)>>,
 }
 
 pub async fn open_login_window<R: Runtime>(app: &AppHandle<R>, state: &AppState, base_url: &str) -> AppResult<()> {
@@ -78,8 +83,10 @@ pub async fn open_login_window<R: Runtime>(app: &AppHandle<R>, state: &AppState,
         checking: AtomicBool::new(false),
         last_names: StdMutex::new(None),
         epoch: state.logout_epoch.load(Ordering::SeqCst),
+        midata_person: StdMutex::new(None),
     });
 
+    let nav_attempt = attempt.clone();
     let nav_app = app.clone();
     let nav_base = instance.base.clone();
     let load_app = app.clone();
@@ -96,6 +103,14 @@ pub async fn open_login_window<R: Runtime>(app: &AppHandle<R>, state: &AppState,
             // Runs on the main thread: only log, never touch cookies here.
             // Blocks plaintext http and the app's own (IPC-capable) origins.
             let allowed = is_allowed_login_navigation(url, &nav_base);
+            if allowed && url.origin() != nav_base.origin() {
+                // String work only: remember a MiData `/people/<id>` path (id is not logged).
+                if let Some(id) = person_id_from_path(url.path()) {
+                    if let Ok(mut g) = nav_attempt.midata_person.lock() {
+                        *g = Some((url.origin().ascii_serialization(), id));
+                    }
+                }
+            }
             log(
                 &nav_app,
                 AuthLog {
@@ -203,6 +218,44 @@ async fn read_webview_cookies<R: Runtime>(window: WebviewWindow<R>, instance: &I
     .map_err(|e| e.to_string())?
 }
 
+/// Reads the MiData cookies of the login webview (candidates: default MiData instance and the base
+/// URL MidataState knows) and hands a `_session_id` session to `MidataState`. Cookie reads happen on
+/// a blocking worker (wry#583). Logs cookie NAMES only; every failure is swallowed.
+async fn adopt_midata_session<R: Runtime>(app: &AppHandle<R>, window: &WebviewWindow<R>, attempt: &LoginAttempt) {
+    let Some(state) = app.try_state::<MidataState>() else { return };
+    let mut bases: Vec<String> = vec![DEFAULT_MIDATA_BASE_URL.to_string()];
+    if let Some(known) = state.known_base_url().await {
+        if !bases.contains(&known) {
+            bases.push(known);
+        }
+    }
+    for base in bases {
+        let Ok(base_u) = Url::parse(&base) else { continue };
+        let w = window.clone();
+        let read = tauri::async_runtime::spawn_blocking(move || {
+            w.cookies_for_url(base_u)
+                .map(|cs| cs.into_iter().map(|c| RawCookie::new(c.name(), c.value())).collect::<Vec<_>>())
+                .map_err(|e| e.to_string())
+        })
+        .await;
+        let Ok(Ok(cookies)) = read else { continue };
+        if pick_session_cookie(&cookies).is_none() {
+            continue;
+        }
+        let origin = Url::parse(&base).ok().map(|u| u.origin().ascii_serialization());
+        let person_id = attempt
+            .midata_person
+            .lock()
+            .ok()
+            .and_then(|g| g.clone())
+            .filter(|(o, _)| Some(o) == origin.as_ref())
+            .map(|(_, id)| id);
+        if adopt_session_cookies(app, &state, &base, cookies, person_id).await {
+            return;
+        }
+    }
+}
+
 async fn check_cookies<R: Runtime>(app: &AppHandle<R>, window: WebviewWindow<R>, attempt: &LoginAttempt, trigger: &str) {
     if attempt.done.load(Ordering::SeqCst) || attempt.checking.swap(true, Ordering::SeqCst) {
         return;
@@ -303,6 +356,10 @@ async fn check_cookies<R: Runtime>(app: &AppHandle<R>, window: WebviewWindow<R>,
         ),
     );
     emit_session(app, &info);
+
+    // Same webview, same incognito store: reuse a MiData session so no second login is needed.
+    // Best effort; must never fail the eCamp login.
+    adopt_midata_session(app, &window, attempt).await;
 
     // Close promptly so the eCamp SPA in the login window cannot rotate the
     // (single-use) refresh token behind our back.

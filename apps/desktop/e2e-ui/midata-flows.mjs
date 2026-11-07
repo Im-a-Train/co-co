@@ -12,6 +12,10 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
     if (!/Rote Zone/i.test(t)) throw new Error('red zone text missing')
     if (!/verbunden per Anmeldung/i.test(t)) throw new Error('status chip missing')
     if (!/Service-Token/i.test(t)) throw new Error('token section missing')
+    if (!/übernimmt co-co die MiData-Sitzung automatisch/.test(t)) throw new Error('OAuth help text missing')
+    await page.getByTestId('midata-personid-detected').waitFor({ timeout: 5000 })
+    const pid = await page.getByTestId('midata-personid').locator('input').inputValue()
+    if (pid !== '4711') throw new Error('person id not auto-adopted: ' + pid)
   })
 
   await step('flow: diagnosis expander shows probe result', async () => {
@@ -62,6 +66,39 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
     const t = await text()
     if (!/Falk/.test(t) || !/Abdeckung/.test(t)) throw new Error('matrix incomplete')
     await shot(page, 'flow-midata-matrix')
+    const coach = await page.getByTestId('midata-coach').innerText()
+    if (!/Coach laut MiData: Falk/.test(coach) || !/\(du\)/.test(coach)) throw new Error('coach line wrong: ' + coach)
+    const src = await page.getByTestId('qual-activities-source').innerText()
+    if (!/Stichwörter/.test(src)) throw new Error('safety activity source text missing')
+  })
+
+  await step('flow: qualification kinds expander changes the mapping', async () => {
+    const coverage = () => page.locator('[data-testid="qual-matrix"] tr.font-weight-medium td:nth-child(2)').innerText()
+    const before = (await coverage()).replace(/\s/g, '')
+    if (before !== '1/5') throw new Error('unexpected lagerleiter coverage before: ' + before)
+    await page.locator('[data-testid="qual-kinds"] .v-expansion-panel-title').click()
+    await page.waitForTimeout(500)
+    const panel = await page.getByTestId('qual-kinds').innerText()
+    if (!/Qualifikationsarten aus MiData \(7\)/.test(panel)) throw new Error('kinds title wrong')
+    if (!/J\+S-Coach/.test(panel) || !/nicht zugeordnet/.test(panel)) throw new Error('unmapped J+S-Coach not highlighted')
+    await shot(page, 'flow-midata-kinds')
+    // J+S-Coach is the 7th kind (index 6): map it to Lagerleiter.
+    await page.getByTestId('qual-kind-select-6').click()
+    await page.getByRole('option', { name: 'Lagerleiter' }).click()
+    await page.keyboard.press('Escape')
+    await page.getByTestId('qual-kinds-save').click()
+    await page.getByTestId('qual-kinds-reload').waitFor({ timeout: 5000 })
+    await shot(page, 'flow-midata-kinds-saved')
+    await page.getByTestId('qual-kinds-reload').click()
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="qual-matrix"] tr.font-weight-medium td:nth-child(2)')?.textContent?.replace(/\s/g, '') === '2/5',
+      null,
+      { timeout: 8000 },
+    )
+    await page.waitForTimeout(400)
+    await shot(page, 'flow-midata-kinds-reloaded')
+    const after = await page.getByTestId('qual-kinds').innerText()
+    if (/nicht zugeordnet/.test(after)) throw new Error('J+S-Coach still shown as unmapped after mapping')
   })
 
   await step('flow: manual edit removes the MiData badge', async () => {

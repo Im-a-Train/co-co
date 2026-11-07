@@ -16,7 +16,8 @@
         "session": "verbunden per Anmeldung",
         "token": "verbunden per Token",
         "none": "nicht verbunden",
-        "cookies": "Cookies: {names}"
+        "cookies": "Cookies: {names}",
+        "viaEcamp": "über die eCamp-Anmeldung (MiData-OAuth) verbunden"
       },
       "login": "Bei MiData anmelden",
       "loginHint": "Öffnet ein Anmeldefenster. Das Passwort sieht nur MiData.",
@@ -45,7 +46,9 @@
         "pbsFields": "PBS-Felder",
         "attributes": "Feldnamen im Export",
         "none": "keine"
-      }
+      },
+      "oauthHelp": "Meldest du dich bei eCamp über MiData an, übernimmt co-co die MiData-Sitzung automatisch. Bei Passwort- oder Google-Anmeldung musst du dich hier separat bei MiData anmelden.",
+      "personIdDetected": "automatisch erkannt"
     },
     "card": {
       "title": "MiData",
@@ -73,13 +76,14 @@
         "ages": "Alter",
         "agesRange": "{min}–{max} Jahre",
         "leaders": "Leitende",
-        "coach": "Coach",
-        "coachYes": "Du bist als Coach des Anlasses eingetragen.",
-        "coachNo": "Du bist nicht als Coach des Anlasses eingetragen.",
-        "coachUnknown": "Coach-Prüfung nicht möglich (Personen-Nr. fehlt oder unbekannt).",
         "withoutBirthday": "{n} ohne Geburtsdatum",
         "event": "Anlass",
-        "location": "Ort"
+        "location": "Ort",
+        "coachLine": "Coach laut MiData: {name}",
+        "coachMatchYes": "du",
+        "coachMatchNo": "nicht du",
+        "coachMatchUnknown": "unbekannt – trage deine MiData-Personen-Nr. in den Einstellungen ein",
+        "coachNone": "Kein Coach im MiData-Anlass eingetragen"
       }
     },
     "picker": {
@@ -146,7 +150,33 @@
         "noResponsible": "keine Verantwortlichen",
         "ok": "qualifiziert",
         "warn": "keine qualifizierte Person verantwortlich",
-        "unknown": "nicht zuordenbar"
+        "unknown": "nicht zuordenbar",
+        "source": "Woher kommt diese Liste? co-co sucht in Titel, Ort, Ablauf, Sicherheitsüberlegungen und Notizen jeder eCamp-Aktivität nach Stichwörtern (dieselben Wortlisten wie die Regeln zu Wasser und Berg, dazu eine Liste für Winter). Das ist eine Heuristik und kann danebenliegen.",
+        "detectedBy": "erkannt durch: {words}",
+        "dismiss": "keine {area}-Aktivität",
+        "dismissedTitle": "Ausgeblendet ({n})",
+        "restore": "wieder einblenden",
+        "areaLower": {
+          "wasser": "Wasser",
+          "berg": "Berg",
+          "winter": "Winter"
+        }
+      },
+      "notReadable": "Qualifikationen konnten nicht gelesen werden (keine Berechtigung in MiData). Die Matrix zeigt deshalb nur ✕.",
+      "unknownCell": "unbekannt",
+      "kinds": {
+        "title": "Qualifikationsarten aus MiData ({n})",
+        "intro": "So ordnet co-co die Qualifikationen aus MiData den Spalten der Matrix zu. Ändere die Zuordnung, wenn eine Art falsch oder gar nicht erkannt wurde.",
+        "label": "Qualifikationsart",
+        "mappedTo": "zugeordnet zu",
+        "valid": "gültig",
+        "expired": "abgelaufen",
+        "unmapped": "nicht zugeordnet",
+        "none": "Keine Qualifikationsarten gelesen.",
+        "save": "Zuordnung speichern",
+        "saved": "Zuordnung gespeichert.",
+        "reload": "Neu aus MiData laden",
+        "reset": "Änderungen verwerfen"
       }
     }
   }

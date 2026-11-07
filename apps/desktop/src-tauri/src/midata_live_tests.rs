@@ -27,7 +27,7 @@ fn midata_live_probe_and_aggregate() {
     let probe = tauri::async_runtime::block_on(probe_impl(&state, &event, group.as_deref())).unwrap();
     println!("probe: {}", serde_json::to_string_pretty(&probe).unwrap());
 
-    match tauri::async_runtime::block_on(fetch_aggregate_impl(&state, &event, "2026-07-18", "2026-07-25", None)) {
+    match tauri::async_runtime::block_on(fetch_aggregate_impl(&state, &event, "2026-07-18", "2026-07-25", None, None)) {
         Ok(a) => println!(
             "aggregate: participants={} jsAge={} leaders={} bands={} dates={} coachMatch={:?}",
             a.participants_count,

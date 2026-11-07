@@ -18,6 +18,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use serde_json::Value;
 use url::Url;
 
+use crate::cookies::RawCookie;
 use crate::CoreError;
 
 /// Default MiData instance (PBS).
@@ -107,10 +108,36 @@ pub struct MidataAggregate {
     pub age_bands: Vec<AgeBand>,
     pub leaders_count: u32,
     pub leaders: Vec<MidataLeader>,
-    /// event.advisor_id == coach person id; None when either is unknown.
+    /// Coach (participation with role `Event::Camp::Role::Coach`) person id == `coach_person_id`;
+    /// without a coach participation: event.advisor_id == coach person id; None when unknown.
     pub coach_match: Option<bool>,
+    /// Nickname (else first name, never last name) of the coach participation; None when there is none.
+    #[serde(default)]
+    pub coach_nickname: Option<String>,
+    /// False when the qualifications request was refused (401/403) or failed: all qualification
+    /// cells are then false because they are UNKNOWN, not because nobody is qualified.
+    #[serde(default = "default_true")]
+    pub qualifications_readable: bool,
+    /// Every distinct qualification-kind label found among the leaders' qualifications (no personal data).
+    #[serde(default)]
+    pub qualification_kinds: Vec<QualKindInfo>,
     /// RFC 3339 UTC timestamp («Stand MiData»), set by the caller.
     pub fetched_at: String,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// One qualification-kind label held by leaders, with the co-co keys it maps to and how many
+/// leaders hold it valid over the camp period vs. only expired / not yet valid.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QualKindInfo {
+    pub label: String,
+    pub keys: Vec<QualKey>,
+    pub valid_leaders: u32,
+    pub expired_leaders: u32,
 }
 
 /// Event list entry for the «Anlass wählen» picker (yellow: names only, no persons).
@@ -157,6 +184,31 @@ pub struct MidataStatus {
     /// "session" (login window) or "token" (service token from the keychain).
     pub method: Option<String>,
     pub cookie_names: Vec<String>,
+    /// MiData person id of the signed-in user when detected from `/people/<id>` URLs.
+    #[serde(default)]
+    pub person_id: Option<String>,
+}
+
+/// Picks the hitobito session cookie (`_session_id`, non-empty value) from a cookie list.
+pub fn pick_session_cookie(cookies: &[RawCookie]) -> Option<&RawCookie> {
+    cookies.iter().find(|c| c.name == SESSION_COOKIE && !c.value.is_empty())
+}
+
+/// Person id from a hitobito URL path such as `/groups/1/people/123` or `/people/123.json`.
+/// Takes the last `/people/<digits>` segment pair; None otherwise.
+pub fn person_id_from_path(path: &str) -> Option<String> {
+    let segs: Vec<&str> = path.split('/').collect();
+    let mut found = None;
+    for w in segs.windows(2) {
+        if w[0] == "people" {
+            let digits: String = w[1].chars().take_while(char::is_ascii_digit).collect();
+            let rest = &w[1][digits.len()..];
+            if !digits.is_empty() && (rest.is_empty() || rest.starts_with('.')) {
+                found = Some(digits);
+            }
+        }
+    }
+    found
 }
 
 /// Inputs for [`reduce_aggregate`]: raw JSON:API documents as returned by MiData.
@@ -175,6 +227,11 @@ pub struct RawEventData<'a> {
     pub coach_person_id: Option<&'a str>,
     /// RFC 3339 timestamp to put into `fetched_at`.
     pub fetched_at: &'a str,
+    /// False when the qualifications request was refused (401/403) or failed; the pages are then ignored.
+    pub qualifications_readable: bool,
+    /// User mapping `label -> keys` (label compared trimmed and case-insensitive). An entry REPLACES the
+    /// built-in keyword mapping for that label; an empty list means "ignore this label".
+    pub qual_mapping: Option<&'a HashMap<String, Vec<QualKey>>>,
 }
 
 /// Validates and normalizes a MiData base URL: https only (http only for
@@ -200,6 +257,8 @@ pub fn normalize_midata_base_url(input: &str) -> Result<String, CoreError> {
 pub enum RoleClass {
     Leader,
     Participant,
+    /// PBS restricted role `Event::Camp::Role::Coach`.
+    Coach,
     Other,
 }
 
@@ -207,11 +266,15 @@ pub enum RoleClass {
 /// - `Leader`, `AssistantLeader` and any segment starting with `Leader`
 ///   (PBS: `LeaderMountainSecurity`, `LeaderSnowSecurity`, `LeaderWaterSecurity`) -> Leader
 /// - `Participant` -> Participant
+/// - `Coach` -> Coach (not a leader, not a participant); the restricted `Advisor*` roles
+///   (`AdvisorMountainSecurity`, `AdvisorSnowSecurity`, `AdvisorWaterSecurity`) -> Other
 /// - everything else (Cook, Helper, Treasurer, Speaker, Kitchen, ...) -> Other
 pub fn classify_role(role_type: &str) -> RoleClass {
     let last = role_type.rsplit("::").next().unwrap_or("").trim();
     if last == "Participant" {
         RoleClass::Participant
+    } else if last == "Coach" {
+        RoleClass::Coach
     } else if last == "AssistantLeader" || last.starts_with("Leader") {
         RoleClass::Leader
     } else {
@@ -236,18 +299,30 @@ fn fold_label(label: &str) -> String {
 
 /// Maps a qualification-kind label (German, as in MiData) to co-co categories.
 /// Case-insensitive keyword matching; one label may map to several keys.
+/// - Lagerleiter: `lagerleit`, `zusatz lager`
+/// - LeiterLsT: `lagersport`, `trekking`, `ls/t`, token `lst`, `leiter*in j+s ls`, `j+s-leiter`
+/// - Wasser: `wasser`, `modul see`, `modul fluss`
+/// - Berg: `berg`; Winter: `winter`, `schnee`
+/// - Slrg: `slrg`, `brevet`, `rettungsschwimm`, `modul pool`, `modul see`, `modul fluss`
+///   (SLRG modules imply both Slrg and Wasser)
 pub fn qual_keys_for_label(label: &str) -> Vec<QualKey> {
     let l = fold_label(label);
     let tokens: Vec<&str> = l.split(|c: char| !c.is_alphanumeric()).filter(|t| !t.is_empty()).collect();
     let has = |k: &str| l.contains(k);
     let mut out = Vec::new();
-    if has("lagerleit") {
+    if has("lagerleit") || has("zusatz lager") {
         out.push(QualKey::Lagerleiter);
     }
-    if has("lagersport") || has("trekking") || has("ls/t") || tokens.contains(&"lst") {
+    if has("lagersport")
+        || has("trekking")
+        || has("ls/t")
+        || tokens.contains(&"lst")
+        || has("leiter*in j+s ls")
+        || has("j+s-leiter")
+    {
         out.push(QualKey::LeiterLsT);
     }
-    if has("wasser") {
+    if has("wasser") || has("modul see") || has("modul fluss") {
         out.push(QualKey::Wasser);
     }
     if has("berg") {
@@ -256,10 +331,25 @@ pub fn qual_keys_for_label(label: &str) -> Vec<QualKey> {
     if has("winter") || has("schnee") {
         out.push(QualKey::Winter);
     }
-    if has("slrg") || has("brevet") || has("rettungsschwimm") {
+    if has("slrg") || has("brevet") || has("rettungsschwimm") || has("modul pool") || has("modul see") || has("modul fluss") {
         out.push(QualKey::Slrg);
     }
     out
+}
+
+/// Like [`qual_keys_for_label`], but a user mapping entry for the label (trimmed, case-insensitive)
+/// replaces the built-in keyword mapping (an empty list ignores the label).
+pub fn qual_keys_with_mapping(label: &str, mapping: Option<&HashMap<String, Vec<QualKey>>>) -> Vec<QualKey> {
+    let norm = label.trim().to_lowercase();
+    if let Some(m) = mapping {
+        if let Some((_, keys)) = m.iter().find(|(k, _)| k.trim().to_lowercase() == norm) {
+            let mut v = keys.clone();
+            v.sort();
+            v.dedup();
+            return v;
+        }
+    }
+    qual_keys_for_label(label)
 }
 
 fn is_leap(y: i32) -> bool {
@@ -534,6 +624,8 @@ struct PersonAgg {
     /// Main leader (Hauptleitung): role type segment exactly `Leader`.
     is_main: bool,
     is_participant: bool,
+    /// Has the PBS coach role (`Event::Camp::Role::Coach`).
+    is_coach: bool,
     person_id: Option<String>,
 }
 
@@ -563,6 +655,7 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
             let mut is_leader = false;
             let mut is_main = false;
             let mut is_participant = false;
+            let mut is_coach = false;
             let mut label: Option<String> = None;
             for rk in rel_ids(p, "roles") {
                 let Some(role) = included.get(&rk) else { continue };
@@ -575,17 +668,19 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
                             label = str_attr(role, "label").or_else(|| rtype.rsplit("::").next().map(String::from));
                         }
                     }
+                    RoleClass::Coach => is_coach |= !is_guest,
                     RoleClass::Participant | RoleClass::Leader => is_participant = true,
                     RoleClass::Other => {}
                 }
             }
             let agg = map.entry(key.clone()).or_insert_with(|| {
                 order.push(key.clone());
-                PersonAgg { leader_label: None, is_leader: false, is_main: false, is_participant: false, person_id: person.clone() }
+                PersonAgg { leader_label: None, is_leader: false, is_main: false, is_participant: false, is_coach: false, person_id: person.clone() }
             });
             agg.is_leader |= is_leader;
             agg.is_main |= is_main;
             agg.is_participant |= is_participant;
+            agg.is_coach |= is_coach;
             if agg.leader_label.is_none() {
                 agg.leader_label = label;
             }
@@ -617,11 +712,20 @@ fn u32_of(v: Option<&Value>) -> Option<u32> {
     }
 }
 
-/// Valid qualification keys per person id over the whole camp period.
-fn valid_qualifications(pages: &[Value], camp_start: &str, camp_end: &str) -> HashMap<String, BTreeSet<QualKey>> {
+/// One qualification of a person: kind label and whether it is valid over the whole camp.
+struct QualRec {
+    person: String,
+    label: String,
+    valid: bool,
+}
+
+/// Parses qualification pages. Validity (strict): valid over the WHOLE camp, i.e. the start
+/// (`start_at`, else `qualified_at` when `start_at` is null) is empty or `<= camp_start` and
+/// `finish_at` is empty or `>= camp_end`.
+fn parse_qualifications(pages: &[Value], camp_start: &str, camp_end: &str) -> Vec<QualRec> {
     let refs: Vec<&Value> = pages.iter().collect();
     let included = index_included(&refs);
-    let mut out: HashMap<String, BTreeSet<QualKey>> = HashMap::new();
+    let mut out = Vec::new();
     for page in pages {
         let Some(data) = page.get("data").and_then(Value::as_array) else { continue };
         for q in data {
@@ -629,16 +733,23 @@ fn valid_qualifications(pages: &[Value], camp_start: &str, camp_end: &str) -> Ha
             let Some(kind_key) = rel_ids(q, "qualification_kind").into_iter().next() else { continue };
             let Some(kind) = included.get(&kind_key) else { continue };
             let Some(label) = str_attr(kind, "label") else { continue };
-            let start = str_attr(q, "start_at").and_then(|s| day_string(&s));
+            let start = str_attr(q, "start_at")
+                .and_then(|s| day_string(&s))
+                .or_else(|| str_attr(q, "qualified_at").and_then(|s| day_string(&s)));
             let finish = str_attr(q, "finish_at").and_then(|s| day_string(&s));
             let ok_start = start.is_none_or(|s| s.as_str() <= camp_start);
             let ok_finish = finish.is_none_or(|f| f.as_str() >= camp_end);
-            if ok_start && ok_finish {
-                out.entry(person).or_default().extend(qual_keys_for_label(&label));
-            }
+            out.push(QualRec { person, label, valid: ok_start && ok_finish });
         }
     }
     out
+}
+
+struct KindAcc {
+    label: String,
+    keys: Vec<QualKey>,
+    valid: BTreeSet<String>,
+    expired: BTreeSet<String>,
 }
 
 /// Reduces raw MiData documents to the aggregate. Pure; never logs.
@@ -654,15 +765,24 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
     let ev_included = index_included(&[raw.event]);
 
     let advisor = event.get("attributes").and_then(|a| a.get("advisor_id")).and_then(id_str);
-    let coach_match = match (raw.coach_person_id.map(str::trim).filter(|c| !c.is_empty()), advisor) {
-        (Some(c), Some(a)) => Some(a == c),
-        _ => None,
-    };
+    let coach_in = raw.coach_person_id.map(str::trim).filter(|c| !c.is_empty());
 
     let refs: Vec<&Value> = raw.participation_pages.iter().collect();
     let people_idx = index_included(&refs);
     let people = collect_people(raw.participation_pages);
-    let quals = valid_qualifications(raw.qualification_pages, &camp_start, &camp_end);
+    let qual_recs =
+        if raw.qualifications_readable { parse_qualifications(raw.qualification_pages, &camp_start, &camp_end) } else { Vec::new() };
+    let coach = people.iter().find(|p| p.is_coach);
+    let coach_match = match coach {
+        Some(c) => match (coach_in, c.person_id.as_deref()) {
+            (Some(a), Some(b)) => Some(a == b),
+            _ => None,
+        },
+        None => match (coach_in, advisor) {
+            (Some(c), Some(a)) => Some(a == c),
+            _ => None,
+        },
+    };
 
     let person_attr = |id: &Option<String>, attr: &str| -> Option<String> {
         let rec = people_idx.get(&("people".to_string(), id.clone()?))?;
@@ -674,6 +794,40 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
     let (mut min_age, mut max_age): (Option<u32>, Option<u32>) = (None, None);
     let mut leaders: Vec<MidataLeader> = Vec::new();
     let mut anon = 0u32;
+
+    let coach_nickname =
+        coach.and_then(|c| person_attr(&c.person_id, "nickname").or_else(|| person_attr(&c.person_id, "first_name")));
+
+    // Qualifications of leaders only: per person the valid keys, plus per-label statistics.
+    let leader_ids: BTreeSet<&str> = people.iter().filter(|p| p.is_leader).filter_map(|p| p.person_id.as_deref()).collect();
+    let mut quals: HashMap<String, BTreeSet<QualKey>> = HashMap::new();
+    let mut kinds: BTreeMap<String, KindAcc> = BTreeMap::new();
+    for r in qual_recs.iter().filter(|r| leader_ids.contains(r.person.as_str())) {
+        let keys = qual_keys_with_mapping(&r.label, raw.qual_mapping);
+        if r.valid {
+            quals.entry(r.person.clone()).or_default().extend(keys.iter().copied());
+        }
+        let acc = kinds.entry(r.label.trim().to_lowercase()).or_insert_with(|| KindAcc {
+            label: r.label.clone(),
+            keys,
+            valid: BTreeSet::new(),
+            expired: BTreeSet::new(),
+        });
+        if r.valid {
+            acc.valid.insert(r.person.clone());
+        } else {
+            acc.expired.insert(r.person.clone());
+        }
+    }
+    let qualification_kinds: Vec<QualKindInfo> = kinds
+        .into_values()
+        .map(|k| QualKindInfo {
+            label: k.label,
+            keys: k.keys,
+            valid_leaders: u32::try_from(k.valid.len()).unwrap_or(u32::MAX),
+            expired_leaders: u32::try_from(k.expired.difference(&k.valid).count()).unwrap_or(u32::MAX),
+        })
+        .collect();
 
     for p in &people {
         if p.is_leader {
@@ -725,6 +879,9 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
         leaders_count: u32::try_from(leaders.len()).unwrap_or(u32::MAX),
         leaders,
         coach_match,
+        coach_nickname,
+        qualifications_readable: raw.qualifications_readable,
+        qualification_kinds,
         fetched_at: raw.fetched_at.to_string(),
     })
 }

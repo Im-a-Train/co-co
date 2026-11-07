@@ -102,7 +102,10 @@ export const cmpCamp01: RulePredicate = (ctx) => {
   }
   if (ctx.midata?.coachMatch === false) {
     const stand = formatStand(ctx.midata.fetchedAt)
-    details.push(`Im MiData-Anlass ist eine andere Person als Coach (Berater) eingetragen (${midataSourceText(stand)})`)
+    const who = ctx.midata.coachNickname?.trim()
+    details.push(
+      `Im MiData-Anlass ist ${who ? `«${who}»` : 'eine andere Person'} als Coach eingetragen, nicht du (${midataSourceText(stand)})`,
+    )
     evidence.push(midataEvidence(stand))
   }
   if (details.length === 0) return []

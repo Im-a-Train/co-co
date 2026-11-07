@@ -729,7 +729,10 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><h3>In the app</h3><ul>
       <li>Lager-Angaben gets an «Aus MiData übernehmen» button. It shows, field by field, the MiData value next to the current one, and the coach accepts each field. Accepted fields get a small «MiData» badge.</li>
       <li>Rules JS-CAMP-02, JS-LL-01, BP-WOLF-01 and BP-WATER-01 then rely on the MiData facts, and the finding says «Quelle: MiData, Stand …».</li>
-      <li>A qualification matrix (leaders × required qualifications for the camp's safety-relevant activities) replaces typing them in by hand.</li>
+      <li>A qualification matrix (leaders × required qualifications for the camp's safety-relevant activities) replaces typing them in by hand. «Qualifikationsarten aus MiData» lists every qualification label found (valid / expired) and lets the coach map unknown labels to a column; a warning appears when MiData does not allow reading qualifications.</li>
+      <li>Safety-relevant activities come from keyword detection in title, location, storyboard and safety text (the SAFE-WATER-01 / SAFE-MTN-01 keyword lists plus a winter list); each activity shows the matching keywords, and a wrong area can be dismissed per camp.</li>
+      <li>Coach: PBS stores the camp coach as the restricted role <span class="mono">Event::Camp::Role::Coach</span>; co-co shows «Coach laut MiData» and checks it against your MiData person number, detected from the login URL when possible.</li>
+      <li>No double login: when you sign in to eCamp via MiData OAuth, co-co adopts the MiData session from the same login window. Password or Google logins to eCamp still need a separate MiData login.</li>
     </ul></div>
   </div>
 </div></section>
