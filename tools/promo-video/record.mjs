@@ -376,6 +376,14 @@ async function main() {
     await click(page.getByTestId('chip-replies'), { after: 1000 })
     await highlight(page.getByTestId('reply-list').first(), 4500)
   })
+  await scene('teilen', async () => {
+    await beat('teilen')
+    const preview = page.locator('.v-card', { hasText: 'Vorschau' }).last()
+    await click(preview.getByRole('tab', { name: /e-mail/i }), { after: 800 })
+    await highlight(preview, 5500)
+    await click(preview.getByRole('tab', { name: /whatsapp/i }), { after: 800 })
+    await highlight(preview, 4500)
+  })
 
   // ---------------- Kapitel 6: Sicherheit (MiData) ----------------
   await scene('midata-card', async () => {
