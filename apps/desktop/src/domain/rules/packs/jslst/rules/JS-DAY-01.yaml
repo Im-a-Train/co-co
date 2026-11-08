@@ -1,19 +1,29 @@
 id: JS-DAY-01
-version: 1.0.0
+version: 2.0.0
 module: lst
 status: active
 title: "Gültiger J+S-Lagertag"
-description: "Ein Lagertag zählt für J+S, wenn mindestens zwei J+S-Einheiten (Lagersport/Lageraktivität) mit zusammen mindestens 240 Minuten stattfinden. Anreise- und Abreisetag beurteilt JS-DAY-04."
-message: "Tag {day}: {units} J+S-Einheiten, {minutes} Min. (nötig: mindestens {minUnits} Einheiten und {minMinutes} Min.)"
+description: "Ein Lagertag zählt für J+S, wenn mindestens zwei J+S-Einheiten mit zusammen mindestens 240 Minuten stattfinden (ab 2027 zusätzlich mit ausreichend Bewegungszeit). Ein Tag, der die Kriterien nicht erfüllt, gilt als trainingsfreier Tag. Anreise- und Abreisetag beurteilt JS-DAY-04."
+message: "{date} zählt nicht als J+S-Tag ({minutes} min J+S-Aktivität in {units} Einheit(en); nötig {minMinutes} min in mindestens {minUnits} Einheiten). Er gilt als trainingsfreier Tag."
 messageVariants:
-  noMapping: "Keine Kategorie ist als Lagersport oder Lageraktivität zugeordnet: J+S-Tage können nicht berechnet werden."
-severity: must
+  bwz: "{date} zählt nicht als J+S-Tag: {minutes} min J+S-Aktivität in {units} Einheit(en) genügen, aber die Bewegungszeit beträgt nur {bwz} min (nötig {minBwz} min). Er gilt als trainingsfreier Tag."
+severity: should
 confidence: verified
 scope: day
 validFrom: 2026-01-01
-inputs: [mapping, params]
-params: [js.minDayMinutes, js.minDayUnits, js.minUnitMinutes, js.minGapMinutes]
+inputs: [mapping, activityTags, params]
+params: [js.minDayMinutes, js.minDayUnits, js.minUnitMinutes, js.minGapMinutes, js.minBwzDayMinutes, js.minBwzActivityMinutes]
 tags: [lagertag]
 sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer», «Trainingsfreie Tage»"
+    binding: true
   - key: WEB-L
-    page: ""
+    page: "«Voraussetzungen»"
+    binding: true
+  - key: TOOL-V
+    page: "«Das J+S-Lager»"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true

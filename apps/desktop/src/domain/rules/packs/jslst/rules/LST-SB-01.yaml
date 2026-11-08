@@ -1,0 +1,39 @@
+id: LST-SB-01
+version: 2.0.0
+module: lst
+status: active
+title: "Möglicherweise Sicherheitsbereich (Berg, Wasser, Winter)"
+description: "Erkennt Aktivitäten, die nach einem Sicherheitsbereich (Berg, Wasser, Winter) aussehen und noch nicht als «SB» markiert sind. Heuristik von co-co: Stichwörter, GPX-Höhe und Dauer, Wintermonate."
+message: "«{activity}» sieht nach einer Aktivität im Sicherheitsbereich {area} aus ({reason}). Falls zutreffend: als «SB {area}» markieren – dann gelten Expertenbewilligung, Zusatzanerkennung im Leitungsteam und nur Jugendliche (Jahrgang ≥ 10)."
+messageVariants:
+  areaBerg: "Berg"
+  areaWasser: "Wasser"
+  areaWinter: "Winter"
+  areaJoin: " / "
+  reasonBergT3: "anspruchsvolle Wanderung (T3)"
+  reasonBergBiwak: "mehrtägig mit Biwak oberhalb der Waldgrenze"
+  reasonWasserRiver: "Fluss mit Boot oder Floss"
+  reasonWasserBach: "anspruchsvolles Bachtrekking"
+  reasonWasserExtra: "Flussschwimmen oder Flusssurfen"
+  reasonWinterSnowshoe: "Schneeschuhtour mit langer Dauer, mehrtägig oder anspruchsvoll"
+  reasonWinterBiwak: "Biwak oder Iglu im Winter ohne Lagerhaus"
+  reasonJoin: "; "
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, documents, campConfig, activityTags, params]
+params: [lst.treelineM, lst.snowshoeSbMinutes, lst.winterMonths]
+keywords: [T3, ANSPRUCHSVOLL, BIWAK, TREELINE, RIVER, BOAT, FLOSS, BACHTREKKING, SB_WASSER_EXTRA, SNOWSHOE, IGLU]
+tags: [sicherheit, sicherheitsbereich]
+sources:
+  - key: MB-UP
+    page: "S. 3"
+    quote: "Mehrtägige Wanderungen mit Übernachtung im Biwak oberhalb der Waldgrenze"
+    binding: true
+  - key: MB-UP
+    page: "S. 4"
+    quote: "Biwakübernachtungen, die im Zelt, Iglu usw. stattfinden, ohne dass ein Lagerhaus mit wintersicherer Zufahrt schnell erreicht werden kann"
+    binding: true
+  - key: WEB-SICH
+    page: "Sicherheitsbereiche"

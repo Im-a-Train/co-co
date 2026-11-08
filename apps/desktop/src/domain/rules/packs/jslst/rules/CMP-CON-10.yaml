@@ -1,9 +1,9 @@
 id: CMP-CON-10
-version: 1.0.0
+version: 2.0.0
 module: js
 status: active
 title: "Teilnehmende in NDS und MiData abgleichen"
-description: "Die in der NDS erfassten Teilnehmenden weichen nicht um mehr als 20 % von MiData ab."
+description: "Die in der NDS erfassten Teilnehmenden weichen nicht um mehr als die Toleranz (Standard 20 %) von MiData ab."
 message: "In der NDS sind {nds} Teilnehmende erfasst, in MiData {midata}: Abweichung über {tolerancePercent} % (Quelle: NDS, Stand {ndsStand}; Quelle: MiData, Stand {midataStand})"
 severity: hint
 confidence: conflict

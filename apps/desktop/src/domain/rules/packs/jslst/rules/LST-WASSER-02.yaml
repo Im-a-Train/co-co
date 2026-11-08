@@ -1,0 +1,18 @@
+id: LST-WASSER-02
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Nur offene, schwimmfähige Boote"
+description: "Mit LS/T sind nur Boote zulässig, die vollgelaufen schwimmfähig bleiben; geschlossene Boote und Gerätetauchen sind nicht erlaubt."
+message: "«{activity}» erwähnt «{term}». Mit LS/T sind nur Boote zulässig, die vollgelaufen schwimmfähig bleiben (offen, Sit-on-Top, aufblasbar) oder Flosse; nicht erlaubt sind geschlossene Boote und anspruchsvolle Wassersportarten wie Gerätetauchen."
+messageVariants:
+  ebbA: "«{activity}» erwähnt «{term}» (geschlossenes Boot bzw. Gerätetauchen). Nur mit Leitung durch eine Person mit J+S-Anerkennung Kanusport bzw. der passenden Sportart möglich."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags]
+keywords: [CLOSED_BOAT, DIVING]
+sources:
+  - { key: MB-UP, page: "S. 5", binding: true }
+tags: [sicherheit, wasser]

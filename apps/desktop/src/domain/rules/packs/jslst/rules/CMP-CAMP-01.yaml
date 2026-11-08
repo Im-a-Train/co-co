@@ -1,5 +1,5 @@
 id: CMP-CAMP-01
-version: 1.0.0
+version: 2.0.0
 module: js
 status: active
 title: "Coach im Lager eingetragen"
@@ -11,10 +11,9 @@ messageVariants:
   midataOther: "Im MiData-Anlass ist «{who}» als Coach eingetragen, nicht du (Quelle: MiData, Stand {stand})"
   midataUnknown: "Im MiData-Anlass ist eine andere Person als Coach eingetragen, nicht du (Quelle: MiData, Stand {stand})"
 severity: hint
-confidence: best-practice
+confidence: unverified
 scope: camp
 validFrom: 2026-01-01
 tags: [vollstaendigkeit]
 sources:
-  - key: WEB-C
-    page: ""
+  - { key: LAGER, page: "S. 18" }

@@ -15,7 +15,7 @@ import type {
   MidataQualKind,
   MidataRecord,
 } from '../types'
-import { MIDATA_QUAL_KEYS } from '../types'
+import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2 } from '../types'
 
 /** Fields «Aus MiData übernehmen» offers, in display order. */
 export const MIDATA_FIELDS: readonly MidataField[] = [
@@ -306,7 +306,8 @@ export function locationDiffers(mdLocation: string | null | undefined, ecamp: Re
 export type QualMapping = Record<string, MidataQualKey[]>
 
 const has = (o: object, k: string): boolean => Object.prototype.hasOwnProperty.call(o, k)
-const sortKeys = (keys: readonly MidataQualKey[]): MidataQualKey[] => MIDATA_QUAL_KEYS.filter((k) => keys.includes(k))
+const ALL_QUAL_KEYS: readonly MidataQualKey[] = [...MIDATA_QUAL_KEYS, ...MIDATA_QUAL_KEYS_V2]
+const sortKeys = (keys: readonly MidataQualKey[]): MidataQualKey[] => ALL_QUAL_KEYS.filter((k) => keys.includes(k))
 const sameKeys = (a: readonly MidataQualKey[], b: readonly MidataQualKey[]): boolean => {
   const x = sortKeys(a)
   const y = sortKeys(b)

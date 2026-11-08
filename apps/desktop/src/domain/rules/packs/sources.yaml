@@ -3,7 +3,7 @@
   publisher: BASPO
   edition: "Ausgabe 2026, verfügbar seit 16.10.2026"
   date: 2026-10-16
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs/Manual Lagersport _ Trekking.pdf"
   weight: binding
   pageConvention: printed
@@ -16,7 +16,7 @@
   docId: "6a87f378…"
   edition: "Stand 2026-10-15"
   date: 2026-10-15
-  url: null
+  url: https://tool.jugendundsport.ch/modules/6a87f3784b0bb56151069072?lang=de
   weight: binding
   pageConvention: section
   partlyRead: ["Bilder (Angebot.png, Lager.png, Activites.svg)"]
@@ -27,7 +27,7 @@
   publisher: BASPO
   docId: "6a60d154…"
   edition: "2026"
-  url: null
+  url: https://tool.jugendundsport.ch/modules/6a60d154dc1144de1e0e6303?lang=de
   weight: didactic
   pageConvention: section
   partlyRead: []
@@ -39,7 +39,7 @@
   docId: "6a75d5f5…"
   edition: "Stand 2026-10-14"
   date: 2026-10-14
-  url: null
+  url: https://tool.jugendundsport.ch/modules/6a75d5f5c621fe46c50d0073?lang=de
   weight: didactic
   pageConvention: section
   partlyRead: ["verlinkte Module «Sicherheit in der Planung» und «Innovieren»"]
@@ -49,7 +49,7 @@
   title: "2027 Neuigkeiten von PBS und J+S"
   publisher: PBS
   edition: "Oktober 2026"
-  url: null
+  url: https://pbs.ch
   file: "co-co-docs/2027_neuigkeiten_von_pbs_und_js_de.pdf"
   weight: binding-quote
   pageConvention: slide
@@ -60,7 +60,7 @@
   title: "Checkliste Ergänzende Bewegungsblöcke für Coachs"
   publisher: BASPO
   edition: "Stand 12/2025"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs"
   weight: binding
   pageConvention: printed
@@ -70,7 +70,7 @@
   title: "Checkliste Ergänzende Bewegungsblöcke für Lagerleitende"
   publisher: BASPO
   edition: "Stand 12/2025"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs"
   weight: binding
   pageConvention: printed
@@ -81,7 +81,7 @@
   publisher: BASPO
   docId: "100.01.de"
   edition: "09/2026"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs"
   weight: info
   pageConvention: printed
@@ -91,7 +91,7 @@
   title: "LS/T Lager (Broschüre)"
   publisher: BASPO
   edition: "2014"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs/LS-T_Lager_d.pdf"
   weight: outdated
   pageConvention: printed
@@ -102,7 +102,7 @@
   title: "LS/T Berg (Broschüre)"
   publisher: BASPO
   edition: "2014"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs/LS-T_Berg_d.pdf"
   weight: outdated
   pageConvention: printed
@@ -113,7 +113,7 @@
   title: "LS/T Wasser (Broschüre)"
   publisher: BASPO
   edition: "2019"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs/LS-T_Wasser_d.pdf"
   weight: didactic
   pageConvention: printed
@@ -124,7 +124,7 @@
   title: "LS/T Winter (Broschüre)"
   publisher: BASPO
   edition: "2019"
-  url: null
+  url: https://www.jugendundsport.ch/de/lagersport-trekking   # publication page; document itself: see file
   file: "co-co-docs/LS-T_Winter_d.pdf"
   weight: didactic
   pageConvention: printed

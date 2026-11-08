@@ -55,3 +55,18 @@
   module: lst-lager
   include: ["abfall", "umwelt", "natur"]
   exclude: []
+- id: DOC_SICHERHEITSKONZEPT
+  module: lst-lager
+  description: "Dateiname eines Sicherheitskonzepts (LST-LAGER-01; DocumentKind kennt keinen Typ dafür)"
+  include: ["sicherheitskonzept", "sicherheit", "notfallkonzept", "notfallblatt"]
+  exclude: []
+- id: DOC_LAGERREGELN
+  module: lst-lager
+  description: "Dateiname der Lagerregeln (LST-LAGER-02/-03)"
+  include: ["lagerregel", "lagerpakt", "=regeln", "hausordnung"]
+  exclude: []
+- id: DOC_LAGERINFO
+  module: lst-lager
+  description: "Dateiname der TN-/Eltern-Information (LST-LAGER-02)"
+  include: ["lagerinfo", "elternbrief", "elterninfo", "teilnehmerinfo", "tn info", "infobrief", "anmeldeinfo"]
+  exclude: []

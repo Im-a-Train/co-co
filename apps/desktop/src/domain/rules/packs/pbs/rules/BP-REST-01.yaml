@@ -1,17 +1,19 @@
 id: BP-REST-01
-version: 1.0.0
+version: 1.1.0
 module: pbs
 status: active
 title: "Freier Block pro Tag"
-description: "Jeder Tag hat mindestens einen freien Block (Freizeit oder Pause von mindestens 60 Minuten)."
+description: "Jeder Tag hat mindestens einen freien Block (Freizeit oder Pause von mindestens 60 Minuten). Bleibt «unverified», weil keine aktuelle Quelle die Regel nennt (LAGER ist von 2014, Hering nur Parameter-Grundlage)."
 message: "{date}: kein freier Block (Freizeit oder Pause von mindestens {gap} Min.)"
 severity: hint
-confidence: best-practice
+confidence: unverified
 scope: day
 validFrom: 2026-01-01
 inputs: [mapping, params]
 params: [pbs.restGapMinutes, pbs.restWindow]
 tags: [rhythmus]
 sources:
+  - key: LAGER
+    page: "S. 18"
   - key: H
     page: ""

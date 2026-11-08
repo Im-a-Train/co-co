@@ -1,17 +1,23 @@
 id: CMP-ACT-03
-version: 1.0.0
+version: 2.0.0
 module: lst
 status: active
-title: "Outdoor-/LS-Aktivität ohne Sicherheitsüberlegungen"
-description: "Aktivitäten im Freien und Lagersport enthalten Sicherheitsüberlegungen."
-message: "«{title}» findet draussen statt oder ist Lagersport, hat aber keine Sicherheitsüberlegungen"
+title: "J+S-Aktivität ohne Sicherheitsüberlegungen"
+description: "J+S-Aktivitäten enthalten Sicherheitsüberlegungen. Aktivitäten mit Risikobezug (draussen, Wasser, Berg, Seil, Nacht, Winter, Feuer, Sicherheitsbereich, EBB) sind ein Mangel (should), andere ein Hinweis."
+message: "«{title}» hat keine Sicherheitsüberlegungen."
 severity: should
 confidence: heuristic
 scope: activity
 validFrom: 2026-01-01
-inputs: [mapping, keywords]
-keywords: [OUTDOOR, WATER, MOUNTAIN, ROPE]
+inputs: [mapping, activityTags, keywords]
+keywords: [OUTDOOR, WATER, MOUNTAIN, ROPE, NIGHT, WINTER, FIRE]
 tags: [vollstaendigkeit, sicherheit]
 sources:
-  - key: WEB-LT
-    page: ""
+  - key: MB-UP
+    page: "S. 1"
+    quote: "haben ein Sicherheitskonzept"
+    binding: true
+  - key: TOOL-P
+    page: "Schritt 3"
+  - key: MAN
+    page: "S. 39, 45"

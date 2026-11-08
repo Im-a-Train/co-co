@@ -13,12 +13,12 @@
 - id: SWIM
   module: lst-wasser
   description: "Schwimm- und Badewörter (LST-WASSER-04)"
-  include: ["=baden", "schwimm"]
-  exclude: []
+  include: ["=baden", "$baden", "schwimm"]
+  exclude: ["füsse baden"]
 - id: UNSUPERVISED
   module: lst-wasser
   description: "Unbeaufsichtigt (LST-WASSER-04)"
-  include: ["unbeaufsichtigt"]
+  include: ["unbeaufsichtigt", "ohne badeaufsicht", "ohne bademeister"]
   exclude: []
 - id: GORGE
   module: lst-wasser
@@ -33,12 +33,12 @@
 - id: RIVER
   module: lst-wasser
   include: ["fluss", "=bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "^flussfahrt", "fliessgewässer"]
-  exclude: ["flussdiagramm"]
+  exclude: ["flussdiagramm", "flussbad"]
 - id: LAKE
   module: lst-wasser
   include: ["=see", "$see", "weiher"]
   extends: []
-  exclude: ["trinkwasser", "wasserflasche", "wasserkanister", "wasserhahn", "wasserstelle", "abwasser", "seeland", "seepferdchen", "seele", "suppe"]
+  exclude: ["trinkwasser", "wasserflasche", "wasserkanister", "wasserhahn", "wasserstelle", "abwasser", "seeland", "seepferdchen", "seele", "seebad", "strandbad"]
 - id: FLOSS
   module: lst-wasser
   include: ["=floss", "flösse", "^flossbau", "^flossfahrt"]
@@ -49,7 +49,8 @@
   exclude: ["kursschiff"]
 - id: BACHTREKKING
   module: lst-wasser
-  include: ["^bachtrekking", "^flusstrekking", "^bachwanderung", "schlucht"]
+  extends: [GORGE]
+  include: ["^bachtrekking", "^flusstrekking", "^bachwanderung"]
   exclude: []
 - id: CLOSED_BOAT
   module: lst-wasser

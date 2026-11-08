@@ -1,10 +1,73 @@
+# PROVISIONAL (catalog §6, §11 Q15): the Pfadiprofil is not obtained; only seven methods are listed.
+- id: PBS_METH_FORTSCHRITT
+  module: pbs
+  description: "provisorisch: Methode Persönlicher Fortschritt"
+  include: ["fortschritt", "persönliches ziel", "^etappe"]
+  exclude: []
+- id: PBS_METH_GESETZ
+  module: pbs
+  description: "provisorisch: Methode Gesetz und Versprechen"
+  include: ["pfadigesetz", "versprechen", "^taufe"]
+  exclude: []
+- id: PBS_METH_GRUPPE
+  module: pbs
+  description: "provisorisch: Methode Leben in der Gruppe"
+  include: ["^gruppenleben", "=fähnli", "=rudel", "=meute", "gruppenarbeit"]
+  exclude: []
+- id: PBS_METH_RITUALE
+  module: pbs
+  description: "provisorisch: Methode Rituale und Traditionen"
+  include: ["ritual", "tradition", "^lagerfeuer", "=taufe", "^abendrunde"]
+  exclude: []
+- id: PBS_METH_MITBESTIMMEN
+  module: pbs
+  description: "provisorisch: Methode Mitbestimmen und Verantwortung tragen"
+  include: ["mitbestimm", "^lagerparlament", "^ämtliplan", "verantwortung", "abstimm"]
+  exclude: []
+- id: PBS_METH_DRAUSSEN
+  module: pbs
+  description: "provisorisch: Methode Draussen leben"
+  include: ["draussen", "^biwak", "=wald", "^lagerbau", "natur"]
+  exclude: []
+- id: PBS_METH_SPIELEN
+  module: pbs
+  description: "provisorisch: Methode Spielen"
+  include: ["=spiel", "^geländespiel", "spielen", "^nachtspiel"]
+  exclude: []
+- id: PBS_REL_PERSOENLICHKEIT
+  module: pbs
+  description: "provisorisch: Beziehung Persönlichkeit"
+  include: ["persönlichkeit", "^selbst", "reflexion", "^stärken"]
+  exclude: []
+- id: PBS_REL_MITMENSCHEN
+  module: pbs
+  description: "provisorisch: Beziehung Mitmenschen"
+  include: ["gemeinschaft", "^zusammenarbeit", "kooperation", "^hilfsbereit"]
+  exclude: []
+- id: PBS_REL_UMWELT
+  module: pbs
+  description: "provisorisch: Beziehung Umwelt"
+  include: ["umwelt", "natur", "^nachhaltig", "naturschutz"]
+  exclude: []
+- id: PBS_REL_SPIRITUALITAET
+  module: pbs
+  description: "provisorisch: Beziehung Spiritualität"
+  include: ["spirituell", "besinnung", "^stille", "^sinnfrage", "^gottesdienst"]
+  exclude: []
+- id: PBS_REL_KOERPER
+  module: pbs
+  description: "provisorisch: Beziehung Körper"
+  include: ["körper", "sport", "bewegung", "gesundheit", "ernährung"]
+  exclude: []
 - id: PBS_METHODS
   module: pbs
-  description: "provisorisch (§11 Q15): die 8 Methoden des Pfadiprofils"
-  include: ["pfadigesetz", "versprechen", "symbolrahmen", "gruppe", "learning by doing", "selber machen", "mitbestimmung", "natur", "spiel", "pfadistufe", "persönliche progression", "erwachsene"]
+  description: "provisorisch: Umbrella über die sieben Methoden"
+  extends: [PBS_METH_FORTSCHRITT, PBS_METH_GESETZ, PBS_METH_GRUPPE, PBS_METH_RITUALE, PBS_METH_MITBESTIMMEN, PBS_METH_DRAUSSEN, PBS_METH_SPIELEN]
+  include: []
   exclude: []
 - id: PBS_RELATIONS
   module: pbs
-  description: "provisorisch (§11 Q15): die 5 Beziehungen des Pfadiprofils"
-  include: ["beziehung zu sich", "beziehung zu anderen", "beziehung zur umwelt", "beziehung zur gesellschaft", "spiritualität", "sinn"]
+  description: "provisorisch: Umbrella über die fünf Beziehungen"
+  extends: [PBS_REL_PERSOENLICHKEIT, PBS_REL_MITMENSCHEN, PBS_REL_UMWELT, PBS_REL_SPIRITUALITAET, PBS_REL_KOERPER]
+  include: []
   exclude: []

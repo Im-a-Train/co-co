@@ -13,5 +13,5 @@ inputs: [mapping, params]
 params: [lst.varMinUnits, lst.varMinDistinct]
 tags: [programm]
 sources:
-  - key: H
-    page: ""
+  - key: MAN
+    page: "S. 38"

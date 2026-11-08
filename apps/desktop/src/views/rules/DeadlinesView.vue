@@ -11,8 +11,9 @@ import { emptyCoachInputs, listCoachInputs, saveCoachInputs } from '@/domain/cam
 import { listCampSummaries } from '@/domain/rules/store'
 import { computeAllDeadlines, daysBetween, deadlineStatus } from '@/domain/rules/lib/deadlines'
 import { toIcs } from '@/domain/rules/ics'
-import { computeMilestoneDeadlines, loadBundledMilestones, radarBucket, type RadarBucket } from '@/domain/rules/milestones'
-import type { CoachInputs, Deadline, Iri } from '@/domain/types'
+import { computeMilestoneDeadlines, loadBundledMilestones, milestoneContextFromConfig, radarBucket, type RadarBucket } from '@/domain/rules/milestones'
+import { listCampRuleConfigs } from '@/domain/rules/campRuleConfigStore'
+import type { CampRuleConfig, CoachInputs, Deadline, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
 import { commands } from '@/lib/tauri'
 
@@ -23,6 +24,7 @@ const inputsByCamp = ref<Record<Iri, CoachInputs>>({})
 const inputsError = ref<string | null>(null)
 const showDone = ref(false)
 const lastJsByCamp = ref<Record<Iri, string | null>>({})
+const ruleConfigByCamp = ref<Record<Iri, CampRuleConfig>>({})
 
 const MILESTONES_KEY = 'co-co.deadlines.showMilestones'
 function readShowMilestones(): boolean {
@@ -47,6 +49,7 @@ async function loadInputs() {
   try {
     lastJsByCamp.value = Object.fromEntries((await listCampSummaries()).map((s) => [s.campIri, s.lastJsDate ?? null]))
     inputsByCamp.value = Object.fromEntries((await listCoachInputs()).map((i) => [i.campIri, i]))
+    ruleConfigByCamp.value = Object.fromEntries((await listCampRuleConfigs()).map((c) => [c.campIri, c]))
     inputsError.value = null
   } catch (e) {
     inputsError.value = e instanceof Error ? e.message : String(e)
@@ -72,7 +75,9 @@ const deadlineCamps = computed(() =>
 const deadlines = computed<Deadline[]>(() => {
   const all = computeAllDeadlines(deadlineCamps.value, inputsByCamp.value)
   if (!showMilestones.value) return all
-  const ms = deadlineCamps.value.flatMap((c) => computeMilestoneDeadlines(c, inputsByCamp.value[c.iri] ?? null, milestoneList))
+  const ms = deadlineCamps.value.flatMap((c) =>
+    computeMilestoneDeadlines(c, inputsByCamp.value[c.iri] ?? null, milestoneList, milestoneContextFromConfig(ruleConfigByCamp.value[c.iri])),
+  )
   return [...all, ...ms].sort((a, b) =>
     a.due < b.due ? -1 : a.due > b.due ? 1 : a.campTitle.localeCompare(b.campTitle) || a.kind.localeCompare(b.kind) || (a.milestoneId ?? '').localeCompare(b.milestoneId ?? ''),
   )

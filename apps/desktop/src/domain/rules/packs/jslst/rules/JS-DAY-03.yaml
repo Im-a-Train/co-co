@@ -9,9 +9,15 @@ severity: must
 confidence: verified
 scope: day
 validFrom: 2026-01-01
-inputs: [mapping, params]
-params: [js.minGapMinutes, js.minUnitMinutes, js.minDayMinutes, js.minDayUnits]
+inputs: [mapping, activityTags, params]
+params: [js.minGapMinutes, js.minUnitMinutes]
 tags: [lagertag, sozialzeit]
 sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer» (Art. 14 Abs. 3 VSpoFöP)"
+    quote: "Zwischen den Trainingseinheiten ist eine Sozialzeit von mindestens 30 Minuten vorgesehen"
+    binding: true
   - key: WEB-L
-    page: ""
+    page: "«Voraussetzungen»"
+    quote: "getrennt durch mindestens 30 Minuten Sozialzeit"
+    binding: true

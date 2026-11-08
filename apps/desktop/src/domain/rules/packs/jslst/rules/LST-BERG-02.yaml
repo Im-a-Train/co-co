@@ -1,0 +1,20 @@
+id: LST-BERG-02
+version: 2.0.0
+module: lst-berg
+status: active
+title: "T3-Wanderung"
+description: "T3-Wanderungen verlangen Erfahrung im Bergwandern mit Gruppen oder den Sicherheitsbereich Berg."
+message: "«{activity}» ist als T3 angegeben. Für T3 empfiehlt J+S den Zusatz Sicherheitsbereich Berg oder Erfahrung im Bergwandern mit Gruppen; anspruchsvolle T3-Touren gehören zum Sicherheitsbereich Berg (nur Jugendliche)."
+messageVariants:
+  kids: "«{activity}» ist als T3 angegeben und für Kinder ungeeignet. Für T3 empfiehlt J+S den Zusatz Sicherheitsbereich Berg oder Erfahrung im Bergwandern mit Gruppen; anspruchsvolle T3-Touren gehören zum Sicherheitsbereich Berg (nur Jugendliche)."
+severity: hint
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, coachInputs, midata, activityTags, params]
+params: [lst.sbMinAgeByYear]
+keywords: [T3]
+sources:
+  - { key: MB-UP, page: "S. 3" }
+  - { key: BERG, page: "S. 10" }
+tags: [sicherheit, berg]

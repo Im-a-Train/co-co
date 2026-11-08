@@ -1,9 +1,9 @@
 id: CMP-NDS-03
-version: 1.0.0
+version: 2.0.0
 module: js
 status: active
 title: "Teilnehmende in NDS und Lagerangaben abgleichen"
-description: "Die in der NDS geplante Teilnehmerzahl weicht nicht um mehr als 20 % von der Zahl aus MiData oder deiner Angabe ab."
+description: "Die in der NDS geplante Teilnehmerzahl weicht nicht um mehr als die Toleranz (Standard 20 %) von der Zahl aus MiData oder deiner Angabe ab."
 message: "In der NDS sind {planned} Teilnehmende geplant, laut MiData {mine}: Abweichung über {tolerancePercent} % (Quelle: NDS, Stand {stand} / Quelle: MiData, Stand {midataStand})"
 messageVariants:
   coach: "In der NDS sind {planned} Teilnehmende geplant, laut Angabe des Coachs {mine}: Abweichung über {tolerancePercent} % (Quelle: NDS, Stand {stand})"

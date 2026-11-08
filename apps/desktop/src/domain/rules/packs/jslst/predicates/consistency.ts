@@ -160,8 +160,8 @@ export const cmpCon04: RulePredicate = (ctx) => {
 
 // CMP-CON-05 ---------------------------------------------------------------------------------
 
-/** MiData qualification keys whose expiry matters (data, not keywords; catalog §4.2 extends it with sb* later). */
-const RECOGNITION_KEYS: readonly MidataQualKey[] = ['leiterLsT', 'lagerleiter', 'wasser', 'berg', 'winter', 'slrg']
+/** MiData qualification keys whose expiry matters (data, not keywords). */
+const RECOGNITION_KEYS: readonly MidataQualKey[] = ['leiterLsT', 'lagerleiter', 'wasser', 'berg', 'winter', 'slrg', 'sbBerg', 'sbWasser', 'sbWinter']
 
 /** MiData recognitions that expired (before or during the camp) for relevant qualification kinds. */
 export const cmpCon05: RulePredicate = (ctx) => {
@@ -294,7 +294,16 @@ export const cmpMd01: RulePredicate = (ctx) => {
   const diffs: NonNullable<RuleHit['fragments']>[string] = []
   if (datesOff && r) diffs.push({ variant: 'dates', params: { ecamp: range(start, end), midata: range(r.start, r.end) } })
   if (placeOff) diffs.push({ variant: 'place', params: { ecampPlace: a?.city ?? a?.name ?? '', midataPlace: md.location ?? '' } })
-  return [{ targets: [ctx.facts.camp.iri], params: { stand }, fragments: { diffs }, evidence: [midataEvidence(stand)] }]
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: { stand },
+      fragments: { diffs },
+      evidence: [midataEvidence(stand)],
+      inputs: { datesDiffer: datesOff, placeDiffers: placeOff, midataStart: r?.start ?? null, midataEnd: r?.end ?? null },
+      redKeys: ['midataStart', 'midataEnd'],
+    },
+  ]
 }
 
 // CMP-NDS-01..03 -----------------------------------------------------------------------------
@@ -310,6 +319,8 @@ export const cmpNds01: RulePredicate = (ctx) => {
       targets: [ctx.facts.camp.iri],
       params: { ecamp: range(start, end), nds: range(nds.start ?? '', nds.end ?? ''), stand },
       evidence: [ndsEvidence(stand)],
+      inputs: { ndsStart: nds.start, ndsEnd: nds.end, ecampStart: start.slice(0, 10), ecampEnd: end.slice(0, 10) },
+      redKeys: ['ndsStart', 'ndsEnd'],
     },
   ]
 }
@@ -329,6 +340,8 @@ export const cmpNds02: RulePredicate = (ctx) => {
       params: { count: open, stand },
       ...(open === 1 ? { variant: 'one' } : {}),
       evidence: [ndsEvidence(stand)],
+      inputs: { attendanceOpenCount: open },
+      redKeys: ['attendanceOpenCount'],
     },
   ]
 }
@@ -350,6 +363,8 @@ export const cmpNds03: RulePredicate = (ctx) => {
       params: md !== null ? { ...params, midataStand: formatStand(ctx.midata!.fetchedAt) } : params,
       ...(md === null ? { variant: 'coach' } : {}),
       evidence: [ndsEvidence(stand)],
+      inputs: { ndsPlanned: planned ?? 0, participants: mine ?? 0, tolerance },
+      redKeys: md !== null ? ['ndsPlanned', 'participants'] : ['ndsPlanned'],
     },
   ]
 }

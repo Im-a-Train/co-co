@@ -122,7 +122,12 @@ function fmt(iso: string): string {
         <section v-for="entry in byGroup" :key="entry.group" class="mb-4">
           <h2 class="text-subtitle-1 mb-2">{{ t(`rules.catalog.module.${entry.group}`) }}</h2>
           <v-expansion-panels variant="accordion" density="compact">
-            <v-expansion-panel v-for="rule in entry.rules" :key="rule.meta.id">
+            <v-expansion-panel
+              v-for="rule in entry.rules"
+              :key="rule.meta.id"
+              :class="{ 'opacity-60': rule.meta.status === 'retired' }"
+              :data-testid="rule.meta.status === 'retired' ? 'rule-retired' : undefined"
+            >
               <v-expansion-panel-title>
                 <div class="d-flex align-center ga-3 flex-grow-1">
                   <v-chip size="x-small" label :color="SEVERITY_COLOR[rule.meta.severity]" variant="flat" class="flex-shrink-0">
@@ -130,6 +135,7 @@ function fmt(iso: string): string {
                   </v-chip>
                   <code class="text-caption flex-shrink-0">{{ rule.meta.id }}</code>
                   <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta.id).all }">{{ rule.meta.title }}</span>
+                  <v-chip v-if="rule.meta.status === 'retired'" size="x-small" color="grey" label>{{ t('rules.status.retired') }}</v-chip>
                   <v-chip v-if="disabledInfo(rule.meta.id).all" size="x-small" color="grey" label data-testid="rule-disabled">
                     {{ t('rules.catalog.state.disabledAll') }}
                   </v-chip>

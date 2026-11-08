@@ -1,20 +1,19 @@
 id: JS-DL-02
-version: 1.0.0
+version: 2.0.0
 module: js
 status: active
 title: "NDS-Abschluss innerhalb von 30 Tagen"
-description: "Das Lager wird spätestens 30 Tage nach der letzten J+S-Aktivität in der NDS abgeschlossen."
-message: "NDS-Abschluss: Frist am {due} überschritten, Abschluss nicht bestätigt{src}"
+description: "Das Angebot wird spätestens 30 Tage nach der letzten Aktivität (Angabe «letzte Aktivität», sonst letzter J+S-Tag, sonst Lagerende) in der NDS abgeschlossen."
+message: "NDS-Abschluss: Frist am {due} überschritten, Abschluss nicht bestätigt: kein Anspruch auf Auszahlung{src}"
 messageVariants:
-  late: "NDS-Abschluss: Abschluss erfolgte am {on}, Frist war {due}{src}"
-  soon: "NDS-Abschluss: Frist am {due}{src}"
+  late: "NDS-Abschluss: Abschluss erfolgte am {on}, Frist war {due}: kein Anspruch auf Auszahlung{src}"
+  soon: "NDS-Abschluss: Frist am {due}; danach besteht kein Anspruch auf Auszahlung{src}"
 severity: must
 confidence: verified
 scope: camp
 validFrom: 2026-01-01
-inputs: [coachInputs, params]
+inputs: [mapping, activityTags, campConfig, params, nds, coachInputs]
 params: [js.ndsClosingDays, js.deadlineSoonDays]
 tags: [frist, nds]
 sources:
-  - key: WEB-L
-    page: ""
+  - { key: WEB-C, page: "«5. Schritt: Abschluss des Angebots»", binding: true }

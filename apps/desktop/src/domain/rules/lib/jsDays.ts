@@ -334,7 +334,7 @@ export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput
     return statusCache.get(iri) ?? null
   }
   const anyJsTag = facts.activities.some((a) => tagsOf(a.iri).some((x) => JS_TAGS.includes(x)))
-  const status: JsDayModel['status'] = mapping || anyJsTag ? 'ok' : 'unknown'
+  const status: JsDayModel['status'] = hasJsMapping(mapping) || anyJsTag ? 'ok' : 'unknown'
 
   const sorted = sortedDays(facts)
   const perDate = new Map<IsoDate, DateSlot>()

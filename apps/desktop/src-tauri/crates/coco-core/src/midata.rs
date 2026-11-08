@@ -29,7 +29,8 @@ pub const JSONAPI_ACCEPT: &str = "application/vnd.api+json";
 pub const SESSION_COOKIE: &str = "_session_id";
 
 /// Qualification categories co-co checks. Serialized camelCase:
-/// `lagerleiter`, `leiterLsT`, `wasser`, `berg`, `winter`, `slrg`.
+/// `lagerleiter`, `leiterLsT`, `wasser`, `berg`, `winter`, `slrg` (legacy) and the rules-v2 keys
+/// `sbBerg`, `sbWasser`, `sbWinter`, `waterBath`, `waterPoolUnsupervised`, `waterLake`, `waterRiver`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum QualKey {
@@ -45,10 +46,37 @@ pub enum QualKey {
     Winter,
     /// SLRG brevet / module (BP-WATER-01).
     Slrg,
+    /// Rules v2: Sicherheitsbereich Berg.
+    SbBerg,
+    /// Rules v2: Sicherheitsbereich Wasser.
+    SbWasser,
+    /// Rules v2: Sicherheitsbereich Winter.
+    SbWinter,
+    /// Rules v2: qualified for supervised bathing.
+    WaterBath,
+    /// Rules v2: qualified for unsupervised pool.
+    WaterPoolUnsupervised,
+    /// Rules v2: qualified for unsupervised lake.
+    WaterLake,
+    /// Rules v2: qualified for swimming in a river.
+    WaterRiver,
 }
 
-pub const ALL_QUAL_KEYS: [QualKey; 6] =
-    [QualKey::Lagerleiter, QualKey::LeiterLsT, QualKey::Wasser, QualKey::Berg, QualKey::Winter, QualKey::Slrg];
+pub const ALL_QUAL_KEYS: [QualKey; 13] = [
+    QualKey::Lagerleiter,
+    QualKey::LeiterLsT,
+    QualKey::Wasser,
+    QualKey::Berg,
+    QualKey::Winter,
+    QualKey::Slrg,
+    QualKey::SbBerg,
+    QualKey::SbWasser,
+    QualKey::SbWinter,
+    QualKey::WaterBath,
+    QualKey::WaterPoolUnsupervised,
+    QualKey::WaterLake,
+    QualKey::WaterRiver,
+];
 
 /// Age band of participants at camp start (inclusive bounds; `to` = None means open-ended).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -65,7 +93,7 @@ pub const AGE_BANDS: [(u32, Option<u32>); 7] =
 
 /// One leader (participation with a leader role). `nickname` is yellow-zone
 /// (falls back to first name; never the full name). Qualifications are yes/no,
-/// valid over the whole camp period. `qualifications` always has all 6 keys.
+/// valid over the whole camp period. `qualifications` has all keys (older stored aggregates may lack the v2 keys).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MidataLeader {
@@ -100,9 +128,12 @@ pub struct MidataAggregate {
     pub location: Option<String>,
     pub maximum_participants: Option<u32>,
     pub participants_count: u32,
-    /// Participants aged 5..=20 at camp start (J+S age).
+    /// Participants with J+S age by Jahrgang: camp start year minus birth year in 5..=20.
     pub participants_js_age_count: u32,
     pub participants_without_birthday: u32,
+    /// Participants per birth year (Jahrgang). Aggregate only, never names or birthdates.
+    #[serde(default)]
+    pub participants_by_birth_year: BTreeMap<u32, u32>,
     pub min_age: Option<u32>,
     pub max_age: Option<u32>,
     pub age_bands: Vec<AgeBand>,
@@ -333,6 +364,46 @@ pub fn qual_keys_for_label(label: &str) -> Vec<QualKey> {
     }
     if has("slrg") || has("brevet") || has("rettungsschwimm") || has("modul pool") || has("modul see") || has("modul fluss") {
         out.push(QualKey::Slrg);
+    }
+    // Rules v2 keys. Token sequences, so «Sicherheitsmodul Wasser» does not count as «Modul Wasser».
+    let seq = |a: &str, b: &str| tokens.windows(2).any(|w| w[0] == a && w[1] == b);
+    let sb = |area: &str| seq("sicherheitsbereich", area) || seq("sb", area);
+    let (mut bath, mut pool, mut lake, mut river) = (false, false, false, false);
+    if sb("berg") {
+        out.push(QualKey::SbBerg);
+    }
+    if sb("wasser") {
+        out.push(QualKey::SbWasser);
+        river = true;
+    }
+    if sb("winter") {
+        out.push(QualKey::SbWinter);
+    }
+    if seq("modul", "wasser") || seq("aufsichtsperson", "wasser") || seq("modul", "see") {
+        (bath, pool, lake) = (true, true, true);
+    }
+    if seq("basis", "pool") {
+        bath = true;
+    }
+    if seq("plus", "pool") {
+        (bath, pool) = (true, true);
+    }
+    if seq("modul", "fluss") {
+        river = true;
+    }
+    // J+S water sport leaders (Kanu, Rudern, Segeln, Triathlon, Windsurfen).
+    if ["kanu", "rudern", "segeln", "triathlon", "windsurf"].iter().any(|w| tokens.iter().any(|t| t.starts_with(w))) {
+        (bath, pool, lake) = (true, true, true);
+    }
+    for (on, k) in [
+        (bath, QualKey::WaterBath),
+        (pool, QualKey::WaterPoolUnsupervised),
+        (lake, QualKey::WaterLake),
+        (river, QualKey::WaterRiver),
+    ] {
+        if on {
+            out.push(k);
+        }
     }
     out
 }
@@ -792,6 +863,8 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
     let mut bands: Vec<AgeBand> = AGE_BANDS.iter().map(|(f, t)| AgeBand { from: *f, to: *t, count: 0 }).collect();
     let (mut participants_count, mut js_age, mut without_bd) = (0u32, 0u32, 0u32);
     let (mut min_age, mut max_age): (Option<u32>, Option<u32>) = (None, None);
+    let mut by_year: BTreeMap<u32, u32> = BTreeMap::new();
+    let camp_year = parse_date(&camp_start).map(|d| d.0);
     let mut leaders: Vec<MidataLeader> = Vec::new();
     let mut anon = 0u32;
 
@@ -845,11 +918,17 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
             });
         } else if p.is_participant {
             participants_count += 1;
-            match person_attr(&p.person_id, "birthday").and_then(|b| age_on(&b, &camp_start)) {
+            let birthday = person_attr(&p.person_id, "birthday");
+            if let (Some(cy), Some((by, _, _))) = (camp_year, birthday.as_deref().and_then(parse_date)) {
+                if let Ok(u) = u32::try_from(by) {
+                    *by_year.entry(u).or_insert(0) += 1;
+                }
+                if (5..=20).contains(&(cy - by)) {
+                    js_age += 1;
+                }
+            }
+            match birthday.and_then(|b| age_on(&b, &camp_start)) {
                 Some(age) => {
-                    if (5..=20).contains(&age) {
-                        js_age += 1;
-                    }
                     min_age = Some(min_age.map_or(age, |m| m.min(age)));
                     max_age = Some(max_age.map_or(age, |m| m.max(age)));
                     if let Some(b) = bands.iter_mut().find(|b| age >= b.from && b.to.is_none_or(|t| age <= t)) {
@@ -873,6 +952,7 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
         participants_count,
         participants_js_age_count: js_age,
         participants_without_birthday: without_bd,
+        participants_by_birth_year: by_year,
         min_age,
         max_age,
         age_bands: bands,

@@ -2,6 +2,7 @@
 import type { RuleContext, RuleHit, RulePredicate, ScheduleEntryFact, Stufe } from '@/domain/types'
 import { addDays, daysBetween } from '../../../lib/deadlines'
 import { categoryClassOf, minutesBetween, sortedDays, wallDate, wallMinutes } from '../../../lib/jsDays'
+import { ALL_ACTIVITY_FIELDS } from '../../../lib/keywords'
 import { hhmmToMinutes } from '../../../lib/params'
 import { activityEvidence, campHit, formatDateDe, midataEvidence, midataSourceText, midataStand } from '../../../lib/util'
 
@@ -72,7 +73,8 @@ export const bpSleep01: RulePredicate = (ctx) => {
     if (window >= need) continue
     hits.push({
       targets: [days[i].iri],
-      params: { day: days[i].number, window: fmtHours(window), need: fmtHours(need), stufe: stufe === 'woelfe' ? 'Wölfe' : stufe },
+      params: { day: days[i].number, window: fmtHours(window), need: fmtHours(need) },
+      fragments: { stufe: [{ variant: `stufe_${stufe}` }] },
     })
   }
   return hits
@@ -141,7 +143,40 @@ export const cmpProg01: RulePredicate = (ctx) => {
   ]
 }
 
+// PBS-METH-01 --------------------------------------------------------------------------------
+
+/** Keyword sets per method / relationship, each with the messageVariant naming it (PBS-METH-01.yaml). */
+export const PBS_PROFILE_GROUPS: { set: string; variant: string }[] = [
+  { set: 'PBS_METH_FORTSCHRITT', variant: 'm_fortschritt' },
+  { set: 'PBS_METH_GESETZ', variant: 'm_gesetz' },
+  { set: 'PBS_METH_GRUPPE', variant: 'm_gruppe' },
+  { set: 'PBS_METH_RITUALE', variant: 'm_rituale' },
+  { set: 'PBS_METH_MITBESTIMMEN', variant: 'm_mitbestimmen' },
+  { set: 'PBS_METH_DRAUSSEN', variant: 'm_draussen' },
+  { set: 'PBS_METH_SPIELEN', variant: 'm_spielen' },
+  { set: 'PBS_REL_PERSOENLICHKEIT', variant: 'r_persoenlichkeit' },
+  { set: 'PBS_REL_MITMENSCHEN', variant: 'r_mitmenschen' },
+  { set: 'PBS_REL_UMWELT', variant: 'r_umwelt' },
+  { set: 'PBS_REL_SPIRITUALITAET', variant: 'r_spiritualitaet' },
+  { set: 'PBS_REL_KOERPER', variant: 'r_koerper' },
+]
+
+/** Provisional (Pfadiprofil not obtained): methods/relationships without any matching programme point. */
+export const pbsMeth01: RulePredicate = (ctx) => {
+  if (ctx.facts.activities.length === 0) return []
+  const missing = PBS_PROFILE_GROUPS.filter(({ set }) => !ctx.facts.activities.some((a) => ctx.keywords.matchActivity(set, a, ALL_ACTIVITY_FIELDS).length > 0))
+  if (missing.length === 0) return []
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      fragments: { list: missing.map((m) => ({ variant: m.variant })) },
+      inputs: { missingCount: missing.length },
+    },
+  ]
+}
+
 export const predicates: Record<string, RulePredicate> = {
+  'PBS-METH-01': pbsMeth01,
   'BP-REST-01': bpRest01,
   'BP-SLEEP-01': bpSleep01,
   'BP-WOLF-01': bpWolf01,

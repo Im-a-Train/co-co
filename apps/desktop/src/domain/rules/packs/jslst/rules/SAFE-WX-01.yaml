@@ -1,9 +1,9 @@
 id: SAFE-WX-01
-version: 1.0.0
+version: 2.0.0
 module: lst-lager
 status: active
 title: "Outdoor-Tag mit Schlechtwettervariante"
-description: "Für Tage mit Outdoor-Aktivitäten ist eine Schlechtwettervariante erwähnt."
+description: "Für Tage mit Outdoor-Aktivitäten ist eine Schlechtwettervariante erwähnt (Programm oder Sicherheitskonzept)."
 message: "{date}: {count} Outdoor-Aktivität(en), aber keine Schlechtwettervariante erwähnt"
 severity: should
 confidence: heuristic
@@ -13,5 +13,5 @@ inputs: [documents, keywords]
 keywords: [OUTDOOR, WATER, MOUNTAIN, ROPE, SCHLECHTWETTER]
 tags: [sicherheit, wetter]
 sources:
-  - key: H
-    page: ""
+  - { key: MAN, page: "S. 39", quote: "Schlechtwettervariante" }
+  - { key: LAGER, page: "S. 23" }

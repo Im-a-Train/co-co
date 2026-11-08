@@ -1,17 +1,22 @@
 id: JS-DAY-04
-version: 1.0.0
+version: 2.0.0
 module: lst
 status: active
 title: "Anreise- und Abreisetag zusammen"
-description: "Anreise- und Abreisetag zählen zusammen als ein Lagertag, wenn sie gemeinsam mindestens 240 Minuten J+S-Zeit erreichen."
-message: "Anreise- und Abreisetag (Tag {first} und {last}) ergeben zusammen nur {minutes} Min. J+S-Zeit (nötig: {min} Min., damit sie als ein Lagertag zählen)"
-severity: must
+description: "Anreise- und Abreisetag zählen zusammen als ein J+S-Tag, wenn sie gemeinsam die J+S-Tag-Kriterien erreichen (mindestens 240 Minuten, ab 2027 zusätzlich Bewegungszeit). Ohne J+S-Aktivitäten an beiden Tagen gibt es keinen Befund."
+message: "Erster und letzter Lagertag zählen nicht als J+S-Tag (zusammen {minutes} min, nötig {min})."
+severity: should
 confidence: verified
 scope: day
 validFrom: 2026-01-01
-inputs: [mapping, params]
-params: [js.minDayMinutes, js.minDayUnits, js.minUnitMinutes, js.minGapMinutes]
+inputs: [mapping, activityTags, params]
+params: [js.minDayMinutes, js.minBwzDayMinutes, js.minUnitMinutes, js.minGapMinutes, js.minDayUnits]
 tags: [lagertag]
 sources:
-  - key: WEB-L
-    page: ""
+  - key: LEITFADEN
+    page: "«Erster und letzter Lagertag» (Art. 14 Abs. 4)"
+    quote: "Wenn am ersten und am letzten Lagertag … keine J+S-Aktivitäten stattfinden, zählen sie nicht"
+    binding: true
+  - key: TOOL-V
+    page: "«Das J+S-Lager»"
+    binding: true

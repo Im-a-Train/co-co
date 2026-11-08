@@ -106,10 +106,13 @@ export function computeDeadlines(camp: DeadlineCamp, inputs: CoachInputs | null,
   push('nds-registration', addDays(camp.start, -lead.ndsRegistration), inputs?.ndsRegistered ?? false, 'JS-DL-01', SOURCE_JS_LAGER)
   const lastJs = camp.lastJsDate ?? camp.end ?? camp.start
   push('nds-closing', addDays(lastJs, lead.ndsClosing), inputs?.ndsClosed ?? false, 'JS-DL-02', SOURCE_JS_LAGER)
-  push('leihmaterial', addDays(camp.start, -lead.leihmaterial), inputs?.leihmaterialOrdered ?? false, 'JS-DL-03', SOURCE_JS_LAGER)
+  // JS-DL-03: lead times count back from the delivery date when the coach entered one, else from the camp start.
+  const leihAnchor = inputs?.leihmaterialDeliveryDate ?? camp.start
+  const kartenAnchor = inputs?.landeskartenDeliveryDate ?? camp.start
+  push('leihmaterial', addDays(leihAnchor, -lead.leihmaterial), inputs?.leihmaterialOrdered ?? false, 'JS-DL-03', SOURCE_JS_LAGER)
   push(
     'landeskarten',
-    addDays(camp.start, -landeskartenLeadDays(camp.start, lead)),
+    addDays(kartenAnchor, -landeskartenLeadDays(kartenAnchor, lead)),
     inputs?.landeskartenOrdered ?? false,
     'JS-DL-03',
     SOURCE_JS_LAGER,

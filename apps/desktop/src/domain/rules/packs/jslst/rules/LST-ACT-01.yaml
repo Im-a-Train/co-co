@@ -1,0 +1,28 @@
+id: LST-ACT-01
+version: 1.0.0
+module: lst
+status: active
+title: "J+S-Aktivität ohne Bewegung?"
+description: "Nicht-sportliche Programmpunkte (z. B. Film, Basteln, Mahlzeiten) zählen nicht als J+S-Aktivität. Erkennung über Stichwörter im Titel; mit dem Tag «J+S-Aktivität» bestätigt der Coach das Gegenteil."
+message: "«{activity}» ist als J+S-Aktivität eingeteilt, wirkt aber nicht sportlich-aktiv («{term}»). Nicht-sportliche Programmpunkte zählen nicht als J+S-Aktivität."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping, keywords, activityTags]
+keywords: [PASSIVE, MOVEMENT]
+tags: [programm]
+sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer»"
+    quote: "Nicht-sportliche Aktivitäten zählen nicht zu den J+S-Aktivitäten"
+    binding: true
+  - key: WEB-L
+    page: "«Förderung von Events»"
+    binding: true
+  - key: TOOL-V
+    page: "«Aktiv und bewegungsorientiert»"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true

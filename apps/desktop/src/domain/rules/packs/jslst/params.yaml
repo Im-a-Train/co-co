@@ -203,7 +203,7 @@
   description: "Zeitraum ohne Auslieferung; orderBy = letzter Bestelltermin."
   unit: dates
   values:
-    - value: { outageFrom: "2026-12-11", outageTo: "2027-01-10", orderBy: "2026-11-04" }
+    - value: { outageStart: "2026-12-11", outageEnd: "2027-01-10", orderBy: "2026-11-04" }
       validFrom: 2026-01-01
       validTo: 2027-01-17
     - { value: null, validFrom: 2027-01-18 }
@@ -336,6 +336,34 @@
   values:
     - { value: "16:00", validFrom: 2026-01-01 }
   sources: [{ key: BERG, page: "S. 6" }]
+  overridable: coach
+- key: lst.oldSnowHighAltitude
+  label: "Altschnee: Höhe hoch (m ü. M.)"
+  unit: m
+  values:
+    - { value: 2000, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 6, 33" }]
+  overridable: coach
+- key: lst.oldSnowHighMonths
+  label: "Altschnee: Monate für hohe Lagen"
+  unit: months
+  values:
+    - { value: [3, 4, 5, 6], validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 6, 33" }]
+  overridable: coach
+- key: lst.oldSnowLowAltitude
+  label: "Altschnee: Höhe tief (m ü. M.)"
+  unit: m
+  values:
+    - { value: 1000, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 6, 33" }]
+  overridable: coach
+- key: lst.oldSnowLowMonths
+  label: "Altschnee: Monate für tiefe Lagen"
+  unit: months
+  values:
+    - { value: [4, 5, 10, 11], validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 6, 33" }]
   overridable: coach
 - key: lst.sunsetTable
   label: "Sonnenuntergang pro Monat"

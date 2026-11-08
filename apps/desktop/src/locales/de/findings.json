@@ -115,7 +115,11 @@
         "documents": "Dokumente",
         "settings": "Einstellungen",
         "midata": "MiData",
-        "nds": "NDS"
+        "nds": "NDS",
+        "campConfig": "Regelmodule und Lagerkontext",
+        "activityTags": "Aktivitäts-Markierungen",
+        "params": "Parameter",
+        "keywords": "Stichwortlisten"
       },
       "factsTitle": "Geprüfte Werte",
       "factsNone": "Für diesen Befund wurden keine Einzelwerte festgehalten.",

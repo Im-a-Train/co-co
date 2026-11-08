@@ -15,5 +15,4 @@ validFrom: 2026-01-01
 inputs: [midata]
 tags: [vollstaendigkeit, midata]
 sources:
-  - key: MD
-    page: ""
+  - { key: MD, page: "" }

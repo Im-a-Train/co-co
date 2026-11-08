@@ -1,6 +1,7 @@
 - id: ANSPRUCHSVOLL
   module: lst
-  include: ["anspruchsvoll", "schlüsselstelle", "ausgesetzt", "mehrtägig", "oberhalb der waldgrenze"]
+  extends: [TREELINE]
+  include: ["anspruchsvoll", "schlüsselstelle", "ausgesetzt", "mehrtägig"]
   exclude: []
 - id: UNTERNEHMUNG
   module: lst
@@ -67,3 +68,8 @@
   include: ["upcycling", "recycling", "^waldexkursion", "flora", "fauna", "^wetterkunde", "^sternkunde", "sterne", "^nachhaltig", "insekten", "^kleinstruktur", "^aufräumaktion", "clean walk", "naturschutz", "^tierspuren", "^pflanzen"]
   exclude: []
   sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: TREELINE
+  module: lst
+  description: "Oberhalb der Waldgrenze (Sicherheitsbereich Berg, MB-UP S. 3)"
+  include: ["oberhalb der waldgrenze", "über der waldgrenze"]
+  exclude: []

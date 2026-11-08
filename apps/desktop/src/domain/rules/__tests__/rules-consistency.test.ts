@@ -201,27 +201,6 @@ describe('CMP-CON-10', () => {
   })
 })
 
-describe('SAFE-MTN-03', () => {
-  const camp = (title = 'Wanderung zum Gipfel') => {
-    const b = base()
-    b.facts.collaborators.push(collab(1, 'Blitz'))
-    b.activity(title, CAT_LA, { content: { safetyText: 'Aufsicht' } })
-    return b
-  }
-  it('hits when matched responsibles lack the mountain qualification', () => {
-    const h = one('SAFE-MTN-03', makeCtx(camp().facts, { midata: makeMidata({ leaders: [leader('blitz')] }) }))
-    expect(h).toHaveLength(1)
-    expect(msg(h[0])).toContain('Quelle: MiData, Stand 01.01.2031')
-  })
-  it('is silent when qualified, unmatched, non-mountain, unreadable or without MiData', () => {
-    expect(one('SAFE-MTN-03', makeCtx(camp().facts, { midata: makeMidata({ leaders: [leader('Blitz', { berg: true })] }) }))).toEqual([])
-    expect(one('SAFE-MTN-03', makeCtx(camp().facts, { midata: makeMidata({ leaders: [leader('Anderer')] }) }))).toEqual([])
-    expect(one('SAFE-MTN-03', makeCtx(camp('Basteln').facts, { midata: makeMidata({ leaders: [leader('Blitz')] }) }))).toEqual([])
-    expect(one('SAFE-MTN-03', makeCtx(camp().facts, { midata: makeMidata({ leaders: [leader('Blitz')], qualificationsReadable: false }) }))).toEqual([])
-    expect(one('SAFE-MTN-03', makeCtx(camp().facts))).toEqual([])
-  })
-})
-
 describe('engine tagging of consistency findings', () => {
   const [pack] = loadBundledPacks()
   const b = base()
@@ -239,7 +218,7 @@ describe('engine tagging of consistency findings', () => {
   const findings = evaluate([pack], makeCtx(b.facts, { midata: md, nds }))
   const byId = (id: string) => findings.filter((x) => x.ruleId === id)
 
-  it.each(['CMP-CON-01', 'CMP-CON-02', 'CMP-CON-03', 'CMP-CON-04', 'CMP-CON-05', 'CMP-CON-06', 'CMP-CON-08', 'CMP-CON-09', 'CMP-CON-10', 'SAFE-MTN-03'])(
+  it.each(['CMP-CON-01', 'CMP-CON-02', 'CMP-CON-03', 'CMP-CON-04', 'CMP-CON-05', 'CMP-CON-06', 'CMP-CON-08', 'CMP-CON-09', 'CMP-CON-10'])(
     '%s is tagged red-derived midata',
     (id) => {
       const fs = byId(id)

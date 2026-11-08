@@ -1,0 +1,19 @@
+id: LST-TREK-04
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Umkehrzeit / Abbruchkriterien fehlen"
+description: "Für Wanderungen und Bergaktivitäten sind Umkehrzeit bzw. Abbruch- und Ausweichkriterien im Sicherheitsteil festgehalten. Bei Wasser-, Winter- und Seilaktivitäten ist dies eine Empfehlung."
+message: "Für «{activity}» sind keine Umkehrzeit bzw. Abbruch- und Ausweichkriterien festgehalten."
+severity: should
+confidence: unverified
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags]
+keywords: [HIKE, MOUNTAIN, WATER, POOL, WINTER, ROPE, UMKEHR]
+tags: [sicherheit, wanderung]
+sources:
+  - { key: BERG, page: "S. 6, 15" }
+  - { key: WASSER, page: "S. 17" }
+  - { key: MAN, page: "S. 44–45" }
+  - { key: MB-UP, page: "S. 1", quote: "Vorgehen im Notfall", binding: true }

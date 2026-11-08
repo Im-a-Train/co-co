@@ -45,3 +45,8 @@ unknown ones return HTTP 400.** Query builders live in `apps/desktop/src-tauri/s
 - **Session reuse**: after an eCamp login via MiData OAuth, the `_session_id` cookie of the MiData
   origin is read from the same login webview and adopted (only when nothing, or a session for the
   same base URL, is connected). The signed-in person id is detected from `/people/<id>` URLs.
+
+## Rules v2 aggregate additions
+
+- `MidataQualKey` gains `sbBerg`, `sbWasser`, `sbWinter`, `waterBath`, `waterPoolUnsupervised`, `waterLake`, `waterRiver` (legacy `wasser`, `slrg`, `berg`, `winter` unchanged; v2 keys are optional in older stored aggregates). Label mapping (`qual_keys_for_label`, token-based, user `qualMapping` still overrides): «Sicherheitsbereich/SB Berg» -> `sbBerg`; «Sicherheitsbereich Wasser» -> `sbWasser`+`waterRiver`; «Sicherheitsbereich Winter» -> `sbWinter`; «Modul Wasser LS/T», «Aufsichtsperson Wasser», «Modul See» -> `waterBath`+`waterPoolUnsupervised`+`waterLake`; «Basis Pool» -> `waterBath`; «Plus Pool» -> `waterBath`+`waterPoolUnsupervised`; «Modul Fluss» -> `waterRiver`; J+S Kanu/Rudern/Segeln/Triathlon/Windsurfen -> bath+pool+lake.
+- `participantsByBirthYear: { "<year>": count }` (optional, red-derived aggregate only; never names or birthdates). `participantsJsAgeCount` is computed by Jahrgang: J+S age if `campStartYear - birthYear` is in 5..=20 (not by exact birthday).

@@ -328,7 +328,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
 <header class="hero">
   <canvas id="topo" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M10 built (M7-0 spike pending)</span>
+    <span class="eyebrow">co-co · spec + status · updated 09.11.2026 · M0–M11 built (M7-0 spike pending)</span>
     <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
     <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
     <div class="badges">
@@ -337,7 +337,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
       <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
       <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
       <span class="badge">Language: <b>German</b>, ready for more</span>
-      <span class="badge">Status: <b>M0–M10 built (M7-0 spike pending)</b></span>
+      <span class="badge">Status: <b>M0–M11 built (M7-0 spike pending)</b></span>
     </div>
   </div>
 </header>
@@ -556,9 +556,14 @@ Details stehen als Kommentare in eCamp. Gruess, Falk</div>
 
 <!-- RULES -->
 <section id="rules"><div class="wrap">
-  <span class="eyebrow">Ships with v1</span>
-  <h2>Basic rule set «co-co Basis 2026.1»</h2>
-  <p class="lede">Only rules confirmed on the official J+S pages may be «Muss». Rules with conflicting or unverified sources run as «Soll» and say so. Best practice and heuristics are «Hinweis».</p>
+  <span class="eyebrow">Rule set v2 · built (M11)</span>
+  <h2>Rule set «co-co 2026.2»: modular packs and a strict severity policy</h2>
+  <p class="lede">Two packs, nine modules, 108 active rules. Only a binding statement in a current official J+S source <em>and</em> a deterministic check on data may be «Muss». Proxy data and keyword detection run as «Soll». 2014 sources, conflicting sources and heuristics are «Soll» (unbestätigt / Quellenkonflikt) or «Hinweis». Decision: <span class="mono">docs/adr/0008-rule-set-v2.md</span>.</p>
+  <div class="grid3">
+    <div class="card"><h3>Packs and modules</h3><ul><li><span class="mono">coco-js-lst</span>: js (29 rules), lst (28), lst-lager (11), lst-wasser (10), lst-trekking (9), lst-winter (8), lst-berg (4), lst-ebb (4)</li><li><span class="mono">coco-pbs</span>: pbs (6)</li><li>Per camp each toggleable module is auto / on / off. «Suggested» modules run but cap their findings at «Hinweis».</li></ul></div>
+    <div class="card"><h3>Severity policy</h3><ul><li>Muss: binding + current official source + deterministic data (incl. coach tags, MiData/NDS, GPX)</li><li>Soll: proxy data, keywords, 2014 sources, 2019 brochures</li><li>Hinweis: PBS / didactic recommendations</li><li>Conflicting sources: never Muss; the loader rejects Muss without «verified»</li></ul></div>
+    <div class="card"><h3>2027 model</h3><ul><li>One pack serves 2026 and 2027: params and rules have validity dates</li><li>From 2027 JS-CAMP-01 counts J+S days only; free days never break the run (maintainer decision)</li><li>Sources are a registry with page and quote (Merkblatt Unfallprävention, Leitfaden, Manual, Webseiten)</li></ul></div>
+  </div>
   <div class="filters" role="group" aria-label="Rule groups" id="rulefilter">
     <button type="button" data-g="all" aria-pressed="true">Alle</button>
     <button type="button" data-g="JS" aria-pressed="false">J+S Kern</button>
@@ -566,23 +571,23 @@ Details stehen als Kommentare in eCamp. Gruess, Falk</div>
     <button type="button" data-g="SAFE" aria-pressed="false">Sicherheit</button>
     <button type="button" data-g="BP" aria-pressed="false">PBS Best Practice</button>
   </div>
+  <p class="lede">The table below is an illustrative selection from v1; the full catalog is in the app («Regeln») and in <span class="mono">docs/plans/rules-v2/catalog-final.md</span>.</p>
   <div class="tbl"><table class="cmp rules"><thead><tr><th>ID</th><th>Check</th><th>Data</th><th>Severity</th><th>Source</th></tr></thead><tbody id="ruletable"></tbody></table></div>
   <div class="grid2">
-    <div class="rulecode"><pre><span class="c"># packages/rules/packs/basis/js/day-min-hours.yaml</span>
-<span class="k">id:</span> <span class="s">JS-DAY-01</span>
-<span class="k">group:</span> js
-<span class="k">severity:</span> must            <span class="c"># must | should | hint</span>
-<span class="k">confidence:</span> verified      <span class="c"># unverified ⇒ max. should</span>
-<span class="k">valid:</span> { from: 2025-01-01, to: 2026-12-31 }
-<span class="k">scope:</span> day
-<span class="k">check:</span> ./day-min-hours.ts   <span class="c"># pure fn(CampFacts) ⇒ Finding[]</span>
-<span class="k">params:</span> { minMinutes: 240, minUnits: 2 }
-<span class="k">source:</span>
-  <span class="k">title:</span> Leitfaden Sportarten
-  <span class="k">url:</span> https://www.jugendundsport.ch/de/lager
-<span class="k">i18n:</span> rules.JS-DAY-01         <span class="c"># locales/de/rules.json</span>
-<span class="k">feedback:</span> feedback/day-too-short <span class="c"># Vorlage pro Sprache</span>
-<span class="k">fixtures:</span> [ok-8days, tue-short]</pre></div>
+    <div class="rulecode"><pre><span class="c"># packs/jslst/rules/LST-WASSER-04.yaml (schema v2)</span>
+<span class="k">id:</span> <span class="s">LST-WASSER-04</span>
+<span class="k">module:</span> lst-wasser         <span class="c"># module of the pack; per-camp auto / on / off</span>
+<span class="k">status:</span> active
+<span class="k">severity:</span> should           <span class="c"># must | should | hint</span>
+<span class="k">confidence:</span> heuristic      <span class="c"># must ⇒ verified (loader enforces)</span>
+<span class="k">scope:</span> activity
+<span class="k">validFrom:</span> 2026-01-01
+<span class="k">message:</span> "…{detail}"       <span class="c"># German texts live in the YAML</span>
+<span class="k">params:</span> [lst.ropeMinSafetyChars]   <span class="c"># packs/jslst/params.yaml</span>
+<span class="k">keywords:</span> [WATER, POOL]            <span class="c"># packs/jslst/keywords/*.yaml</span>
+<span class="k">sources:</span>
+  - { key: MB-UP, page: "S. 5", binding: true }   <span class="c"># packs/sources.yaml</span>
+<span class="k">formerIds:</span> [SAFE-WATER-01]    <span class="c"># overrides carry over</span></pre></div>
     <div class="rulecode"><pre><span class="c">// day-min-hours.ts</span>
 <span class="k">export default</span> defineRule(({ facts, params, t }) =&gt;
   facts.days
@@ -801,6 +806,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><span class="eyebrow">M8 · ✓ built (live check pending)</span><h3>NDS (read-only)</h3><ul><li>NDS web API spec from redacted captures</li><li>Rust NDS module: AGOV login, aggregates only</li><li>«Aus NDS übernehmen» + NDS card in Lager-Angaben</li><li>JS-DL-01/02 with «Quelle: NDS»; CMP-NDS-01/02/03</li><li>Pending: live run with a real camp (attendance state code, paging, login detection)</li></ul></div>
     <div class="card"><span class="eyebrow">M9 · ✓ built</span><h3>eCamp links + cross-source checks</h3><ul><li>eCamp activity link in every activity feedback item (WhatsApp, e-mail, text) and «In eCamp öffnen»</li><li><span class="mono">open_ecamp_url</span>: validated in Rust, system browser via tauri-plugin-opener</li><li>Consistency rules eCamp ↔ MiData ↔ NDS (CMP-CON-*): dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participants</li><li>SAFE-MTN-03: mountain activities without a responsible with a Berg qualification (MiData)</li></ul></div>
     <div class="card"><span class="eyebrow">M10 · ✓ built</span><h3>Feedback loop + transparency</h3><ul><li>Comment sync: resolved and answered eCamp comments flow back into the feedback items («In eCamp erledigt», «n Antworten», «vermutlich Antwort», missing in eCamp)</li><li>Explainability panel «Warum?»: rule + pack version, validity date, how the severity came about, inputs used/missing and the checked values (red values badged, never sent to the AI)</li><li>Leader self-check: tab «Selbstcheck», draft rounds (own table, not counted as review rounds), fixed / open / new since the last run, report for the Lagerleitung</li><li>Deadline radar: PBS milestones (Hering, unverified offsets) in Fristen, radar lanes, done flags, ICS export</li><li>Plan: Documents v2 (camp folder scanned recursively, PDF preview, usability) – <span class="mono">docs/plans/documents-v2.md</span></li></ul></div>
+    <div class="card"><span class="eyebrow">M11 · ✓ built</span><h3>Regelwerk v2</h3><ul><li>Modular packs <span class="mono">coco-js-lst</span> (J+S general + Lagersport/Trekking modules Lager, Trekking, Berg, Wasser, Winter, EBB) and <span class="mono">coco-pbs</span>; 108 active rules (66 new, 5 superseded by successors with formerIds), JS-STAFF-01 retired</li><li>Strict severity policy, loader-enforced; one pack for 2026 and the 2027 model (J+S days; free days never break the run)</li><li>Sources registry incl. Merkblatt Unfallprävention and Leitfaden, with page and quote per finding; coach checklist; activity tags (Sicherheitsbereich, EBB, no-J+S activity)</li><li>Card «Regelmodule» (auto / on / off with reasons), Dexie v5 table <span class="mono">campRuleConfig</span>, params, keyword sets and milestones as pack data</li><li>MiData: Sicherheitsbereich and water qualifications by Jahrgang in the qualification matrix</li><li>Decision: <span class="mono">docs/adr/0008-rule-set-v2.md</span></li></ul></div>
   </div>
 </div></section>
 
@@ -814,11 +820,17 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><h3>MiData query syntax ✓</h3><p>Checked 07.11.2026 against <span class="mono">db.scout.ch/api/openapi.json</span>: filters need the operator (<span class="mono">filter[after_or_on][eq]</span>), events only allow <span class="mono">include=dates|kind|contact|…</span> (organisation names via <span class="mono">/api/groups</span>), participations link people via <span class="mono">participant</span>. Unknown names return HTTP 400; a unit test now pins every query to the spec. See <span class="mono">docs/contracts/midata-api.md</span>.</p></div>
     <div class="card"><h3>eCamp links: live check</h3><p>The activity link and «In eCamp öffnen» (tauri-plugin-opener) are tested with mocks only. Try them once in the release exe against app.ecamp3.ch, and paste a copied e-mail into Outlook/Gmail to confirm the linked titles arrive (rich-text clipboard in WebView2). The slug segments only approximate eCamp's own shorteners (shortTitle or the first 16 characters of the title), which is harmless because eCamp resolves the ids only.</p></div>
     <div class="card"><h3>Cross-source rules: tuning</h3><p>CMP-CON-* are new and run as «Hinweis» or «Soll» only. Open: which eCamp collaborators count as «Leitende» (CON-02 counts established members and managers), name matching by nickname (CON-03, can give false hits), and whether NDS «planned» counts are the right basis. Check them against 2–3 real camps.</p></div>
-    <div class="card"><h3>More checks, more data</h3><p>Not built yet, because the meaning or the data is missing:</p><ul><li>NDS children/adolescents vs. MiData age bands: which age limits NDS uses</li><li>NDS <span class="mono">campAgendaUploaded</span> and <span class="mono">coachAuthorizedForContribution</span>: deadline and meaning unclear</li><li>A winter check like SAFE-MTN-03: needs a winter keyword list in the rule pack</li><li>NDS activity location/time, NDS coach, J+S numbers: not fetched (red zone); possible later as Rust-side yes/no facts</li></ul></div>
-    <div class="card"><h3>PBS milestones: offsets unverified</h3><p>The deadline radar's PBS milestones (Lagerplatz T−180, Grobprogramm T−75, Lagermeldung T−60, Elterninformation T−42, Sicherheitskonzept T−28, Lagerdossier T−14, Lagerbericht E+14, Lagerabrechnung E+60) are co-co defaults, not taken from Hering. They show «unbestätigt» until a PBS owner confirms or corrects <span class="mono">milestones/pbs.yaml</span>.</p></div>
+    <div class="card"><h3>More checks, more data</h3><p>Not built yet, because the meaning or the data is missing:</p><ul><li>NDS children/adolescents vs. MiData age bands: which age limits NDS uses</li><li>NDS <span class="mono">campAgendaUploaded</span> and <span class="mono">coachAuthorizedForContribution</span>: deadline and meaning unclear</li><li>NDS activity location/time, NDS coach, J+S numbers: not fetched (red zone); possible later as Rust-side yes/no facts</li></ul></div>
+    <div class="card"><h3>PBS milestones: offsets unverified</h3><p>The deadline radar's PBS milestones (Lagerplatz T−180, Grobprogramm T−75, Lagermeldung T−60, Elterninformation T−42, Sicherheitskonzept T−28, Lagerdossier T−14, Lagerbericht E+14, Lagerabrechnung E+60) are co-co defaults, not taken from Hering. They show «unbestätigt» until a PBS owner confirms or corrects <span class="mono">packs/pbs/milestones.yaml</span>.</p></div>
     <div class="card"><h3>Documents v2: decisions needed</h3><p>Plan in <span class="mono">docs/plans/documents-v2.md</span> (one camp folder scanned recursively, in-app PDF preview with page jumps, three-pane layout). Open: per-camp folder vs. one global root, shared folders between camps, limits (depth 8, 2000 files, 25 MB, cloud-only files skipped), broad folders refused or warned, more file types, CSP changes for pdf.js.</p></div>
     <div class="card"><h3>Comment sync: live check</h3><p>Tested with mocks only. Check on dev.ecamp3.ch whether replies carry the <span class="mono">parent</span> link; without it co-co only infers answers («vermutlich Antwort»).</p></div>
-    <div class="card"><h3>Rule confirmation</h3><p>The leader ratio, the training-free days and the 2027 Bewegungszeit stay «Soll / Quelle unsicher» until PBS or BASPO confirms them.</p></div>
+    <div class="card"><h3>Rules v2: free days, even camp lengths</h3><p>The Leitfaden text, WEB-L and the Leitfaden example table disagree for even camp lengths, and from 2027 TOOL-V may replace the cap. JS-FREE-01 stays «Quellenkonflikt» (max. Hinweis in 2027) until J+S answers.</p></div>
+    <div class="card"><h3>Rules v2: 2027 model dates</h3><p>The start date 2027-01-01 for the whole model is assumed (only the target-group merger is dated, PBS27 slide 9). Also open: whether eCamp keeps the LA thematic areas (CMP-LA-01 ends 2026-12-31), and whether Sozialzeit (30 min) and the 2-unit rule stay in 2027.</p></div>
+    <div class="card"><h3>Rules v2: interpretations</h3><p>Time-of-day boundaries (Morgen/Nachmittag/Abend) are a co-co choice, so JS-DAY-06 stays «Soll». The combined first/last day needs 120 min Bewegungszeit by co-co's reading. The skip rule for days failing the J+S-day criteria is the maintainer's decision; a J+S confirmation would remove the residual risk.</p></div>
+    <div class="card"><h3>Rules v2: 2014-only items</h3><p>Milestones, checklist items marked «2014» and rules built only on the 2014 brochures (e.g. LST-LAGER-02/03/06, LST-TREK-03/04/07, LST-BERG-04) stay «unbestätigt» until a current source confirms them.</p></div>
+    <div class="card"><h3>Rules v2: MiData labels</h3><p>The exact MiData labels for «Zusatz Sicherheitsbereich» and the SLRG modules must be checked against live data. Coach overrides via <span class="mono">settings.midata.qualMapping</span> are the fallback.</p></div>
+    <div class="card"><h3>Rules v2: data gaps</h3><p>The LS/T subsidy group size (16) comes from one slide only (JS-STAFF-03 stays Hinweis). Camps with sport «other» get only the <span class="mono">js</span> module, because JS-CAMP-01 and the day rules sit in <span class="mono">lst</span>. Offer-level checks rely on coach input.</p></div>
+    <div class="card"><h3>Rules v2: small known gaps</h3><p>Safety-concept, Lagerregeln and Lagerinfo documents are matched by filename keywords (no document kinds); child age &lt; 10 and the 90 % threshold of LST-LAGER-02 are TS constants; PBS method keyword lists are provisional (Pfadiprofil missing); public holidays for JS-DL-04 are federal only.</p></div>
     <div class="card"><h3>IndexedDB durability</h3><p>The webview's storage can be wiped by an uninstall or a profile reset. co-co reminds you to export a backup after each review round.</p></div>
     <div class="card"><h3>OAuth callback</h3><p>eCamp does not validate the callback URL (a possible open redirect). Report it to the eCamp team; co-co doesn't rely on it.</p></div>
     <div class="card"><h3>Licence</h3><p>eCamp is AGPL-3.0. Choose an AGPL-compatible licence for co-co now if you plan to contribute it upstream later.</p></div>
@@ -948,6 +960,9 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['Lagerbewilligung A/B/C','Digital PBS checklists, pre-filled by the rules.','later'],
       ['Versioned rule packs','YAML + TS predicates with valid-from/to dates; each camp is checked against the rules valid at its start.','v1',0,'d'],
       ['Confidence badges','verified / conflict / unverified / best practice / heuristic; only verified rules may be «Muss».','v1',0,'d'],
+      ['Rule modules per camp','Card «Regelmodule»: J+S/PBS, Berg, Wasser, Winter, EBB as auto / on / off with reasons; suggested modules only give hints.','v1'],
+      ['Activity tags','The coach tags activities (sb-berg, sb-wasser, ebb-a/b, keine-js-aktivitaet …); tags count as data and confirm modules.','v1'],
+      ['Coach checklist','Checklist items from the J+S sources, shown depending on camp context and tags.','v1'],
       ['Explainability panel','Show the input facts and the rule version behind each verdict, not only the rule, source and evidence.','next',0,'d'],
       ['Rulebook time machine','When J+S publishes new rules (e.g. Bewegungszeit 2027), show side by side what changes for each of your camps.','next',0,'d'],
       ['Golden test set','20–30 anonymised past camps with real coach verdicts; measure false positives per rule before a rule may block.','next',0,'d'],
@@ -960,7 +975,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['Safety-activity detector','Keyword rules flag water, mountain, rope, night and fire activities hidden in storyboards; an AI pass for less obvious cases could follow.','v1',0,'d'],
       ['Soft safety review (AI)','AI reads an activity\'s safety considerations and returns «KI-Einschätzung» hints, never «Muss».','later','ai','d'],
       ['Qualification matrix','Leaders × required qualifications (Lagerleiter, LS/T, Wasser/Berg/Winter) valid on the camp dates, matched to the responsibles. Built with MiData (M7).','v1',0,'d'],
-      ['Water qualification matcher','Map the setting (pool, lake, river) to the qualification it requires.','next',0,'d'],
+      ['Water qualification matcher','Map the setting (pool, lake, river) to the qualification it requires, by Jahrgang of the leader (MiData).','v1',0,'d'],
       ['Expert package','One-click PDF of each safety-area activity for the J+S-Experte LS/T, with a scoped link and approval status.','next',0,'d'],
       ['Route check on the map','swisstopo profile and T-scale per segment, turn-back points, exits, nearest hospital and Rega landing site.','later',0,'d'],
       ['Weather-aware re-checks','MeteoSwiss forecast at T−2 and on the day, linked to the activity\'s bad-weather variant.','later',0,'d'],
@@ -1025,7 +1040,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ]],
   ];
   const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
-  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list','eCamp links in feedback','Cross-source consistency checks','Explainability panel','Hering deadline radar','Comment sync','Leader self-check']);
+  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list','eCamp links in feedback','Cross-source consistency checks','Explainability panel','Hering deadline radar','Comment sync','Leader self-check','Rule modules per camp','Activity tags','Coach checklist','Water qualification matcher']);
   ['Befunde-Triage','Ignorieren with a reason','Rule disabling','Versioned rule packs','Confidence badges','Safety-activity detector','Soft safety review (AI)'].forEach(n=>DONE.add(n));
   const WIP=new Set([]);
   const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';

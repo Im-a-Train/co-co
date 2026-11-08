@@ -1,5 +1,5 @@
 id: CMP-NDS-02
-version: 1.0.0
+version: 2.0.0
 module: js
 status: active
 title: "Offene Anwesenheitskontrolle (AWK) in der NDS"
@@ -8,11 +8,14 @@ message: "In der NDS sind bei {count} Aktivitäten die Anwesenheitskontrolle (AW
 messageVariants:
   one: "In der NDS ist bei 1 Aktivität die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
 severity: should
-confidence: best-practice
+confidence: verified
 scope: camp
 validFrom: 2026-01-01
 inputs: [nds]
 tags: [vollstaendigkeit, nds]
 sources:
   - key: WEB-C
-    page: ""
+    page: "«3. Schritt»"
+    quote: "AWK zeitnah und wahrheitsgetreu … erfasst"
+    binding: true
+  - { key: MAN, page: "S. 17" }

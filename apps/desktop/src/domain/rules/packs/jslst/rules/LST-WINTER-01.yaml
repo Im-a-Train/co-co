@@ -1,0 +1,26 @@
+id: LST-WINTER-01
+version: 1.0.0
+module: lst-winter
+status: active
+title: "Winterlager: Haus mit wintersicherer Zufahrt"
+description: "Lager im Winter finden in einem Haus mit wintersicherer Zufahrt statt, sonst gilt das Lager als Sicherheitsbereich Winter. «Im Winter» entscheidet co-co über den Parameter der Wintermonate."
+message: "Lager im Winter finden in einem Haus mit wintersicherer Zufahrt statt – Angabe zur Zufahrt fehlt."
+messageVariants:
+  notHouse: "Lager im Winter finden in einem Haus statt – als Lagerform ist «{campForm}» erfasst."
+  noAccess: "Ohne wintersichere Zufahrt gilt das Lager als Sicherheitsbereich Winter (Expertenbewilligung, Zusatz Winter, nur Jugendliche)."
+  form_zelt: "Zelt"
+  form_gemischt: "gemischt"
+severity: should
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [campConfig, params]
+params: [lst.winterMonths]
+tags: [sicherheit, winter]
+sources:
+  - key: MB-UP
+    page: "S. 4"
+    quote: "Lager im Winter finden in einem Haus mit wintersicherer Zufahrt statt"
+    binding: true
+  - key: MB-UP
+    page: "S. 4"

@@ -15,5 +15,9 @@ validFrom: 2026-01-01
 inputs: [coachInputs]
 tags: [leitung]
 sources:
-  - key: WEB-C
-    page: ""
+  - key: LEITFADEN
+    page: "«Lagerleitung»"
+    quote: "In der Sportart Lagersport/Trekking muss mindestens eine Person über den Zusatz «Lagerleiter» verfügen"
+    binding: true
+  - key: PBS27
+    page: "Folie 9"

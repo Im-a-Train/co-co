@@ -1,0 +1,23 @@
+id: LST-WASSER-05
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Bachtrekking: Pflichtpunkte"
+description: "Bachtrekking braucht Wetterbericht, Ausstiegsmöglichkeiten, Rekognoszierung und Angaben zu Kraftwerk/Schwall in den Sicherheitsüberlegungen."
+message: "Für das Bachtrekking «{activity}» fehlen in den Sicherheitsüberlegungen: {missing}."
+messageVariants:
+  missingWetter: "Wetterbericht"
+  missingAusstieg: "Ausstiegsmöglichkeiten"
+  missingReco: "Rekognoszierung"
+  missingKraftwerk: "Kraftwerk/Schwall"
+  missingJoin: ", "
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [BACHTREKKING, WETTER, AUSSTIEG, RECO, KRAFTWERK]
+sources:
+  - { key: WASSER, page: "S. 13, 15, 16" }
+  - { key: MB-UP, page: "S. 3, 5" }
+tags: [sicherheit, wasser]

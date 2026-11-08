@@ -3,14 +3,15 @@ version: 1.0.0
 module: lst
 status: active
 title: "Lageraktivität ohne Themenbereich"
-description: "Jede Lageraktivität (LA) ist einem Themenbereich zugeordnet."
+description: "Jede Lageraktivität (LA) ist einem Themenbereich zugeordnet. Das Konzept LA kommt in den Quellen für 2027 nicht mehr vor."
 message: "«{title}» ist eine Lageraktivität ohne Themenbereich"
 severity: should
 confidence: best-practice
 scope: activity
 validFrom: 2026-01-01
+validTo: 2026-12-31
 inputs: [mapping]
 tags: [vollstaendigkeit]
 sources:
   - key: WEB-L
-    page: ""
+    page: "«Lagerprogramm»"

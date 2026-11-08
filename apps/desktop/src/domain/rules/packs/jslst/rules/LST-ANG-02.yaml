@@ -1,0 +1,33 @@
+id: LST-ANG-02
+version: 1.0.0
+module: lst
+status: active
+title: "Erscheinungsformen nicht alle sichtbar"
+description: "Im Angebot werden alle sechs Erscheinungsformen erlebbar. Die J+S-Aktivitäten werden nach EF-Tag, sonst nach Stichwörtern eingeordnet."
+message: "Für folgende Erscheinungsformen ist keine Aktivität erkennbar: {list}. Im Angebot müssen alle erlebbar werden."
+messageVariants:
+  ef1: "EF1 Outdoor- und Lagerbautechniken"
+  ef2: "EF2 Sicher unterwegs"
+  ef3: "EF3 Spiel und Sport"
+  ef4: "EF4 Bedürfnisse und Ideen"
+  ef5: "EF5 Gemeinschaft"
+  ef6: "EF6 Natur und Umwelt"
+  listJoin: ", "
+severity: hint
+confidence: heuristic
+scope: camp
+validFrom: 2027-01-01
+inputs: [mapping, keywords, activityTags, campConfig]
+keywords: [EF1, EF2, EF3, EF4, EF5, EF6]
+tags: [angebot]
+sources:
+  - key: MAN
+    page: "S. 21, 26–27"
+    binding: true
+  - key: TOOL-V
+    page: "«Das J+S-Angebot»"
+    binding: true
+  - key: TOOL-G
+    page: "Folien 1–6"
+  - key: PBS27
+    page: "Folie 5"

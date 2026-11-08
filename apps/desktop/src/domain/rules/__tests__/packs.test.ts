@@ -8,14 +8,11 @@ import { allPredicates as predicates } from './predicates'
 import { DEFAULT_APP_SETTINGS, MODULE_IDS, type CampFacts, type CategoryMapping, type RulePack } from '@/domain/types'
 import { makeCtx, MAPPING, FactsBuilder } from './factory'
 
-const EXPECTED_IDS = [
-  'JS-CAMP-01', 'JS-CAMP-02', 'JS-DAY-01', 'JS-DAY-02', 'JS-DAY-03', 'JS-DAY-04', 'JS-DAY-05', 'JS-DL-01', 'JS-DL-02', 'JS-DL-03',
-  'JS-LL-01', 'JS-STAFF-01', 'JS-FREE-01', 'JS-BWZ-27',
-  'CMP-ACT-01', 'CMP-ACT-02', 'CMP-ACT-03', 'CMP-LA-01', 'CMP-DAY-01', 'CMP-CAMP-01', 'CMP-MD-01', 'CMP-NDS-01', 'CMP-NDS-02', 'CMP-NDS-03', 'CMP-PROG-01', 'CMP-CON-01', 'CMP-CON-02', 'CMP-CON-03', 'CMP-CON-04', 'CMP-CON-05', 'CMP-CON-06', 'CMP-CON-07', 'CMP-CON-08', 'CMP-CON-09', 'CMP-CON-10',
-  'SAFE-WATER-01', 'SAFE-MTN-01', 'SAFE-MTN-02', 'SAFE-MTN-03', 'SAFE-ROPE-01', 'SAFE-NIGHT-01', 'SAFE-WX-01', 'SAFE-DOC-01',
-  'BP-REST-01', 'BP-SLEEP-01', 'BP-WOLF-01', 'BP-WATER-01', 'BP-VAR-01',
+const JSLST_IDS = [
+  'BP-VAR-01', 'CMP-ACT-01', 'CMP-ACT-02', 'CMP-ACT-03', 'CMP-CAMP-01', 'CMP-CON-01', 'CMP-CON-02', 'CMP-CON-03', 'CMP-CON-04', 'CMP-CON-05', 'CMP-CON-06', 'CMP-CON-07', 'CMP-CON-08', 'CMP-CON-09', 'CMP-CON-10', 'CMP-DAY-01', 'CMP-LA-01', 'CMP-MD-01', 'CMP-NDS-01', 'CMP-NDS-02', 'CMP-NDS-03', 'JS-AGE-01', 'JS-BWZ-02', 'JS-BWZ-27', 'JS-CAMP-01', 'JS-CAMP-02', 'JS-DAY-01', 'JS-DAY-02', 'JS-DAY-03', 'JS-DAY-04', 'JS-DAY-05', 'JS-DAY-06', 'JS-DL-01', 'JS-DL-02', 'JS-DL-03', 'JS-DL-04', 'JS-DL-05', 'JS-DL-06', 'JS-EXCL-01', 'JS-FREE-01', 'JS-LL-01', 'JS-PROG-01', 'JS-PROG-02', 'JS-STAFF-01', 'JS-STAFF-02', 'JS-STAFF-03', 'LST-ACT-01', 'LST-ACT-02', 'LST-ACT-03', 'LST-ACT-04', 'LST-ACT-05', 'LST-ANG-01', 'LST-ANG-02', 'LST-BERG-01', 'LST-BERG-02', 'LST-BERG-03', 'LST-BERG-04', 'LST-EBB-01', 'LST-EBB-02', 'LST-EBB-03', 'LST-EBB-04', 'LST-LAGER-01', 'LST-LAGER-02', 'LST-LAGER-03', 'LST-LAGER-04', 'LST-LAGER-05', 'LST-LAGER-06', 'LST-LAGER-07', 'LST-SB-01', 'LST-SB-02', 'LST-SB-03', 'LST-SB-04', 'LST-SB-05', 'LST-TREK-01', 'LST-TREK-02', 'LST-TREK-03', 'LST-TREK-04', 'LST-TREK-05', 'LST-TREK-06', 'LST-TREK-07', 'LST-TREK-08', 'LST-TREK-09', 'LST-WASSER-01', 'LST-WASSER-02', 'LST-WASSER-03', 'LST-WASSER-04', 'LST-WASSER-05', 'LST-WASSER-06', 'LST-WASSER-07', 'LST-WASSER-08', 'LST-WASSER-09', 'LST-WASSER-10', 'LST-WINTER-01', 'LST-WINTER-02', 'LST-WINTER-03', 'LST-WINTER-04', 'LST-WINTER-05', 'LST-WINTER-06', 'LST-WINTER-07', 'LST-WINTER-08', 'SAFE-NIGHT-01', 'SAFE-ROPE-01', 'SAFE-WX-01',
 ]
-const PBS_IDS = ['BP-REST-01', 'BP-SLEEP-01', 'BP-WOLF-01', 'BP-WATER-01', 'CMP-PROG-01']
+const PBS_IDS = ['BP-REST-01', 'BP-SLEEP-01', 'BP-WOLF-01', 'BP-WATER-01', 'CMP-PROG-01', 'PBS-METH-01']
+const EXPECTED_IDS = [...JSLST_IDS, ...PBS_IDS]
 
 const packs = loadBundledPacks()
 const allRules = packs.flatMap((p) => p.rules)
@@ -58,17 +55,17 @@ describe('bundled packs (rules v2)', () => {
 
   it('must ⇒ verified (loader and validateRuleMeta)', () => {
     for (const { meta } of allRules) if (meta.severity === 'must') expect(meta.confidence, meta.id).toBe('verified')
-    expect(validateRuleMeta({ ...byId['JS-DAY-01'], confidence: 'heuristic' })).toEqual([expect.stringMatching(/must.*verified/)])
+    expect(validateRuleMeta({ ...byId['JS-DAY-02'], confidence: 'heuristic' })).toEqual([expect.stringMatching(/must.*verified/)])
   })
 
-  it('keeps today’s severities/confidences (behaviour-preserving migration)', () => {
-    expect(byId['JS-STAFF-01']).toMatchObject({ severity: 'should', confidence: 'conflict' })
-    expect(byId['JS-FREE-01']).toMatchObject({ severity: 'should', confidence: 'conflict' })
-    expect(byId['JS-BWZ-27']).toMatchObject({ severity: 'hint', confidence: 'unverified', validFrom: '2027-01-01' })
-    expect(byId['JS-DAY-01'].severity).toBe('must')
-    expect(byId['JS-DAY-05'].severity).toBe('should')
-    expect(byId['CMP-CAMP-01'].severity).toBe('hint')
-    expect(byId['SAFE-NIGHT-01'].severity).toBe('hint')
+  it('applies the catalog v2 severity decisions (§4)', () => {
+    expect(byId['JS-STAFF-01']).toMatchObject({ status: 'retired' })
+    expect(byId['JS-DAY-01']).toMatchObject({ severity: 'should', confidence: 'verified' })
+    expect(byId['JS-DAY-02']).toMatchObject({ severity: 'must', confidence: 'verified' })
+    expect(byId['JS-BWZ-27']).toMatchObject({ severity: 'should', confidence: 'verified', validFrom: '2027-01-01' })
+    expect(byId['JS-CAMP-01']).toMatchObject({ severity: 'must', confidence: 'verified' })
+    expect(byId['LST-WASSER-01'].formerIds).toEqual(['SAFE-WATER-01'])
+    expect(byId['LST-SB-03'].formerIds).toEqual(['SAFE-MTN-03'])
     expect(packs[1].rules.every((r) => r.meta.severity === 'hint')).toBe(true)
   })
 
@@ -152,7 +149,7 @@ sources:
 
 describe('end to end', () => {
   it('a clean synthetic camp has no findings from the mapping-based J+S rules', () => {
-    const b = new FactsBuilder({ days: 5 })
+    const b = new FactsBuilder({ days: 5, start: '2026-07-12' })
     for (let d = 1; d <= 5; d++) b.validDay(d, d % 2 ? 'LS' : 'LA')
     const mapping: CategoryMapping = { ...MAPPING, entries: { LS: 'LS', LA: 'LA' } }
     for (const a of b.facts.activities) a.categoryIri = a.categoryIri === 'LS' ? 'LS' : 'LA'

@@ -1,12 +1,12 @@
 id: JS-DL-01
-version: 1.0.0
+version: 1.1.0
 module: js
 status: active
 title: "NDS-Anmeldung mindestens 30 Tage vor Lagerbeginn"
-description: "Das Lager ist spätestens 30 Tage vor Lagerbeginn in der NDS angemeldet."
+description: "Das Lager ist spätestens 30 Tage vor Lagerbeginn in der NDS angemeldet. Die Frist gilt auch, wenn das Lager später zu einem bestehenden Angebot hinzugefügt wird (gleiche Frist für die Nachmeldung)."
 message: "NDS-Anmeldung: Frist am {due} überschritten, Anmeldung nicht bestätigt{src}"
 messageVariants:
-  late: "NDS-Anmeldung: Anmeldung erfolgte am {on}, Frist war {due}{src}"
+  late: "NDS-Anmeldung: Anmeldung erfolgte am {on}, Frist war {due}: Bewilligung nicht garantiert{src}"
   soonOne: "NDS-Anmeldung: Frist am {due} (noch {left} Tag){src}"
   soonMany: "NDS-Anmeldung: Frist am {due} (noch {left} Tage){src}"
 severity: must
@@ -17,5 +17,4 @@ inputs: [coachInputs, params]
 params: [js.ndsRegistrationLeadDays, js.deadlineSoonDays]
 tags: [frist, nds]
 sources:
-  - key: WEB-L
-    page: ""
+  - { key: WEB-C, page: "«Anmeldefrist für J+S-Angebote» (Art. 22 SpoFöV, Art. 58 VSpoFöP)", binding: true }

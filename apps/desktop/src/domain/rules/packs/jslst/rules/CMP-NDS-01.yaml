@@ -12,5 +12,5 @@ validFrom: 2026-01-01
 inputs: [nds]
 tags: [vollstaendigkeit, nds]
 sources:
-  - key: WEB-L
-    page: ""
+  - { key: WEB-C, page: "«Anmeldefrist für J+S-Angebote»" }
+  - { key: WEB-L }

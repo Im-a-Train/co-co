@@ -11,5 +11,7 @@ scope: activity
 validFrom: 2026-01-01
 tags: [vollstaendigkeit]
 sources:
-  - key: H
-    page: ""
+  - key: MAN
+    page: "S. 39"
+  - key: TOOL-P
+    page: "Schritt 1"

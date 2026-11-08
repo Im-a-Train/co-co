@@ -31,3 +31,8 @@ export async function updateCampRuleConfig(
     return putCampRuleConfig(fn(current), db)
   })
 }
+
+/** All stored records (e.g. for the deadline radar over all camps). */
+export async function listCampRuleConfigs(db: CocoDb = getDb()): Promise<CampRuleConfig[]> {
+  return (await db.campRuleConfig.toArray()).map((r) => normalizeCampRuleConfig(r, r.campIri))
+}

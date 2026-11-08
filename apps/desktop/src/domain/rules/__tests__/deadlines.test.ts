@@ -47,6 +47,12 @@ describe('computeDeadlines', () => {
     expect(d['nds-closing'].due).toBe('2031-08-18')
   })
 
+  it('counts Leihmaterial and Landeskarten back from the delivery dates when set (JS-DL-03)', () => {
+    const d = byKind('2031-07-12', '2031-07-19', makeCoachInputs({ leihmaterialDeliveryDate: '2031-07-01', landeskartenDeliveryDate: '2031-05-20' }))
+    expect(d['leihmaterial'].due).toBe('2031-05-27')
+    expect(d['landeskarten'].due).toBe('2031-04-29')
+  })
+
   it('takes done flags and rule ids from inputs', () => {
     const d = byKind('2031-07-12', '2031-07-19', makeCoachInputs({ ndsRegistered: true, landeskartenOrdered: true }))
     expect(d['nds-registration']).toMatchObject({ done: true, ruleId: 'JS-DL-01' })

@@ -1,0 +1,25 @@
+id: LST-LAGER-03
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Lagerregeln: Pflichtbereiche"
+description: "Lagerregeln (Dokument) decken Sicherheit, Sucht, Zusammenleben, Elektronik und Umwelt ab. Die Regel prüft nur, wenn ein Dokument «Lagerregeln» vorhanden ist."
+message: "In den Lagerregeln fehlt ein Bezug zu: {missing}."
+messageVariants:
+  missingJoin: ", "
+  areaSicherheit: "Sicherheit"
+  areaSucht: "Alkohol, Tabak und Drogen"
+  areaZusammen: "Zusammenleben"
+  areaElektronik: "Handy und Elektronik"
+  areaUmwelt: "Umwelt"
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [documents, keywords]
+keywords: [DOC_LAGERREGELN, RULES_SICHERHEIT, RULES_SUCHT, RULES_ZUSAMMEN, RULES_ELEKTRONIK, RULES_UMWELT]
+tags: [dokumente, lagerregeln]
+sources:
+  - { key: LAGER, page: "S. 32–33" }
+  - { key: MAN, page: "S. 16" }
+  - { key: MB-UP, page: "S. 1", quote: "legen klare Regeln fest", binding: true }

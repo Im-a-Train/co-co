@@ -1,16 +1,23 @@
 id: CMP-ACT-02
-version: 1.0.0
+version: 2.0.0
 module: lst
 status: active
-title: "LS/LA-Aktivität ohne Ablauf"
-description: "Lagersport- und Lageraktivitäten haben einen Ablauf (Storyboard)."
-message: "«{title}» ist eine J+S-Einheit, hat aber keinen Ablauf (Storyboard)"
+title: "J+S-Aktivität ohne Beschreibung"
+description: "J+S-Aktivitäten und ihre Inhalte müssen klar beschrieben und im Programm ersichtlich sein: Ablauf (Storyboard) oder Notizen sind nötig."
+message: "«{title}» ist eine J+S-Aktivität, hat aber weder Ablauf (Storyboard) noch Notizen."
 severity: should
-confidence: best-practice
+confidence: verified
 scope: activity
 validFrom: 2026-01-01
-inputs: [mapping]
+inputs: [mapping, activityTags]
 tags: [vollstaendigkeit]
 sources:
-  - key: H
-    page: ""
+  - key: WEB-L
+    page: "«Lagerprogramm»"
+    quote: "Die J+S-Aktivitäten und deren Inhalte müssen klar beschrieben und im Programm ersichtlich sein"
+    binding: true
+  - key: LEITFADEN
+    page: "«Aktivitätendauer»"
+    binding: true
+  - key: MAN
+    page: "S. 38–39"

@@ -1,0 +1,18 @@
+id: LST-TREK-02
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Marschzeit länger als Programmfenster"
+description: "Die aus der GPX-Route geschätzte Marschzeit (inkl. Pausen) passt ins Programmfenster der Aktivität. Tempo, Abstieg und Pausen stammen aus der Broschüre Berg (2014) und können in den Einstellungen angepasst werden."
+message: "Geschätzte Marschzeit von «{activity}» {estimate} (inkl. Pausen) passt nicht ins Programmfenster von {slot}."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [documents, settings, coachInputs, midata, params]
+params: [lst.paceLkmPerHour, lst.paceKidsLkmPerHour, lst.descentHmPerLkm, lst.pauseMinutesPerHour]
+formerIds: [SAFE-MTN-02]
+tags: [sicherheit, wanderung]
+sources:
+  - { key: MB-UP, page: "S. 3", quote: "Zeitberechnung", binding: true }
+  - { key: BERG, page: "S. 14, 21" }

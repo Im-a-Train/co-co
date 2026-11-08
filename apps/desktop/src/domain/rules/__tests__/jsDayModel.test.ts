@@ -1,7 +1,7 @@
 /** Shared J+S day model (ctx.js, catalog v2 §3.9): 2026/2027 params, parallel entries, midnight split, end days. */
 import { describe, expect, it } from 'vitest'
 import { windowsCovered } from '../lib/timeWindows'
-import { CAT_LS, CAT_NONE, FactsBuilder, makeCtx } from './factory'
+import { CAT_ES, CAT_LS, CAT_NONE, FactsBuilder, makeCtx, mappingOf } from './factory'
 
 /** Two 2 h units 09–11 and 14–16 with movement time `ys` per entry. */
 function jsDay(b: FactsBuilder, day: number, ys: number | null = null) {
@@ -124,5 +124,11 @@ describe('ctx.js (J+S day model)', () => {
     const w = [{ id: 'x', label: 'X', from: 0, to: 60 }]
     expect(windowsCovered([{ from: 40, to: 100 }], w, 30)).toEqual([])
     expect(windowsCovered([{ from: 30, to: 100 }], w, 30)).toEqual(['x'])
+  })
+
+  it('a mapping without any LS/LA category (and no J+S tags) is unknown, too', () => {
+    const b = new FactsBuilder({ start: '2026-07-12', days: 3 })
+    b.entry(b.activity('Essen', CAT_ES), 2, '12:00', '13:00')
+    expect(makeCtx(b.facts, { mapping: mappingOf({ [CAT_ES]: 'ES' }) }).js.status).toBe('unknown')
   })
 })

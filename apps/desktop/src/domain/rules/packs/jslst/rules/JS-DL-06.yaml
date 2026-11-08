@@ -1,0 +1,17 @@
+id: JS-DL-06
+version: 1.0.0
+module: js
+status: active
+title: "Lieferunterbruch Leihmaterial"
+description: "Wegen eines Systemwechsels beim Armeelogistikcenter wird zeitweise kein Leihmaterial ausgeliefert oder abgeholt. Geprüft wird, ob das Zeitfenster des Lagers (Lieferung bis 7 Tage nach Lagerende) den Unterbruch überschneidet."
+message: "Zwischen {outageStart} und {outageEnd} wird kein Leihmaterial ausgeliefert oder abgeholt (Systemwechsel Armeelogistikcenter). Bestellschluss für diesen Zeitraum war der {orderBy}. Material muss ab {outageStart} sicher gelagert werden."
+severity: hint
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+validTo: 2027-01-17
+inputs: [coachInputs, params]
+params: [js.leihmaterialOutage]
+tags: [frist]
+sources:
+  - { key: WEB-LU, binding: true }

@@ -4,12 +4,13 @@
   exclude: ["wanderweg"]
 - id: BIKE
   module: lst-trekking
-  include: ["velo", "fahrrad", "^radtour", "=bike", "biken", "inline", "skates", "^trotti"]
+  extends: [BIKE_INLINE]
+  include: ["velo", "fahrrad", "^radtour", "=bike", "biken", "^trotti"]
   exclude: ["veloständer", "velokeller"]
 - id: BIKE_INLINE
   module: lst-trekking
   description: "Inline-Skating und Rollsport (LST-TREK-08)"
-  include: ["inline", "inlineskate", "^inliner", "skates", "rollschuh"]
+  include: ["inline", "skates", "^inlineskat", "rollschuh"]
   exclude: []
 - id: BIWAK
   module: lst-trekking

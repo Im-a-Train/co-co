@@ -136,7 +136,14 @@
         "wasser": "Wasser",
         "berg": "Berg",
         "winter": "Winter",
-        "slrg": "SLRG"
+        "slrg": "SLRG",
+        "sbBerg": "SB Berg",
+        "sbWasser": "SB Wasser",
+        "sbWinter": "SB Winter",
+        "waterBath": "Baden (beaufsichtigt)",
+        "waterPoolUnsupervised": "Pool (unbeaufsichtigt)",
+        "waterLake": "See (unbeaufsichtigt)",
+        "waterRiver": "Fluss"
       },
       "activities": {
         "title": "Sicherheitsrelevante Aktivitäten",

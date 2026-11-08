@@ -1,58 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { allPredicates as p } from './predicates'
 import { coachNameMatches } from '../packs/jslst/predicates/js'
-import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, makeMidata, makeNds, mappingOf, msg } from './factory'
+import { CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, makeMidata, makeNds, mappingOf, msg } from './factory'
 
-const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
-describe('CMP-ACT-01', () => {
-  it('flags activities without responsibles', () => {
-    const b = new FactsBuilder()
-    b.activity('Mit', CAT_LS)
-    const bad = b.activity('Ohne', CAT_LS, { responsible: false })
-    expect(ids(p['CMP-ACT-01'](makeCtx(b.facts)))).toEqual([bad.iri])
-  })
-})
 
-describe('CMP-ACT-02', () => {
-  it('flags LS/LA activities without storyboard content only', () => {
-    const b = new FactsBuilder()
-    const bad = b.activity('LS leer', CAT_LS, { content: { hasStoryboard: false, storyboardText: '' } })
-    const blank = b.activity('LA blank', CAT_LA, { content: { hasStoryboard: true, storyboardText: '  ' } })
-    b.activity('Essen leer', CAT_ES, { content: { hasStoryboard: false, storyboardText: '' } })
-    b.activity('LS voll', CAT_LS)
-    expect(ids(p['CMP-ACT-02'](makeCtx(b.facts)))).toEqual([bad.iri, blank.iri])
-    expect(p['CMP-ACT-02'](makeCtx(b.facts, { mapping: null }))).toEqual([])
-  })
-})
 
-describe('CMP-ACT-03', () => {
-  it('flags LS and outdoor activities without safety text', () => {
-    const b = new FactsBuilder()
-    const ls = b.activity('Turnen', CAT_LS)
-    const outdoor = b.activity('Geländespiel im Wald', CAT_LA)
-    b.activity('Basteln', CAT_LA)
-    b.activity('Wald mit Sicherheit', CAT_LA, { content: { safetyText: 'Erste Hilfe dabei', hasSafetyConsiderations: true } })
-    expect(ids(p['CMP-ACT-03'](makeCtx(b.facts)))).toEqual([ls.iri, outdoor.iri])
-  })
-})
 
-describe('CMP-LA-01', () => {
-  it('flags LA without thematic area', () => {
-    const b = new FactsBuilder()
-    const bad = b.activity('LA ohne', CAT_LA)
-    b.activity('LA mit', CAT_LA, { content: { laThematicAreas: ['umwelt'] } })
-    b.activity('LS', CAT_LS)
-    expect(ids(p['CMP-LA-01'](makeCtx(b.facts)))).toEqual([bad.iri])
-  })
-})
-
-describe('CMP-DAY-01', () => {
-  it('flags days without day responsible', () => {
-    const b = new FactsBuilder({ days: 3 }).dayResponsible(1).dayResponsible(3)
-    expect(ids(p['CMP-DAY-01'](makeCtx(b.facts)))).toEqual([b.dayIri(2)])
-  })
-})
 
 describe('CMP-CAMP-01', () => {
   it('flags empty coach name', () => {

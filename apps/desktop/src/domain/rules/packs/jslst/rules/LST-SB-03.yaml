@@ -1,0 +1,31 @@
+id: LST-SB-03
+version: 2.0.0
+module: lst
+status: active
+title: "Sicherheitsbereich ohne Zusatzanerkennung im Team"
+description: "Mindestens eine J+S-Leitungsperson braucht einen gültigen Zusatz im entsprechenden Sicherheitsbereich (Abgleich mit MiData). Gilt auch für das Lager ohne wintersichere Zufahrt im Winter."
+message: "Für «{activity}» (Sicherheitsbereich {area}) braucht mindestens eine J+S-Leitungsperson einen gültigen Zusatz im Sicherheitsbereich {area} – im Leitungsteam ist keiner erfasst."
+messageVariants:
+  camp: "Lager ohne wintersichere Zufahrt gilt als Sicherheitsbereich Winter – im Leitungsteam ist kein gültiger Zusatz Sicherheitsbereich Winter erfasst."
+  unknown: "Zusatzanerkennungen nicht prüfbar (MiData nicht verbunden oder nicht lesbar)."
+  areaBerg: "Berg"
+  areaWasser: "Wasser"
+  areaWinter: "Winter"
+  areaJoin: " / "
+severity: must
+confidence: verified
+scope: activity
+validFrom: 2026-01-01
+inputs: [activityTags, campConfig, midata, params]
+params: [lst.winterMonths]
+formerIds: [SAFE-MTN-03]
+tags: [sicherheit, sicherheitsbereich, midata]
+sources:
+  - key: MB-UP
+    page: "S. 2"
+    quote: "Mindestens eine J+S-Leitungsperson verfügt über einen gültigen Zusatz im entsprechenden Sicherheitsbereich"
+    binding: true
+  - key: WEB-ZA
+    page: "Zusatzanerkennungen Sicherheit"
+  - key: WEB-SICH
+    page: "Sicherheitsbereiche"
