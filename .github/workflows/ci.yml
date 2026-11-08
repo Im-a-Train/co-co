@@ -9,6 +9,10 @@ name: CI
 #                      that has VS Build Tools (C++ workload) + Windows SDK + WebView2. Produces NSIS + MSI.
 #
 # macOS / Linux bundles are opt-in: Actions → CI → "Run workflow" and tick the platform.
+#
+# Releases (ADR 0008): every push to main (= every merged PR) gets the next SemVer pre-release version
+# `<base>-<channel>.<n>` (scripts/version.mjs next), the Windows build is stamped with it, and the
+# `release` job publishes a GitHub pre-release + tag `v<version>` with the NSIS installer and the portable exe.
 
 on:
   push:
@@ -29,7 +33,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a running main build: it may be half-way through publishing a release.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -73,6 +78,12 @@ jobs:
       - name: npm ci
         run: npm ci
 
+      - name: Version manifests agree
+        run: npm run version:check
+
+      - name: Versioning script tests
+        run: npm run test:scripts
+
       - name: Typecheck (vue-tsc)
         run: npm run typecheck
 
@@ -91,10 +102,40 @@ jobs:
         working-directory: apps/desktop/src-tauri
         run: cargo test --workspace
 
+  version:
+    name: Release version
+    runs-on: [self-hosted, Linux, X64]
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # all tags, to count the pre-release number
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Compute version
+        id: v
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            version=$(node scripts/version.mjs next)
+            release=true
+          else
+            version=$(node scripts/version.mjs current)
+            release=false
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          echo "### Version: \`$version\` (release: $release)" >> "$GITHUB_STEP_SUMMARY"
+
   windows-cross:
     name: Windows installer (cross-compiled on self-hosted Linux)
     if: vars.WINDOWS_BUILD != 'native'
-    needs: check
+    needs: [check, version]
     runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v7
@@ -121,21 +162,34 @@ jobs:
       - name: npm ci
         run: npm ci
 
+      - name: Stamp version ${{ needs.version.outputs.version }}
+        if: needs.version.outputs.release == 'true'
+        run: node scripts/version.mjs set ${{ needs.version.outputs.version }}
+
       - name: Build NSIS installer (x86_64-pc-windows-msvc)
         run: npm run tauri -w apps/desktop -- build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis
 
-      - name: Upload Windows installer
+      - name: Collect installer + portable exe
+        shell: bash
+        run: |
+          out=release-files; rm -rf "$out"; mkdir -p "$out"
+          rel=apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release
+          cp "$rel"/bundle/nsis/*.exe "$out"/
+          cp "$rel"/co-co.exe "$out/co-co_${{ needs.version.outputs.version }}_x64-portable.exe"
+          ls -l "$out"
+
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: co-co-windows-x64
-          path: apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          path: release-files/*
           if-no-files-found: error
           retention-days: 14
 
   windows-native:
     name: Windows installers (native, self-hosted Windows)
     if: vars.WINDOWS_BUILD == 'native'
-    needs: check
+    needs: [check, version]
     runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v7
@@ -155,18 +209,67 @@ jobs:
       - name: npm ci
         run: npm ci
 
-      - name: Build NSIS + MSI installers
-        run: npm run tauri -w apps/desktop -- build --bundles nsis,msi
+      - name: Stamp version ${{ needs.version.outputs.version }}
+        if: needs.version.outputs.release == 'true'
+        run: node scripts/version.mjs set ${{ needs.version.outputs.version }}
 
-      - name: Upload Windows installers
+      # MSI (WiX) rejects non-numeric pre-release versions such as 0.1.0-alpha.3, so releases ship NSIS only.
+      - name: Build Windows installers
+        run: npm run tauri -w apps/desktop -- build --bundles ${{ needs.version.outputs.release == 'true' && 'nsis' || 'nsis,msi' }}
+
+      - name: Collect installers + portable exe
+        shell: bash
+        run: |
+          out=release-files; rm -rf "$out"; mkdir -p "$out"
+          rel=apps/desktop/src-tauri/target/release
+          cp "$rel"/bundle/nsis/*.exe "$out"/
+          cp "$rel"/bundle/msi/*.msi "$out"/ 2>/dev/null || true
+          cp "$rel"/co-co.exe "$out/co-co_${{ needs.version.outputs.version }}_x64-portable.exe"
+          ls -l "$out"
+
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: co-co-windows-x64
-          path: |
-            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
-            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          path: release-files/*
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish GitHub release
+    needs: [version, windows-cross, windows-native]
+    # One of the two Windows jobs is always skipped, hence always() + explicit result checks.
+    if: >-
+      always() && needs.version.outputs.release == 'true' &&
+      (needs.windows-cross.result == 'success' || needs.windows-native.result == 'success')
+    runs-on: [self-hosted, Linux, X64]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: co-co-windows-x64
+          path: release-files
+
+      - name: Create tag + pre-release v${{ needs.version.outputs.version }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: co-co ${{ needs.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: true
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: release-files/*
+          body: |
+            **Alpha-Version** – nur für Tests, Daten können sich zwischen Versionen ändern.
+
+            **Download (Windows 10/11, x64):**
+            - `co-co_${{ needs.version.outputs.version }}_x64-setup.exe` – Installer (empfohlen, Startmenü + Deinstallation)
+            - `co-co_${{ needs.version.outputs.version }}_x64-portable.exe` – direkt startbar ohne Installation (benötigt WebView2, bei Windows 10/11 vorinstalliert)
+
+            Die Dateien sind nicht signiert; Windows SmartScreen zeigt beim ersten Start eine Warnung („Weitere Informationen“ → „Trotzdem ausführen“).
 
   linux:
     name: Linux bundles (opt-in)
