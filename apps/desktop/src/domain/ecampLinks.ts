@@ -68,6 +68,42 @@ export function ecampActivityUrl(facts: LinkFacts, activityIri: Iri): string | n
   return `${base}/${parts.join('/')}`
 }
 
+/**
+ * Short activity URL (ids only): {base}/camps/{campId}/-/program/activity/{activityId}.
+ * eCamp resolves only the ids; a missing scheduleEntryId falls back to the first entry.
+ */
+export function ecampActivityShortUrl(facts: LinkFacts, activityIri: Iri): string | null {
+  const base = safeBase(facts.instanceBaseUrl)
+  const activity = facts.activities.find((a) => a.iri === activityIri)
+  if (!base || !activity || !facts.camp.id) return null
+  return `${base}/camps/${encodeURIComponent(facts.camp.id)}/-/program/activity/${encodeURIComponent(lastSegment(activity.iri))}`
+}
+
+/** activityIri -> short eCamp URL for every activity with a resolvable link. */
+export function activityShortUrlMap(facts: LinkFacts | null): Record<Iri, string> {
+  if (!facts) return {}
+  const out: Record<Iri, string> = {}
+  for (const a of facts.activities) {
+    const url = ecampActivityShortUrl(facts, a.iri)
+    if (url) out[a.iri] = url
+  }
+  return out
+}
+
+/** activityIri -> block number(s) like "1.2/3.4" (by start, deduplicated); activities without numbers are omitted. */
+export function activityBlockNumbers(facts: Pick<CampFacts, 'scheduleEntries'> | null): Record<Iri, string> {
+  if (!facts) return {}
+  const byActivity = new Map<Iri, string[]>()
+  const sorted = [...facts.scheduleEntries].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0))
+  for (const e of sorted) {
+    if (!e.number) continue
+    const list = byActivity.get(e.activityIri) ?? []
+    if (!list.includes(e.number)) list.push(e.number)
+    byActivity.set(e.activityIri, list)
+  }
+  return Object.fromEntries([...byActivity].map(([iri, nums]) => [iri, nums.join('/')]))
+}
+
 /** activityIri -> eCamp URL for every activity with a resolvable link. */
 export function activityUrlMap(facts: LinkFacts | null): Record<Iri, string> {
   if (!facts) return {}

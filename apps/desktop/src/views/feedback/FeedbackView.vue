@@ -10,7 +10,7 @@ import { useCampRoute } from '@/composables/useCampRoute'
 import { useFeedback } from '@/composables/useFeedback'
 import { KIND_ORDER } from '@/domain/feedback'
 import { newReplies } from '@/domain/feedback/commentSync'
-import { activityUrlMap } from '@/domain/ecampLinks'
+import { activityBlockNumbers, activityShortUrlMap, activityUrlMap } from '@/domain/ecampLinks'
 import type { FeedbackKind, FeedbackScope } from '@/domain/types'
 
 const { t } = useI18n()
@@ -26,11 +26,14 @@ const activityOptions = computed(() =>
   (facts.value?.activities ?? []).map((a) => ({ title: a.title, value: a.iri })).sort((a, b) => a.title.localeCompare(b.title, 'de')),
 )
 const activityUrls = computed(() => activityUrlMap(facts.value))
+const activityShortUrls = computed(() => activityShortUrlMap(facts.value))
 const coachName = computed(() => facts.value?.collaborators.find((c) => c.isCurrentUser)?.displayName ?? null)
 const renderContext = computed(() => ({
   campTitle: facts.value?.camp.title ?? '',
   activityTitles: activityTitles.value,
   activityUrls: activityUrls.value,
+  activityShortUrls: activityShortUrls.value,
+  activityNumbers: activityBlockNumbers(facts.value),
   coachName: coachName.value,
 }))
 

@@ -43,8 +43,7 @@
     "linkLabel": "eCamp",
     "openInEcamp": "In eCamp öffnen",
     "openInEcampFailed": "eCamp konnte nicht geöffnet werden",
-    "includeLinks": "eCamp-Links einfügen",
-    "template": "Vorlage",
+    "includeLinks": "eCamp-Links einfügen",    "template": "Vorlage",
     "noTemplate": "Keine Vorlage",
     "templates": {
       "grobprogramm": "Grobprogramm",

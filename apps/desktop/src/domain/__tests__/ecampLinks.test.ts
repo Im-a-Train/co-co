@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activityUrlMap, ecampActivityUrl, ecampSlug } from '../ecampLinks'
+import { activityBlockNumbers, activityShortUrlMap, activityUrlMap, ecampActivityShortUrl, ecampActivityUrl, ecampSlug } from '../ecampLinks'
 import type { CampFacts } from '../types'
 
 type Facts = Pick<CampFacts, 'instanceBaseUrl' | 'camp' | 'scheduleEntries' | 'activities'>
@@ -56,5 +56,41 @@ describe('activityUrlMap', () => {
     expect(Object.keys(activityUrlMap(facts()))).toEqual(['/api/activities/a1', '/api/activities/a2'])
     expect(activityUrlMap(null)).toEqual({})
     expect(activityUrlMap(facts({ instanceBaseUrl: null }))).toEqual({})
+  })
+})
+
+describe('activityBlockNumbers', () => {
+  const e = (iri: string, activityIri: string, start: string, number: string | null) => ({ iri, activityIri, start, number })
+  it('joins numbers sorted by start, deduplicated; skips missing numbers', () => {
+    const f = {
+      scheduleEntries: [
+        e('s3', '/api/activities/a1', '2026-07-03T08:00:00Z', '3.4'),
+        e('s1', '/api/activities/a1', '2026-07-01T08:00:00Z', '1.2'),
+        e('s2', '/api/activities/a1', '2026-07-02T08:00:00Z', '3.4'),
+        e('s4', '/api/activities/a2', '2026-07-01T08:00:00Z', null),
+      ] as Facts['scheduleEntries'],
+    }
+    expect(activityBlockNumbers(f)).toEqual({ '/api/activities/a1': '1.2/3.4' })
+    expect(activityBlockNumbers(null)).toEqual({})
+  })
+})
+
+describe('ecampActivityShortUrl', () => {
+  it('builds the id-only URL', () => {
+    expect(ecampActivityShortUrl(facts(), '/api/activities/a1')).toBe('https://dev.ecamp3.ch/camps/c1/-/program/activity/a1')
+    expect(ecampActivityShortUrl(facts(), '/api/activities/a2')).toBe('https://dev.ecamp3.ch/camps/c1/-/program/activity/a2')
+  })
+  it('returns null for bad base, unknown activity and missing camp id', () => {
+    expect(ecampActivityShortUrl(facts({ instanceBaseUrl: null }), '/api/activities/a1')).toBeNull()
+    expect(ecampActivityShortUrl(facts({ instanceBaseUrl: 'javascript:alert(1)' }), '/api/activities/a1')).toBeNull()
+    expect(ecampActivityShortUrl(facts(), '/api/activities/zzz')).toBeNull()
+    expect(ecampActivityShortUrl(facts({}, { id: '' }), '/api/activities/a1')).toBeNull()
+  })
+  it('activityShortUrlMap maps all resolvable activities', () => {
+    expect(activityShortUrlMap(facts())).toEqual({
+      '/api/activities/a1': 'https://dev.ecamp3.ch/camps/c1/-/program/activity/a1',
+      '/api/activities/a2': 'https://dev.ecamp3.ch/camps/c1/-/program/activity/a2',
+    })
+    expect(activityShortUrlMap(null)).toEqual({})
   })
 })
