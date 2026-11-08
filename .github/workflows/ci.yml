@@ -246,10 +246,19 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Self-hosted runners keep their workspace between runs: use a fresh, per-run directory so no
+      # files from earlier builds end up in the release.
+      - name: Prepare clean download directory
+        shell: bash
+        run: |
+          dir="${{ runner.temp }}/release-files-${{ github.run_id }}"
+          rm -rf "$dir" && mkdir -p "$dir"
+          echo "RELEASE_DIR=$dir" >> "$GITHUB_ENV"
+
       - uses: actions/download-artifact@v4
         with:
           name: co-co-windows-x64
-          path: release-files
+          path: ${{ env.RELEASE_DIR }}
 
       - name: Create tag + pre-release v${{ needs.version.outputs.version }}
         uses: softprops/action-gh-release@v2
@@ -261,7 +270,7 @@ jobs:
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: release-files/*
+          files: ${{ env.RELEASE_DIR }}/*
           body: |
             **Alpha-Version** – nur für Tests, Daten können sich zwischen Versionen ändern.
 
