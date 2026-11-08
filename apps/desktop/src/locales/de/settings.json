@@ -5,7 +5,75 @@
       "instances": "Instanzen",
       "ai": "KI",
       "backup": "Backup",
+      "dataZones": "Datenschutz: So geht co-co mit Daten um",
       "diagnostics": "Diagnose"
+    },
+    "dataZones": {
+      "intro": "co-co sortiert alle Daten in drei Zonen. Die Farbe sagt, wie vorsichtig die App damit umgeht.",
+      "more": "Mehr erfahren",
+      "rows": {
+        "source": "Woher?",
+        "stored": "Wo gespeichert?",
+        "ai": "Darf eine KI sie sehen?",
+        "backup": "Im Backup?",
+        "leaves": "Verlässt den Rechner?"
+      },
+      "green": {
+        "name": "Grün",
+        "title": "co-co-eigene Daten",
+        "examples": "Regeln, Befunde, Feedback-Entwürfe ohne Namen",
+        "source": "Entstehen in co-co selbst.",
+        "stored": "Lokal auf diesem Rechner (IndexedDB).",
+        "ai": "Ja.",
+        "backup": "Ja.",
+        "leaves": "Nein."
+      },
+      "yellow": {
+        "name": "Gelb",
+        "title": "Lagerinhalt und Dokumente",
+        "examples": "Programm aus eCamp, Leiternamen, eigene Dokumente",
+        "source": "Aus eCamp (mit deiner Anmeldung) und aus Dokumenten, die du einliest.",
+        "stored": "Lokal auf diesem Rechner (IndexedDB). Anmelde-Cookies bleiben nur im Arbeitsspeicher von Rust.",
+        "ai": "Nur geschwärzt, nach Vorschau und Freigabe. Dokumente nur, wenn du sie freigegeben hast.",
+        "backup": "Ja. Beim Zurückspielen sind Dokumente wieder nicht für die KI freigegeben.",
+        "leaves": "Nur an eCamp selbst. An die KI nur wie oben beschrieben."
+      },
+      "red": {
+        "name": "Rot",
+        "title": "Personendaten aus MiData/NDS",
+        "examples": "Namen, Rollen, Geburtsdaten, Qualifikationen",
+        "source": "Aus MiData und NDS, abgerufen über Rust. Geladen werden nur Name, Rolle, Geburtsdatum und Qualifikationen. AHV-Nummer, Adresse und Gesundheitsdaten werden nicht geladen.",
+        "stored": "Im Reiter «Personen» siehst du Namen, Rollen und Geburtsdaten. Sie liegen nur im Arbeitsspeicher und werden nie gespeichert. Beim Abmelden oder Lagerwechsel werden sie gelöscht. Lokal gespeichert werden nur Zahlen (z. B. Altersgruppen, Anzahl Qualifikationen).",
+        "ai": "Nie.",
+        "backup": "Standardmässig nicht. Du kannst es beim Export bewusst einschalten.",
+        "leaves": "Nein. Sie werden nur auf deinem Bildschirm angezeigt. Nie an eine KI."
+      },
+      "flow": {
+        "title": "So fliessen die Daten",
+        "sources": "Quellen",
+        "rust": "Rust",
+        "rustA": "Anmeldung",
+        "rustB": "Geheimnisse im",
+        "rustB2": "Schlüsselbund",
+        "rustC": "Personen nur im Speicher",
+        "app": "App (lokal)",
+        "appA": "Daten bleiben hier",
+        "appB": "auf dem Rechner",
+        "gateway": "KI-Gateway",
+        "gatewayA": "Grün: ja",
+        "gatewayB": "Gelb: geschwärzt",
+        "blocked": "blockiert",
+        "redLabel": "Rot",
+        "alt": "Diagramm: Quellen liefern Daten an Rust, Rust an die lokale App, die App optional an das KI-Gateway. Rote Daten (Personen) werden nur angezeigt und dort blockiert."
+      },
+      "details": {
+        "keychainTitle": "Wo liegen Passwörter und Schlüssel?",
+        "keychain": "Der KI-Schlüssel sowie die Zugangsdaten für MiData und NDS liegen im Schlüsselbund des Betriebssystems. Die eCamp-Anmeldung (Cookies) lebt nur im Arbeitsspeicher von Rust und erreicht nie die Oberfläche. Die lokale Datenbank ist nicht zusätzlich verschlüsselt.",
+        "aiTitle": "Was prüft das KI-Gateway?",
+        "ai": "Jeder KI-Aufruf läuft durch eine einzige Stelle. Sie lehnt rote Daten, ungeschwärzte gelbe Daten und alles ab, was nach MiData/NDS aussieht. KI-Befunde sind nie «muss».",
+        "backupTitle": "Was passiert mit dem Backup?",
+        "backup": "Das Backup enthält alle lokalen Tabellen. Mit der Standardeinstellung werden MiData/NDS-Daten, daraus übernommene Werte und Befunde, die sie zitieren, weggelassen."
+      }
     }
   }
 }

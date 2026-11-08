@@ -13,7 +13,8 @@ import { EXPORT_FORMAT, EXPORT_VERSION, type CocoExport } from '../types'
 
 export type ImportMode = 'replace' | 'merge'
 
-export const APP_VERSION = '0.1.0'
+/** Version of the running build (package.json, stamped by CI for releases). */
+export const APP_VERSION: string = __APP_VERSION__
 
 export interface ImportReport {
   mode: ImportMode

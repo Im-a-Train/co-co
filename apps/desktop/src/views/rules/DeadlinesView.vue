@@ -9,10 +9,17 @@ import { RouterLink } from 'vue-router'
 import DeadlineStatusChip from '@/components/rules/DeadlineStatusChip.vue'
 import { emptyCoachInputs, listCoachInputs, saveCoachInputs } from '@/domain/campFacts/store'
 import { listCampSummaries } from '@/domain/rules/store'
-import { computeAllDeadlines, daysBetween, deadlineStatus } from '@/domain/rules/deadlines'
+import {
+  archiveDeadlines,
+  computeAllDeadlines,
+  daysBetween,
+  deadlineStatus,
+  filterDeadlines,
+  type DeadlineStatus,
+} from '@/domain/rules/deadlines'
 import { toIcs } from '@/domain/rules/ics'
 import { computeMilestoneDeadlines, loadBundledMilestones, radarBucket, type RadarBucket } from '@/domain/rules/milestones'
-import type { CoachInputs, Deadline, Iri } from '@/domain/types'
+import type { CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
 import { commands } from '@/lib/tauri'
 
@@ -40,6 +47,58 @@ watch(showMilestones, (v) => {
     /* storage unavailable: the switch just is not remembered */
   }
 })
+
+const FILTERS_KEY = 'co-co.deadlines.filters'
+const KIND_OPTIONS: DeadlineKind[] = ['nds-registration', 'nds-closing', 'leihmaterial', 'landeskarten', 'lagerbewilligung', 'pbs-milestone']
+const STATUS_OPTIONS: DeadlineStatus[] = ['open', 'soon', 'overdue', 'done']
+interface StoredFilters {
+  campIris: Iri[]
+  kinds: DeadlineKind[]
+  statuses: DeadlineStatus[]
+  showArchived: boolean
+}
+function readFilters(): StoredFilters {
+  const empty: StoredFilters = { campIris: [], kinds: [], statuses: [], showArchived: false }
+  try {
+    const raw = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? 'null') as Partial<StoredFilters> | null
+    if (!raw || typeof raw !== 'object') return empty
+    const strs = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+    return {
+      campIris: strs(raw.campIris),
+      kinds: strs(raw.kinds).filter((k): k is DeadlineKind => (KIND_OPTIONS as string[]).includes(k)),
+      statuses: strs(raw.statuses).filter((k): k is DeadlineStatus => (STATUS_OPTIONS as string[]).includes(k)),
+      showArchived: raw.showArchived === true,
+    }
+  } catch {
+    return empty
+  }
+}
+const initialFilters = readFilters()
+const filterCamps = ref<Iri[]>(initialFilters.campIris)
+const filterKinds = ref<DeadlineKind[]>(initialFilters.kinds)
+const filterStatuses = ref<DeadlineStatus[]>(initialFilters.statuses)
+const showArchived = ref(initialFilters.showArchived)
+watch([filterCamps, filterKinds, filterStatuses, showArchived], () => {
+  try {
+    const v: StoredFilters = {
+      campIris: [...filterCamps.value],
+      kinds: [...filterKinds.value],
+      statuses: [...filterStatuses.value],
+      showArchived: showArchived.value,
+    }
+    localStorage.setItem(FILTERS_KEY, JSON.stringify(v))
+  } catch {
+    /* storage unavailable: the filters just are not remembered */
+  }
+})
+const hasFilters = computed(() => filterCamps.value.length > 0 || filterKinds.value.length > 0 || filterStatuses.value.length > 0)
+function resetFilters() {
+  filterCamps.value = []
+  filterKinds.value = []
+  filterStatuses.value = []
+}
+const kindItems = computed(() => KIND_OPTIONS.map((k) => ({ value: k, title: t(`rules.deadlines.kindShort.${k}`) })))
+const statusItems = computed(() => STATUS_OPTIONS.map((k) => ({ value: k, title: t(`rules.deadlines.status.${k}`) })))
 
 const milestoneList = loadBundledMilestones()
 
@@ -69,14 +128,30 @@ const deadlineCamps = computed(() =>
     .map((c) => ({ iri: c.iri, title: c.title, start: c.start, end: c.end, lastJsDate: lastJsByCamp.value[c.iri] ?? null })),
 )
 
-const deadlines = computed<Deadline[]>(() => {
+const campOptions = computed(() => deadlineCamps.value.map((c) => ({ value: c.iri, title: c.title })))
+
+/** Every deadline incl. archived ones (camp ended more than a month ago: done, computed, never stored). */
+const allDeadlines = computed<Deadline[]>(() => {
   const all = computeAllDeadlines(deadlineCamps.value, inputsByCamp.value)
-  if (!showMilestones.value) return all
+  const ends = Object.fromEntries(deadlineCamps.value.map((c) => [c.iri, c.end]))
+  if (!showMilestones.value) return archiveDeadlines(all, ends, today.value)
   const ms = deadlineCamps.value.flatMap((c) => computeMilestoneDeadlines(c, inputsByCamp.value[c.iri] ?? null, milestoneList))
-  return [...all, ...ms].sort((a, b) =>
+  const merged = [...all, ...ms].sort((a, b) =>
     a.due < b.due ? -1 : a.due > b.due ? 1 : a.campTitle.localeCompare(b.campTitle) || a.kind.localeCompare(b.kind) || (a.milestoneId ?? '').localeCompare(b.milestoneId ?? ''),
   )
+  return archiveDeadlines(merged, ends, today.value)
 })
+
+const archivedCount = computed(() => new Set(allDeadlines.value.filter((d) => d.archived).map((d) => d.campIri)).size)
+
+/** Deadlines after archive switch and camp/kind/status filters: feeds radar, table and ICS export. */
+const deadlines = computed<Deadline[]>(() =>
+  filterDeadlines(
+    allDeadlines.value.filter((d) => showArchived.value || !d.archived),
+    { campIris: filterCamps.value, kinds: filterKinds.value, statuses: filterStatuses.value },
+    today.value,
+  ),
+)
 
 function titleOf(d: Deadline): string {
   return d.kind === 'pbs-milestone' ? (d.title ?? d.milestoneId ?? '') : t(`rules.deadlines.kind.${d.kind}`)
@@ -100,7 +175,7 @@ const allRows = computed(() =>
 )
 
 const rows = computed(() =>
-  allRows.value.filter((r) => (showDone.value || !r.done) && (bucketFilter.value === null || r.bucket === bucketFilter.value)),
+  allRows.value.filter((r) => (showDone.value || !r.done || r.archived || filterStatuses.value.includes('done')) && (bucketFilter.value === null || r.bucket === bucketFilter.value)),
 )
 
 const BUCKETS: Exclude<RadarBucket, 'done'>[] = ['overdue', 'week', 'month', 'later']
@@ -183,7 +258,7 @@ function relative(left: number): string {
       {{ t('rules.deadlines.saveFailed') }}: {{ saveError }}
     </v-alert>
 
-    <section v-if="allRows.length" class="mb-4" data-testid="radar">
+    <section v-if="allDeadlines.length" class="mb-4" data-testid="radar">
       <div class="d-flex align-center mb-1">
         <h2 class="text-subtitle-1">{{ t('rules.deadlines.radar.title') }}</h2>
         <v-btn v-if="bucketFilter" size="x-small" variant="text" class="ml-2" data-testid="radar-clear" @click="bucketFilter = null">
@@ -226,8 +301,70 @@ function relative(left: number): string {
       </v-row>
     </section>
 
+    <div class="d-flex align-start flex-wrap ga-3 mb-2" data-testid="deadline-filters">
+      <v-autocomplete
+        v-model="filterCamps"
+        :items="campOptions"
+        :label="t('rules.deadlines.filters.camps')"
+        :placeholder="t('rules.deadlines.filters.allCamps')"
+        persistent-placeholder
+        multiple
+        chips
+        closable-chips
+        clearable
+        density="compact"
+        variant="outlined"
+        hide-details
+        style="min-width: 260px; max-width: 420px"
+        data-testid="filter-camps"
+      />
+      <v-select
+        v-model="filterKinds"
+        :items="kindItems"
+        :label="t('rules.deadlines.filters.kinds')"
+        :placeholder="t('rules.deadlines.filters.allKinds')"
+        persistent-placeholder
+        multiple
+        chips
+        closable-chips
+        clearable
+        density="compact"
+        variant="outlined"
+        hide-details
+        style="min-width: 220px; max-width: 360px"
+        data-testid="filter-kinds"
+      />
+      <v-select
+        v-model="filterStatuses"
+        :items="statusItems"
+        :label="t('rules.deadlines.filters.statuses')"
+        :placeholder="t('rules.deadlines.filters.allStatuses')"
+        persistent-placeholder
+        multiple
+        chips
+        closable-chips
+        clearable
+        density="compact"
+        variant="outlined"
+        hide-details
+        style="min-width: 200px; max-width: 320px"
+        data-testid="filter-statuses"
+      />
+      <v-btn v-if="hasFilters" size="small" variant="text" class="mt-1" data-testid="filters-reset" @click="resetFilters">
+        {{ t('rules.deadlines.filters.reset') }}
+      </v-btn>
+    </div>
     <div class="d-flex align-center flex-wrap ga-4 mb-2">
       <v-switch v-model="showDone" :label="t('rules.deadlines.showDone')" density="compact" hide-details color="primary" />
+      <v-switch
+        v-model="showArchived"
+        :label="t('rules.deadlines.showArchived') + (archivedCount ? ` (${archivedCount})` : '')"
+        :title="t('rules.deadlines.archivedHint')"
+        density="compact"
+        hide-details
+        color="primary"
+        data-testid="archived-switch"
+      />
       <v-switch
         v-model="showMilestones"
         :label="t('rules.deadlines.showMilestones')"
@@ -255,11 +392,19 @@ function relative(left: number): string {
     </v-alert>
 
     <v-alert
-      v-if="!loading && !error && allRows.length === 0"
+      v-if="!loading && !error && allDeadlines.length === 0"
       type="info"
       variant="tonal"
       density="compact"
       :text="t('rules.deadlines.empty')"
+    />
+    <v-alert
+      v-else-if="!loading && !error && allRows.length === 0"
+      type="info"
+      variant="tonal"
+      density="compact"
+      :text="t('rules.deadlines.filters.noMatch')"
+      data-testid="filters-no-match"
     />
 
     <v-card v-else-if="rows.length" variant="outlined">
@@ -277,7 +422,7 @@ function relative(left: number): string {
             v-for="row in rows"
             :id="`deadline-${row.key}`"
             :key="row.key"
-            :class="{ 'deadline-highlight': highlighted === row.key }"
+            :class="{ 'deadline-highlight': highlighted === row.key, 'deadline-archived': row.archived }"
             :data-testid="row.kind === 'pbs-milestone' ? 'milestone-row' : 'deadline-row'"
           >
             <td class="text-no-wrap">
@@ -310,6 +455,9 @@ function relative(left: number): string {
             </td>
             <td class="text-no-wrap">
               <DeadlineStatusChip :status="row.status" />
+              <v-chip v-if="row.archived" size="x-small" label variant="tonal" class="ml-1" data-testid="archived-badge">
+                {{ t('rules.deadlines.archivedBadge') }}
+              </v-chip>
               <v-btn
                 v-if="row.kind === 'pbs-milestone'"
                 size="x-small"
@@ -342,6 +490,9 @@ function relative(left: number): string {
 }
 .radar-item:hover {
   background: rgba(var(--v-theme-on-surface), 0.06);
+}
+.deadline-archived {
+  opacity: 0.55;
 }
 .deadline-highlight {
   background: rgba(var(--v-theme-primary), 0.12);

@@ -42,6 +42,18 @@ unknown ones return HTTP 400.** Query builders live in `apps/desktop/src-tauri/s
 - **Qualifications**: valid over the whole camp: start (`start_at`, else `qualified_at` when
   `start_at` is null) empty or `<= campStart`, and `finish_at` empty or `>= campEnd`. A 401/403 or
   failed qualifications request does not fail the aggregate: `qualificationsReadable=false`.
+- **Relationship linkage (Graphiti)**: `relationships.<rel>.data` is only rendered for relationships that
+  are INCLUDED. co-co includes `qualification_kind` (and `participant`/`roles` for participations) but not
+  `person`, so a qualification's person and kind are read from `relationships.*.data` first and fall back
+  to `attributes.person_id` / `attributes.qualification_kind_id` (kind looked up in `included` as
+  `qualification_kinds`). Participations fall back to `attributes.participant_id` + `participant_type`
+  (`Person` -> people, `Event::Guest` -> guest). Ids may be numbers or strings.
+- **Leader fields**: `MidataLeader.roleLabels` = all role labels of the person in the camp (also non-leader
+  roles such as Küche), `roleLabel` stays the first leader label. `expiredQualifications` = keys held only via
+  qualifications not valid over the whole camp. `qualificationDetails` = `{label, keys, validAtCamp,
+  finishAt (YYYY-MM-DD|null)}` per held qualification, sorted by label. All `#[serde(default)]`; absent in
+  aggregates cached before this change.
 - **Session reuse**: after an eCamp login via MiData OAuth, the `_session_id` cookie of the MiData
   origin is read from the same login webview and adopted (only when nothing, or a session for the
   same base URL, is connected). The signed-in person id is detected from `/people/<id>` URLs.
+- **Own person id (coach)**: openapi.json (downloaded 2026-11-08) has NO "current user" endpoint (paths: events, groups, people, qualifications, roles, ... only; `/oauth/profile` is not in it and needs an OAuth bearer token co-co does not use; service tokens carry no person). Detection order: (1) `/people/<id>` seen in login-window navigations (above); (2) `midata_find_self`: `GET /api/people?filter[email][eq]=<eCamp account e-mail>&fields[people]=nickname,first_name&page[size]=2` (`email` is a documented people filter and attribute in openapi). Exactly one hit = our person; 0 or >1 hits = no auto-detection, the UI shows the reason and asks for the number by hand. The e-mail comes from the eCamp profile already loaded by `useSession`. NOT verified live (no credentials in the dev environment): MiData may hide `email` filtering from non-admin roles or return no hit if the MiData e-mail differs from the eCamp one, which is why the manual override stays.

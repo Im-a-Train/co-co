@@ -42,12 +42,16 @@ const COMMANDS: &[&str] = &[
     "midata_find_events",
     "midata_fetch_aggregate",
     "midata_probe",
+    "midata_find_self",
     "nds_status",
     "nds_open_login",
     "nds_logout",
     "nds_find_camps",
     "nds_fetch_aggregate",
     "nds_probe",
+    "persons_load_midata",
+    "persons_load_nds",
+    "persons_clear",
 ];
 
 fn main() {

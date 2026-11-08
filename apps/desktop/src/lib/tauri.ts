@@ -148,6 +148,9 @@ export const EVENT_MCP_TOOL_CALL = 'mcp://tool-call'
 export const EVENT_MCP_STATUS = 'mcp://status'
 /** Rust -> main window: a call ended without the frontend's answer (client cancelled, timeout, server stopped). */
 export const EVENT_MCP_TOOL_CANCEL = 'mcp://tool-cancel'
+// «Personen» tab (red zone, ADR 0009). Types live in the persons domain contract.
+import type { MidataPersonsResult, NdsPersonsResult } from '@/domain/persons/types'
+import type { IsoDate } from '@/domain/types'
 
 export const commands = {
   // M0
@@ -235,6 +238,7 @@ export const commands = {
     qualMapping: Record<string, MidataQualKey[]> | null,
   ) => call<MidataAggregate>('midata_fetch_aggregate', { eventId, campStart, campEnd, coachPersonId, qualMapping }),
   /** M7-0 spike: what the current auth can read (status codes + field names only). */
+  midataFindSelf: (email: string) => call<{ personId: string | null; nickname: string | null; count: number }>('midata_find_self', { email }),
   midataProbe: (eventId: string, groupId: string | null) => call<MidataProbe>('midata_probe', { eventId, groupId }),
   // M8: NDS (read-only, unofficial web API). Refreshed only on explicit user action.
   ndsStatus: () => call<NdsStatus>('nds_status'),
@@ -245,6 +249,12 @@ export const commands = {
   ndsFetchAggregate: (offerBusinessId: string, campBusinessId: string) =>
     call<NdsAggregate>('nds_fetch_aggregate', { offerBusinessId, campBusinessId }),
   ndsProbe: (campBusinessId: string) => call<NdsProbe>('nds_probe', { campBusinessId }),
+  // «Personen» tab (ADR 0009, RED ZONE): individual people, held in Rust memory only, never persisted.
+  personsLoadMidata: (eventId: string, campStart: IsoDate, campEnd: IsoDate) =>
+    call<MidataPersonsResult>('persons_load_midata', { eventId, campStart, campEnd }),
+  personsLoadNds: (ndsCampId: string) => call<NdsPersonsResult>('persons_load_nds', { ndsCampId }),
+  /** Wipes the in-memory person lists in Rust (lock, logout, leaving the tab). */
+  personsClear: () => call<void>('persons_clear'),
 }
 
 /** Decodes DocumentBytes.bytesBase64. */

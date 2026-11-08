@@ -58,6 +58,34 @@ export async function radarFlows({ page, step, shot, BASE }) {
     await page.waitForTimeout(400)
   })
 
+  await step('flow: camp filter and "Ältere Lager anzeigen" for archived camps', async () => {
+    await page.goto(`${BASE}#/fristen`)
+    await page.waitForSelector('[data-testid="deadline-filters"]', { timeout: 8000 })
+    await page.waitForTimeout(600)
+    const hasCamp = (name) => page.locator('tbody tr', { hasText: name }).count()
+    // Archived camp (ended > 1 month ago) is hidden by default.
+    if ((await hasCamp('Sommerlager (älter)')) !== 0) throw new Error('archived camp visible by default')
+    const sw = page.getByTestId('archived-switch').locator('input')
+    if (!(await sw.isChecked())) await sw.check()
+    await page.getByText('Erledigte anzeigen').click()
+    await page.waitForTimeout(400)
+    if ((await hasCamp('Sommerlager (älter)')) === 0) throw new Error('archived camp not shown after the switch')
+    await shot(page, 'flow-radar-archived')
+    // Camp filter narrows the table to the chosen camp.
+    await page.getByTestId('filter-camps').locator('input').click()
+    await page.getByRole('option', { name: 'Sommerlager (älter)' }).click()
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(400)
+    const rowCount = await page.locator('tbody tr').count()
+    const own = await hasCamp('Sommerlager (älter)')
+    if (rowCount === 0 || rowCount !== own) throw new Error(`camp filter: ${own} of ${rowCount} rows match`)
+    await shot(page, 'flow-radar-camp-filter')
+    await page.getByTestId('filters-reset').click()
+    await sw.uncheck()
+    await page.getByText('Erledigte anzeigen').click()
+    await page.waitForTimeout(300)
+  })
+
   await step('flow: ICS export runs without error', async () => {
     await page.getByTestId('export-ics').click()
     await page.waitForTimeout(600)

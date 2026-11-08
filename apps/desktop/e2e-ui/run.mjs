@@ -1,11 +1,11 @@
 /**
- * Browser UI QA without Tauri. Starts (or reuses) the vite dev server, loads the app with ?mock=1
+ * Browser UI QA without Tauri. Starts the vite dev server, loads the app with ?mock=1
  * (dev-only Tauri IPC mock, see src/dev/mockTauri.ts) in the installed Microsoft Edge, visits every route,
  * collects console errors, takes screenshots and exercises the main flows.
  *
  * Usage: npm run test:ui   (env UI_SHOTS_DIR overrides the screenshot directory)
  */
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,6 +18,9 @@ import { explainFlows } from './explain-flows.mjs'
 import { selfCheckFlows } from './selfcheck-flows.mjs'
 import { radarFlows } from './radar-flows.mjs'
 import { mcpFlows } from './mcp-flows.mjs'
+import { exclusionFlows } from './exclusion-flows.mjs'
+import { personsFlows } from './persons-flows.mjs'
+import { dataZonesFlows } from './datazones-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const PORT = Number(process.env.UI_PORT || 1420)
@@ -36,8 +39,15 @@ async function isUp() {
 }
 
 let server = null
+function killServer() {
+  if (!server) return
+  if (process.platform === 'win32' && server.pid) spawnSync('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore' })
+  else server.kill()
+  server = null
+}
 async function ensureServer() {
-  if (await isUp()) return
+  if (await isUp())
+    throw new Error(`Port ${PORT} already answers (probably another session's Vite server serving other code). Set UI_PORT to a free port, e.g. UI_PORT=1431.`)
   const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
   server = spawn(cmd, ['run', 'dev:vite', ...(PORT === 1420 ? [] : ['--', '--port', String(PORT)])], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32' })
   for (let i = 0; i < 120; i++) {
@@ -141,7 +151,7 @@ async function main() {
   })
 
   await step('flow: confirm category mapping', async () => {
-    await go('zuordnung', 'flow-mapping')
+    await go('raster?zuordnung=1', 'flow-mapping') // mapping lives in the GP view (collapsible panel)
     const btn = page.getByRole('button', { name: /bestätigen/i }).first()
     await btn.click()
     await page.waitForTimeout(800)
@@ -184,6 +194,9 @@ async function main() {
   await selfCheckFlows({ page, step, go, shot, BASE })
   await radarFlows({ page, step, go, shot, BASE })
   await mcpFlows({ page, step, shot, BASE })
+  await exclusionFlows({ page, step, go, shot, BASE })
+  await personsFlows({ page, step, go, shot, BASE })
+  await dataZonesFlows({ page, step, go, shot, BASE })
 
   await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')
@@ -245,7 +258,7 @@ async function main() {
   })
 
   await browser.close()
-  if (server) server.kill()
+  killServer()
 
   writeFileSync(join(SHOTS, 'report.json'), JSON.stringify({ results, problems, shots }, null, 2))
   console.log(`\nScreenshots: ${shots.length} in ${SHOTS}`)
@@ -260,6 +273,6 @@ async function main() {
 
 main().catch((e) => {
   console.error(e)
-  if (server) server.kill()
+  killServer()
   process.exit(2)
 })

@@ -62,6 +62,7 @@ watch(campIri, () => void load(), { immediate: true })
         :to="{ name: tab.name, params: { campId } }"
         :prepend-icon="tab.icon"
         :text="t(tab.titleKey)"
+        :title="'titleLongKey' in tab ? t(tab.titleLongKey) : undefined"
       />
     </v-tabs>
 

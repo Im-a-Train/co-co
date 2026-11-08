@@ -82,3 +82,41 @@ export function computeDeadlines(camp: DeadlineCamp, inputs: CoachInputs | null)
   push('lagerbewilligung', addDays(camp.start, -BEWILLIGUNG_LEAD_DAYS), inputs?.lagerbewilligungDone ?? false, null, SOURCE_COACH)
   return out
 }
+
+/** Adds calendar months to a `YYYY-MM-DD` date; the day is clamped to the target month's length. */
+export function addMonths(date: IsoDate, months: number): IsoDate {
+  const [y, m, d] = date.slice(0, 10).split('-').map(Number)
+  const first = new Date(Date.UTC(y, m - 1 + months, 1))
+  const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate()
+  return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(d, last))).toISOString().slice(0, 10)
+}
+
+/** A camp is archived (deadlines hidden / treated as done) once it ended more than one calendar month ago. */
+export function isArchivedCamp(campEnd: IsoDate | null | undefined, today: IsoDate): boolean {
+  if (!campEnd) return false
+  return today > addMonths(campEnd, 1)
+}
+
+/** Marks the deadlines of archived camps as done (`archived: true`). Pure; nothing is persisted. */
+export function archiveDeadlines(deadlines: Deadline[], campEndByIri: Record<Iri, IsoDate | null | undefined>, today: IsoDate): Deadline[] {
+  return deadlines.map((d) => (isArchivedCamp(campEndByIri[d.campIri], today) ? { ...d, done: true, archived: true } : d))
+}
+
+export interface DeadlineFilter {
+  /** Empty = all camps. */
+  campIris: Iri[]
+  /** Empty = all kinds. */
+  kinds: DeadlineKind[]
+  /** Empty = all statuses. */
+  statuses: DeadlineStatus[]
+}
+
+/** Filters deadlines by camp, kind and status (each empty list means "no restriction"). */
+export function filterDeadlines<T extends Deadline>(deadlines: T[], filter: DeadlineFilter, today: IsoDate): T[] {
+  return deadlines.filter(
+    (d) =>
+      (!filter.campIris.length || filter.campIris.includes(d.campIri)) &&
+      (!filter.kinds.length || filter.kinds.includes(d.kind)) &&
+      (!filter.statuses.length || filter.statuses.includes(deadlineStatus(d, today))),
+  )
+}

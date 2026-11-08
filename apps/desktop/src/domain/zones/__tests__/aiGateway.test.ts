@@ -66,6 +66,15 @@ describe('aiGateway NDS marker', () => {
   })
 })
 
+describe('aiGateway red brand (ADR 0009)', () => {
+  it('refuses any payload that contains a __red branded object, however deep', async () => {
+    const person = { __red: true, firstName: 'Test' }
+    await expect(send({ ...req(), parts: [{ zone: 'green', value: 'x', extra: [{ nested: person }] } as never] })).rejects.toThrow(/Rote Daten/)
+    await expect(send({ ...req(), extra: person } as never)).rejects.toThrow(/Rote Daten/)
+    expect(complete).not.toHaveBeenCalled()
+  })
+})
+
 describe('aiGateway.send', () => {
   it('sends a valid request and logs metadata only', async () => {
     const res = await send(req({ maxTokens: 99999 }))

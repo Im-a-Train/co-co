@@ -239,6 +239,42 @@ export function trainingFreeDays(report: JsDayReport): JsDay[] {
   return report.days.filter((d) => d.unitCount === 0 && !d.validCombined)
 }
 
+export type JsDayReason =
+  | { code: 'fewUnits'; units: number; required: number }
+  | { code: 'tooShort'; minutes: number; required: number }
+  | { code: 'shortUnit'; activityIri: Iri; minutes: number; start: IsoDateTime; end: IsoDateTime; required: number }
+  | { code: 'gap'; minutes: number; start: IsoDateTime; end: IsoDateTime; required: number }
+  | { code: 'combinedOnly' }
+
+/**
+ * Why a day is not valid on its own (mirrors `buildDay` / `qualityOk`). Empty for a valid day.
+ * A day that is only valid through the arrival/departure combination lists its own failures
+ * followed by `combinedOnly`.
+ */
+export function jsDayInvalidReasons(day: JsDay): JsDayReason[] {
+  if (day.valid) return []
+  const reasons: JsDayReason[] = []
+  if (day.unitCount < MIN_DAY_UNITS) reasons.push({ code: 'fewUnits', units: day.unitCount, required: MIN_DAY_UNITS })
+  if (day.jsMinutes < MIN_DAY_MINUTES) reasons.push({ code: 'tooShort', minutes: day.jsMinutes, required: MIN_DAY_MINUTES })
+  for (const u of day.units) {
+    if (!u.longEnough) {
+      reasons.push({
+        code: 'shortUnit',
+        activityIri: u.activityIri,
+        minutes: u.minutes,
+        start: u.start,
+        end: u.end,
+        required: MIN_UNIT_MINUTES,
+      })
+    }
+  }
+  for (const g of day.gaps) {
+    if (!g.ok) reasons.push({ code: 'gap', minutes: g.minutes, start: g.start, end: g.end, required: MIN_GAP_MINUTES })
+  }
+  if (day.validCombined) reasons.push({ code: 'combinedOnly' })
+  return reasons
+}
+
 /** Quantity check used by JS-DAY-01: enough units + minutes (ignores unit length and Sozialzeit). */
 export function quantityOk(d: JsDay): boolean {
   return d.validCombined || (d.unitCount >= MIN_DAY_UNITS && d.jsMinutes >= MIN_DAY_MINUTES)

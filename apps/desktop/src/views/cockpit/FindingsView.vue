@@ -12,12 +12,14 @@ import {
 } from '@/domain/cockpit'
 import { campIdFromIri } from '@/domain/iri'
 import { activityIriOfFinding, gridLocationFromFinding, recallPosition, rememberPosition, statusesOf } from '@/domain/triage'
+import { loadBundledPacks } from '@/domain/rules/packs'
 import { useFeedback } from '@/composables/useFeedback'
 import type { ActivityFact, Finding, Iri, RuleGroup } from '@/domain/types'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import { createFeedbackFromFinding } from '@/components/cockpit/feedbackAction'
 import FindingCard from '@/components/cockpit/FindingCard.vue'
 import FindingTriage, { type FeedbackDraft } from '@/components/cockpit/FindingTriage.vue'
+import CategoryExclusionDialog from '@/components/cockpit/CategoryExclusionDialog.vue'
 import OverrideDialog from '@/components/cockpit/OverrideDialog.vue'
 import SeverityChip from '@/components/cockpit/SeverityChip.vue'
 import { tryAction, useCockpit } from '@/components/cockpit/useCockpit'
@@ -28,6 +30,7 @@ const route = useRoute()
 const { campIri, factsHandle, settings, findingsHandle } = useCockpit()
 const { facts } = factsHandle
 const { findings, evaluating, disabledRules, disablePrompt } = findingsHandle
+const { excludedCount, categoryExclusions } = findingsHandle
 const classOf = settings.classOf
 const feedbackHandle = useFeedback(campIri)
 
@@ -47,6 +50,26 @@ const error = ref<string | null>(null)
 const overrideTarget = ref<Finding | null>(null)
 const overrideOpen = ref(false)
 const disabledDialog = ref(false)
+const exclusionDialog = ref(false)
+const notice = ref<string | null>(null)
+const allRules = computed(() =>
+  loadBundledPacks()
+    .flatMap((p) => p.rules)
+    .map((r) => ({ id: r.meta.id, title: r.meta.title })),
+)
+/** Category IRI of the activity a rule finding is about (null for camp/day findings). */
+function categoryIriOf(f: Finding): Iri | null {
+  const actIri = activityIriOfFinding(f, facts.value)
+  return facts.value?.activities.find((a) => a.iri === actIri)?.categoryIri ?? null
+}
+const canExclude = (f: Finding) => f.origin === 'rule' && !!categoryIriOf(f)
+async function excludeForRule(f: Finding) {
+  const cat = categoryIriOf(f)
+  if (!cat) return
+  const c = facts.value?.categories.find((x) => x.iri === cat)
+  error.value = await tryAction(() => findingsHandle.excludeCategory(cat, f.ruleId))
+  if (!error.value) notice.value = t('findings.categoryExclusion.forRuleDone', { category: c ? `${c.short} ${c.name}`.trim() : cat, ruleId: f.ruleId })
+}
 
 // ---- triage / list mode ----------------------------------------------------------------------------
 const hasActivityFilter = typeof route.query.activity === 'string'
@@ -189,6 +212,14 @@ function addAi(list: Finding[]) {
         <v-btn value="list" prepend-icon="mdi-view-list-outline" :text="t('findings.mode.list')" data-testid="mode-list" />
       </v-btn-toggle>
       <v-spacer />
+      <v-btn
+        size="small"
+        variant="tonal"
+        prepend-icon="mdi-filter-remove-outline"
+        :text="t('findings.categoryExclusion.button')"
+        data-testid="category-exclusion-open"
+        @click="exclusionDialog = true"
+      />
       <v-chip
         v-if="disabledRules.length"
         size="small"
@@ -212,6 +243,20 @@ function addAi(list: Finding[]) {
       :text="t('findings.actionFailed', { error })"
       @click:close="error = null"
     />
+
+    <v-alert
+      v-if="excludedCount > 0"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
+      data-testid="exclusion-info"
+    >
+      {{ t('findings.categoryExclusion.info', { count: excludedCount }, excludedCount) }}
+      <template #append>
+        <v-btn size="small" variant="text" :text="t('findings.categoryExclusion.manage')" data-testid="exclusion-manage" @click="exclusionDialog = true" />
+      </template>
+    </v-alert>
 
     <v-alert v-if="disablePrompt" type="warning" variant="tonal" density="compact" class="mb-3" data-testid="disable-prompt">
       {{ t('findings.disablePrompt.text', { title: disablePrompt.title, count: disablePrompt.count }) }}
@@ -240,6 +285,7 @@ function addAi(list: Finding[]) {
       @unignore="undoOverride"
       @open-activity="(iri: string) => openActivity(iri)"
       @open-feedback="openFeedbackItem"
+      @exclude-category="excludeForRule"
     />
 
     <template v-else>
@@ -299,12 +345,24 @@ function addAi(list: Finding[]) {
             class="finding-card"
             @feedback="feedback"
             @override="askOverride"
+            :can-exclude-category="canExclude(f)"
+            @exclude-category="excludeForRule"
             @remove-override="undoOverride"
             @open-activity="(iri: string) => openActivity(iri, f.id)"
           />
         </div>
       </section>
     </template>
+
+    <CategoryExclusionDialog
+      v-model="exclusionDialog"
+      :categories="facts?.categories ?? []"
+      :exclusions="categoryExclusions"
+      :rules="allRules"
+      @exclude="(cat: string, ruleId: string | null) => findingsHandle.excludeCategory(cat, ruleId)"
+      @include="(cat: string, ruleId: string | null) => findingsHandle.includeCategory(cat, ruleId)"
+    />
+    <v-snackbar :model-value="!!notice" timeout="4000" @update:model-value="notice = null">{{ notice }}</v-snackbar>
 
     <OverrideDialog v-model="overrideOpen" :finding="overrideTarget" @confirm="doOverride" />
 

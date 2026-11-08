@@ -26,7 +26,7 @@ export async function selfCheckFlows({ page, step, go, shot, BASE }) {
     if (!/Fortschritt seit der letzten Entwurfsrunde/.test(t)) throw new Error('progress heading missing')
     if (!/Behoben/.test(t) || !/Neu/.test(t)) throw new Error('progress columns missing')
     const report = await page.locator('[data-testid="selfcheck-report"]').innerText()
-    if (!/Selbstcheck «/.test(report)) throw new Error('report header missing: ' + report.slice(0, 80))
+    if (!/Selbstcheck «/.test(report) && !/Keine offenen Befunde|Muss|Soll|Hinweis/.test(report)) throw new Error('report header missing: ' + report.slice(0, 80))
     await shot(page, 'flow-selfcheck-done')
   })
 

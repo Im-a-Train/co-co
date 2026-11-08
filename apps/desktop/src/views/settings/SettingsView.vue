@@ -6,6 +6,7 @@
 import { useI18n } from 'vue-i18n'
 import AiSection from '@/components/settings/AiSection.vue'
 import BackupSection from '@/components/settings/BackupSection.vue'
+import DataZonesSection from '@/components/settings/DataZonesSection.vue'
 import DiagnosticsSection from '@/components/settings/DiagnosticsSection.vue'
 import InstancesSection from '@/components/settings/InstancesSection.vue'
 import MidataSection from '@/components/settings/MidataSection.vue'
@@ -36,6 +37,10 @@ const { t } = useI18n()
     <section id="backup" class="mb-8">
       <h2 class="text-h6 mb-2">{{ t('settings.sections.backup') }}</h2>
       <BackupSection />
+    </section>
+    <section id="datenschutz" class="mb-8">
+      <h2 class="text-h6 mb-2">{{ t('settings.sections.dataZones') }}</h2>
+      <DataZonesSection />
     </section>
     <section id="diagnose" class="mb-8">
       <h2 class="text-h6 mb-2">{{ t('settings.sections.diagnostics') }}</h2>

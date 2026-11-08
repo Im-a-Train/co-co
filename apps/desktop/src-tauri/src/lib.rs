@@ -14,6 +14,7 @@ mod login_window;
 mod mcp;
 mod midata;
 mod nds;
+mod persons;
 mod session;
 
 #[cfg(test)]
@@ -34,6 +35,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .manage(midata::MidataState::new().expect("MiData-HTTP-Client konnte nicht erstellt werden"))
+        .manage(persons::PersonsState::default())
         .manage(nds::NdsState::new().expect("NDS-HTTP-Client konnte nicht erstellt werden"))
         .manage(mcp::McpState::new())
         .setup(|app| {
@@ -90,12 +92,16 @@ pub fn run() {
             midata::midata_find_events,
             midata::midata_fetch_aggregate,
             midata::midata_probe,
+            midata::midata_find_self,
             nds::nds_status,
             nds::nds_open_login,
             nds::nds_logout,
             nds::nds_find_camps,
             nds::nds_fetch_aggregate,
             nds::nds_probe,
+            midata::persons_load_midata,
+            nds::persons_load_nds,
+            persons::persons_clear,
         ])
         .run(tauri::generate_context!())
         .expect("error while running co-co");

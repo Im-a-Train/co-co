@@ -17,12 +17,12 @@ declare module 'vue-router' {
 
 export const CAMP_TABS = [
   { path: 'uebersicht', name: 'camp-overview', titleKey: 'campTabs.overview', icon: 'mdi-view-dashboard-outline' },
-  { path: 'raster', name: 'camp-grid', titleKey: 'campTabs.grid', icon: 'mdi-calendar-week' },
-  { path: 'aktivitaeten', name: 'camp-activities', titleKey: 'campTabs.activities', icon: 'mdi-format-list-bulleted' },
+  { path: 'raster', name: 'camp-grid', titleKey: 'campTabs.grid', titleLongKey: 'campTabs.gridLong', icon: 'mdi-calendar-week' },
+  { path: 'aktivitaeten', name: 'camp-activities', titleKey: 'campTabs.activities', titleLongKey: 'campTabs.activitiesLong', icon: 'mdi-format-list-bulleted' },
   { path: 'befunde', name: 'camp-findings', titleKey: 'campTabs.findings', icon: 'mdi-alert-circle-check-outline' },
   { path: 'selbstcheck', name: 'camp-selfcheck', titleKey: 'campTabs.selfCheck', icon: 'mdi-clipboard-check-outline' },
   { path: 'angaben', name: 'camp-inputs', titleKey: 'campTabs.inputs', icon: 'mdi-form-select' },
-  { path: 'zuordnung', name: 'camp-mapping', titleKey: 'campTabs.mapping', icon: 'mdi-shape-outline' },
+  { path: 'personen', name: 'camp-persons', titleKey: 'campTabs.persons', icon: 'mdi-account-group-outline' },
   { path: 'feedback', name: 'camp-feedback', titleKey: 'campTabs.feedback', icon: 'mdi-message-draw' },
   { path: 'dokumente', name: 'camp-documents', titleKey: 'campTabs.documents', icon: 'mdi-file-document-multiple-outline' },
   { path: 'runden', name: 'camp-rounds', titleKey: 'campTabs.rounds', icon: 'mdi-history' },
@@ -37,7 +37,7 @@ const campViews: Record<CampTabName, () => Promise<unknown>> = {
   'camp-findings': () => import('@/views/cockpit/FindingsView.vue'),
   'camp-selfcheck': () => import('@/views/selfCheck/SelfCheckView.vue'),
   'camp-inputs': () => import('@/views/camps/CoachInputsView.vue'),
-  'camp-mapping': () => import('@/views/camps/MappingView.vue'),
+  'camp-persons': () => import('@/views/persons/PersonsView.vue'),
   'camp-feedback': () => import('@/views/feedback/FeedbackView.vue'),
   'camp-documents': () => import('@/views/documents/DocumentsView.vue'),
   'camp-rounds': () => import('@/views/rounds/RoundsView.vue'),
@@ -63,6 +63,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
     children: [
       { path: '', name: 'camp', redirect: (to) => ({ name: 'camp-overview', params: to.params }) },
+      // The mapping lives in a collapsible section of the GP view; the old URL redirects there.
+      {
+        path: 'zuordnung',
+        name: 'camp-mapping',
+        redirect: (to) => ({ name: 'camp-grid', params: to.params, query: { zuordnung: '1' } }),
+      },
       ...CAMP_TABS.map((tab) => ({
         path: tab.path,
         name: tab.name,

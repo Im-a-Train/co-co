@@ -615,3 +615,68 @@ fn guests_and_inactive_participations() {
     });
     assert_eq!(leader_person_ids(std::slice::from_ref(&doc)), vec!["6"]);
 }
+
+#[test]
+fn qualifications_and_participants_without_relationship_linkage() {
+    use QualKey::*;
+    // MiData only renders relationship `data` for included relationships: person / kind come from attributes.
+    let q = vec![json!({
+        "data": [
+            {"id": "q1", "type": "qualifications", "attributes": {"person_id": 300, "qualification_kind_id": "k1", "start_at": "2020-01-01", "finish_at": null}},
+            {"id": "q2", "type": "qualifications", "attributes": {"person_id": "300", "qualification_kind_id": 2, "start_at": "2019-01-01", "finish_at": "2025-01-01"}}
+        ],
+        "included": [
+            {"id": "k1", "type": "qualification_kinds", "attributes": {"label": "Zusatz Lagerleiter"}},
+            {"id": "2", "type": "qualification_kinds", "attributes": {"label": "SLRG Modul Pool"}}
+        ]
+    })];
+    let pages = vec![json!({
+        "data": [
+            {"id": "1", "type": "event_participations", "attributes": {"participant_id": 300, "participant_type": "Person"},
+             "relationships": {"roles": {"data": [{"type": "event_roles", "id": "rl"}, {"type": "event_roles", "id": "rk"}]}}},
+            {"id": "2", "type": "event_participations", "attributes": {"participant_id": 9, "participant_type": "Event::Guest"},
+             "relationships": {"roles": {"data": [{"type": "event_roles", "id": "rl"}]}}}
+        ],
+        "included": [
+            {"id": "300", "type": "people", "attributes": {"first_name": "Lena", "nickname": "Luchs"}},
+            {"id": "rl", "type": "event_roles", "attributes": {"type": "Event::Camp::Role::Leader", "label": "Hauptleitung"}},
+            {"id": "rk", "type": "event_roles", "attributes": {"type": "Event::Role::Cook", "label": "Küche"}}
+        ]
+    })];
+    let a = reduce_aggregate(&RawEventData {
+        base_url: "u",
+        event: &event(),
+        participation_pages: &pages,
+        qualification_pages: &q,
+        camp_start: "2026-07-18",
+        camp_end: "2026-07-25",
+        coach_person_id: None,
+        fetched_at: "t",
+        qualifications_readable: true,
+        qual_mapping: None,
+    })
+    .unwrap();
+    assert_eq!(a.leaders_count, 1, "guest is not a leader");
+    let l = &a.leaders[0];
+    assert_eq!(l.nickname, "Luchs");
+    assert!(l.qualifications[&Lagerleiter]);
+    assert!(!l.qualifications[&Slrg]);
+    assert_eq!(l.role_labels, vec!["Hauptleitung", "Küche"]);
+    assert_eq!(l.role_label, "Hauptleitung");
+    assert_eq!(l.expired_qualifications, vec![Slrg]);
+    let d: Vec<(&str, bool, Option<&str>)> =
+        l.qualification_details.iter().map(|d| (d.label.as_str(), d.valid_at_camp, d.finish_at.as_deref())).collect();
+    assert_eq!(d, vec![("SLRG Modul Pool", false, Some("2025-01-01")), ("Zusatz Lagerleiter", true, None)]);
+}
+
+#[test]
+fn self_match_by_email() {
+    let one = json!({"data": [{"id": "4711", "type": "people", "attributes": {"nickname": null, "first_name": "Lena", "last_name": "X"}}]});
+    let m = parse_self_match(&one);
+    assert_eq!((m.person_id.as_deref(), m.nickname.as_deref(), m.count), (Some("4711"), Some("Lena"), 1));
+    let none = parse_self_match(&json!({"data": []}));
+    assert_eq!((none.person_id, none.count), (None, 0));
+    let two = parse_self_match(&json!({"data": [{"id": 1, "type": "people"}, {"id": 2, "type": "people"}]}));
+    assert_eq!((two.person_id, two.count), (None, 2));
+    assert!(is_plausible_email("a@b.ch") && !is_plausible_email("a b@c.ch") && !is_plausible_email("a@@b") && !is_plausible_email("@b"));
+}
