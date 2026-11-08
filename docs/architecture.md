@@ -152,7 +152,7 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 
 ## Rule set v2 (modular packs)
 
-Decision: [ADR 0009](adr/0009-rule-set-v2.md). Author API: `docs/plans/rules-v2/infra-api.md`; pack format:
+Decision: [ADR 0011](adr/0011-rule-set-v2.md). Author API: `docs/plans/rules-v2/infra-api.md`; pack format:
 `src/domain/rules/packs/README.md`; catalog: `docs/plans/rules-v2/catalog-final.md`.
 
 Layout under `src/domain/rules/`:

@@ -1,4 +1,4 @@
-# ADR 0009: Rule set v2 (modular packs, per-camp module states, pack data, strict severity policy)
+# ADR 0011: Rule set v2 (modular packs, per-camp module states, pack data, strict severity policy)
 
 - Status: accepted
 - Date: 2026-11-09

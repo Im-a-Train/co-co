@@ -1,7 +1,7 @@
 # Rule packs
 
 Bundled packs: `jslst/` (`coco-js-lst`: J+S general + Lagersport/Trekking modules) and `pbs/` (`coco-pbs`).
-Decision: `docs/adr/0009-rule-set-v2.md`. Author API with code examples: `docs/plans/rules-v2/infra-api.md`.
+Decision: `docs/adr/0011-rule-set-v2.md`. Author API with code examples: `docs/plans/rules-v2/infra-api.md`.
 Full catalog and policy: `docs/plans/rules-v2/catalog-final.md`. All user-visible texts are German; code
 and comments are English; TypeScript predicates contain no German.
 
