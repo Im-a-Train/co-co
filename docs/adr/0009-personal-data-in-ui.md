@@ -1,4 +1,4 @@
-# ADR 0008: Personal data (red zone) in the UI
+# ADR 0009: Personal data (red zone) in the UI
 
 - Status: Accepted (2026-11-08) for phase P1 as built; see "Implementation status (P1)" below
 - Date: 2026-11-08

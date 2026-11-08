@@ -1,10 +1,10 @@
-# ADR 0009: Encryption at rest, unlocked by the eCamp login
+# ADR 0010: Encryption at rest, unlocked by the eCamp login
 
 - Status: Accepted (2026-11-08); not implemented yet
 - Date: 2026-11-08
 - Plan: `docs/plans/encryption-at-rest.md` (facts, inventory, phases, tests)
 - Builds on: [0003](0003-login-via-webview-cookies.md), [0004](0004-no-backend-local-storage.md) (which left
-  "format, encryption and backup" to a later ADR), [0005](0005-data-zones-and-ai.md), [0008](0008-personal-data-in-ui.md)
+  "format, encryption and backup" to a later ADR), [0005](0005-data-zones-and-ai.md), [0009](0009-personal-data-in-ui.md)
 
 ## Context
 
@@ -81,7 +81,7 @@ derived from it.
   working because MiniSearch is built in memory after decrypt (`domain/documents/index.ts:446`).
 - WebView2/Chromium LevelDB may keep deleted plaintext blocks until compaction; migration cannot guarantee
   secure erase. Documented limitation; recommend BitLocker for full-disk.
-- Red-derived (ADR 0006/0007/0008) tables become encrypted like everything else; their other rules
+- Red-derived (ADR 0006/0007/0009) tables become encrypted like everything else; their other rules
   (no AI, optional backup omission) are unchanged.
 - The spec artifact, `docs/contracts/commands.md`, `docs/architecture.md` and ADR 0004 text ("no
   localStorage for secrets", "own ADR on encryption") are updated in the implementing PRs.

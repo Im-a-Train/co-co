@@ -1,5 +1,5 @@
 /**
- * «Personen» tab contract (ADR 0008, plan docs/plans/participants-and-nds-sync.md, phase P1).
+ * «Personen» tab contract (ADR 0009, plan docs/plans/participants-and-nds-sync.md, phase P1).
  *
  * RED ZONE. These rows are personal data (names, birth dates, roles). Rules:
  * - Never sent to the AI: every type here carries the `__red` brand; aiGateway refuses it.

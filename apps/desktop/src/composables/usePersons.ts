@@ -1,5 +1,5 @@
 /**
- * «Personen» tab state (RED ZONE, ADR 0008): people from MiData / NDS live in memory only
+ * «Personen» tab state (RED ZONE, ADR 0009): people from MiData / NDS live in memory only
  * (module-level refs, never Dexie / localStorage / backup / AI). Cleared on logout, on camp switch,
  * and by `clear()` (which also wipes the copy held in Rust).
  */

@@ -139,7 +139,7 @@ export type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain
 import type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
 export const EVENT_NDS_STATUS = 'nds://status'
 
-// «Personen» tab (red zone, ADR 0008). Types live in the persons domain contract.
+// «Personen» tab (red zone, ADR 0009). Types live in the persons domain contract.
 import type { MidataPersonsResult, NdsPersonsResult } from '@/domain/persons/types'
 import type { IsoDate } from '@/domain/types'
 
@@ -217,7 +217,7 @@ export const commands = {
   ndsFetchAggregate: (offerBusinessId: string, campBusinessId: string) =>
     call<NdsAggregate>('nds_fetch_aggregate', { offerBusinessId, campBusinessId }),
   ndsProbe: (campBusinessId: string) => call<NdsProbe>('nds_probe', { campBusinessId }),
-  // «Personen» tab (ADR 0008, RED ZONE): individual people, held in Rust memory only, never persisted.
+  // «Personen» tab (ADR 0009, RED ZONE): individual people, held in Rust memory only, never persisted.
   personsLoadMidata: (eventId: string, campStart: IsoDate, campEnd: IsoDate) =>
     call<MidataPersonsResult>('persons_load_midata', { eventId, campStart, campEnd }),
   personsLoadNds: (ndsCampId: string) => call<NdsPersonsResult>('persons_load_nds', { ndsCampId }),

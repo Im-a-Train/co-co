@@ -1,6 +1,6 @@
 # Plan: encryption at rest, unlocked by the eCamp login
 
-Status: accepted 2026-11-08 ([ADR 0009](../adr/0009-encryption-at-rest.md)), not implemented yet. Maintainer decisions are marked **Resolved** below. Decision record: [ADR 0009](../adr/0009-encryption-at-rest.md). All paths relative to
+Status: accepted 2026-11-08 ([ADR 0010](../adr/0010-encryption-at-rest.md)), not implemented yet. Maintainer decisions are marked **Resolved** below. Decision record: [ADR 0010](../adr/0010-encryption-at-rest.md). All paths relative to
 `apps/desktop/` unless noted. Line numbers are from the worktree `feedback-ux-round`.
 
 ## 0. Short answers
@@ -41,7 +41,7 @@ Query patterns (grep): only `.where('campIri').equals()` (documents, feedback, r
 `.where('findingId').equals()` (`domain/rules/store.ts:14`), `aiLog.orderBy('at')` (`composables/useAi.ts:43`),
 plain `.toArray()`/`.get()`/`.put()`. No range queries; no `path`/`contentHash`/`folder`/`status`/`updatedAt`
 index is ever queried. So v5 can drop those indexes at no functional cost.
-Red-derived person data (ADR 0008, `composables/usePersons.ts`, `domain/persons/types.ts:6`) is memory-only, never persisted.
+Red-derived person data (ADR 0009, `composables/usePersons.ts`, `domain/persons/types.ts:6`) is memory-only, never persisted.
 
 ### 1.2 localStorage (webview, plaintext)
 
@@ -128,7 +128,7 @@ import, migration of the legacy DB to the first user. Open question 2.
 
 CSP check (`src-tauri/tauri.conf.json:24-30`): `script-src 'self'`, `connect-src ipc: http://ipc.localhost`. WebCrypto
 (`crypto.subtle`) needs no CSP change (`crypto.randomUUID` is already used, `db.ts:132`). "Secrets stay in Rust"
-(CLAUDE.md) is amended by ADR 0009 for the data key only: not a credential for any external system, no exfiltration
+(CLAUDE.md) is amended by ADR 0010 for the data key only: not a credential for any external system, no exfiltration
 channel under the CSP, non-extractable after import.
 
 Envelope per row: stored object = `{ <primary key>, <remaining indexed fields>, _enc: { v:1, iv, ct } }`; `ct` =
@@ -187,7 +187,7 @@ existing export JSON. Argon2id runs in Rust (`argon2` crate; WebCrypto only has 
 
 | Phase | Content | Files |
 | --- | --- | --- |
-| 0 | ADR accepted, contract rows | `docs/adr/0009*`, `docs/contracts/commands.md` |
+| 0 | ADR accepted, contract rows | `docs/adr/0010*`, `docs/contracts/commands.md` |
 | 1 Rust key store | `data_key.rs`: get-or-create 32-byte key in keychain (new service/user, pattern of `ai.rs`), `unlock_data_store`, `lock_data_store`, verified-session gate, zeroize; new-command checklist | `src-tauri/src/data_key.rs`, `commands.rs`, `lib.rs`, `build.rs` `COMMANDS`, `capabilities/default.json` (`main` only), `coco-core/src/datakey.rs` (pure checks), `src/lib/tauri.ts`, `docs/contracts/commands.md` |
 | 2 Crypto + middleware | `crypto.ts` (envelope, AES-GCM, AAD), `encryptionMiddleware.ts`, `LockedError`/`DecryptError`; split `db.ts`: `legacyDb.ts` (v1-v4 frozen) + new `CocoDb` `coco2`; `getDb()` throws when locked; `unlockDb(keyBytes)`/`lockDb()` | `src/domain/storage/{crypto,encryptionMiddleware,legacyDb,db}.ts`, `src/domain/storage/__tests__/*` |
 | 3 Session wiring + routes | `useDataStore` composable (`locked/unlocking/ready/error`), hooks in `useSession.setSession` and logout, `meta.requiresUnlock` + guard, unlock error UI in `/verbindung`, clear all composable caches on lock | `src/composables/useDataStore.ts`, `useSession.ts`, `src/router/index.ts`, `views/connection/ConnectionView.vue`, `locales/de/storage.json`, `App.vue` |

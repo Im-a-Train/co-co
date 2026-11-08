@@ -212,7 +212,7 @@ pub const Q_PARTICIPANTS_LIST: &str = "query ParticipantsListForCamp($campBusine
   }
 }";
 
-/// «Personen» tab (ADR 0008, red zone, read-only): the participants list WITH the person fields needed
+/// «Personen» tab (ADR 0009, red zone, read-only): the participants list WITH the person fields needed
 /// for the MiData reconciliation. Same operation name and root field as the counting query. Only
 /// fields present in the captured operations; `privateAddress` and AHV are deliberately NOT requested.
 pub const Q_PERSONS_PARTICIPANTS: &str = "query ParticipantsListForCamp($campBusinessId: ID!, $chunk: Chunk) {

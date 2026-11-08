@@ -1,5 +1,5 @@
 /**
- * Guard (ADR 0008): the Personen data (red zone) never reaches the AI, Dexie or backups.
+ * Guard (ADR 0009): the Personen data (red zone) never reaches the AI, Dexie or backups.
  * Test files (__tests__) are exempt.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'

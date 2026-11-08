@@ -1,6 +1,6 @@
 # Plan: «Personen» tab and MiData / NDS reconciliation
 
-Status: P1 built (read-only, memory only, M12; no AHV, no CSV import, no encrypted cache); P2/P3 are plans only. Date: 2026-11-08. Related: ADR 0005, 0006, 0007, **0008 (accepted for P1)**.
+Status: P1 built (read-only, memory only, M12; no AHV, no CSV import, no encrypted cache); P2/P3 are plans only. Date: 2026-11-08. Related: ADR 0005, 0006, 0007, **0009 (accepted for P1)**.
 All NDS write behaviour below is **unverified**. All examples are invented.
 
 ## 0. Short answers
@@ -109,7 +109,7 @@ New `views/camp/PersonsView.vue`, tab in `CampLayout`, `locales/de/persons.json`
 
 ## 3. Zones
 
-See [ADR 0008](../adr/0008-personal-data-in-ui.md): red brand type, aiGateway + contract test, no logs/
+See [ADR 0009](../adr/0009-personal-data-in-ui.md): red brand type, aiGateway + contract test, no logs/
 events/errors, memory-first, ciphertext-only persistence, excluded from backup, masked AHV, no clipboard,
 synthetic fixtures only, writes need their own ADR.
 
@@ -199,9 +199,9 @@ a yes, stop at P2.
 
 | Phase | Scope | NDS writes | Gate |
 | --- | --- | --- | --- |
-| **P1** | Personen tab (MiData A, CSV B), NDS camp lists, diff view, optional masked AHV enrichment, match tests | none | ADR 0008 accepted |
+| **P1** | Personen tab (MiData A, CSV B), NDS camp lists, diff view, optional masked AHV enrichment, match tests | none | ADR 0009 accepted |
 | **P2** | Export the «to add» list as a file for NDS: import template if one exists, else a CSV checklist the coach saves consciously | none | Template found or checklist accepted |
-| **P3** | Direct add via allow-listed mutations, dry run, audit log | add only | HAR capture on a test camp, BASPO answer, new ADR 0009 |
+| **P3** | Direct add via allow-listed mutations, dry run, audit log | add only | HAR capture on a test camp, BASPO answer, new ADR |
 
 ## 6. Milestones, questions, risks
 
@@ -209,13 +209,13 @@ a yes, stop at P2.
 
 | # | Content | Size |
 | --- | --- | --- |
-| M-P0 | Accept ADR 0008; `Red` brand + guard tests; synthetic fixtures; masked-display component | S |
+| M-P0 | Accept ADR 0009; `Red` brand + guard tests; synthetic fixtures; masked-display component | S |
 | M-P1a | MiData persons load (A) + CSV import (B) in `coco-core`, `PersonRow`, tab with filters | M |
 | M-P1b | Port match/normalisation from impex to `domain/persons` with tests; NDS camp lists into rows; diff states | M |
 | M-P1c | NDS person list capture (read), AHV enrichment in Rust, reveal/mask, lock | M |
 | M-P1d | Optional encrypted cache (b1 + b2) | M |
 | M-P2 | Export file for NDS | S |
-| M-P3 | Capture write flows, BASPO answer, ADR 0009, mutations, dry run, audit | L |
+| M-P3 | Capture write flows, BASPO answer, new ADR, mutations, dry run, audit | L |
 
 Each milestone also updates the spec artifact (working agreement in CLAUDE.md).
 
@@ -225,7 +225,7 @@ Each milestone also updates the spec artifact (working agreement in CLAUDE.md).
    (unverified live)? If not, CSV import is the main path.
 2. Will BASPO/J+S allow write access, or point to an official import, for participants?
 3. How do people get into an NDS camp today (UI flow, import file, MiData sync)? Capture needed.
-4. Persistence: **resolved for P1: memory only (a)**. An encrypted cache is superseded by general encryption at rest (ADR 0009, no passphrase in v1).
+4. Persistence: **resolved for P1: memory only (a)**. An encrypted cache is superseded by general encryption at rest (ADR 0010, no passphrase in v1).
 5. Is AHV processing in co-co acceptable, or should co-co never read `ahvn13` and only show match yes/no?
 6. Stufe and age-band mapping (PBS vs J+S) and the exact J+S age cutoff date.
 7. Show «only in NDS» people at all (may be legitimate late changes)?
@@ -235,7 +235,7 @@ Each milestone also updates the spec artifact (working agreement in CLAUDE.md).
 
 | Risk | Mitigation |
 | --- | --- |
-| Personal data leak (AI, logs, backup, screenshots) | ADR 0008, brand + contract tests, synthetic fixtures only |
+| Personal data leak (AI, logs, backup, screenshots) | ADR 0009, brand + contract tests, synthetic fixtures only |
 | Wrong match leads to a wrong NDS write | AHV-first matching, ambiguous never automatic, dry run, add-only |
 | Undocumented NDS interface changes or is blocked | Read-first phases, P2 file fallback, feature flag |
 | ToS / legal (AHVG, DSG) | Written BASPO/PBS answer before P3; minimal fields |

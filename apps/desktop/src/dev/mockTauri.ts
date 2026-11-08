@@ -432,7 +432,7 @@ export function installMockTauri(): void {
   )
 }
 
-// ---- «Personen» tab mocks (ADR 0008). SYNTHETIC people only (invented names, no real data).
+// ---- «Personen» tab mocks (ADR 0009). SYNTHETIC people only (invented names, no real data).
 function mockMidataPersons(eventId: string) {
   const none = { lagerleiter: 'none', leiterLsT: 'none', wasser: 'none', berg: 'none', winter: 'none', slrg: 'none' }
   const row = (

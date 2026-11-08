@@ -1,4 +1,4 @@
-//! «Personen» tab state (ADR 0008, red zone): the last loaded MiData and NDS person lists.
+//! «Personen» tab state (ADR 0009, red zone): the last loaded MiData and NDS person lists.
 //!
 //! Memory only: no file, no keychain, no log line, no event. The lists are wiped by
 //! `persons_clear` (UI: lock, logout, leaving the tab) and vanish when the app exits. Errors from the
