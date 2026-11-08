@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeJsDays, hasJsMapping, lastJsDate, trainingFreeDays } from '../jsDays'
+import { computeJsDays, jsDayInvalidReasons, hasJsMapping, lastJsDate, trainingFreeDays } from '../jsDays'
 import { CAT_ES, CAT_LA, CAT_LS, CAT_NONE, FactsBuilder, MAPPING, mappingOf } from './factory'
 
 describe('computeJsDays', () => {
@@ -108,6 +108,31 @@ describe('computeJsDays', () => {
     const r = computeJsDays(b.facts, MAPPING)
     expect(lastJsDate(r)).toBe(b.dateOf(2))
     expect(trainingFreeDays(r).map((d) => d.number)).toEqual([1, 3, 4])
+  })
+
+  it('jsDayInvalidReasons: empty for valid days, codes for the failures', () => {
+    const v = new FactsBuilder({ days: 3 }).validDay(2)
+    expect(jsDayInvalidReasons(computeJsDays(v.facts, MAPPING).days[1])).toEqual([])
+    const b = new FactsBuilder({ days: 4 })
+    b.entry(b.activity('c', CAT_LS), 3, '09:00', '13:00') // 1 unit, 240 min
+    b.entry(b.activity('d', CAT_LS), 4, '09:00', '09:20') // short
+    b.entry(b.activity('e', CAT_LS), 4, '09:40', '13:00') // gap 20
+    const days = computeJsDays(b.facts, MAPPING).days
+    expect(jsDayInvalidReasons(days[2]).map((r) => r.code)).toEqual(['fewUnits'])
+    expect(jsDayInvalidReasons(days[1]).map((r) => r.code)).toEqual(['fewUnits', 'tooShort'])
+    const r3 = jsDayInvalidReasons(days[3])
+    expect(r3.map((r) => r.code)).toEqual(['tooShort', 'shortUnit', 'gap'])
+    expect(r3[1]).toMatchObject({ minutes: 20, required: 30 })
+    expect(r3[2]).toMatchObject({ minutes: 20, required: 30 })
+  })
+
+  it('jsDayInvalidReasons: combinedOnly for an arrival day valid only combined', () => {
+    const b = new FactsBuilder({ days: 4 })
+    b.entry(b.activity('an', CAT_LS), 1, '16:00', '18:00')
+    b.entry(b.activity('ab', CAT_LA), 4, '09:00', '11:00')
+    b.validDay(2).validDay(3)
+    const r = computeJsDays(b.facts, MAPPING)
+    expect(jsDayInvalidReasons(r.days[0]).map((x) => x.code)).toEqual(['fewUnits', 'tooShort', 'combinedOnly'])
   })
 
   it('counts overlapping units once and takes gaps from the running max end', () => {

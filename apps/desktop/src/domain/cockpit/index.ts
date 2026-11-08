@@ -3,7 +3,7 @@
  * eCamp times are camp-local wall clock, so we slice the ISO strings
  * instead of using Date getters (see domain/types.ts).
  */
-import type { JsDayReport } from '../rules/jsDays'
+import { jsDayInvalidReasons, type JsDayReason, type JsDayReport } from '../rules/jsDays'
 import type {
   CampFacts,
   CategoryClass,
@@ -103,6 +103,8 @@ export interface GridDay {
   jsUnits: number
   /** null while the J+S calculator is not available. */
   valid: boolean | null
+  /** Why the day is not valid (empty while valid or without a J+S report). */
+  invalidReasons: JsDayReason[]
   /** Entries that lie completely outside the visible hours. */
   hiddenEntries: number
 }
@@ -154,14 +156,6 @@ export function buildGrid(
   jsDays: JsDayReport | null,
   opts: GridOptions = {},
 ): GridModel {
-  const startHour = opts.startHour ?? GRID_START_HOUR
-  const endHour = opts.endHour ?? GRID_END_HOUR
-  const from = startHour * 60
-  const span = (endHour - startHour) * 60
-  const pct = (min: number) => ((min - from) / span) * 100
-  const catColor = new Map(facts.categories.map((c) => [c.iri, c.color]))
-  const actById = new Map(facts.activities.map((a) => [a.iri, a]))
-
   const entriesByDate = new Map<IsoDate, ScheduleEntryFact[]>()
   for (const e of facts.scheduleEntries) {
     const d = dateOf(e.start)
@@ -169,6 +163,29 @@ export function buildGrid(
     list.push(e)
     entriesByDate.set(d, list)
   }
+  /** Start/end minute of an entry on its start day; crossing midnight ends at 24:00. */
+  const rangeOf = (e: ScheduleEntryFact): [number, number] => {
+    const s = minutesOfDay(e.start)
+    let en = dateOf(e.end) > dateOf(e.start) ? 24 * 60 : minutesOfDay(e.end)
+    if (en <= s) en = s + e.durationMinutes
+    return [s, en]
+  }
+
+  // Hours are dynamic unless fixed by the caller: the default 07-23 window grows to show early/late entries.
+  let autoStart = GRID_START_HOUR
+  let autoEnd = GRID_END_HOUR
+  for (const e of facts.scheduleEntries) {
+    const [s, en] = rangeOf(e)
+    autoStart = Math.min(autoStart, Math.floor(s / 60))
+    autoEnd = Math.max(autoEnd, Math.ceil(Math.min(en, 24 * 60) / 60))
+  }
+  const startHour = opts.startHour ?? Math.max(0, autoStart)
+  const endHour = opts.endHour ?? Math.min(24, autoEnd)
+  const from = startHour * 60
+  const span = (endHour - startHour) * 60
+  const pct = (min: number) => ((min - from) / span) * 100
+  const catColor = new Map(facts.categories.map((c) => [c.iri, c.color]))
+  const actById = new Map(facts.activities.map((a) => [a.iri, a]))
 
   const days: GridDay[] = [...facts.days]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -176,9 +193,7 @@ export function buildGrid(
       const blocks: GridBlock[] = []
       let hidden = 0
       for (const e of entriesByDate.get(day.date) ?? []) {
-        const s = minutesOfDay(e.start)
-        let en = dateOf(e.end) > day.date ? 24 * 60 : minutesOfDay(e.end)
-        if (en <= s) en = s + e.durationMinutes
+        const [s, en] = rangeOf(e)
         const cs = Math.max(s, from)
         const ce = Math.min(en, from + span)
         if (ce <= cs) {
@@ -231,6 +246,7 @@ export function buildGrid(
         jsMinutes,
         jsUnits: rep ? rep.unitCount : jsBlocks.length,
         valid: rep ? rep.valid || rep.validCombined : null,
+        invalidReasons: rep && !(rep.valid || rep.validCombined) ? jsDayInvalidReasons(rep) : [],
         hiddenEntries: hidden,
       }
     })

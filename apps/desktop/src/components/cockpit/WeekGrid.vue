@@ -6,9 +6,11 @@ import {
   formatMinutes,
   meterPercent,
   meterThresholdPercent,
+  minutesOfDay,
   type GridBlock,
   type GridModel,
 } from '@/domain/cockpit'
+import type { JsDayReason } from '@/domain/rules/jsDays'
 
 defineProps<{ grid: GridModel; selected?: string | null }>()
 const emit = defineEmits<{ select: [activityIri: string] }>()
@@ -16,6 +18,24 @@ const { t, tm } = useI18n()
 void tm
 
 const HOUR_PX = 40
+
+const clock = (iso: string) => formatClock(minutesOfDay(iso))
+
+function reasonText(r: JsDayReason): string {
+  const p = t
+  switch (r.code) {
+    case 'fewUnits':
+      return p('cockpit.grid.invalidReasons.fewUnits', { units: r.units, required: r.required })
+    case 'tooShort':
+      return p('cockpit.grid.invalidReasons.tooShort', { time: formatMinutes(r.minutes), required: formatMinutes(r.required) })
+    case 'shortUnit':
+      return p('cockpit.grid.invalidReasons.shortUnit', { start: clock(r.start), end: clock(r.end), minutes: r.minutes, required: r.required })
+    case 'gap':
+      return p('cockpit.grid.invalidReasons.gap', { start: clock(r.start), end: clock(r.end), minutes: r.minutes, required: r.required })
+    case 'combinedOnly':
+      return p('cockpit.grid.invalidReasons.combinedOnly')
+  }
+}
 
 function blockStyle(b: GridBlock, color: string) {
   const w = 100 / b.lanes
@@ -53,6 +73,16 @@ function blockStyle(b: GridBlock, color: string) {
             :title="d.valid ? t('cockpit.grid.valid') : t('cockpit.grid.invalid')"
           />
           {{ t('cockpit.grid.jsMinutes', { time: formatMinutes(d.jsMinutes) }) }}
+        </div>
+        <div v-if="d.valid === false && d.invalidReasons.length" class="text-caption" data-testid="grid-invalid-why">
+          <span class="wg-why text-warning">
+            {{ t('cockpit.grid.whyInvalid') }}
+            <v-tooltip activator="parent" location="bottom" max-width="320">
+              <ul class="wg-why-list">
+                <li v-for="(r, i) in d.invalidReasons" :key="i">{{ reasonText(r) }}</li>
+              </ul>
+            </v-tooltip>
+          </span>
         </div>
         <div v-if="d.hiddenEntries" class="text-caption text-medium-emphasis">
           {{ t('cockpit.grid.hidden', d.hiddenEntries) }}
@@ -171,6 +201,15 @@ function blockStyle(b: GridBlock, color: string) {
   width: 2px;
   height: 12px;
   background: rgb(var(--v-theme-on-surface));
+}
+.wg-why {
+  cursor: help;
+  text-decoration: underline dotted;
+}
+.wg-why-list {
+  margin: 0;
+  padding-left: 16px;
+  text-align: left;
 }
 .wg-gap {
   position: absolute;

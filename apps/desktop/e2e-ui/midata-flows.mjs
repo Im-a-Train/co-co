@@ -13,9 +13,14 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
     if (!/verbunden per Anmeldung/i.test(t)) throw new Error('status chip missing')
     if (!/Service-Token/i.test(t)) throw new Error('token section missing')
     if (!/übernimmt co-co die MiData-Sitzung automatisch/.test(t)) throw new Error('OAuth help text missing')
-    await page.getByTestId('midata-personid-detected').waitFor({ timeout: 5000 })
+    await page.getByTestId('midata-personid-auto').waitFor({ timeout: 5000 })
+    const auto = await page.getByTestId('midata-personid-auto').innerText()
+    if (!/Automatisch erkannt/.test(auto) || !/4711/.test(auto)) throw new Error('auto-detected line wrong: ' + auto)
+    if ((await page.getByTestId('midata-personid').count()) !== 0) throw new Error('person id field should be hidden while auto-detected')
+    await page.getByTestId('midata-personid-override').click()
     const pid = await page.getByTestId('midata-personid').locator('input').inputValue()
     if (pid !== '4711') throw new Error('person id not auto-adopted: ' + pid)
+    await shot(page, 'flow-midata-settings-override')
   })
 
   await step('flow: diagnosis expander shows probe result', async () => {
@@ -68,8 +73,7 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
     await shot(page, 'flow-midata-matrix')
     const coach = await page.getByTestId('midata-coach').innerText()
     if (!/Coach laut MiData: Falk/.test(coach) || !/\(du\)/.test(coach)) throw new Error('coach line wrong: ' + coach)
-    const src = await page.getByTestId('qual-activities-source').innerText()
-    if (!/Stichwörter/.test(src)) throw new Error('safety activity source text missing')
+    if ((await page.getByTestId('qual-cell-invalid').count()) < 1) throw new Error('yellow (invalid) qualification cell missing')
   })
 
   await step('flow: qualification kinds expander changes the mapping', async () => {

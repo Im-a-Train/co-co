@@ -4,10 +4,10 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampMidata, useMidata } from '@/composables/useMidata'
-import { buildQualificationMatrix, compareWithInputs, type QualMapping, type SafetyArea } from '@/domain/midata'
-import { getAreaOverrides, saveAreaOverrides, setAreaDismissed, type CampAreaOverrides } from '@/domain/midata/areaOverrides'
+import { buildQualificationMatrix, compareWithInputs, type QualMapping } from '@/domain/midata'
+import { getAreaOverrides, type CampAreaOverrides } from '@/domain/midata/areaOverrides'
 import type { CoachInputs, Iri, MidataAggregate, MidataField } from '@/domain/types'
-import { dismissedEntries, makeAreaOf, makeKeywordsOf } from './areas'
+import { makeAreaOf, makeKeywordsOf } from './areas'
 import { formatStand } from './format'
 import MidataAdoptDialog from './MidataAdoptDialog.vue'
 import MidataEventPicker from './MidataEventPicker.vue'
@@ -51,17 +51,7 @@ const matrix = computed(() =>
     ? buildQualificationMatrix(agg.value, facts.value, makeAreaOf(facts.value.activities, dismissed.value), makeKeywordsOf(facts.value.activities))
     : null,
 )
-const dismissedList = computed(() => (facts.value ? dismissedEntries(facts.value.activities, dismissed.value) : []))
 
-async function setDismissed(iri: string, area: SafetyArea, value: boolean): Promise<void> {
-  const next = setAreaDismissed(dismissed.value, iri, area, value)
-  dismissed.value = next
-  try {
-    await saveAreaOverrides(props.campIri, next)
-  } catch {
-    // Kept in memory for this session; persistence is a convenience.
-  }
-}
 async function saveMapping(next: QualMapping): Promise<void> {
   await md.saveQualMapping(next)
 }
@@ -180,12 +170,9 @@ function apply(fields: MidataField[]): void {
       :matrix="matrix"
       :kinds="agg?.qualificationKinds ?? []"
       :mapping="md.qualMapping.value"
-      :dismissed="dismissedList"
       :loading="camp.loading.value"
       @save-mapping="saveMapping"
       @reload="camp.refresh()"
-      @dismiss="(iri, area) => setDismissed(iri, area, true)"
-      @restore="(iri, area) => setDismissed(iri, area, false)"
     />
 
     <MidataEventPicker
