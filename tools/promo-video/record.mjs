@@ -1,19 +1,22 @@
 /**
- * Records a German promo video of co-co: the app in mock mode (?mock=1, no real data) plus the public
- * MiData test instance (pbs.puzzle.ch, sign-in page only, no login). Captions, title cards and a
- * visible cursor are drawn by an overlay injected into every page, so the recording needs no editing.
+ * Records the German promo video of co-co as a short story (coach «Falk» coaches one camp), see story.mjs.
+ * The app runs in mock mode (?mock=1, invented data); the MiData part shows the public sign-in page of the
+ * PBS MiData test instance (pbs.puzzle.ch, no login). Title cards, captions, cursor and highlights are
+ * drawn by an overlay injected into every page.
  *
- * Usage (from the repo root):
- *   (the script starts vite on PROMO_PORT if nothing is running there)
- *   node tools/promo-video/record.mjs [outDir]
- * Env: PROMO_PORT (default 1437), PROMO_MIDATA_URL (default https://pbs.puzzle.ch/de/users/sign_in)
+ * Each beat waits for its narration (durations from tts.py), and its start time goes to timeline.json,
+ * so mix.mjs can lay the voice clips exactly under the picture. See README.md for the full pipeline.
+ *
+ *   node tools/promo-video/record.mjs [outDir]     (voice clips expected in <outDir>/voice)
+ * Env: PROMO_PORT (default 1437), PROMO_MIDATA_URL, PROMO_VOICE_DIR, PROMO_FFMPEG
  */
 import { spawn } from 'node:child_process'
-import { mkdirSync, existsSync, readdirSync } from 'node:fs'
+import { mkdirSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import { BEATS } from './story.mjs'
 
 const repo = fileURLToPath(new URL('../..', import.meta.url))
 const PORT = Number(process.env.PROMO_PORT || 1437)
@@ -55,7 +58,7 @@ const overlayInit = () => {
     // Caption
     const cap = mk('div', {
       position: 'absolute', left: '50%', bottom: '28px', transform: 'translate(-50%, 30px)', opacity: '0',
-      transition: 'opacity .45s ease, transform .45s ease', maxWidth: '1180px', width: 'max-content',
+      transition: 'opacity .45s ease, transform .45s ease', maxWidth: '1320px', width: 'max-content',
       background: 'rgba(15, 35, 52, 0.92)', color: '#fff', borderRadius: '16px', padding: '16px 28px 18px',
       boxShadow: '0 12px 40px rgba(0,0,0,.35)', borderLeft: '6px solid #f0b429',
     }, root)
@@ -150,6 +153,8 @@ async function startRecorder(page, file) {
     while (written < due) { ff.stdin.write(last); written++ }
   }, 1000 / FPS / 2)
   return {
+    /** Seconds since the first recorded frame. */
+    time() { return (Date.now() - t0) / 1000 },
     /** Re-attach after a cross-site navigation (new renderer, screencast stops). */
     async reattach() { await cdp.detach().catch(() => {}); await attach() },
     async stop() {
@@ -178,6 +183,12 @@ async function ensureServer() {
 }
 
 async function main() {
+  const byId = Object.fromEntries(BEATS.map((b) => [b.id, b]))
+  const voiceDir = process.env.PROMO_VOICE_DIR || join(OUT, 'voice')
+  const durFile = join(voiceDir, 'durations.json')
+  const durations = existsSync(durFile) ? JSON.parse(readFileSync(durFile, 'utf8')) : {}
+  if (!Object.keys(durations).length) console.warn(`no ${durFile}: timing by text length, video without voice`)
+
   console.log('starting server / browser')
   await ensureServer()
   const browser = await chromium.launch({ channel: 'msedge', headless: true })
@@ -198,7 +209,6 @@ async function main() {
   const page = await ctx.newPage()
   const wait = (ms) => page.waitForTimeout(ms)
   const P = (fn, ...a) => page.evaluate(([f, args]) => window.__promo?.[f]?.(...args), [fn, a])
-  const caption = async (kicker, title, sub, hold = 0) => { await P('caption', kicker, title, sub); if (hold) await wait(hold) }
   const settle = async () => {
     await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 6000 }).catch(() => {})
   }
@@ -206,7 +216,7 @@ async function main() {
     await settle()
     await page.goto(`${APP}#${hash}`)
     await page.waitForSelector('.v-application', { timeout: 15000 })
-    await wait(1200)
+    await wait(900)
   }
   const tab = (name) => nav(`/lager/${CAMP}/${name}`)
   async function pointAt(locator, { ring = false } = {}) {
@@ -233,180 +243,238 @@ async function main() {
     await page.evaluate((top) => window.scrollTo({ top, behavior: 'smooth' }), y)
     await wait(ms)
   }
+
+  // ---- Beats: caption/card + narration timing ----------------------------------------------
+  let rec = null
+  let active = null
+  const timeline = []
+  async function finishBeat(pad = 0.5) {
+    if (!active) return
+    const left = active.t + active.dur + pad - rec.time()
+    active = null
+    if (left > 0) await wait(left * 1000)
+  }
+  /** Shows the beat's caption or title card and starts its narration; waits for the previous one first. */
+  async function beat(id) {
+    const b = byId[id]
+    if (!b) throw new Error('unknown beat ' + id)
+    await finishBeat()
+    if (b.card) {
+      await P('hideCaption')
+      await P('card', ...b.card)
+    } else {
+      await P('caption', b.kicker, b.title, b.sub)
+    }
+    const t = rec.time()
+    const dur = durations[id] ?? Math.max(4, b.voice.length / 14)
+    timeline.push({ id, t: Number(t.toFixed(3)), dur })
+    active = { t, dur }
+    console.log(`beat ${id} @ ${t.toFixed(1)} s (${dur.toFixed(1)} s)`)
+  }
   async function scene(name, fn) {
-    console.log(`scene ${name}`)
-    await P('hideCaption')
-    await wait(450)
     try { await fn() } catch (e) { console.warn(`scene "${name}" partly failed: ${String(e.message || e).split('\n')[0]}`) }
     await P('hideRing')
+    await finishBeat()
   }
+  async function captionOff() { await P('hideCaption'); await wait(350) }
 
-  // ---------------- 1. Intro ----------------
-  const INTRO = ['J+S-Lagercoaching', 'co-co', 'Das Coach Cockpit für eCamp-Lager: prüfen, verstehen, Feedback geben.', 'Die heissesten Features im Überblick']
+  // ---------------- Kapitel 0/1: Intro + Auftrag ----------------
   await page.goto('data:text/html,<body style="margin:0;background:%230e2f47"></body>')
   await page.waitForFunction(() => !!window.__promo)
-  await P('card', ...INTRO)
-  const rec = await startRecorder(page, join(OUT, 'co-co-promo.webm'))
-  await wait(1500)
-  await page.goto(`${APP}&promoIntro=1#/lager`)
-  await page.waitForFunction(() => !!window.__promo)
-  await P('card', ...INTRO)
-  await page.waitForSelector('.v-application', { timeout: 15000 })
-  await wait(3000)
+  await P('card', ...byId.intro.card)
+  rec = await startRecorder(page, join(OUT, 'co-co-promo.silent.webm'))
+  await scene('intro', async () => {
+    await beat('intro')
+    await wait(800)
+    await page.goto(`${APP}&promoIntro=1#/lager`)
+    await page.waitForFunction(() => !!window.__promo)
+    await P('card', ...byId.intro.card)
+    await page.waitForSelector('.v-application', { timeout: 15000 })
+  })
+  await scene('auftrag', () => beat('auftrag'))
   await P('hideCard')
-  await wait(900)
+  await wait(700)
 
-  // ---------------- 2. Meine Lager ----------------
+  // ---------------- Kapitel 2: Überblick ----------------
   await scene('lager', async () => {
-    await caption('Meine Lager', 'Alle deine Lager auf einen Blick', 'Mit deinem eigenen eCamp-Login – Rolle, Review-Status, Befunde und nächste Frist.', 1800)
-    await highlight(page.locator('tbody tr').first(), 2200)
-    await click(page.locator('tbody tr'), { after: 1500 })
+    await beat('lager')
+    await highlight(page.locator('tbody tr').first(), 3500)
+    await finishBeat(0)
+    await click(page.locator('tbody tr'), { after: 1200 })
   })
 
-  // ---------------- 3. Cockpit ----------------
-  await scene('uebersicht', async () => {
-    await caption('Cockpit', 'Das ganze Lager in Sekunden geprüft', 'Regelpaket «co-co Basis 2026.1»: J+S-Kernregeln, Vollständigkeit, Sicherheit und PBS-Best-Practice.', 1500)
-    await highlight(page.locator('.v-card', { hasText: 'Soll-Befunde' }).first(), 2200)
-    await scrollTo(560, 1800)
-    await caption('Cockpit', 'Die wichtigsten Befunde zuerst', 'Jeder Befund mit Quelle, Schweregrad und Verlässlichkeit – ein Klick zum Feedback.', 3000)
-    await scrollTo(0, 1000)
+  // ---------------- Kapitel 3: Erste Durchsicht ----------------
+  await scene('cockpit', async () => {
+    await captionOff()
+    await beat('cockpit')
+    await wait(1500)
+    await highlight(page.locator('.v-card', { hasText: 'Muss-Befunde' }).first(), 2000)
+    await highlight(page.locator('.v-card', { hasText: 'Soll-Befunde' }).first(), 2600)
+    await highlight(page.locator('.v-card', { hasText: 'Gültige J+S-Tage' }).first(), 4000)
   })
-
-  // ---------------- 4. Raster ----------------
+  await scene('zuordnung', async () => {
+    await captionOff()
+    await tab('zuordnung')
+    await beat('zuordnung')
+    await highlight(page.locator('table').first(), 3800)
+    await click(page.getByRole('button', { name: /bestätigen/i }), { after: 900 })
+    await highlight(page.locator('.v-alert', { hasText: /bestätigt/i }).first(), 2200)
+  })
   await scene('raster', async () => {
+    await captionOff()
     await tab('raster')
-    await caption('Lagertag-Rechner', 'J+S-Zeit pro Tag – Lücken sofort sichtbar', 'Wochenraster mit gültigen J+S-Tagen und Sozialzeit direkt aus dem eCamp-Programm.', 3600)
+    await beat('raster')
+    await wait(1200)
+    await scrollTo(200, 2500)
+    await scrollTo(0, 1500)
   })
 
-  // ---------------- 5. Befunde durchgehen ----------------
+  // ---------------- Kapitel 4: Befunde durchgehen ----------------
   await scene('triage', async () => {
+    await captionOff()
     await tab('befunde')
     await page.waitForSelector('.triage-item', { timeout: 8000 })
-    await caption('Befunde durchgehen', 'Triage im Flow – ganz mit der Tastatur', 'F speichert das Feedback, I ignoriert, J/K blättert. co-co springt zum nächsten offenen Befund.', 1500)
-    await highlight(page.locator('[data-testid="triage-editor"]'), 2000)
+    await beat('triage')
+    await highlight(page.locator('.triage-item').first(), 2500)
+    await highlight(page.locator('[data-testid="triage-editor"]'), 3500)
     await page.locator('body').click({ position: { x: 5, y: 5 } })
-    for (const key of ['f', 'i']) {
-      await caption('Befunde durchgehen', key === 'f' ? 'Taste F – Feedback gespeichert, weiter' : 'Taste I – ignoriert, weiter', 'Fortschritt und Status bleiben pro Lager gespeichert.')
-      await page.keyboard.press(key)
-      await wait(1800)
-    }
-    await highlight(page.locator('[data-testid="triage-progress"]'), 1600)
+    await P('cursor', 1060, 720)
+    await wait(1500)
+    await page.keyboard.press('f')
+    await wait(2600)
+    await page.keyboard.press('i')
+    await wait(1500)
+    await highlight(page.locator('[data-testid="triage-progress"]'), 1800)
   })
-
-  // ---------------- 6. Warum? ----------------
   await scene('warum', async () => {
+    await beat('warum')
     const panel = page.locator('[data-testid="finding-explain"]').first()
-    await caption('Neu: «Warum?»', 'Jeder Befund ist erklärbar', 'Regel und Version, Regelpaket, verwendete Angaben und geprüfte Werte – transparent statt Blackbox.')
     await click(panel.getByRole('button', { name: 'Warum?' }), { after: 900 })
-    await highlight(page.locator('[data-testid="finding-explain-body"]'), 3800)
+    await highlight(page.locator('[data-testid="finding-explain-body"]'), 6000)
   })
 
-  // ---------------- 7. Feedback + eCamp-Kommentare ----------------
+  // ---------------- Kapitel 5: Feedback geben ----------------
   await scene('feedback', async () => {
+    await captionOff()
     await tab('feedback')
-    await caption('Feedback', 'Lob, Auflage, Anregung oder Frage', 'Für das ganze Lager oder eine Aktivität – Vorlagen pro Review-Zeitpunkt, teilen per WhatsApp, Mail oder Text.', 2600)
-    await click(page.getByRole('button', { name: 'Aktivitäts-Punkt' }), { after: 900 })
-    await click(page.locator('.v-select'), { after: 700 })
-    await click(page.locator('.v-overlay--active .v-list-item'), { after: 600 })
-    await page.locator('.v-card textarea').first().pressSequentially('Bitte Sicherheitsüberlegungen und Schlechtwettervariante ergänzen.', { delay: 28 })
-    await wait(500)
-    await click(page.getByRole('button', { name: 'Speichern', exact: true }), { after: 1000 })
+    await beat('feedback')
+    await click(page.getByRole('button', { name: 'Aktivitäts-Punkt' }), { after: 800 })
+    await click(page.locator('.v-select'), { after: 600 })
+    await click(page.locator('.v-overlay--active .v-list-item'), { after: 500 })
+    await page.locator('.v-card textarea').first().pressSequentially('Bitte Sicherheitsüberlegungen und Schlechtwettervariante ergänzen.', { delay: 25 })
+    await wait(400)
+    await click(page.getByRole('button', { name: 'Speichern', exact: true }), { after: 900 })
     const card = page.getByTestId('feedback-item').filter({ hasText: 'Schlechtwettervariante' })
-    await caption('Neu: Kommentar-Sync', 'Direkt als eCamp-Kommentar posten', 'Das Feedback landet genau bei der Aktivität – dort, wo das Leitungsteam plant.')
-    await click(card.getByRole('button', { name: 'In eCamp posten' }), { after: 1500 })
-    await caption('Neu: Kommentar-Sync', 'Antworten und Erledigtes zurückholen', 'Ein Klick synchronisiert: Was in eCamp erledigt oder beantwortet wurde, sieht der Coach sofort.')
+    await click(card.getByRole('button', { name: 'In eCamp posten' }), { after: 1200 })
+    await highlight(card, 1500)
+  })
+  await scene('sync', async () => {
+    await beat('sync')
+    await wait(1200)
     await click(page.getByTestId('sync-comments'), { after: 1500 })
-    await highlight(page.getByTestId('chip-resolved').first(), 2000)
-    await click(page.getByTestId('chip-replies'), { after: 1200 })
-    await highlight(page.getByTestId('reply-list').first(), 2400)
+    await highlight(page.getByTestId('chip-resolved').first(), 2500)
+    await click(page.getByTestId('chip-replies'), { after: 1000 })
+    await highlight(page.getByTestId('reply-list').first(), 4500)
   })
 
-  // ---------------- 8. MiData: Testumgebung ----------------
+  // ---------------- Kapitel 6: Sicherheit (MiData) ----------------
   await scene('midata-card', async () => {
-    await P('hideCaption')
-    await P('card', 'Neu', 'MiData-Anbindung', 'Teilnehmende, Leitende und Qualifikationen – direkt aus der MiData der PBS.', 'Nur lesend · mit deinem eigenen Login · Rote Zone')
-    await wait(3800)
-  })
-  await scene('midata-site', async () => {
+    await beat('midata-card')
+    await wait(1500)
     await page.goto(MIDATA, { waitUntil: 'commit', timeout: 30000 })
     await page.waitForFunction(() => !!window.__promo, null, { timeout: 30000 })
     await rec.reattach()
-    await P('card', 'Neu', 'MiData-Anbindung', 'Teilnehmende, Leitende und Qualifikationen – direkt aus der MiData der PBS.', 'Nur lesend · mit deinem eigenen Login · Rote Zone')
+    await P('card', ...byId['midata-card'].card)
     await page.waitForLoadState('domcontentloaded', { timeout: 30000 })
     await page.waitForLoadState('load', { timeout: 15000 }).catch(() => {})
-    await wait(400)
+  })
+  await scene('midata-site', async () => {
     await P('hideCard')
     await wait(800)
-    await caption('MiData-Testumgebung', 'pbs.puzzle.ch – die Integrationsinstanz der PBS-MiData', 'Hier wird die Anbindung getestet. co-co nutzt dein eigenes Konto – oder übernimmt die Sitzung aus dem eCamp-Login.', 1500)
-    const form = page.locator('form').first()
-    await highlight(form, 3200)
-    await caption('MiData-Testumgebung', 'Kein Backend, keine Kopie deiner Daten', 'co-co spricht direkt mit MiData. Personendaten bleiben in Rust auf deinem Gerät – nie in der UI, nie bei der KI.', 4200)
+    await beat('midata-site')
+    await highlight(page.locator('form').first(), 5000)
+    await highlight(page.getByText(/Testumgebung/).first(), 3500)
   })
-
-  // ---------------- 9. MiData in co-co ----------------
   await scene('midata-settings', async () => {
+    await captionOff()
     await page.goto(`${APP}#/einstellungen`)
     await rec.reattach()
     await page.waitForSelector('[data-testid="midata-settings"]', { timeout: 10000 })
-    await wait(1000)
-    await caption('Einstellungen', 'MiData verbinden – automatisch per eCamp-OAuth', 'Wer sich bei eCamp mit MiData anmeldet, ist auch in co-co gleich verbunden. Alternativ per Service-Token.')
-    await highlight(page.getByTestId('midata-settings'), 3600)
+    await wait(600)
+    await beat('midata-settings')
+    await highlight(page.getByTestId('midata-settings'), 5000)
   })
-  await scene('midata-angaben', async () => {
+  await scene('midata-pick', async () => {
+    await captionOff()
     await tab('angaben')
     await page.waitForSelector('[data-testid="midata-card"]', { timeout: 8000 })
-    await caption('Lager-Angaben', 'MiData-Anlass verknüpfen und laden', 'co-co schlägt passende Anlässe vor – mit Abteilung, Region und Datumsabgleich.')
+    await beat('midata-pick')
     const pick = page.getByTestId('midata-pick')
     if (await pick.count()) {
       await click(pick, { after: 900 })
       await page.getByTestId('midata-event-4101').waitFor({ timeout: 5000 })
-      await wait(1400)
-      await click(page.getByTestId('midata-event-4101'), { after: 900 })
+      await highlight(page.getByTestId('midata-event-4101'), 2500)
+      await finishBeat(0)
+      await click(page.getByTestId('midata-event-4101'), { after: 700 })
     }
-    await click(page.getByTestId('midata-refresh'), { after: 1200 })
+  })
+  await scene('midata-numbers', async () => {
+    await click(page.getByTestId('midata-refresh'), { after: 800 })
     await page.waitForSelector('[data-testid="midata-summary"]', { timeout: 8000 })
-    await caption('Rote Zone · nur Zahlen', 'Teilnehmende, J+S-Alter, Leitende', 'In der Oberfläche landen nur Aggregate – keine Namen von Teilnehmenden, keine Geburtsdaten.')
-    await highlight(page.getByTestId('midata-summary'), 3000)
-    await click(page.getByTestId('midata-adopt-open'), { after: 900 })
-    await caption('Rote Zone · nur Zahlen', 'Mit einem Klick in die Lager-Angaben übernehmen', 'Die Regeln rechnen damit sofort weiter – z. B. Betreuungsverhältnis und SLRG-Abdeckung.')
-    await wait(1200)
-    await click(page.getByTestId('adopt-apply'), { after: 1200 })
-    const matrix = page.getByTestId('qual-matrix')
-    await caption('Qualifikationen', 'Wer darf was? Die Qualifikationsmatrix', 'Lagerleiter, LS/T, Wasser, Berg, Winter, SLRG – gültig am Lagerbeginn, abgeglichen mit den sicherheitsrelevanten Aktivitäten.')
-    await highlight(matrix, 4800)
+    await beat('midata-numbers')
+    await highlight(page.getByTestId('midata-summary'), 6000)
+  })
+  await scene('midata-adopt', async () => {
+    await beat('midata-adopt')
+    await click(page.getByTestId('midata-adopt-open'), { after: 1800 })
+    await click(page.getByTestId('adopt-apply'), { after: 900 })
+    await highlight(page.getByTestId('input-participantsCount'), 2000)
+  })
+  await scene('matrix', async () => {
+    await beat('matrix')
+    await highlight(page.getByTestId('qual-matrix'), 6000)
+    await highlight(page.getByTestId('qual-activities-source').locator('xpath=..'), 6000)
   })
 
-  // ---------------- 10. Selbstcheck ----------------
+  // ---------------- Kapitel 7: Selbstcheck ----------------
   await scene('selfcheck', async () => {
+    await captionOff()
     await tab('selbstcheck')
     await page.waitForSelector('[data-testid="selfcheck-start"]', { timeout: 8000 })
-    await caption('Neu: Selbstcheck', 'Lagerleitende prüfen ihr Lager vor der Abgabe', 'Entwurfsrunden mit Fortschritt und Bericht – ohne die offiziellen Review-Runden zu berühren.', 1500)
+    await beat('selfcheck')
     await page.waitForFunction(() => !document.querySelector('[data-testid="selfcheck-start"]')?.hasAttribute('disabled'), null, { timeout: 8000 })
     await click(page.getByTestId('selfcheck-start'), { after: 800 })
     await page.locator('[data-testid="selfcheck-note"] textarea').first().pressSequentially('Entwurf vor der Abgabe', { delay: 35 })
     await click(page.getByTestId('selfcheck-confirm'), { after: 1500 })
-    await highlight(page.getByTestId('selfcheck-report'), 3200)
+    await highlight(page.getByTestId('selfcheck-report'), 5000)
   })
 
-  // ---------------- 11. Fristen-Radar ----------------
+  // ---------------- Kapitel 8: Fristen ----------------
   await scene('radar', async () => {
+    await captionOff()
     await nav('/fristen')
-    await caption('Neu: Fristen-Radar', 'Nie wieder eine Frist verpassen', 'Überfällig, diese Woche, nächste 4 Wochen, später – für alle deine Lager, inklusive PBS-Meilensteine.', 1500)
-    await highlight(page.locator('[data-testid^="radar-head-"]').first().locator('xpath=..'), 2600)
-    await caption('Neu: Fristen-Radar', 'Als Kalender exportieren (.ics)', 'Alle Fristen in Outlook, Google oder Apple Kalender – mit Quelle (J+S-Regel oder Hering).')
-    await highlight(page.getByTestId('export-ics'), 2400)
-    await highlight(page.getByTestId('milestone-row').first(), 2200)
+    await beat('radar')
+    await highlight(page.locator('[data-testid^="radar-head-"]').first().locator('xpath=..'), 3500)
+    await highlight(page.getByTestId('milestone-row').first(), 3500)
+  })
+  await scene('ics', async () => {
+    await beat('ics')
+    await click(page.getByTestId('export-ics'), { after: 1500 })
   })
 
-  // ---------------- 12. Outro ----------------
-  await P('hideCaption')
-  await P('card', 'co-co · Coach Cockpit', 'Weniger suchen. Mehr coachen.', 'eCamp · MiData · NDS · J+S- und PBS-Regeln – in einer Desktop-App.', 'Kein eigenes Backend · Daten bleiben auf deinem Gerät · KI optional und abgeschaltet')
-  await wait(5500)
+  // ---------------- Outro ----------------
+  await scene('outro', async () => {
+    await P('hideCaption')
+    await beat('outro')
+  })
+  await wait(1500)
 
   const seconds = await rec.stop()
   await ctx.close()
   await browser.close()
-  console.log(`Video: ${join(OUT, 'co-co-promo.webm')} (${seconds.toFixed(1)} s, ${VW}x${VH})`)
+  writeFileSync(join(OUT, 'timeline.json'), JSON.stringify({ voiceDir, beats: timeline }, null, 2))
+  console.log(`Video: ${join(OUT, 'co-co-promo.silent.webm')} (${seconds.toFixed(1)} s, ${VW}x${VH})`)
+  console.log(`Timeline: ${join(OUT, 'timeline.json')} - next: node tools/promo-video/mix.mjs ${OUT}`)
 }
 
 main()

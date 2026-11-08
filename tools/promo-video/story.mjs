@@ -1,0 +1,146 @@
+/**
+ * Story of the promo video: one coach, one camp, from the first look to the calendar.
+ * Each beat is one caption (kicker / title / sub) plus the narration spoken by the TTS voice.
+ * `voice` may use phonetic spellings («Ko-Ko», «Jot und Es») - it is never shown on screen.
+ */
+export const BEATS = [
+  {
+    id: 'intro',
+    card: ['J+S-Lagercoaching', 'co-co', 'Das Coach Cockpit für eCamp-Lager', 'Eine Geschichte aus dem Coach-Alltag'],
+    voice: 'Ko-Ko. Das Coach Cockpit für e-Camp-Lager. Eine kleine Geschichte aus dem Alltag eines Jot-und-Es-Coachs.',
+  },
+  {
+    id: 'auftrag',
+    card: ['Kapitel 1 · Der Auftrag', 'Falk coacht ein Winterlager', 'Das Leitungsteam um Anna plant «Auf in die Berge» in eCamp. Falk soll prüfen, beraten und Feedback geben – neben Job und Studium.', ''],
+    voice: 'Das ist Falk. Er ist Jot-und-Es-Coach seiner Abteilung. Das Leitungsteam um Anna plant das Winterlager «Auf in die Berge» in e-Camp. Falk soll das Programm prüfen, beraten und Feedback geben. Und das alles neben Job und Studium.',
+  },
+  {
+    id: 'lager',
+    kicker: 'Kapitel 2 · Überblick',
+    title: 'Ein Login – alle Lager, die Falk coacht',
+    sub: 'Falk meldet sich mit seinem eigenen eCamp-Konto an. co-co zeigt jedes Lager mit Rolle, Review-Status und der nächsten Frist.',
+    voice: 'Falk meldet sich mit seinem eigenen e-Camp-Konto an. Ko-Ko zeigt ihm alle Lager, die er coacht. Mit Status und der nächsten Frist.',
+  },
+  {
+    id: 'cockpit',
+    kicker: 'Kapitel 3 · Erste Durchsicht',
+    title: 'Das ganze Programm in Sekunden geprüft',
+    sub: 'co-co prüft das Lager gegen J+S-Vorgaben, Sicherheit und PBS-Empfehlungen: kein Muss-Befund, aber 11 Soll-Befunde – und 0 von 7 gültigen J+S-Tagen?',
+    voice: 'Ein Klick, und Ko-Ko hat das ganze Programm geprüft. Gegen Jot-und-Es-Vorgaben, Sicherheitsregeln und Empfehlungen der Pfadi. Kein Muss-Befund. Aber elf Soll-Befunde. Und null von sieben gültigen Jot-und-Es-Tagen?',
+  },
+  {
+    id: 'zuordnung',
+    kicker: 'Kapitel 3 · Erste Durchsicht',
+    title: 'Kategorien zuordnen: Was zählt als Lagersport?',
+    sub: 'co-co schlägt vor, welche eCamp-Kategorie als Lagersport oder Lageraktivität zählt. Falk prüft den Vorschlag und bestätigt ihn.',
+    voice: 'Der Grund: Ko-Ko weiss noch nicht sicher, welche e-Camp-Kategorien als Lagersport zählen. Es macht einen Vorschlag. Falk prüft ihn und bestätigt.',
+  },
+  {
+    id: 'raster',
+    kicker: 'Kapitel 3 · Erste Durchsicht',
+    title: 'Lagertag-Rechner: J+S-Zeit pro Tag',
+    sub: 'Jetzt rechnet co-co die J+S-Zeit für jeden Lagertag. Zu kurze Tage oder fehlende Sozialzeit sieht Falk auf einen Blick.',
+    voice: 'Jetzt rechnet der Lagertag-Rechner die Jot-und-Es-Zeit für jeden Tag. Zu kurze Tage oder fehlende Pausen sieht Falk auf einen Blick.',
+  },
+  {
+    id: 'triage',
+    kicker: 'Kapitel 4 · Befunde durchgehen',
+    title: 'Zwanzig Minuten am Abend',
+    sub: 'Befund für Befund – die betroffene Aktivität daneben, ein Feedback-Vorschlag schon formuliert. F übernimmt ihn, I ignoriert, weiter geht es automatisch.',
+    voice: 'Am Abend nimmt sich Falk zwanzig Minuten Zeit. Befund für Befund. Die betroffene Aktivität steht daneben, ein Vorschlag für das Feedback ist schon formuliert. Mit der Taste F übernimmt er ihn. Mit I ignoriert er einen Befund. Und weiter geht es zum nächsten.',
+  },
+  {
+    id: 'warum',
+    kicker: 'Kapitel 4 · Befunde durchgehen',
+    title: '«Warum?» – jeder Befund ist begründet',
+    sub: 'Bei einem Befund zur Bergtour ist Falk unsicher. co-co zeigt die Regel mit Version und Quelle und genau die Werte, die geprüft wurden.',
+    voice: 'Bei einem Befund zur Bergtour ist Falk unsicher. Ein Klick auf «Warum?» zeigt die Regel, ihre Quelle und genau die Werte, die geprüft wurden. So kann er sein Feedback begründen.',
+  },
+  {
+    id: 'feedback',
+    kicker: 'Kapitel 5 · Feedback geben',
+    title: 'Feedback dort, wo das Team plant',
+    sub: 'Lob, Auflage, Anregung oder Frage – Falk schreibt einen Punkt zum Skitag und postet ihn als Kommentar direkt an die Aktivität in eCamp.',
+    voice: 'Sein Feedback schreibt Falk dort, wo das Team plant. Ein Punkt zum Skitag. Und mit einem Klick landet er als Kommentar direkt bei der Aktivität in e-Camp.',
+  },
+  {
+    id: 'sync',
+    kicker: 'Kapitel 5 · Feedback geben',
+    title: 'Zwei Tage später: Antworten abgleichen',
+    sub: '«Kommentare abgleichen» holt zurück, was in eCamp passiert ist: Anna hat geantwortet, ein Punkt ist bereits erledigt.',
+    voice: 'Zwei Tage später. Ein Klick auf «Kommentare abgleichen», und Falk sieht, was passiert ist. Anna hat geantwortet. Ein Punkt ist bereits erledigt. Kein Nachfragen per Chat, kein Suchen.',
+  },
+  {
+    id: 'midata-card',
+    card: ['Kapitel 6 · Sicherheit', 'Wer leitet was?', 'Für Skitage braucht es die richtigen Qualifikationen. Die stehen in MiData, der Datenbank der PBS.', 'Nur lesend · mit Falks eigenem Konto · Rote Zone'],
+    voice: 'Für Skitage braucht es die richtigen Qualifikationen. Diese Angaben stehen nicht in e-Camp, sondern in Mi-Data, der Datenbank der Pfadi.',
+  },
+  {
+    id: 'midata-site',
+    kicker: 'Kapitel 6 · Sicherheit',
+    title: 'Entwickelt auf der MiData-Testumgebung der PBS',
+    sub: 'Die Anbindung wird auf pbs.puzzle.ch mit Testdaten erprobt. co-co nutzt immer Falks eigenes Konto – oder übernimmt die Sitzung aus dem eCamp-Login.',
+    voice: 'Entwickelt und getestet wird die Anbindung auf der Testumgebung der Mi-Data, mit Testdaten. Ko-Ko nutzt immer Falks eigenes Konto. Hat er sich bei e-Camp mit Mi-Data angemeldet, ist er automatisch verbunden.',
+  },
+  {
+    id: 'midata-settings',
+    kicker: 'Kapitel 6 · Sicherheit',
+    title: 'Einmal verbinden, nur lesend',
+    sub: 'In den Einstellungen sieht Falk den Status der Verbindung. co-co liest nur – es schreibt nie etwas in MiData.',
+    voice: 'In den Einstellungen sieht Falk, dass Mi-Data verbunden ist. Ko-Ko liest nur. Es schreibt nie etwas zurück.',
+  },
+  {
+    id: 'midata-pick',
+    kicker: 'Kapitel 6 · Sicherheit',
+    title: 'Den passenden MiData-Anlass finden',
+    sub: 'co-co sucht Anlässe rund um die Lagerdaten und markiert, welcher passt. Falk wählt das Lager der Abteilung Musterhausen.',
+    voice: 'Ko-Ko sucht die Anlässe rund um die Lagerdaten und zeigt, welcher passt. Falk wählt das Lager seiner Abteilung.',
+  },
+  {
+    id: 'midata-numbers',
+    kicker: 'Rote Zone · nur Zahlen',
+    title: '24 Teilnehmende, 5 Leitende – ohne Personendaten',
+    sub: 'In der Oberfläche landen nur Zahlen. Namen und Geburtsdaten von Teilnehmenden bleiben geschützt und gehen nie an eine KI.',
+    voice: 'Geladen werden nur Zahlen: vierundzwanzig Teilnehmende, fünf Leitende. Namen und Geburtsdaten der Kinder bleiben geschützt. Und sie gehen nie an eine KI.',
+  },
+  {
+    id: 'midata-adopt',
+    kicker: 'Rote Zone · nur Zahlen',
+    title: 'Übernehmen – und die Regeln rechnen weiter',
+    sub: 'Mit einem Klick fliessen die Zahlen in die Lager-Angaben. Regeln wie Betreuungsverhältnis oder SLRG-Abdeckung prüfen jetzt mit echten Werten.',
+    voice: 'Mit einem Klick übernimmt Falk die Zahlen. Regeln wie das Betreuungsverhältnis prüfen jetzt mit echten Werten.',
+  },
+  {
+    id: 'matrix',
+    kicker: 'Kapitel 6 · Sicherheit',
+    title: 'Die Qualifikationsmatrix',
+    sub: 'Wer hat Lagerleiter, Berg, Winter, Wasser oder SLRG – gültig am Lagerbeginn? Der Verantwortliche der Skitage lässt sich keiner Winter-Qualifikation zuordnen: ein klarer Punkt fürs Gespräch mit Anna.',
+    voice: 'Die Qualifikationsmatrix zeigt, wer was leiten darf, gültig am Lagerbeginn. Doch der Verantwortliche der Skitage lässt sich keiner Winter-Qualifikation zuordnen. Ein klarer Punkt für das nächste Gespräch mit Anna.',
+  },
+  {
+    id: 'selfcheck',
+    kicker: 'Kapitel 7 · Das Team zieht mit',
+    title: 'Selbstcheck für die Lagerleitung',
+    sub: 'Anna kann das Lager vor der Abgabe selbst prüfen: dieselben Regeln als Entwurfsrunde, mit Fortschritt und Bericht – ohne die offizielle Prüfung zu verändern.',
+    voice: 'Und das Leitungsteam kann vorarbeiten. Mit dem Selbstcheck prüft Anna das Lager vor der Abgabe selbst. Dieselben Regeln, als Entwurfsrunde mit Bericht. Die offizielle Prüfung bleibt unberührt.',
+  },
+  {
+    id: 'radar',
+    kicker: 'Kapitel 8 · Bis zum Lagerstart',
+    title: 'Fristen-Radar: nichts geht unter',
+    sub: 'Lagermeldung, Leihmaterial, Sicherheitskonzept, NDS-Anmeldung: alle Termine aller Lager, mit J+S-Fristen und PBS-Meilensteinen.',
+    voice: 'Bis zum Lagerstart gibt es viele Termine. Lagermeldung, Leihmaterial, Sicherheitskonzept, Anmeldung bei Jot und Es. Das Fristen-Radar sammelt sie für alle Lager.',
+  },
+  {
+    id: 'ics',
+    kicker: 'Kapitel 8 · Bis zum Lagerstart',
+    title: 'Direkt in Falks Kalender',
+    sub: 'Ein Export als .ics – und die Fristen erscheinen in Outlook, Google oder Apple Kalender, jeweils mit Quelle.',
+    voice: 'Und mit einem Export landen alle Fristen direkt in Falks Kalender.',
+  },
+  {
+    id: 'outro',
+    card: ['co-co · Coach Cockpit', 'Weniger suchen. Mehr coachen.', 'Damit Falk Zeit hat für das, was zählt: ein gutes Gespräch mit dem Leitungsteam.', 'Kein eigenes Backend · Daten bleiben auf deinem Gerät · KI optional und standardmässig aus'],
+    voice: 'Ko-Ko. Weniger suchen, mehr coachen. Damit Falk Zeit hat für das, was zählt: ein gutes Gespräch mit dem Leitungsteam.',
+  },
+]
