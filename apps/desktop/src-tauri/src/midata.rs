@@ -400,7 +400,7 @@ fn participations_path(id: &str) -> String {
     )
 }
 
-/// Participations for the «Personen» tab (ADR 0008): same as `participations_path`, plus the person
+/// Participations for the «Personen» tab (ADR 0009): same as `participations_path`, plus the person
 /// attributes the tab shows. Kept separate so the aggregate query stays minimal.
 fn persons_participations_path(id: &str) -> String {
     format!(
@@ -688,7 +688,7 @@ pub async fn fetch_aggregate_impl(
     Ok(aggregate)
 }
 
-/// «Personen» tab: individual MiData people of one event (red zone, ADR 0008). The caller keeps the
+/// «Personen» tab: individual MiData people of one event (red zone, ADR 0009). The caller keeps the
 /// result in memory only; nothing here logs or formats person values.
 pub async fn fetch_persons_impl(
     state: &MidataState,

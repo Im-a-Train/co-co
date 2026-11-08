@@ -1,4 +1,4 @@
-//! «Personen» tab (ADR 0008, plan `docs/plans/participants-and-nds-sync.md`, phase P1): person rows
+//! «Personen» tab (ADR 0009, plan `docs/plans/participants-and-nds-sync.md`, phase P1): person rows
 //! of one MiData event and one NDS camp. RED ZONE.
 //!
 //! Unlike `midata::reduce_aggregate` / `nds::reduce_aggregate` these reducers return INDIVIDUAL

@@ -54,6 +54,8 @@ npm test                                     # vitest (domain + helpers, Node en
 npm run build:vite -w apps/desktop           # vue-tsc + vite production build
 UI_PORT=1431 npm run test:ui -w apps/desktop # Edge UI harness on a free port, screenshots to e2e-ui/shots/
 npm run test:live -w apps/desktop            # opt-in live test, needs ECAMP_E2E_URL/USER/PASSWORD env vars
+npm run version:check                        # all manifests carry the same base version (ADR 0008)
+npm run version:bump -- minor                # raise base version (patch|minor|major) in a PR; never edit by hand
 # Rust (in apps/desktop/src-tauri)
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
@@ -124,6 +126,8 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
 ## Git workflow
 
 - Branch from `main`, open a PR, wait for green CI. Do not push to `main` directly.
+- Every push to `main` publishes a GitHub pre-release `v<base>-alpha.<n>` (installer + portable exe) via
+  CI (ADR 0008). Versions are stamped by CI only; committed manifests keep the plain base version.
 - Small, focused commits; end commit messages with the `Co-Authored-By` trailer when an agent wrote
   the change.
 - Update `docs/` (ADR, contracts, architecture, spec status) in the same PR when behaviour or

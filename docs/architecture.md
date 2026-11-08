@@ -172,7 +172,7 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
   `selfChecks`, deliberately separate from review rounds. Backup with `omitRedDerived` strips red
   findings from the runs.
 - **Personen (red zone, memory only)** (`domain/persons/`: `match`, `diff`, `age`, `view`; `usePersons`;
-  tab «Personen», ADR 0008): MiData and NDS people are loaded on click via `persons_load_*`, held in
+  tab «Personen», ADR 0009): MiData and NDS people are loaded on click via `persons_load_*`, held in
   module-level refs (and in Rust), reconciled by `diffPersons`, and wiped on logout, camp switch or
   «Aus dem Speicher entfernen» (`persons_clear`). All row types carry the `__red` brand; `aiGateway`
   refuses any payload containing it; no Dexie table, no backup, no clipboard

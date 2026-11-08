@@ -47,7 +47,7 @@ export class AiRefusedError extends Error {
 /** Marker of a serialized MiData/NDS aggregate (JSON, any whitespace). */
 const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*(MiData|NDS)|"offerBusinessId"|"campBusinessId"|"redKeys"|"evaluatedFor"/
 
-/** True when `v` (deep) carries the red-zone `__red` brand of the Personen types (ADR 0008). */
+/** True when `v` (deep) carries the red-zone `__red` brand of the Personen types (ADR 0009). */
 export function containsRedBrand(v: unknown, seen = new Set<object>()): boolean {
   if (typeof v !== 'object' || v === null) return false
   if (seen.has(v)) return false

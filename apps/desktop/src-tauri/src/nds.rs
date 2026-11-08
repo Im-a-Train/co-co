@@ -427,7 +427,7 @@ pub async fn find_camps_impl(state: &NdsState, from: &str, to: &str) -> AppResul
     Ok(out)
 }
 
-/// «Personen» tab: individual NDS people of one camp (red zone, ADR 0008), read-only queries.
+/// «Personen» tab: individual NDS people of one camp (red zone, ADR 0009), read-only queries.
 /// A failing list fails the whole call (a partial list would look like missing people).
 pub async fn fetch_persons_impl(state: &NdsState, camp_id: &str) -> AppResult<NdsPersonsResult> {
     validate_id(camp_id)?;
