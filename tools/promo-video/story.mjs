@@ -71,6 +71,13 @@ export const BEATS = [
     voice: 'Zwei Tage später. Ein Klick auf «Kommentare abgleichen», und Falk sieht, was passiert ist. Anna hat geantwortet. Ein Punkt ist bereits erledigt. Kein Nachfragen per Chat, kein Suchen.',
   },
   {
+    id: 'teilen',
+    kicker: 'Kapitel 5 · Feedback geben',
+    title: 'Oder als Nachricht ans ganze Team',
+    sub: 'Für E-Mail fasst co-co alle Punkte zusammen – jeder Aktivitätstitel ist ein Link direkt in eCamp. In WhatsApp stehen kurze Blocknummern wie «1.1» statt langer Links.',
+    voice: 'Lieber als Nachricht ans ganze Team? Ko-Ko fasst alle Punkte zusammen. In der E-Mail ist jeder Aktivitätstitel ein Link, direkt in e-Camp. Und in Whatsapp stehen kurze Blocknummern statt langer Links.',
+  },
+  {
     id: 'midata-card',
     card: ['Kapitel 6 · Sicherheit', 'Wer leitet was?', 'Für Skitage braucht es die richtigen Qualifikationen. Die stehen in MiData, der Datenbank der PBS.', 'Nur lesend · mit Falks eigenem Konto · Rote Zone'],
     voice: 'Für Skitage braucht es die richtigen Qualifikationen. Diese Angaben stehen nicht in e-Camp, sondern in Mi-Data, der Datenbank der Pfadi.',
