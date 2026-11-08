@@ -12,6 +12,8 @@ workflow. This file has recipes for the most common changes.
    `cargo test --workspace` + `cargo clippy --workspace --all-targets -- -D warnings` in
    `apps/desktop/src-tauri`, and for UI changes `npm run test:ui -w apps/desktop`.
 4. Open a PR using the template; CI must be green before merging.
+5. Merging to `main` publishes the next alpha pre-release automatically (ADR 0008). Do not edit version
+   numbers by hand; for a new minor/patch/major base version run `npm run version:bump -- <part>` in a PR.
 
 ## Add or change a rule
 
