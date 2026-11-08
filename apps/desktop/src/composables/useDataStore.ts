@@ -1,5 +1,5 @@
 /**
- * State of the encrypted local data store (ADR 0009). The key lives in the OS keychain (Rust) and is only
+ * State of the encrypted local data store (ADR 0010). The key lives in the OS keychain (Rust) and is only
  * released after a verified eCamp session: login -> unlock(), logout -> lock().
  * Composables that cache DB-derived state register a reset via onDataStoreLocked().
  */

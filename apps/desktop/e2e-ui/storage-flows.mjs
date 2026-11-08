@@ -1,5 +1,5 @@
 /**
- * storage flows of the UI harness (imported by run.mjs): encrypted local data store (ADR 0009).
+ * storage flows of the UI harness (imported by run.mjs): encrypted local data store (ADR 0010).
  * Locked start, route guard, unlock after login, lock on logout, key-lost dialog + reset.
  * Uses mock URL options ?loggedout=1 (start without session) and ?keylost=1 (wrong data key). Run it last:
  * the key-lost flow leaves the harness database encrypted with the second mock key.

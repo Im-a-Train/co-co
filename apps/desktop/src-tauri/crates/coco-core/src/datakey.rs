@@ -1,4 +1,4 @@
-//! Data key helpers (ADR 0009): random 32-byte key, base64 transport form and a versioned
+//! Data key helpers (ADR 0010): random 32-byte key, base64 transport form and a versioned
 //! AES-256-GCM envelope `{"v":1,"iv":"<b64 12 bytes>","ct":"<b64 ciphertext+tag>"}`.
 //! Errors never contain key material or plaintext.
 

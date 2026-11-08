@@ -1,5 +1,5 @@
 /**
- * One-time copy of the legacy plaintext database 'coco' into the encrypted 'coco2' (ADR 0009).
+ * One-time copy of the legacy plaintext database 'coco' into the encrypted 'coco2' (ADR 0010).
  * Copy table by table through the encryption middleware (chunked), verify counts, delete the legacy database LAST.
  * Progress is stored in an encrypted internal settings row, so an interrupted run resumes; a second run is a no-op.
  */

@@ -1,4 +1,4 @@
-/** Errors of the encrypted local store (ADR 0009). Callers map these to German UI texts. */
+/** Errors of the encrypted local store (ADR 0010). Callers map these to German UI texts. */
 
 /** The data store is locked (no key): nobody may read or write co-co data. */
 export class LockedError extends Error {

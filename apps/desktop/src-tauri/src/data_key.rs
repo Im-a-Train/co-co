@@ -1,4 +1,4 @@
-//! ADR 0009: the data key for encryption at rest lives in the OS keychain
+//! ADR 0010: the data key for encryption at rest lives in the OS keychain
 //! (service `ch.imatrain.coco`, user `data-key`, base64 of 32 random bytes).
 //!
 //! `unlock_data_store` hands it to the UI only while the eCamp session is verified (one

@@ -72,7 +72,7 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
   CSP). Add a Tauri command instead.
 - **Secrets stay in Rust / the OS keychain.** Cookie values, refresh tokens, passwords and API keys never
   reach the UI, IndexedDB, logs, error messages or events. Only cookie *names* may be shown. Sole exception
-  (ADR 0009): the local data key (not a credential) enters the webview once per unlock, as a
+  (ADR 0010): the local data key (not a credential) enters the webview once per unlock, as a
   non-extractable WebCrypto key; credentials stay Rust-only.
 - **Persisted data is encrypted.** All persisted data goes through `getDb()` and its encryption middleware
   (guard: `src/__tests__/contracts/encryptionGuard.test.ts`); no raw IndexedDB, no new files with content.

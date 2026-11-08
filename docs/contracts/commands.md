@@ -133,7 +133,7 @@ window only. Nothing runs in the background. Unknown state codes are kept as raw
 | `persons_load_nds` | `ndsCampId: string` | `NdsPersonsResult` (red brand) | Same for NDS: read-only `ParticipantsListForCamp` / `SupervisorsListForCamp` with `person { businessId personNumber firstName lastName birthDate }` and `targetAudienceGroup` / `involvementType`. `privateAddress` and AHV are not requested. Memory only. 401/403 -> «Anmeldung abgelaufen». |
 | `persons_clear` | none | `void` | Wipes the in-memory person lists (call on lock, logout, leaving the tab). |
 
-## ADR 0009: data key (encryption at rest)
+## ADR 0010: data key (encryption at rest)
 
 | Command | Args | Returns | Notes |
 | --- | --- | --- | --- |

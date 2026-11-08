@@ -31,7 +31,7 @@ const MAX_DEBOUNCE_WINDOW: Duration = Duration::from_secs(5);
 
 /// Managed state: the persisted allowed-path scope plus the active watchers.
 ///
-/// `allowed-paths.json` is AES-256-GCM encrypted with the data key (ADR 0009). Until
+/// `allowed-paths.json` is AES-256-GCM encrypted with the data key (ADR 0010). Until
 /// `unlock` has run (eCamp session verified) the scope is empty and nothing is persisted.
 pub struct FileState {
     scope: Mutex<PathScope>,

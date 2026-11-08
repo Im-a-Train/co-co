@@ -1,6 +1,6 @@
 /**
  * Per-table encryption config: the allowlist of fields that stay PLAINTEXT in IndexedDB (primary key and
- * indexed fields). Everything else goes into the encrypted `_enc` envelope (ADR 0009, plan section 4).
+ * indexed fields). Everything else goes into the encrypted `_enc` envelope (ADR 0010, plan section 4).
  * Every table in TABLE_NAMES needs an entry (enforced by contracts/encryptionGuard.test.ts and at db open).
  * Plaintext metadata is limited to opaque ids (camp IRIs, finding ids), `rounds.number` and `aiLog.at`.
  */

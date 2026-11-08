@@ -1,5 +1,5 @@
 /**
- * Dexie DBCore middleware that encrypts every row at rest (ADR 0009).
+ * Dexie DBCore middleware that encrypts every row at rest (ADR 0010).
  *
  * Stored row = { <plaintext allowlist fields incl. primary key>, _enc: { v, iv, ct } }.
  * Reads decrypt and merge; failures throw DecryptError (never empty data), a dropped key throws LockedError.

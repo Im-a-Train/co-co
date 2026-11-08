@@ -1,5 +1,5 @@
 /**
- * Encrypted IndexedDB (Dexie) database 'coco2' with all co-co tables (ADR 0009). Shared by all modules.
+ * Encrypted IndexedDB (Dexie) database 'coco2' with all co-co tables (ADR 0010). Shared by all modules.
  * The legacy plaintext database 'coco' (v1-v4) lives frozen in legacyDb.ts and is migrated by migrate.ts.
  * getDb() throws LockedError until unlockDb(key) ran; every row goes through the encryption middleware.
  *

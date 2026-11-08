@@ -1,5 +1,5 @@
 /**
- * Guard (ADR 0009): every table is covered by the encryption middleware, Dexie is only used where allowed,
+ * Guard (ADR 0010): every table is covered by the encryption middleware, Dexie is only used where allowed,
  * and localStorage holds nothing but the boot/UI keys. Test files (__tests__) are exempt.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'

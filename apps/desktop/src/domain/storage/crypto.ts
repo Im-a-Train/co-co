@@ -1,5 +1,5 @@
 /**
- * AES-256-GCM envelope for rows of the local store (ADR 0009).
+ * AES-256-GCM envelope for rows of the local store (ADR 0010).
  * - The key is imported as a NON-extractable CryptoKey; the raw bytes are zeroed right after import.
  * - Envelope `{ v: 1, iv, ct }`: fresh random 96-bit IV per write; AAD = table + '\0' + primary key, so a row
  *   copied under another table or key fails to decrypt.

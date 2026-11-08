@@ -89,7 +89,7 @@ pub async fn logout<R: Runtime>(app: AppHandle<R>, webview: Webview<R>, state: S
     crate::auth::logout(&app, &state).await
 }
 
-/// ADR 0009: hands the data key to the UI, only with a verified eCamp session.
+/// ADR 0010: hands the data key to the UI, only with a verified eCamp session.
 #[tauri::command]
 pub async fn unlock_data_store<R: Runtime>(
     app: AppHandle<R>,

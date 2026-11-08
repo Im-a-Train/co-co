@@ -64,7 +64,7 @@ Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleStat
 `documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`.
 
-### Encryption at rest (ADR 0009)
+### Encryption at rest (ADR 0010)
 
 - **Middleware:** `getDb()` returns a Dexie `coco2` with `storage/encryptionMiddleware.ts`. Each row is stored as its plaintext
   allowlist fields (primary key, indexed ids) plus one AES-256-GCM envelope `_enc` (WebCrypto, non-extractable key). Reads decrypt, so callers see plain rows. `encryptionConfig.ts` lists the plaintext fields per table; the guard test `encryptionGuard.test.ts` forbids bypasses (raw IndexedDB, other storage).

@@ -1,6 +1,6 @@
 # ADR 0004: No co-co backend; data stays local
 
-- Status: accepted (encryption of the local store: see [0009](0009-encryption-at-rest.md))
+- Status: accepted (encryption of the local store: see [0010](0010-encryption-at-rest.md))
 - Date: 2026-11-07
 
 ## Context

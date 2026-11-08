@@ -1,6 +1,6 @@
 /**
  * FROZEN legacy IndexedDB database 'coco' (plaintext, schema v1-v4). Kept only so `migrate.ts` can read it
- * once and copy it into the encrypted database `coco2` (ADR 0009). Do NOT edit the versions below and do not
+ * once and copy it into the encrypted database `coco2` (ADR 0010). Do NOT edit the versions below and do not
  * use this class anywhere except the migration and tests.
  */
 import Dexie, { type EntityTable } from 'dexie'
