@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { copyText } from '@/lib/clipboard'
+import { copyRich, copyText } from '@/lib/clipboard'
+import { commands } from '@/lib/tauri'
 import { renderFeedback, TEMPLATE_IDS, type RenderContext } from '@/domain/feedback'
 import type { FeedbackChannel, FeedbackItem, FeedbackTemplateId } from '@/domain/types'
 
@@ -19,6 +20,26 @@ const rendered = computed(() =>
 
 async function copy(text: string) {
   notice.value = (await copyText(text)) ? t('feedback.copied') : t('feedback.copyFailed')
+}
+
+async function copyBody() {
+  const r = rendered.value
+  const ok = r.html ? await copyRich(r.html, r.body) : await copyText(r.body)
+  notice.value = ok ? t('feedback.copied') : t('feedback.copyFailed')
+}
+
+/** Links in the HTML preview must not navigate inside the webview: open them externally. */
+async function onHtmlClick(e: MouseEvent) {
+  const a = (e.target as HTMLElement | null)?.closest('a')
+  if (!a) return
+  e.preventDefault()
+  const href = a.getAttribute('href')
+  if (!href) return
+  try {
+    await commands.openEcampUrl(href)
+  } catch (err) {
+    notice.value = `${t('feedback.openInEcampFailed')}: ${err instanceof Error ? err.message : String(err)}`
+  }
 }
 </script>
 
@@ -47,9 +68,20 @@ async function copy(text: string) {
           <v-btn size="x-small" variant="text" icon="mdi-content-copy" :aria-label="t('feedback.copy')" @click="copy(rendered.subject ?? '')" />
         </div>
       </div>
-      <v-sheet border rounded class="pa-3" style="white-space: pre-wrap; max-height: 420px; overflow: auto">{{ rendered.body }}</v-sheet>
+      <!-- rendered.html is built only from escaped text parts and http(s) URLs (see domain/feedback). -->
+      <v-sheet
+        v-if="rendered.html"
+        border
+        rounded
+        class="pa-3 feedback-html"
+        data-test="feedback-html"
+        style="max-height: 420px; overflow: auto"
+        @click="onHtmlClick"
+        v-html="rendered.html"
+      />
+      <v-sheet v-else border rounded class="pa-3" style="white-space: pre-wrap; max-height: 420px; overflow: auto">{{ rendered.body }}</v-sheet>
       <div class="d-flex align-center mt-3">
-        <v-btn variant="tonal" color="primary" prepend-icon="mdi-content-copy" :disabled="!rendered.body" @click="copy(rendered.body)">
+        <v-btn variant="tonal" color="primary" prepend-icon="mdi-content-copy" :disabled="!rendered.body" @click="copyBody">
           {{ t('feedback.copy') }}
         </v-btn>
         <span v-if="notice" class="text-caption ml-3">{{ notice }}</span>

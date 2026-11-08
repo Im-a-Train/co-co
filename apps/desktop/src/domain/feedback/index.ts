@@ -15,6 +15,10 @@ export interface RenderContext {
   activityTitles: Record<Iri, string>
   /** activityIri -> eCamp web URL (see domain/ecampLinks). Missing entries render without link. */
   activityUrls?: Record<Iri, string>
+  /** activityIri -> short eCamp URL (ids only); only used in the plain-text fallback of email/plain. */
+  activityShortUrls?: Record<Iri, string>
+  /** activityIri -> block number(s), e.g. "1.2/3.4" (see domain/ecampLinks activityBlockNumbers). */
+  activityNumbers?: Record<Iri, string>
   /** Append the eCamp link to activity items (default true when activityUrls is given). */
   includeLinks?: boolean
   templateId?: FeedbackTemplateId
@@ -28,6 +32,8 @@ export interface RenderedFeedback {
   /** Only for 'email'. */
   subject: string | null
   body: string
+  /** HTML body with linked activity titles (email/plain only); null when the plain body suffices. */
+  html: string | null
 }
 
 export interface FeedbackLint {
@@ -75,19 +81,72 @@ const WHATSAPP_EMOJI: Record<FeedbackKind, string> = {
 
 function itemLine(item: FeedbackItem, channel: FeedbackChannel, ctx: RenderContext): string {
   const text = item.text.trim().replace(/\n+/g, ' ')
-  const title = item.scope === 'activity' && item.activityIri ? ctx.activityTitles[item.activityIri] : undefined
+  const title = itemTitle(item, ctx)
   const label = title ? (channel === 'whatsapp' ? `*${title}*: ` : `${title}: `) : ''
-  const url =
-    ctx.includeLinks !== false && item.scope === 'activity' && item.activityIri
-      ? ctx.activityUrls?.[item.activityIri]
-      : undefined
   if (channel === 'whatsapp') {
-    // Raw URL on its own line so WhatsApp autolinks it.
-    return `${WHATSAPP_EMOJI[item.kind]} ${label}${text}` + (url ? `
-   ${url}` : '')
+    // No link: WhatsApp cannot hide URLs; the block number identifies the activity.
+    return `${WHATSAPP_EMOJI[item.kind]} ${label}${text}`
   }
-  return `- ${label}${text}` + (url ? `
-  ${tr('feedback.linkLabel')}: ${url}` : '')
+  const urls = itemUrls(item, ctx)
+  const url = urls.short ?? urls.long
+  return `- ${label}${text}` + (url ? ` (${tr('feedback.linkLabel')}: ${url})` : '')
+}
+
+/** "{block numbers} {title}" of an activity item (numbers optional), or undefined. */
+function itemTitle(item: FeedbackItem, ctx: RenderContext): string | undefined {
+  if (item.scope !== 'activity' || !item.activityIri) return undefined
+  const title = ctx.activityTitles[item.activityIri]
+  if (!title) return undefined
+  const nr = ctx.activityNumbers?.[item.activityIri]
+  return nr ? `${nr} ${title}` : title
+}
+
+function itemUrls(item: FeedbackItem, ctx: RenderContext): { long?: string; short?: string } {
+  if (ctx.includeLinks === false || item.scope !== 'activity' || !item.activityIri) return {}
+  return { long: ctx.activityUrls?.[item.activityIri], short: ctx.activityShortUrls?.[item.activityIri] }
+}
+
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function htmlText(s: string): string {
+  return escapeHtml(s).replace(/\r?\n/g, '<br>')
+}
+
+function itemHtml(item: FeedbackItem, ctx: RenderContext): { html: string; linked: boolean } {
+  const text = htmlText(item.text.trim().replace(/\n+/g, ' '))
+  const title = itemTitle(item, ctx)
+  const url = itemUrls(item, ctx).long
+  if (url) {
+    const href = escapeHtml(url)
+    if (title) return { html: `- <a href="${href}">${escapeHtml(title)}</a>: ${text}`, linked: true }
+    return { html: `- ${text} <a href="${href}">${escapeHtml(tr('feedback.openInEcamp'))}</a>`, linked: true }
+  }
+  return { html: `- ${title ? `${escapeHtml(title)}: ` : ''}${text}`, linked: false }
+}
+
+/** HTML items block (sections in Feedback-Kultur order, bold headings); `linked` = any item has a link. */
+function renderItemsHtml(items: FeedbackItem[], ctx: RenderContext): { html: string; linked: boolean } {
+  const ordered = orderItems(items.filter((i) => i.text.trim() !== ''))
+  const blocks: string[] = []
+  let linked = false
+  for (const kind of KIND_ORDER) {
+    const group = ordered.filter((i) => i.kind === kind)
+    if (group.length === 0) continue
+    const lines = group.map((i) => {
+      const r = itemHtml(i, ctx)
+      linked ||= r.linked
+      return r.html
+    })
+    blocks.push([`<b>${escapeHtml(`${tr(`feedback.section.${kind}`)}:`)}</b>`, ...lines].join('<br>'))
+  }
+  return { html: blocks.join('<br><br>'), linked }
 }
 
 /** Renders grouped items (sections in Feedback-Kultur order) without template. */
@@ -120,6 +179,8 @@ function collapseBlankLines(s: string): string {
   return s.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
+const ITEMS_TOKEN = '\u0000ITEMS\u0000'
+
 export function renderFeedback(items: FeedbackItem[], channel: FeedbackChannel, ctx: RenderContext): RenderedFeedback {
   const itemsBlock = renderItemsBlock(items, channel, ctx)
   const tpl = ctx.template ?? (ctx.templateId ? safeTemplate(ctx.templateId) : null)
@@ -127,21 +188,32 @@ export function renderFeedback(items: FeedbackItem[], channel: FeedbackChannel, 
   const vars = { camp: campName, coach: ctx.coachName ?? '', items: itemsBlock }
   let subject: string | null = null
   let body: string
+  let htmlBody: string | null = null
+  const itemsHtml = channel !== 'whatsapp' && ctx.includeLinks !== false ? renderItemsHtml(items, ctx) : null
   if (tpl) {
     const parts = splitTemplate(tpl)
     subject = parts.subject !== null ? fillTemplate(parts.subject, vars).trim() : null
     body = collapseBlankLines(fillTemplate(parts.body, vars))
+    if (itemsHtml?.linked) {
+      // Fill with a placeholder token, escape the rest, then swap in the (already escaped) items HTML.
+      const filled = collapseBlankLines(fillTemplate(parts.body, { ...vars, items: ITEMS_TOKEN }))
+      htmlBody = htmlText(filled).replace(ITEMS_TOKEN, () => itemsHtml.html)
+    }
   } else {
     body = itemsBlock
+    if (itemsHtml?.linked) htmlBody = itemsHtml.html
   }
   if (channel === 'whatsapp') {
     // WhatsApp: the subject becomes a bold first line.
     if (subject) body = `*${subject}*\n\n${body}`
-    return { channel, subject: null, body }
+    return { channel, subject: null, body, html: null }
   }
-  if (channel === 'email') return { channel, subject: subject ?? campName, body }
-  if (subject) body = `${subject}\n\n${body}`
-  return { channel, subject: null, body }
+  if (channel === 'email') return { channel, subject: subject ?? campName, body, html: htmlBody }
+  if (subject) {
+    body = `${subject}\n\n${body}`
+    if (htmlBody !== null) htmlBody = `${htmlText(subject)}<br><br>${htmlBody}`
+  }
+  return { channel, subject: null, body, html: htmlBody }
 }
 
 function safeTemplate(id: FeedbackTemplateId): string | null {

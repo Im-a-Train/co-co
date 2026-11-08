@@ -79,8 +79,19 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     const body = await page.locator('.v-sheet').first().innerText().catch(() => '')
     if (!(await page.locator('[data-test="open-ecamp"]').count())) throw new Error('"In eCamp öffnen" button missing')
     if (!/in ecamp öffnen/i.test(await text())) throw new Error('button label missing')
-    if (!/\/program\/activity\//.test(body)) throw new Error('preview lacks eCamp link: ' + body.slice(0, 200))
+    if (/\/program\/activity\//.test(body) || /https?:\/\//.test(body)) throw new Error('whatsapp preview must not contain a link: ' + body.slice(0, 200))
+    if (!/\*?\d+\.\d+(\/\d+\.\d+)* /.test(body)) throw new Error('whatsapp preview lacks block number: ' + body.slice(0, 200))
     await shot(page, 'flow-feedback-links')
+    await page.locator('.v-tab', { hasText: /e-?mail/i }).first().click()
+    await page.waitForSelector('[data-test="feedback-html"] a', { timeout: 5000 })
+    const htmlSheet = page.locator('[data-test="feedback-html"]')
+    const anchorHref = (await htmlSheet.locator('a').first().getAttribute('href')) ?? ''
+    const anchorText = (await htmlSheet.locator('a').first().innerText()).trim()
+    const visible = await htmlSheet.innerText()
+    if (!anchorText) throw new Error('email preview link has no title text')
+    if (!/\/program\/activity\//.test(anchorHref)) throw new Error('email link href wrong: ' + anchorHref)
+    if (visible.includes(anchorHref) || /https?:\/\//.test(visible)) throw new Error('email preview shows the raw URL: ' + visible.slice(0, 300))
+    await shot(page, 'flow-feedback-links-email')
   })
 
   await step('flow: triage position survives tab switch and back/forward', async () => {

@@ -191,17 +191,79 @@ describe('eCamp links', () => {
     item({ id: '1', kind: 'must', scope: 'activity', activityIri: '/api/activities/a1', text: 'Bitte Sicherheit ergänzen.' }),
     item({ id: '2', kind: 'kudos', text: 'Tolles Programm!' }),
   ]
-  it('plain and email append an indented eCamp line', () => {
+  const short = 'https://dev.ecamp3.ch/camps/c1/-/program/activity/a1'
+  const sctx = { ...lctx, activityShortUrls: { '/api/activities/a1': short } }
+  it('plain and email keep a one-line fallback with the short URL', () => {
     for (const ch of ['plain', 'email'] as const) {
-      const r = renderFeedback(items, ch, lctx)
-      expect(r.body).toContain(`- 1.2 Postenlauf: Bitte Sicherheit ergänzen.\n  eCamp: ${url}`)
+      const r = renderFeedback(items, ch, sctx)
+      expect(r.body).toContain(`- 1.2 Postenlauf: Bitte Sicherheit ergänzen. (eCamp: ${short})`)
+      expect(r.body).not.toContain(url)
       expect(r.body.match(/eCamp:/g)).toHaveLength(1)
     }
   })
-  it('whatsapp appends the raw URL on its own line', () => {
-    const r = renderFeedback(items, 'whatsapp', lctx)
-    expect(r.body).toContain(`⚠️ *1.2 Postenlauf*: Bitte Sicherheit ergänzen.\n   ${url}`)
+  it('plain fallback uses the long URL when no short URL exists', () => {
+    expect(renderFeedback(items, 'plain', lctx).body).toContain(`(eCamp: ${url})`)
+  })
+  it('whatsapp has no URL at all and no html', () => {
+    const r = renderFeedback(items, 'whatsapp', sctx)
+    expect(r.body).toContain('⚠️ *1.2 Postenlauf*: Bitte Sicherheit ergänzen.')
+    expect(r.body).not.toContain('http')
     expect(r.body).not.toContain('eCamp:')
+    expect(r.html).toBeNull()
+  })
+  it('block numbers prefix the title in whatsapp, plain fallback and html', () => {
+    const nctx = {
+      ...sctx,
+      activityTitles: { '/api/activities/a1': 'Postenlauf' },
+      activityNumbers: { '/api/activities/a1': '1.2/3.4' },
+    }
+    expect(renderFeedback(items, 'whatsapp', { ...nctx, includeLinks: false }).body).toContain('⚠️ *1.2/3.4 Postenlauf*: Bitte')
+    expect(renderFeedback(items, 'plain', nctx).body).toContain('- 1.2/3.4 Postenlauf: Bitte')
+    expect(renderFeedback(items, 'email', nctx).html).toContain(`<a href="${url}">1.2/3.4 Postenlauf</a>`)
+    // no number -> title only
+    expect(renderFeedback(items, 'whatsapp', { ...nctx, activityNumbers: {} }).body).toContain('*Postenlauf*:')
+  })
+  it('email/plain html links the title and keeps the long URL only in href', () => {
+    for (const ch of ['plain', 'email'] as const) {
+      const r = renderFeedback(items, ch, sctx)
+      expect(r.html).toContain(`- <a href="${url}">1.2 Postenlauf</a>: Bitte Sicherheit ergänzen.`)
+      expect(r.html).toMatch(/<b>[^<]+:<\/b><br>- <a /)
+      expect(r.html).toContain('<br>')
+    }
+  })
+  it('html escapes titles, text, href and template parts', () => {
+    const evil = 'https://x.ch/a?b=1&c="2"'
+    const r = renderFeedback(
+      [item({ id: 'e', kind: 'must', scope: 'activity', activityIri: '/api/activities/a1', text: 'A & B <i>"q"</i>\'s' })],
+      'email',
+      {
+        campTitle: 'Camp <b>&',
+        activityTitles: { '/api/activities/a1': '<script>alert(1)</script> & Co' },
+        activityUrls: { '/api/activities/a1': evil },
+        template: 'Betreff: S\n\nHallo {{camp}}\n\n{{items}}\n\nGruss {{coach}}',
+        coachName: '<c>',
+      },
+    )
+    expect(r.html).not.toContain('<script>')
+    expect(r.html).toContain('<a href="https://x.ch/a?b=1&amp;c=&quot;2&quot;">&lt;script&gt;alert(1)&lt;/script&gt; &amp; Co</a>')
+    expect(r.html).toContain('A &amp; B &lt;i&gt;&quot;q&quot;&lt;/i&gt;&#39;s')
+    expect(r.html).toContain('Hallo Camp &lt;b&gt;&amp;<br><br>')
+    expect(r.html).toContain('Gruss &lt;c&gt;')
+    expect(r.html).not.toContain('\u0000')
+    expect(r.subject).toBe('S')
+  })
+  it('titleless linked item gets an "In eCamp öffnen" anchor', () => {
+    const r = renderFeedback(
+      [item({ id: 'n', scope: 'activity', activityIri: '/api/activities/zz', text: 'Hm' })],
+      'plain',
+      { ...ctx, activityUrls: { '/api/activities/zz': url } },
+    )
+    expect(r.html).toContain(`- Hm <a href="${url}">In eCamp öffnen</a>`)
+  })
+  it('html is null without links, with includeLinks=false and for camp items', () => {
+    expect(renderFeedback(items, 'email', ctx).html).toBeNull()
+    expect(renderFeedback(items, 'email', { ...sctx, includeLinks: false }).html).toBeNull()
+    expect(renderFeedback([item({ id: 'c', text: 'Lager' })], 'plain', sctx).html).toBeNull()
   })
   it('includeLinks=false and missing URL render without link', () => {
     expect(renderFeedback(items, 'plain', { ...lctx, includeLinks: false }).body).not.toContain('http')
