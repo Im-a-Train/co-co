@@ -8,12 +8,12 @@ export const BEATS = [
   {
     id: 'intro',
     card: ['Für J+S-Coaches', 'co-co', 'Lager coachen mit weniger Aufwand', 'Eine Geschichte aus dem Coach-Alltag'],
-    voice: 'Ko-Ko. Lager coachen mit weniger Aufwand. Eine kleine Geschichte aus dem Alltag eines Coachs.',
+    voice: 'Ko-Ko. Lager kohtschen mit weniger Aufwand. Eine kleine Geschichte aus dem Alltag eines Coachs.',
   },
   {
     id: 'auftrag',
     card: ['Kapitel 1 · Der Auftrag', 'Falk coacht ein Winterlager', 'Das Leitungsteam um Anna plant «Auf in die Berge» in eCamp. Falk soll das Programm anschauen, beraten und Rückmeldung geben – neben Job und Studium.', ''],
-    voice: 'Das ist Falk. Er ist Coach in seiner Abteilung. Das Leitungsteam um Anna plant das Winterlager «Auf in die Berge» in Ih-Kämp. Falk soll das Programm anschauen, beraten und Rückmeldung geben. Und das alles neben Job und Studium.',
+    voice: 'Das ist Falk. Er ist Coach in seiner Abteilung. Das Leitungs-Tiem um Anna plant das Winterlager «Auf in die Berge» in Ih-Kämp. Falk soll das Programm anschauen, beraten und Rückmeldung geben. Und das alles neben Job und Studium.',
   },
   {
     id: 'lager',
@@ -27,7 +27,7 @@ export const BEATS = [
     kicker: 'Kapitel 3 · Erste Durchsicht',
     title: 'Wo steht das Lager?',
     sub: 'co-co liest das Programm und vergleicht es mit den Vorgaben von J+S und der Pfadi: nichts Dringendes, aber elf Punkte zum Anschauen – und noch kein gültiger J+S-Tag?',
-    voice: 'Ko-Ko liest das ganze Programm und vergleicht es mit den Vorgaben von Jot und Es und der Pfadi. Das Ergebnis: nichts Dringendes. Aber elf Punkte zum Anschauen. Und noch kein einziger gültiger Lagertag?',
+    voice: 'Ko-Ko liest das ganze Programm und vergleicht es mit den Vorgaben von Jott und Ess und der Pfadi. Das Ergebnis: nichts Dringendes. Aber elf Punkte zum Anschauen. Und noch kein einziger gültiger Lagertag?',
   },
   {
     id: 'zuordnung',
@@ -48,7 +48,7 @@ export const BEATS = [
     kicker: 'Kapitel 4 · Durchsehen',
     title: 'Zwanzig Minuten am Abend',
     sub: 'Punkt für Punkt geht Falk die Hinweise durch. Die passende Aktivität steht daneben, ein Feedback-Text ist schon vorgeschlagen. Übernehmen oder weglassen – und weiter.',
-    voice: 'Am Abend nimmt sich Falk zwanzig Minuten Zeit. Punkt für Punkt. Die passende Aktivität steht gleich daneben, und ein Feedback-Text ist schon vorgeschlagen. Übernehmen, oder weglassen. Und weiter zum nächsten Punkt.',
+    voice: 'Am Abend nimmt sich Falk zwanzig Minuten Zeit. Punkt für Punkt. Die passende Aktivität steht gleich daneben, und ein Fiedbäck-Text ist schon vorgeschlagen. Übernehmen, oder weglassen. Und weiter zum nächsten Punkt.',
   },
   {
     id: 'warum',
@@ -69,14 +69,14 @@ export const BEATS = [
     kicker: 'Kapitel 5 · Rückmeldung geben',
     title: 'Zwei Tage später',
     sub: 'Ein Klick zeigt, was das Team damit gemacht hat: Anna hat geantwortet, ein Punkt ist schon erledigt. Kein Nachfragen, kein Suchen im Chat.',
-    voice: 'Zwei Tage später. Ein Klick, und Falk sieht, was das Team damit gemacht hat. Anna hat geantwortet. Ein Punkt ist schon erledigt. Kein Nachfragen, kein Suchen im Chat.',
+    voice: 'Zwei Tage später. Ein Klick, und Falk sieht, was das Team damit gemacht hat. Anna hat geantwortet. Ein Punkt ist schon erledigt. Kein Nachfragen, kein Suchen im Tschätt.',
   },
   {
     id: 'teilen',
     kicker: 'Kapitel 5 · Rückmeldung geben',
     title: 'Oder als Nachricht ans Team',
     sub: 'Alle Punkte als fertige E-Mail – jeder Aktivitätstitel führt mit einem Klick zum Programm in eCamp. Für WhatsApp kurz und knapp mit Blocknummern.',
-    voice: 'Lieber als Nachricht ans ganze Team? Ko-Ko fasst alles zu einer E-Mail zusammen. Jeder Titel führt mit einem Klick direkt zum Programm. Und für Wotsäpp gibt es eine kurze Version.',
+    voice: 'Lieber als Nachricht ans ganze Team? Ko-Ko fasst alles zu einer Ih-Mejl zusammen. Jeder Titel führt mit einem Klick direkt zum Programm. Und für Wotts-Äpp gibt es eine kurze Version.',
   },
   {
     id: 'midata-card',
@@ -123,7 +123,7 @@ export const BEATS = [
     kicker: 'Kapitel 7 · Das Team zieht mit',
     title: 'Das Team kann selbst vorprüfen',
     sub: 'Mit dem Selbstcheck prüft Anna ihr Lager vor der Abgabe selbst – mit denselben Regeln und einem Bericht zum Weitergeben.',
-    voice: 'Und das Leitungsteam kann selbst vorarbeiten. Mit dem Selbstcheck prüft Anna ihr Lager vor der Abgabe. Mit denselben Regeln, und mit einem Bericht zum Weitergeben.',
+    voice: 'Und das Leitungs-Tiem kann selbst vorarbeiten. Mit dem Selbstcheck prüft Anna ihr Lager vor der Abgabe. Mit denselben Regeln, und mit einem Bericht zum Weitergeben.',
   },
   {
     id: 'radar',
@@ -142,6 +142,6 @@ export const BEATS = [
   {
     id: 'outro',
     card: ['co-co', 'Weniger suchen. Mehr coachen.', 'Damit Falk Zeit hat für das, was zählt: das Gespräch mit dem Leitungsteam.', 'Deine Daten bleiben bei dir · Keine Personendaten an die KI · KI nur, wenn du willst'],
-    voice: 'Ko-Ko. Weniger suchen, mehr coachen. Deine Daten bleiben bei dir, und Personendaten gehen nie an eine künstliche Intelligenz. Damit Falk Zeit hat für das, was zählt: das Gespräch mit dem Leitungsteam.',
+    voice: 'Ko-Ko. Weniger suchen, mehr kohtschen. Deine Daten bleiben bei dir, und Personendaten gehen nie an eine künstliche Intelligenz. Damit Falk Zeit hat für das, was zählt: das Gespräch mit dem Leitungs-Tiem.',
   },
 ]
