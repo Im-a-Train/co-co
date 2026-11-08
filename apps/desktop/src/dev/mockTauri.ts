@@ -357,6 +357,8 @@ function installMcpMock() {
         return { handled: false }
     }
   }
+}
+
 // Past camps for the "ended / older" filters: one ended ~1 month ago, one ended >3 months ago.
 function withPastCamps(res: unknown): unknown {
   const list = res as { _embedded: { items: Record<string, unknown>[] }; totalItems?: number }
