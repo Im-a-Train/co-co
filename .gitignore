@@ -38,3 +38,6 @@ apps/desktop/src-tauri/target-*/
 # NDS network captures may contain personal data
 *.har
 captures/
+
+# Promo video output (tools/promo-video)
+promo-out/
