@@ -22,7 +22,7 @@ if (!clips.length) throw new Error(`no voice clips in ${voiceDir}`)
 const inputs = ['-i', video]
 for (const c of clips) inputs.push('-i', join(voiceDir, `${c.id}.wav`))
 const delayed = clips.map((c, i) => `[${i + 1}:a]aresample=48000,adelay=delays=${Math.round(c.t * 1000)}:all=1[a${i}]`)
-const filter = `${delayed.join(';')};${clips.map((_, i) => `[a${i}]`).join('')}amix=inputs=${clips.length}:normalize=0:dropout_transition=0,volume=1.6,alimiter=limit=0.95,apad[voice]`
+const filter = `${delayed.join(';')};${clips.map((_, i) => `[a${i}]`).join('')}amix=inputs=${clips.length}:normalize=0:dropout_transition=0,volume=${process.env.MIX_GAIN || 1},alimiter=limit=0.95,apad[voice]`
 
 function run(args) {
   execFileSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', ...args], { stdio: 'inherit' })

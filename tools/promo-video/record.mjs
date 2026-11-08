@@ -1,14 +1,13 @@
 /**
  * Records the German promo video of co-co as a short story (coach «Falk» coaches one camp), see story.mjs.
- * The app runs in mock mode (?mock=1, invented data); the MiData part shows the public sign-in page of the
- * PBS MiData test instance (pbs.puzzle.ch, no login). Title cards, captions, cursor and highlights are
+ * The app runs in mock mode (?mock=1, invented data). Title cards, captions, cursor and highlights are
  * drawn by an overlay injected into every page.
  *
  * Each beat waits for its narration (durations from tts.py), and its start time goes to timeline.json,
  * so mix.mjs can lay the voice clips exactly under the picture. See README.md for the full pipeline.
  *
  *   node tools/promo-video/record.mjs [outDir]     (voice clips expected in <outDir>/voice)
- * Env: PROMO_PORT (default 1437), PROMO_MIDATA_URL, PROMO_VOICE_DIR, PROMO_FFMPEG
+ * Env: PROMO_PORT (default 1437), PROMO_VOICE_DIR, PROMO_FFMPEG
  */
 import { spawn } from 'node:child_process'
 import { mkdirSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -21,7 +20,6 @@ import { BEATS } from './story.mjs'
 const repo = fileURLToPath(new URL('../..', import.meta.url))
 const PORT = Number(process.env.PROMO_PORT || 1437)
 const APP = `http://localhost:${PORT}/?mock=1`
-const MIDATA = process.env.PROMO_MIDATA_URL || 'https://pbs.puzzle.ch/de/users/sign_in'
 const CAMP = '70ca971c992f'
 const OUT = resolve(process.argv[2] || join(repo, 'promo-out'))
 const W = 1600 // CSS viewport
@@ -225,7 +223,7 @@ async function main() {
     if (!b) throw new Error('no bounding box')
     await P('cursor', b.x + b.width / 2, b.y + b.height / 2)
     if (ring) await P('ring', b)
-    await wait(800)
+    await wait(650)
     return b
   }
   async function click(locator, opts = {}) {
@@ -307,16 +305,16 @@ async function main() {
   await scene('cockpit', async () => {
     await captionOff()
     await beat('cockpit')
-    await wait(1500)
-    await highlight(page.locator('.v-card', { hasText: 'Muss-Befunde' }).first(), 2000)
-    await highlight(page.locator('.v-card', { hasText: 'Soll-Befunde' }).first(), 2600)
-    await highlight(page.locator('.v-card', { hasText: 'Gültige J+S-Tage' }).first(), 4000)
+    await wait(800)
+    await highlight(page.locator('.v-card', { hasText: 'Muss-Befunde' }).first(), 1500)
+    await highlight(page.locator('.v-card', { hasText: 'Soll-Befunde' }).first(), 1800)
+    await highlight(page.locator('.v-card', { hasText: 'Gültige J+S-Tage' }).first(), 2600)
   })
   await scene('zuordnung', async () => {
     await captionOff()
     await tab('zuordnung')
     await beat('zuordnung')
-    await highlight(page.locator('table').first(), 3800)
+    await highlight(page.locator('table').first(), 2200)
     await click(page.getByRole('button', { name: /bestätigen/i }), { after: 900 })
     await highlight(page.locator('.v-alert', { hasText: /bestätigt/i }).first(), 2200)
   })
@@ -335,22 +333,22 @@ async function main() {
     await tab('befunde')
     await page.waitForSelector('.triage-item', { timeout: 8000 })
     await beat('triage')
-    await highlight(page.locator('.triage-item').first(), 2500)
-    await highlight(page.locator('[data-testid="triage-editor"]'), 3500)
+    await highlight(page.locator('.triage-item').first(), 1600)
+    await highlight(page.locator('[data-testid="triage-editor"]'), 2400)
     await page.locator('body').click({ position: { x: 5, y: 5 } })
     await P('cursor', 1060, 720)
-    await wait(1500)
+    await wait(700)
     await page.keyboard.press('f')
-    await wait(2600)
+    await wait(1800)
     await page.keyboard.press('i')
-    await wait(1500)
-    await highlight(page.locator('[data-testid="triage-progress"]'), 1800)
+    await wait(1200)
+    await highlight(page.locator('[data-testid="triage-progress"]'), 1200)
   })
   await scene('warum', async () => {
     await beat('warum')
     const panel = page.locator('[data-testid="finding-explain"]').first()
     await click(panel.getByRole('button', { name: 'Warum?' }), { after: 900 })
-    await highlight(page.locator('[data-testid="finding-explain-body"]'), 6000)
+    await highlight(page.locator('[data-testid="finding-explain-body"]'), 5000)
   })
 
   // ---------------- Kapitel 5: Feedback geben ----------------
@@ -361,54 +359,40 @@ async function main() {
     await click(page.getByRole('button', { name: 'Aktivitäts-Punkt' }), { after: 800 })
     await click(page.locator('.v-select'), { after: 600 })
     await click(page.locator('.v-overlay--active .v-list-item'), { after: 500 })
-    await page.locator('.v-card textarea').first().pressSequentially('Bitte Sicherheitsüberlegungen und Schlechtwettervariante ergänzen.', { delay: 25 })
+    await page.locator('.v-card textarea').first().pressSequentially('Bitte Sicherheitsüberlegungen und Schlechtwettervariante ergänzen.', { delay: 12 })
     await wait(400)
     await click(page.getByRole('button', { name: 'Speichern', exact: true }), { after: 900 })
     const card = page.getByTestId('feedback-item').filter({ hasText: 'Schlechtwettervariante' })
-    await click(card.getByRole('button', { name: 'In eCamp posten' }), { after: 1200 })
-    await highlight(card, 1500)
+    await click(card.getByRole('button', { name: 'In eCamp posten' }), { after: 900 })
+    await highlight(card, 900)
   })
   await scene('sync', async () => {
     await beat('sync')
-    await wait(1200)
-    await click(page.getByTestId('sync-comments'), { after: 1500 })
-    await highlight(page.getByTestId('chip-resolved').first(), 2500)
-    await click(page.getByTestId('chip-replies'), { after: 1000 })
-    await highlight(page.getByTestId('reply-list').first(), 4500)
+    await click(page.getByTestId('sync-comments'), { after: 1000 })
+    await highlight(page.getByTestId('chip-resolved').first(), 1400)
+    await click(page.getByTestId('chip-replies'), { after: 600 })
+    await highlight(page.getByTestId('reply-list').first(), 2600)
   })
   await scene('teilen', async () => {
     await beat('teilen')
     const preview = page.locator('.v-card', { hasText: 'Vorschau' }).last()
-    await click(preview.getByRole('tab', { name: /e-mail/i }), { after: 800 })
-    await highlight(preview, 5500)
-    await click(preview.getByRole('tab', { name: /whatsapp/i }), { after: 800 })
-    await highlight(preview, 4500)
+    await click(preview.getByRole('tab', { name: /e-mail/i }), { after: 600 })
+    await highlight(preview, 3800)
+    await click(preview.getByRole('tab', { name: /whatsapp/i }), { after: 600 })
+    await highlight(preview, 2200)
   })
 
   // ---------------- Kapitel 6: Sicherheit (MiData) ----------------
   await scene('midata-card', async () => {
     await beat('midata-card')
-    await wait(1500)
-    await page.goto(MIDATA, { waitUntil: 'commit', timeout: 30000 })
-    await page.waitForFunction(() => !!window.__promo, null, { timeout: 30000 })
-    await rec.reattach()
-    await P('card', ...byId['midata-card'].card)
-    await page.waitForLoadState('domcontentloaded', { timeout: 30000 })
-    await page.waitForLoadState('load', { timeout: 15000 }).catch(() => {})
-  })
-  await scene('midata-site', async () => {
-    await P('hideCard')
-    await wait(800)
-    await beat('midata-site')
-    await highlight(page.locator('form').first(), 5000)
-    await highlight(page.getByText(/Testumgebung/).first(), 3500)
+    await wait(1200)
+    await settle()
+    await page.goto(`${APP}#/einstellungen`) // happens behind the title card
+    await page.waitForSelector('[data-testid="midata-settings"]', { timeout: 10000 })
   })
   await scene('midata-settings', async () => {
-    await captionOff()
-    await page.goto(`${APP}#/einstellungen`)
-    await rec.reattach()
-    await page.waitForSelector('[data-testid="midata-settings"]', { timeout: 10000 })
-    await wait(600)
+    await P('hideCard')
+    await wait(800)
     await beat('midata-settings')
     await highlight(page.getByTestId('midata-settings'), 5000)
   })
@@ -421,7 +405,7 @@ async function main() {
     if (await pick.count()) {
       await click(pick, { after: 900 })
       await page.getByTestId('midata-event-4101').waitFor({ timeout: 5000 })
-      await highlight(page.getByTestId('midata-event-4101'), 2500)
+      await highlight(page.getByTestId('midata-event-4101'), 1200)
       await finishBeat(0)
       await click(page.getByTestId('midata-event-4101'), { after: 700 })
     }
@@ -440,8 +424,8 @@ async function main() {
   })
   await scene('matrix', async () => {
     await beat('matrix')
-    await highlight(page.getByTestId('qual-matrix'), 6000)
-    await highlight(page.getByTestId('qual-activities-source').locator('xpath=..'), 6000)
+    await highlight(page.getByTestId('qual-matrix'), 4000)
+    await highlight(page.getByTestId('qual-activities-source').locator('xpath=..'), 2800)
   })
 
   // ---------------- Kapitel 7: Selbstcheck ----------------
@@ -454,7 +438,7 @@ async function main() {
     await click(page.getByTestId('selfcheck-start'), { after: 800 })
     await page.locator('[data-testid="selfcheck-note"] textarea').first().pressSequentially('Entwurf vor der Abgabe', { delay: 35 })
     await click(page.getByTestId('selfcheck-confirm'), { after: 1500 })
-    await highlight(page.getByTestId('selfcheck-report'), 5000)
+    await highlight(page.getByTestId('selfcheck-report'), 3000)
   })
 
   // ---------------- Kapitel 8: Fristen ----------------
