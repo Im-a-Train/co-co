@@ -7,8 +7,9 @@ import { predicates as ebb } from './ebb'
 import { predicates as js } from './js'
 import { predicates as lager } from './lager'
 import { predicates as lst } from './lst'
+import { predicates as sb } from './sb'
 import { predicates as trekking } from './trekking'
 import { predicates as wasser } from './wasser'
 import { predicates as winter } from './winter'
 
-export const predicates: Record<string, RulePredicate> = mergePredicates(js, consistency, lst, lager, trekking, berg, wasser, winter, ebb)
+export const predicates: Record<string, RulePredicate> = mergePredicates(js, consistency, lst, sb, lager, trekking, berg, wasser, winter, ebb)
