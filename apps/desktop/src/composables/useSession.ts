@@ -2,6 +2,7 @@ import { computed, ref, shallowRef } from 'vue'
 import { asResource, embeddedOne, linkHref, str, type HalResource } from '@/lib/hal'
 import { computeRefreshDelayMs, remainingSeconds } from '@/lib/refresh'
 import { commands, errorMessage, onSession, type SessionInfo } from '@/lib/tauri'
+import { useDataStore } from './useDataStore'
 import { useInstances } from './useInstances'
 import { useSpikeProtocol } from './useSpikeProtocol'
 
@@ -85,12 +86,15 @@ async function loadUser(): Promise<void> {
 
 function setSession(next: SessionInfo | null): void {
   const prevUser = session.value?.userIri
+  const wasLoggedIn = session.value !== null
   session.value = next
   if (!next) {
     clearRefreshTimer()
     user.value = null
+    if (wasLoggedIn) void useDataStore().lock()
     return
   }
+  if (!wasLoggedIn) void useDataStore().unlock()
   scheduleRefresh()
   if (next.userIri !== prevUser || !user.value) void loadUser()
   // The login flow discovers the instance on the Rust side only; make sure the UI knows it too

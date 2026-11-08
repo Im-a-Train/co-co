@@ -41,6 +41,7 @@ async function doImport() {
 <template>
   <div>
     <p class="text-body-2 text-medium-emphasis mb-3">{{ t('backup.intro') }}</p>
+    <v-alert type="warning" variant="tonal" density="compact" class="mb-3" :text="t('backup.unencryptedWarning')" data-testid="backup-unencrypted-warning" />
     <div class="text-body-2 mb-3">{{ lastExportText }}</div>
 
     <div class="d-flex flex-wrap ga-2 mb-3">

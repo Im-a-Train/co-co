@@ -12,9 +12,10 @@ export async function addOverride(campIri: Iri, findingId: string, ruleId: strin
   const db = getDb()
   return db.transaction('rw', db.overrides, async () => {
     const existing = await db.overrides.where('findingId').equals(findingId).and((o) => o.campIri === campIri).toArray()
-    if (existing.length) await db.overrides.bulkDelete(existing.map((o) => o.id))
     const override: Override = { id: newId(), campIri, findingId, ruleId, reason: trimmed, createdAt: nowIso() }
+    // New row first: a failure never loses the existing override.
     await db.overrides.put(override)
+    if (existing.length) await db.overrides.bulkDelete(existing.map((o) => o.id))
     return override
   })
 }

@@ -18,9 +18,9 @@ const drawer = ref(true)
 const navItems = [
   { to: '/verbindung', icon: 'mdi-connection', titleKey: 'nav.connection', auth: false },
   { to: '/lager', icon: 'mdi-tent', titleKey: 'nav.camps', auth: true },
-  { to: '/fristen', icon: 'mdi-calendar-clock', titleKey: 'nav.deadlines', auth: false },
-  { to: '/regeln', icon: 'mdi-book-check-outline', titleKey: 'nav.rules', auth: false },
-  { to: '/einstellungen', icon: 'mdi-cog-outline', titleKey: 'nav.settings', auth: false },
+  { to: '/fristen', icon: 'mdi-calendar-clock', titleKey: 'nav.deadlines', auth: true },
+  { to: '/regeln', icon: 'mdi-book-check-outline', titleKey: 'nav.rules', auth: true },
+  { to: '/einstellungen', icon: 'mdi-cog-outline', titleKey: 'nav.settings', auth: true },
 ]
 
 onMounted(() => {

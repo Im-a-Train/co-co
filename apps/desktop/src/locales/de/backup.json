@@ -4,6 +4,7 @@
     "intro": "Alle co-co-Daten (Angaben, Feedback, Runden, Dokument-Auszüge, Einstellungen) liegen nur auf diesem Gerät. Exportiere sie regelmässig als JSON-Datei.",
     "lastExport": "Letzter Export: {date}",
     "neverExported": "Noch nie exportiert.",
+    "unencryptedWarning": "Die Backup-Datei ist NICHT verschlüsselt. Bewahre sie sicher auf (nicht in geteilten Ordnern).",
     "export": "Alles exportieren",
     "exported": "Backup gespeichert: {path}",
     "import": "Backup importieren",

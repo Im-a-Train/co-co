@@ -8,6 +8,7 @@ import { useCampFacts } from '@/composables/useCampFacts'
 import { RoundsError, diffEntities, snapshotEntities } from '@/domain/rounds'
 import * as store from '@/domain/rounds/store'
 import type { CampFacts, Diff, Iri, ReviewState, ReviewStatus, Round, Snapshot } from '@/domain/types'
+import { onDataStoreLocked } from './useDataStore'
 
 export interface RoundsHandle {
   review: ComputedRef<ReviewState | null>
@@ -39,6 +40,16 @@ const diffs = ref<Record<Iri, Diff | null>>({})
 const lastFacts = ref<Record<Iri, CampFacts | null>>({})
 const loadingState = ref<Record<Iri, boolean>>({})
 const errors = ref<Record<Iri, string | null>>({})
+
+onDataStoreLocked(() => {
+  reviews.value = {}
+  roundsByCamp.value = {}
+  snapshotCache.clear()
+  diffs.value = {}
+  lastFacts.value = {}
+  loadingState.value = {}
+  errors.value = {}
+})
 
 async function snapshotById(id: string): Promise<Snapshot | null> {
   const hit = snapshotCache.get(id)

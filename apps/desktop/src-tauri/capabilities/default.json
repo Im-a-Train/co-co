@@ -43,6 +43,8 @@
     "allow-nds-probe",
     "allow-persons-load-midata",
     "allow-persons-load-nds",
-    "allow-persons-clear"
+    "allow-persons-clear",
+    "allow-unlock-data-store",
+    "allow-lock-data-store"
   ]
 }

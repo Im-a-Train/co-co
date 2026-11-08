@@ -85,7 +85,28 @@ pub async fn api_get<R: Runtime>(
 pub async fn logout<R: Runtime>(app: AppHandle<R>, webview: Webview<R>, state: State<'_, AppState>) -> AppResult<()> {
     ensure_main(&webview)?;
     crate::persons::clear_all_of(&app);
+    crate::data_key::lock(&app);
     crate::auth::logout(&app, &state).await
+}
+
+/// ADR 0009: hands the data key to the UI, only with a verified eCamp session.
+#[tauri::command]
+pub async fn unlock_data_store<R: Runtime>(
+    app: AppHandle<R>,
+    webview: Webview<R>,
+    state: State<'_, AppState>,
+    files: State<'_, FileState>,
+) -> AppResult<crate::data_key::UnlockResult> {
+    ensure_main(&webview)?;
+    crate::data_key::unlock(&app, &state, &files).await
+}
+
+/// Drops Rust-side key copies (the keychain entry stays).
+#[tauri::command]
+pub async fn lock_data_store<R: Runtime>(app: AppHandle<R>, webview: Webview<R>) -> AppResult<()> {
+    ensure_main(&webview)?;
+    crate::data_key::lock(&app);
+    Ok(())
 }
 
 // ---- M2: eCamp comments

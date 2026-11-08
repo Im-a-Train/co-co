@@ -69,7 +69,12 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
 - **Network only through Rust.** The webview never calls eCamp, MiData or Anthropic directly (strict
   CSP). Add a Tauri command instead.
 - **Secrets stay in Rust / the OS keychain.** Cookie values, refresh tokens, passwords and API keys never
-  reach the UI, IndexedDB, logs, error messages or events. Only cookie *names* may be shown.
+  reach the UI, IndexedDB, logs, error messages or events. Only cookie *names* may be shown. Sole exception
+  (ADR 0009): the local data key (not a credential) enters the webview once per unlock, as a
+  non-extractable WebCrypto key; credentials stay Rust-only.
+- **Persisted data is encrypted.** All persisted data goes through `getDb()` and its encryption middleware
+  (guard: `src/__tests__/contracts/encryptionGuard.test.ts`); no raw IndexedDB, no new files with content.
+  `localStorage` only for the allowlisted non-sensitive keys.
 - **New Tauri command checklist:** Rust command → `build.rs` `COMMANDS` → `allow-<name>` in
   `capabilities/default.json` (window `main` only; the remote `ecamp-login` window gets no IPC) →
   wrapper in `src/lib/tauri.ts` → row in `docs/contracts/commands.md` → tests in `coco-core` if pure.
@@ -84,8 +89,10 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
   stay inactive until the coach confirmed the category mapping.
 - **i18n:** no hard-coded user-visible strings; add keys under your area's namespace in
   `src/locales/de/<area>.json`. Duplicate keys throw at start-up.
-- **IndexedDB (Dexie, `domain/storage/db.ts`):** never edit an existing schema version; add
-  `version(n+1)` with an upgrade. Backup export/import must keep covering all tables.
+- **IndexedDB (Dexie, `domain/storage/db.ts`):** the encrypted database is `coco2`; `legacyDb.ts` (old
+  plaintext `coco`, migration source only) is frozen. Never edit an existing schema version; add
+  `version(n+1)` with an upgrade. Backup export/import must keep covering all tables. `db.transaction()` is
+  not atomic (async WebCrypto): order multi-table writes so a failure leaves a consistent state.
 - **Credentials never in the repo.** Live tests read env vars only. Fixtures under
   `src/__tests__/fixtures/dev-camp/` are dev.ecamp3.ch test data – keep real personal data out.
 
