@@ -77,15 +77,25 @@ CI runs on the **self-hosted runner** (`self-hosted, Linux, X64`) and builds **W
 
 | Job | Runner | When |
 | --- | --- | --- |
-| `check`: typecheck, vitest, vite build, cargo test | self-hosted Linux | every push and PR |
-| `windows-cross`: NSIS installer cross-compiled with `cargo-xwin` | self-hosted Linux | every push and PR |
-| `windows-native`: NSIS + MSI | self-hosted Windows | repo variable `WINDOWS_BUILD=native` |
+| `check`: version check, typecheck, vitest, vite build, cargo test | self-hosted Linux | every push and PR |
+| `version`: next release version (`scripts/version.mjs next`) | self-hosted Linux | every push and PR |
+| `windows-cross`: NSIS installer + portable exe, cross-compiled with `cargo-xwin` | self-hosted Linux | every push and PR |
+| `windows-native`: NSIS (+ MSI outside releases) + portable exe | self-hosted Windows | repo variable `WINDOWS_BUILD=native` |
+| `release`: tag `v<version>` + GitHub pre-release with the Windows files | self-hosted Linux | every push to `main` |
 | `linux`: deb + AppImage | self-hosted Linux | manual run, input `linux` |
 | `macos`: dmg | GitHub-hosted `macos-latest` | manual run, input `macos` |
 
 The Linux runner needs the packages in `APT_PACKAGES` (`ci.yml`); CI installs missing ones if the runner
 user has passwordless sudo. Installers are unsigned, so Windows SmartScreen warns on first run.
-Download the latest installer as the artifact `co-co-windows-x64` of a green run.
+
+## Versions and downloads
+
+SemVer, alpha phase ([ADR 0008](docs/adr/0008-versioning-and-releases.md)): every merge to `main`
+publishes a **GitHub pre-release** `v0.1.0-alpha.<n>` under
+[Releases](https://github.com/Im-a-Train/co-co/releases) with
+`co-co_<version>_x64-setup.exe` (installer) and `co-co_<version>_x64-portable.exe` (runs without install).
+The repo keeps the base version; raise it in a PR with `npm run version:bump -- minor|patch|major`.
+PR builds stay available as the artifact `co-co-windows-x64` of the run.
 
 ## Security and privacy
 
@@ -97,7 +107,7 @@ Download the latest installer as the artifact `co-co-windows-x64` of a green run
   never reaches AI.
 
 Details: [ADRs](docs/adr/) – 0001 Tauri, 0002 Vue/Vuetify, 0003 login via webview cookies, 0004 no
-backend, 0005 data zones and AI, 0006 MiData red zone.
+backend, 0005 data zones and AI, 0006 MiData red zone, 0007 NDS red zone, 0008 versioning and releases.
 
 ## Licence
 

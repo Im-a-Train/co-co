@@ -328,7 +328,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
 <header class="hero">
   <canvas id="topo" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="eyebrow">co-co · spec + status · updated 09.11.2026 · M0–M11 built (M7-0 spike pending)</span>
+    <span class="eyebrow">co-co · spec + status · updated 09.11.2026 · M0–M14 built (M7-0 spike pending)</span>
     <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
     <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
     <div class="badges">
@@ -337,7 +337,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
       <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
       <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
       <span class="badge">Language: <b>German</b>, ready for more</span>
-      <span class="badge">Status: <b>M0–M11 built (M7-0 spike pending)</b></span>
+      <span class="badge">Status: <b>M0–M14 built (M7-0 spike pending)</b></span>
     </div>
   </div>
 </header>
@@ -352,7 +352,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
   <h2>Decisions from the grilling</h2>
   <div class="decisions">
     <div class="dec"><span class="k">Direction</span><span class="v">Approach A · Cockpit</span><span class="n">Rule engine first. The PR-style rounds and the AI co-coach from the first draft become later layers.</span></div>
-    <div class="dec"><span class="k">Runtime</span><span class="v">Tauri 2 desktop</span><span class="n">Windows, macOS and Linux, about 10 MB. Unsigned builds on GitHub Releases at first.</span></div>
+    <div class="dec"><span class="k">Runtime</span><span class="v">Tauri 2 desktop</span><span class="n">Windows, macOS and Linux, about 10 MB. Every merge to main publishes an alpha pre-release (installer + portable exe) on GitHub Releases, unsigned at first.</span></div>
     <div class="dec"><span class="k">UI</span><span class="v">Vue 3 + Vuetify + vue-i18n</span><span class="n">Same stack as eCamp's frontend, which keeps a later upstream contribution possible.</span></div>
     <div class="dec"><span class="k">Backend</span><span class="v">None</span><span class="n">co-co talks only to the eCamp API. Its own data stays in IndexedDB, with a JSON export for backup.</span></div>
     <div class="dec"><span class="k">eCamp instances</span><span class="v">Configurable</span><span class="n">ecamp3.ch by default; dev or self-hosted instances can be added, each with its own login.</span></div>
@@ -806,7 +806,8 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><span class="eyebrow">M8 · ✓ built (live check pending)</span><h3>NDS (read-only)</h3><ul><li>NDS web API spec from redacted captures</li><li>Rust NDS module: AGOV login, aggregates only</li><li>«Aus NDS übernehmen» + NDS card in Lager-Angaben</li><li>JS-DL-01/02 with «Quelle: NDS»; CMP-NDS-01/02/03</li><li>Pending: live run with a real camp (attendance state code, paging, login detection)</li></ul></div>
     <div class="card"><span class="eyebrow">M9 · ✓ built</span><h3>eCamp links + cross-source checks</h3><ul><li>eCamp activity link in every activity feedback item (WhatsApp, e-mail, text) and «In eCamp öffnen»</li><li><span class="mono">open_ecamp_url</span>: validated in Rust, system browser via tauri-plugin-opener</li><li>Consistency rules eCamp ↔ MiData ↔ NDS (CMP-CON-*): dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participants</li><li>SAFE-MTN-03: mountain activities without a responsible with a Berg qualification (MiData)</li></ul></div>
     <div class="card"><span class="eyebrow">M10 · ✓ built</span><h3>Feedback loop + transparency</h3><ul><li>Comment sync: resolved and answered eCamp comments flow back into the feedback items («In eCamp erledigt», «n Antworten», «vermutlich Antwort», missing in eCamp)</li><li>Explainability panel «Warum?»: rule + pack version, validity date, how the severity came about, inputs used/missing and the checked values (red values badged, never sent to the AI)</li><li>Leader self-check: tab «Selbstcheck», draft rounds (own table, not counted as review rounds), fixed / open / new since the last run, report for the Lagerleitung</li><li>Deadline radar: PBS milestones (Hering, unverified offsets) in Fristen, radar lanes, done flags, ICS export</li><li>Plan: Documents v2 (camp folder scanned recursively, PDF preview, usability) – <span class="mono">docs/plans/documents-v2.md</span></li></ul></div>
-    <div class="card"><span class="eyebrow">M11 · ✓ built</span><h3>Regelwerk v2</h3><ul><li>Modular packs <span class="mono">coco-js-lst</span> (J+S general + Lagersport/Trekking modules Lager, Trekking, Berg, Wasser, Winter, EBB) and <span class="mono">coco-pbs</span>; 108 active rules (66 new, 5 superseded by successors with formerIds), JS-STAFF-01 retired</li><li>Strict severity policy, loader-enforced; one pack for 2026 and the 2027 model (J+S days; free days never break the run)</li><li>Sources registry incl. Merkblatt Unfallprävention and Leitfaden, with page and quote per finding; coach checklist; activity tags (Sicherheitsbereich, EBB, no-J+S activity)</li><li>Card «Regelmodule» (auto / on / off with reasons), Dexie v5 table <span class="mono">campRuleConfig</span>, params, keyword sets and milestones as pack data</li><li>MiData: Sicherheitsbereich and water qualifications by Jahrgang in the qualification matrix</li><li>Decision: <span class="mono">docs/adr/0009-rule-set-v2.md</span></li></ul></div>
+    <div class="card"><span class="eyebrow">M14 · ✓ built</span><h3>Regelwerk v2</h3><ul><li>Modular packs <span class="mono">coco-js-lst</span> (J+S general + Lagersport/Trekking modules Lager, Trekking, Berg, Wasser, Winter, EBB) and <span class="mono">coco-pbs</span>; 108 active rules (66 new, 5 superseded by successors with formerIds), JS-STAFF-01 retired</li><li>Strict severity policy, loader-enforced; one pack for 2026 and the 2027 model (J+S days; free days never break the run)</li><li>Sources registry incl. Merkblatt Unfallprävention and Leitfaden, with page and quote per finding; coach checklist; activity tags (Sicherheitsbereich, EBB, no-J+S activity)</li><li>Card «Regelmodule» (auto / on / off with reasons), Dexie v5 table <span class="mono">campRuleConfig</span>, params, keyword sets and milestones as pack data</li><li>MiData: Sicherheitsbereich and water qualifications by Jahrgang in the qualification matrix</li><li>Decision: <span class="mono">docs/adr/0009-rule-set-v2.md</span></li></ul></div>
+    <div class="card"><span class="eyebrow">Infra · ✓ built</span><h3>Versioning + releases</h3><ul><li>SemVer in the alpha phase: base version 0.1.0 in every manifest, checked in CI with <span class="mono">npm run version:check</span></li><li>Every merge to main publishes a GitHub pre-release <span class="mono">v&lt;base&gt;-alpha.&lt;n&gt;</span> with an NSIS installer and a portable exe (needs WebView2)</li><li>CI stamps the version into the build (no bot commit, the tag is the record); the app version shows in backups and the report</li><li>Base bump via PR: <span class="mono">npm run version:bump -- minor|patch|major</span>; builds are unsigned (SmartScreen warning)</li></ul></div>
   </div>
 </div></section>
 
@@ -834,6 +835,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><h3>IndexedDB durability</h3><p>The webview's storage can be wiped by an uninstall or a profile reset. co-co reminds you to export a backup after each review round.</p></div>
     <div class="card"><h3>OAuth callback</h3><p>eCamp does not validate the callback URL (a possible open redirect). Report it to the eCamp team; co-co doesn't rely on it.</p></div>
     <div class="card"><h3>Licence</h3><p>eCamp is AGPL-3.0. Choose an AGPL-compatible licence for co-co now if you plan to contribute it upstream later.</p></div>
+    <div class="card"><h3>Auto-updater + code signing</h3><p>There is no auto-updater yet: alpha builds are installed by hand from GitHub Releases. Open: Tauri updater (signed update manifests) and a code-signing certificate to get rid of the SmartScreen warning.</p></div>
   </div>
 </div></section>
 
