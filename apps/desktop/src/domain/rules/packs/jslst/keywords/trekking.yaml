@@ -1,0 +1,65 @@
+- id: HIKE
+  module: lst-trekking
+  include: ["wanderung", "wandern", "hike", "hajk", "haik", "^bergwanderung", "^tageswanderung", "=marsch", "^nachtwanderung", "^bachtrekking", "^schneeschuh"]
+  exclude: ["wanderweg"]
+- id: BIKE
+  module: lst-trekking
+  include: ["velo", "fahrrad", "^radtour", "=bike", "biken", "inline", "skates", "^trotti"]
+  exclude: ["veloständer", "velokeller"]
+- id: BIKE_INLINE
+  module: lst-trekking
+  description: "Inline-Skating und Rollsport (LST-TREK-08)"
+  include: ["inline", "inlineskate", "^inliner", "skates", "rollschuh"]
+  exclude: []
+- id: BIWAK
+  module: lst-trekking
+  include: ["biwak", "bivouac", "^blachenzelt", "übernachtung draussen", "^zelttrekking", "unter freiem himmel"]
+  exclude: []
+- id: ROUTE_DOC
+  module: lst-trekking
+  include: ["route", "karte", "kartenausschnitt"]
+  exclude: []
+- id: ALT_ROUTE
+  module: lst-trekking
+  include: ["alternativroute", "alternative route", "ausweichroute", "variante"]
+  exclude: []
+- id: MARSCHZEIT
+  module: lst-trekking
+  include: ["marschzeit", "zeitberechnung", "marschtabelle", "=lkm", "leistungskilometer"]
+  exclude: []
+- id: UMKEHR
+  module: lst-trekking
+  include: ["umkehr", "umkehrzeit", "umkehrpunkt", "abbruch", "ausstieg", "ausweich", "spätestens um"]
+  exclude: []
+- id: RECO
+  module: lst-trekking
+  include: ["reko", "rekognos", "erkundet"]
+  exclude: []
+- id: KIT_APOTHEKE
+  module: lst-trekking
+  include: ["apotheke", "erste hilfe", "sanität"]
+  exclude: []
+- id: KIT_RETTUNGSDECKE
+  module: lst-trekking
+  include: ["rettungsdecke", "rettungsfolie", "biwaksack"]
+  exclude: []
+- id: KIT_ALARM
+  module: lst-trekking
+  include: ["handy", "natel", "telefon", "funk", "mobiltelefon"]
+  exclude: []
+- id: KIT_WAERME
+  module: lst-trekking
+  include: ["rettungsfolie", "rettungsdecke", "wärmekissen"]
+  exclude: []
+- id: BIKE_HELM
+  module: lst-trekking
+  include: ["helm"]
+  exclude: []
+- id: BIKE_INSTR
+  module: lst-trekking
+  include: ["instruktion", "instruiert", "fahrtechnik", "bremstechnik", "velocheck", "fahrtest", "veloparcours"]
+  exclude: []
+- id: BIKE_PROTECT
+  module: lst-trekking
+  include: ["schoner", "schutzausrüstung", "handgelenk"]
+  exclude: []

@@ -6,8 +6,8 @@ import RuleCard from '@/components/rules/RuleCard.vue'
 import { useRuleState } from '@/composables/useRuleState'
 import { campsWithDisabled, isGloballyDisabled } from '@/domain/rules/ruleState'
 import { disableRuleStored, enableRuleStored } from '@/domain/rules/ruleStateStore'
-import { loadBundledPacks } from '@/domain/rules/packs'
-import type { Rule, RuleGroup, RulePack, Severity } from '@/domain/types'
+import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
+import type { ModuleId, Rule, RulePack, Severity } from '@/domain/types'
 
 const { t } = useI18n()
 const { state: ruleState } = useRuleState()
@@ -30,7 +30,6 @@ async function toggle(ruleId: string, action: 'enable' | 'disableAll') {
 }
 
 const SEVERITY_COLOR: Record<Severity, string> = { must: 'error', should: 'warning', hint: 'info' }
-const GROUPS: RuleGroup[] = ['js', 'completeness', 'safety', 'best-practice']
 
 const packs = ref<RulePack[]>([])
 const loadError = ref<string | null>(null)
@@ -41,7 +40,9 @@ try {
 }
 
 const search = ref('')
-const group = ref<RuleGroup | 'all'>('all')
+const group = ref<ModuleId | 'all'>('all')
+/** Filter options: the modules of the loaded packs (catalog v2). */
+const GROUPS = computed<ModuleId[]>(() => modulesOf(packs.value).map((m) => m.id))
 
 function matches(rule: Rule, query: string): boolean {
   if (!query) return true
@@ -57,10 +58,10 @@ function matches(rule: Rule, query: string): boolean {
 const visible = computed(() =>
   packs.value.map((pack) => ({
     pack,
-    byGroup: GROUPS.filter((g) => group.value === 'all' || group.value === g)
+    byGroup: GROUPS.value.filter((g) => group.value === 'all' || group.value === g)
       .map((g) => ({
         group: g,
-        rules: pack.rules.filter((r) => r.meta.group === g && matches(r, search.value)),
+        rules: pack.rules.filter((r) => r.meta.module === g && matches(r, search.value)),
       }))
       .filter((entry) => entry.rules.length > 0),
   })),
@@ -97,7 +98,7 @@ function fmt(iso: string): string {
       />
       <v-chip-group v-model="group" mandatory selected-class="text-primary">
         <v-chip value="all" size="small" filter>{{ t('rules.catalog.allGroups') }}</v-chip>
-        <v-chip v-for="g in GROUPS" :key="g" :value="g" size="small" filter>{{ t(`rules.catalog.group.${g}`) }}</v-chip>
+        <v-chip v-for="g in GROUPS" :key="g" :value="g" size="small" filter>{{ t(`rules.catalog.module.${g}`) }}</v-chip>
       </v-chip-group>
     </div>
 
@@ -119,7 +120,7 @@ function fmt(iso: string): string {
 
       <v-card-text>
         <section v-for="entry in byGroup" :key="entry.group" class="mb-4">
-          <h2 class="text-subtitle-1 mb-2">{{ t(`rules.catalog.group.${entry.group}`) }}</h2>
+          <h2 class="text-subtitle-1 mb-2">{{ t(`rules.catalog.module.${entry.group}`) }}</h2>
           <v-expansion-panels variant="accordion" density="compact">
             <v-expansion-panel v-for="rule in entry.rules" :key="rule.meta.id">
               <v-expansion-panel-title>

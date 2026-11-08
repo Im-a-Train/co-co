@@ -1,15 +1,21 @@
 id: JS-DL-01
 version: 1.0.0
-group: js
+module: js
+status: active
 title: "NDS-Anmeldung mindestens 30 Tage vor Lagerbeginn"
 description: "Das Lager ist spätestens 30 Tage vor Lagerbeginn in der NDS angemeldet."
-message: "NDS-Anmeldung: {detail}"
+message: "NDS-Anmeldung: Frist am {due} überschritten, Anmeldung nicht bestätigt{src}"
+messageVariants:
+  late: "NDS-Anmeldung: Anmeldung erfolgte am {on}, Frist war {due}{src}"
+  soonOne: "NDS-Anmeldung: Frist am {due} (noch {left} Tag){src}"
+  soonMany: "NDS-Anmeldung: Frist am {due} (noch {left} Tage){src}"
 severity: must
 confidence: verified
 scope: camp
 validFrom: 2026-01-01
-inputs: [coachInputs]
+inputs: [coachInputs, params]
+params: [js.ndsRegistrationLeadDays, js.deadlineSoonDays]
 tags: [frist, nds]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

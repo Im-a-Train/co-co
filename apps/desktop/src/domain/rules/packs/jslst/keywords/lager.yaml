@@ -1,0 +1,57 @@
+- id: ROPE
+  module: lst-lager
+  include: ["seil", "pionier", "abseil", "hochseil", "flying fox", "flyingfox", "^seilbrücke", "^seilbahn", "^pionierbau", "=knoten"]
+  exclude: ["seilziehen", "seilspringen", "seilspiel", "seilpark"]
+- id: ROPE_SAFETY
+  module: lst-lager
+  description: "Sicherheitsthemen Seilaktivität (SAFE-ROPE-01)"
+  include: ["sicherung", "verankerung", "bremse"]
+  exclude: []
+- id: FIRE
+  module: lst-lager
+  include: ["=feuer", "^feuerstelle", "^lagerfeuer", "bräteln", "^grill", "kochen über", "^feuerschale", "=glut", "feuer machen", "feuer entfachen"]
+  exclude: ["feuerwehr", "feuerwerk"]
+- id: FIRE_SAFETY
+  module: lst-lager
+  include: ["waldbrand", "feuerverbot", "feuerstelle", "feuerschale", "löschwasser", "löschen", "=kübel"]
+  exclude: []
+- id: NIGHT
+  module: lst-lager
+  include: ["^nacht"]
+  exclude: ["nachtessen", "nachtisch", "nachtrag", "nachtmahl", "nachtruhe"]
+- id: SCHLECHTWETTER
+  module: lst-lager
+  include: ["schlechtwetter", "schlechtes wetter", "regenprogramm", "regenvariante", "bei regen", "bei schlechtem wetter", "regenwetter", "plan b", "sw variante", "schlechtwettervariante", "regenalternative", "indoor variante", "ausweichprogramm", "bei nässe", "falls es regnet", "variante bei regen"]
+  exclude: []
+- id: HOECK
+  module: lst-lager
+  include: ["höck", "leiterhöck", "tagesrückblick", "leitersitzung"]
+  exclude: []
+- id: DAY1_INFO
+  module: lst-lager
+  include: ["lagerregeln", "=regeln", "lagerpakt", "sicherheit", "notfall", "begrüssung"]
+  exclude: []
+- id: BUILD
+  module: lst-lager
+  include: ["aufbau", "abbau", "lagerbau"]
+  exclude: []
+- id: RULES_SICHERHEIT
+  module: lst-lager
+  include: ["sicherheit", "feuer", "gelände verlassen"]
+  exclude: []
+- id: RULES_SUCHT
+  module: lst-lager
+  include: ["alkohol", "tabak", "rauch", "drogen", "sucht"]
+  exclude: []
+- id: RULES_ZUSAMMEN
+  module: lst-lager
+  include: ["respekt", "zusammen"]
+  exclude: []
+- id: RULES_ELEKTRONIK
+  module: lst-lager
+  include: ["handy", "natel", "smartphone", "elektronisch"]
+  exclude: []
+- id: RULES_UMWELT
+  module: lst-lager
+  include: ["abfall", "umwelt", "natur"]
+  exclude: []

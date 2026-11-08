@@ -11,6 +11,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type {
   AiLogEntry,
+  CampRuleConfig,
   CampSummaryRecord,
   CategoryMapping,
   CoachInputs,
@@ -64,6 +65,8 @@ export class CocoDb extends Dexie {
   nds!: EntityTable<NdsRecord, 'campIri'>
   /** Owner: selfCheck. Leader self-check runs («Entwurfsrunden»), separate from review rounds. */
   selfChecks!: EntityTable<SelfCheckRun, 'id'>
+  /** Owner: rules (v2). Per-camp rule modules, activity tags, camp/offer context, checklist (zone green). */
+  campRuleConfig!: EntityTable<CampRuleConfig, 'campIri'>
 
   constructor(name = DB_NAME) {
     super(name)
@@ -93,6 +96,10 @@ export class CocoDb extends Dexie {
     this.version(4).stores({
       selfChecks: 'id, campIri, createdAt',
     })
+    // v5 (rules v2): per-camp rule config. New table only, no data migration.
+    this.version(5).stores({
+      campRuleConfig: 'campIri',
+    })
   }
 }
 
@@ -113,6 +120,7 @@ export const TABLE_NAMES = [
   'midata',
   'nds',
   'selfChecks',
+  'campRuleConfig',
 ] as const
 
 export type TableName = (typeof TABLE_NAMES)[number]

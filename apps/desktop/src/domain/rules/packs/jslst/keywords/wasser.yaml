@@ -1,0 +1,101 @@
+- id: WATER
+  module: lst-wasser
+  description: "Wasserbezug allgemein"
+  include: ["=baden", "badi", "schwimm", "=see", "$see", "fluss", "=bach", "$bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "kanu", "kanadier", "kajak", "kayak", "=boot", "$boot", "wasser", "rafting", "=raft", "tauchen", "weiher", "=teich", "strand", "ruder", "floss", "flösse", "^schlauchboot", "=sup", "stand up paddle", "^seeüberquer", "^streckenschwimm", "^flussschwimm", "^bachtrekking", "^wasserspiel", "^staudamm", "^dämme", "^planschen", "=freibad", "=hallenbad", "=strandbad", "=seebad"]
+  exclude: ["trinkwasser", "wasserflasche", "wasserkanister", "wasserhahn", "wasserstelle", "abwasser", "seeland", "seepferdchen", "seele", "suppe"]
+  sources: [{ key: WASSER, page: "S. 6–23" }]
+- id: POOL
+  module: lst-wasser
+  description: "Beaufsichtigtes Bad (Hallenbad/Freibad/Seebad/Flussbad)"
+  include: ["hallenbad", "freibad", "erlebnisbad", "badi", "schwimmbad", "seebad", "strandbad", "flussbad"]
+  exclude: []
+  sources: [{ key: MB-UP, page: "S. 5" }]
+- id: SWIM
+  module: lst-wasser
+  description: "Schwimm- und Badewörter (LST-WASSER-04)"
+  include: ["=baden", "schwimm"]
+  exclude: []
+- id: UNSUPERVISED
+  module: lst-wasser
+  description: "Unbeaufsichtigt (LST-WASSER-04)"
+  include: ["unbeaufsichtigt"]
+  exclude: []
+- id: GORGE
+  module: lst-wasser
+  description: "Schlucht (LST-WASSER-08)"
+  include: ["schlucht"]
+  exclude: []
+- id: SB_WASSER_EXTRA
+  module: lst-wasser
+  description: "Zusätzliche Auslöser Sicherheitsbereich Wasser (LST-SB-01)"
+  include: ["=raft", "^flussschwimm", "^flusssurf"]
+  exclude: []
+- id: RIVER
+  module: lst-wasser
+  include: ["fluss", "=bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "^flussfahrt", "fliessgewässer"]
+  exclude: ["flussdiagramm"]
+- id: LAKE
+  module: lst-wasser
+  include: ["=see", "$see", "weiher"]
+  extends: []
+  exclude: ["trinkwasser", "wasserflasche", "wasserkanister", "wasserhahn", "wasserstelle", "abwasser", "seeland", "seepferdchen", "seele", "suppe"]
+- id: FLOSS
+  module: lst-wasser
+  include: ["=floss", "flösse", "^flossbau", "^flossfahrt"]
+  exclude: []
+- id: BOAT
+  module: lst-wasser
+  include: ["kanu", "kanadier", "kajak", "=boot", "$boot", "=raft", "rafting", "=sup", "^schlauchboot"]
+  exclude: ["kursschiff"]
+- id: BACHTREKKING
+  module: lst-wasser
+  include: ["^bachtrekking", "^flusstrekking", "^bachwanderung", "schlucht"]
+  exclude: []
+- id: CLOSED_BOAT
+  module: lst-wasser
+  include: ["spritzdecke", "spritzwasserdecke", "eskimorolle", "wildwasserkajak", "geschlossenes kajak"]
+  exclude: []
+- id: DIVING
+  module: lst-wasser
+  include: ["gerätetauchen", "^sporttauchen", "^scuba", "^tauchflasche"]
+  exclude: ["schnorchel"]
+- id: LAKE_SWIM
+  module: lst-wasser
+  include: ["^seeüberquer", "^seequerung", "^streckenschwimm", "über den see"]
+  exclude: []
+- id: AM_WATER
+  module: lst-wasser
+  include: ["füsse baden", "^wasserrad", "^staudamm", "^dämme bauen", "^steine sammeln"]
+  exclude: []
+- id: JUMP
+  module: lst-wasser
+  include: ["=springen", "sprung", "^klippensprung", "^brückensprung"]
+  exclude: ["sprungturm"]
+- id: ROPE_IN_WATER
+  module: lst-wasser
+  include: ["anseil", "angeseilt", "seilsicherung", "abseil", "boote verbinden", "zusammengebunden"]
+  exclude: []
+- id: FLOSS_OK
+  module: lst-wasser
+  include: ["bewilligung", "schifffahrtsamt", "2 5", "uferzone"]
+  exclude: []
+- id: ESCORT
+  module: lst-wasser
+  include: ["begleitboot", "=boot", "rettungsbrett", "=sup"]
+  exclude: []
+- id: VEST
+  module: lst-wasser
+  include: ["schwimmweste", "rettungsweste", "=weste"]
+  exclude: []
+- id: WETTER
+  module: lst-wasser
+  include: ["wetter", "meteo", "gewitter"]
+  exclude: []
+- id: AUSSTIEG
+  module: lst-wasser
+  include: ["ausstieg", "abbruch"]
+  exclude: []
+- id: KRAFTWERK
+  module: lst-wasser
+  include: ["kraftwerk", "schwall", "wasserstand"]
+  exclude: []

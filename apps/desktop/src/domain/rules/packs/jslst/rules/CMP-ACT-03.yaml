@@ -1,6 +1,7 @@
 id: CMP-ACT-03
 version: 1.0.0
-group: completeness
+module: lst
+status: active
 title: "Outdoor-/LS-Aktivität ohne Sicherheitsüberlegungen"
 description: "Aktivitäten im Freien und Lagersport enthalten Sicherheitsüberlegungen."
 message: "«{title}» findet draussen statt oder ist Lagersport, hat aber keine Sicherheitsüberlegungen"
@@ -8,8 +9,9 @@ severity: should
 confidence: heuristic
 scope: activity
 validFrom: 2026-01-01
-inputs: [mapping]
+inputs: [mapping, keywords]
+keywords: [OUTDOOR, WATER, MOUNTAIN, ROPE]
 tags: [vollstaendigkeit, sicherheit]
-source:
-  title: "Lagersport/Trekking"
-  url: https://www.jugendundsport.ch/de/lagersport-trekking
+sources:
+  - key: WEB-LT
+    page: ""

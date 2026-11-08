@@ -1,14 +1,22 @@
 id: SAFE-WATER-01
 version: 1.0.0
-group: safety
+module: lst-lager
+status: active
 title: "Wasseraktivität: Verantwortung und Sicherheit"
 description: "Aktivitäten im oder am Wasser haben eine verantwortliche Person und nicht leere Sicherheitsüberlegungen. Erkennung über Stichwörter (Heuristik)."
 message: "«{title}» (Wasser: {keywords}): {missing}"
+messageVariants:
+  noResponsible: "keine verantwortliche Person"
+  noSafety: "keine Sicherheitsüberlegungen"
+  noQualification: "keine verantwortliche Person mit Wasser-/SLRG-Qualifikation (Quelle: MiData, Stand {stand})"
+  missingJoin: " und "
 severity: should
 confidence: heuristic
 scope: activity
 validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [WATER]
 tags: [sicherheit, wasser]
-source:
-  title: "Lagersport/Trekking"
-  url: https://www.jugendundsport.ch/de/lagersport-trekking
+sources:
+  - key: WEB-LT
+    page: ""

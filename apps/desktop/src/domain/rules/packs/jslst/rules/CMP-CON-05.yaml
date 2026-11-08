@@ -1,14 +1,18 @@
 id: CMP-CON-05
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Abgelaufene Anerkennungen in MiData"
 description: "Die Anerkennungen der Leitenden (Leiter, Lagerleiter, Wasser, Berg, Winter, SLRG) sind für die ganze Lagerdauer gültig."
-message: "Anerkennungen in MiData sind nicht für die ganze Lagerdauer gültig"
+message: "Folgende Anerkennungen sind nicht für die ganze Lagerdauer gültig (vor oder während des Lagers abgelaufen): {list} (Quelle: MiData, Stand {stand})"
+messageVariants:
+  item: "{label}: {count} Leitende"
 severity: should
 confidence: conflict
 scope: camp
 validFrom: 2026-01-01
+inputs: [midata]
 tags: [vollstaendigkeit, midata]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

@@ -1,6 +1,7 @@
 id: CMP-ACT-01
 version: 1.0.0
-group: completeness
+module: lst
+status: active
 title: "Aktivität ohne Verantwortliche"
 description: "Jede Aktivität hat mindestens eine verantwortliche Person."
 message: "«{title}» hat keine verantwortliche Person"
@@ -9,6 +10,6 @@ confidence: best-practice
 scope: activity
 validFrom: 2026-01-01
 tags: [vollstaendigkeit]
-source:
-  title: "Hering (PBS)"
-  url: https://hering.scout.ch/de
+sources:
+  - key: H
+    page: ""

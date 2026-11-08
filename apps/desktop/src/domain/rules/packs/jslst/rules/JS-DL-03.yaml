@@ -1,15 +1,20 @@
 id: JS-DL-03
 version: 1.0.0
-group: js
+module: js
+status: active
 title: "Leihmaterial und Landeskarten rechtzeitig bestellen"
 description: "Leihmaterial wird mindestens 5 Wochen, Landeskarten mindestens 3 Wochen (Juni bis August: 5 Wochen) vor Lagerbeginn bestellt."
 message: "{what} hätte bis {due} bestellt werden sollen (keine Bestellung bestätigt)"
+messageVariants:
+  leihmaterial: "Leihmaterial hätte bis {due} bestellt werden sollen (keine Bestellung bestätigt)"
+  landeskarten: "Landeskarten hätte bis {due} bestellt werden sollen (keine Bestellung bestätigt)"
 severity: should
 confidence: verified
 scope: camp
 validFrom: 2026-01-01
-inputs: [coachInputs]
+inputs: [coachInputs, params]
+params: [js.leihmaterialLeadDays, js.landeskartenLeadDays, js.landeskartenLeadDaysSummer, js.landeskartenSummerMonths]
 tags: [frist]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

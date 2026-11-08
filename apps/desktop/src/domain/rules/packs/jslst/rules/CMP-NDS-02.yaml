@@ -1,14 +1,18 @@
 id: CMP-NDS-02
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Offene Anwesenheitskontrolle (AWK) in der NDS"
 description: "Nach dem Lager ist die Anwesenheitskontrolle (AWK) aller Aktivitäten in der NDS erledigt. Grundlage ist der zuletzt abgerufene Stand aus der NDS."
-message: "In der NDS sind {count} Anwesenheitskontrollen offen (Quelle: NDS, Stand {stand})"
+message: "In der NDS sind bei {count} Aktivitäten die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
+messageVariants:
+  one: "In der NDS ist bei 1 Aktivität die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
 severity: should
 confidence: best-practice
 scope: camp
 validFrom: 2026-01-01
+inputs: [nds]
 tags: [vollstaendigkeit, nds]
-source:
-  title: "Leitfaden Coach J+S"
-  url: https://www.jugendundsport.ch/de/leitfaden-coach
+sources:
+  - key: WEB-C
+    page: ""

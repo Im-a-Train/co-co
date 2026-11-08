@@ -1,0 +1,20 @@
+id: BP-WATER-01
+version: 1.0.0
+module: pbs
+status: active
+title: "1 SLRG-Qualifizierte pro 12 Teilnehmende"
+description: "Bei Wasseraktivitäten kommt eine Person mit SLRG-Qualifikation auf höchstens 12 Teilnehmende."
+message: "Wasseraktivitäten geplant, SLRG-Qualifizierte: {have} (empfohlen: 1 pro {per} Teilnehmende, also {needed} bei {participants}){src}"
+messageVariants:
+  noCount: "Wasseraktivitäten geplant, SLRG-Qualifizierte: keine Angabe (empfohlen: 1 pro {per} Teilnehmende, also {needed} bei {participants}){src}"
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs, params, keywords]
+params: [pbs.slrgParticipantsPerPerson]
+keywords: [WATER]
+tags: [wasser, leitung]
+sources:
+  - key: H
+    page: ""

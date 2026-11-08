@@ -1,6 +1,7 @@
 id: BP-VAR-01
 version: 1.0.0
-group: best-practice
+module: lst
+status: active
 title: "Abwechslung im Programm"
 description: "Die J+S-Einheiten decken über die Woche mehrere Kategorien oder Themen ab."
 message: "Wenig Abwechslung: {units} J+S-Einheiten, aber nur eine Kategorie bzw. ein Thema"
@@ -8,8 +9,9 @@ severity: hint
 confidence: best-practice
 scope: camp
 validFrom: 2026-01-01
-inputs: [mapping]
+inputs: [mapping, params]
+params: [lst.varMinUnits, lst.varMinDistinct]
 tags: [programm]
-source:
-  title: "Hering (PBS)"
-  url: https://hering.scout.ch/de
+sources:
+  - key: H
+    page: ""

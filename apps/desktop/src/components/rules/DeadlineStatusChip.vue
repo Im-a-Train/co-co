@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Status chip of a deadline (done=success, overdue=error, soon=warning, open=neutral). */
 import { useI18n } from 'vue-i18n'
-import type { DeadlineStatus } from '@/domain/rules/deadlines'
+import type { DeadlineStatus } from '@/domain/rules/lib/deadlines'
 
 defineProps<{ status: DeadlineStatus }>()
 const { t } = useI18n()

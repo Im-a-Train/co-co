@@ -76,7 +76,10 @@ describe('evaluate skips disabled rules', () => {
     meta: {
       id,
       version: '1',
+      module: 'js',
       group: 'js',
+      status: 'active',
+      sources: [{ key: 'WEB-L', page: '' }],
       title: id,
       description: 'd',
       message: 'm',

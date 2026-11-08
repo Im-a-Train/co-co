@@ -1,14 +1,16 @@
 id: CMP-CON-07
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Lagertage in NDS und eCamp abgleichen"
 description: "Die in der NDS geplanten Lagertage entsprechen den Tagen in eCamp."
-message: "Lagertage in NDS und eCamp stimmen nicht überein"
+message: "In der NDS sind {planned} Lagertage geplant, in eCamp {days} (Quelle: NDS, Stand {stand})"
 severity: hint
 confidence: conflict
 scope: camp
 validFrom: 2026-01-01
+inputs: [nds]
 tags: [vollstaendigkeit, nds]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

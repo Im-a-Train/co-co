@@ -1,8 +1,12 @@
+import { allPredicates as p } from './predicates'
 import { describe, expect, it } from 'vitest'
-import { predicates as p } from '../packs/basis/predicates'
-import { hasKeyword, matchKeywords, MOUNTAIN, NIGHT, ROPE, WATER } from '../packs/basis/predicates/util'
 import type { DocCheckItem, GpxStats, SafetyCheckKey } from '@/domain/types'
-import { CAT_LA, CAT_LS, CAT_NONE, FactsBuilder, makeCoachInputs, makeCtx, makeDoc, makeMidata } from './factory'
+import { CAT_LA, CAT_LS, CAT_NONE, FactsBuilder, makeCoachInputs, makeCtx, makeDoc, makeMidata, msg } from './factory'
+
+const keywords = makeCtx(new FactsBuilder().facts).keywords
+const hasKeyword = (text: string, set: string) => keywords.match(set, text).length > 0
+const matchKeywords = (text: string, set: string) => keywords.match(set, text).map((m) => m.term)
+const [WATER, MOUNTAIN, ROPE, NIGHT] = ['WATER', 'MOUNTAIN', 'ROPE', 'NIGHT']
 
 const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
@@ -33,8 +37,8 @@ describe('SAFE-WATER-01', () => {
     b.activity('Trinkwasser holen', CAT_LA)
     const hits = p['SAFE-WATER-01'](makeCtx(b.facts))
     expect(ids(hits)).toEqual([noSafety.iri, noResp.iri])
-    expect(hits[0].params?.missing).toBe('keine Sicherheitsüberlegungen')
-    expect(hits[1].params?.missing).toBe('keine verantwortliche Person')
+    expect(msg(hits[0])).toMatch(/: keine Sicherheitsüberlegungen$/)
+    expect(msg(hits[1])).toMatch(/: keine verantwortliche Person$/)
   })
   it('also finds keywords in location and storyboard', () => {
     const b = new FactsBuilder()
@@ -98,8 +102,8 @@ describe('SAFE-ROPE-01', () => {
     b.activity('Seilziehen', CAT_LA)
     const hits = p['SAFE-ROPE-01'](makeCtx(b.facts))
     expect(ids(hits)).toEqual([short.iri, noTopic.iri])
-    expect(hits[0].params?.reasons).toMatch(/zu kurz/)
-    expect(hits[1].params?.reasons).toMatch(/weder/)
+    expect(msg(hits[0])).toMatch(/zu kurz/)
+    expect(msg(hits[1])).toMatch(/weder/)
   })
 })
 
@@ -111,7 +115,7 @@ describe('SAFE-NIGHT-01', () => {
     b.entry(b.activity('Frühsport', CAT_LS), 2, '07:00', '08:00') // rest 8h
     const hits = p['SAFE-NIGHT-01'](makeCtx(b.facts))
     expect(ids(hits)).toEqual([night.iri])
-    expect(hits[0].params?.reasons).toMatch(/8 h 00 min/)
+    expect(msg(hits[0])).toMatch(/8 h 00 min/)
   })
   it('accepts 8.5h rest with safety text; flags missing safety text and nacht keyword', () => {
     const b = new FactsBuilder({ days: 3 })
@@ -123,7 +127,7 @@ describe('SAFE-NIGHT-01', () => {
     b.entry(b.activity('Später', CAT_LS), 3, '10:00', '11:00')
     const hits = p['SAFE-NIGHT-01'](makeCtx(b.facts))
     expect(ids(hits)).toEqual([kw.iri])
-    expect(hits[0].params?.reasons).toBe('keine Sicherheitsüberlegungen')
+    expect(msg(hits[0])).toMatch(/: keine Sicherheitsüberlegungen$/)
   })
   it('ignores Nachtessen', () => {
     const b = new FactsBuilder({ days: 2 })
@@ -174,8 +178,8 @@ describe('SAFE-DOC-01', () => {
     const hits = p['SAFE-DOC-01'](makeCtx(f, { documents: [worse, partial] }))
     expect(hits).toHaveLength(1)
     expect(hits[0].targets[1]).toBe('d1')
-    expect(hits[0].params?.missing).toMatch(/Krisenkontakt/)
-    expect(hits[0].params?.missing).not.toMatch(/Notrufnummern/)
+    expect(msg(hits[0])).toMatch(/Krisenkontakt/)
+    expect(msg(hits[0])).not.toMatch(/Notrufnummern/)
     const complete = makeDoc({ docCheck: { items: checkItems(['emergencyNumbers', 'hospital', 'crisisContact', 'evacuation', 'badWeather', 'threeByThree', 'firstAid', 'campAddress']), complete: true, checkedAt: '' } })
     expect(p['SAFE-DOC-01'](makeCtx(f, { documents: [complete] }))).toEqual([])
   })
@@ -233,7 +237,7 @@ describe('BP-WATER-01', () => {
       p['BP-WATER-01'](makeCtx(b.facts, { coachInputs: makeCoachInputs({ participantsCount: participants, slrgCount: slrg }) }))
     expect(run(25, 2)[0].params).toMatchObject({ needed: 3, have: 2 })
     expect(run(24, 2)).toEqual([])
-    expect(run(10, null)[0].params?.have).toBe('keine Angabe')
+    expect(msg(run(10, null)[0])).toContain('SLRG-Qualifizierte: keine Angabe')
     expect(run(null, 1)).toEqual([])
     const dry = new FactsBuilder()
     dry.activity('Basteln', CAT_LA)
@@ -283,7 +287,7 @@ describe('MiData in safety / best practice rules', () => {
     const b = waterCamp()
     const hits = p['SAFE-WATER-01'](makeCtx(b.facts, { midata: makeMidata({ leaders: [leader('blitz')] }) }))
     expect(hits).toHaveLength(1)
-    expect(hits[0].params?.missing).toContain('Quelle: MiData, Stand 01.01.2031')
+    expect(msg(hits[0])).toContain('Quelle: MiData, Stand 01.01.2031')
   })
   it('SAFE-WATER-01 is satisfied by a qualified matched responsible', () => {
     const b = waterCamp()

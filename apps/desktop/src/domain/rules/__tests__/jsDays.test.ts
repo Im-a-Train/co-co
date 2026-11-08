@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeJsDays, hasJsMapping, lastJsDate, trainingFreeDays } from '../jsDays'
+import { computeJsDays, hasJsMapping, lastJsDate, trainingFreeDays } from '../lib/jsDays'
 import { CAT_ES, CAT_LA, CAT_LS, CAT_NONE, FactsBuilder, MAPPING, mappingOf } from './factory'
 
 describe('computeJsDays', () => {

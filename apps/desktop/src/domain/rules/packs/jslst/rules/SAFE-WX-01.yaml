@@ -1,6 +1,7 @@
 id: SAFE-WX-01
 version: 1.0.0
-group: safety
+module: lst-lager
+status: active
 title: "Outdoor-Tag mit Schlechtwettervariante"
 description: "Für Tage mit Outdoor-Aktivitäten ist eine Schlechtwettervariante erwähnt."
 message: "{date}: {count} Outdoor-Aktivität(en), aber keine Schlechtwettervariante erwähnt"
@@ -8,8 +9,9 @@ severity: should
 confidence: heuristic
 scope: day
 validFrom: 2026-01-01
-inputs: [documents]
+inputs: [documents, keywords]
+keywords: [OUTDOOR, WATER, MOUNTAIN, ROPE, SCHLECHTWETTER]
 tags: [sicherheit, wetter]
-source:
-  title: "Hering (PBS)"
-  url: https://hering.scout.ch/de
+sources:
+  - key: H
+    page: ""

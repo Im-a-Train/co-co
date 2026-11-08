@@ -1,0 +1,13 @@
+id: coco-pbs
+name: "co-co PBS Best Practice 2026.2"
+version: 2026.2.0
+description: "Empfehlungen der Pfadibewegung Schweiz (Hering): Ruhezeiten, Schlaf, Betreuung, Programmstand."
+validFrom: 2026-01-01
+aliases: [coco-basis]
+modules:
+  - id: pbs
+    title: "PBS Best Practice"
+    description: "Empfehlungen der PBS (Hering) für Pfadilager. Gilt für PBS-Lager; für andere Lager kann der Coach das Modul einschalten."
+    appliesWhen: { organizer: pbs }
+    default: on
+    toggleable: true

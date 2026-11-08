@@ -1,0 +1,68 @@
+- id: IGLU
+  module: lst-winter
+  include: ["iglu", "^iglunacht", "^schneehöhle", "quinzhee"]
+  exclude: []
+- id: WINTER
+  module: lst-winter
+  include: ["schnee", "^schneeschuh", "iglu", "^schneehöhle", "quinzhee", "^schneebiwak", "^winterwander", "schlitteln", "schlitten", "=bob", "airboard", "lawine", "^schneeburg", "^schneeskulptur", "^schneeball", "^wintercamp", "^winterlager"]
+  exclude: []
+- id: SNOWSHOE
+  module: lst-winter
+  include: ["^schneeschuh", "^winterwander"]
+  exclude: []
+- id: WINTERHIKE
+  module: lst-winter
+  include: ["^winterwander", "wanderung im schnee"]
+  exclude: []
+- id: SLED
+  module: lst-winter
+  include: ["schlitteln", "schlitten", "=bob", "airboard", "^schlittelpiste", "^schlittelweg"]
+  exclude: []
+- id: WINTER_SECURED
+  module: lst-winter
+  include: ["winterwanderweg", "schneeschuhtrail", "skigebiet", "^schlittelweg", "gesicherter bereich", "im dorf"]
+  exclude: []
+- id: WINTER_FORBIDDEN
+  module: lst-winter
+  include: ["skitour", "=lvs", "lawinenverschütteten", "gletscher", "^gletscherüberquer"]
+  exclude: []
+- id: WR_HANG
+  module: lst-winter
+  include: ["hang", "neigung", "30 grad", "30 °"]
+  exclude: []
+- id: WR_LAWINE
+  module: lst-winter
+  include: ["lawinenbulletin", "lawine", "=slf", "gefahrenstufe"]
+  exclude: []
+- id: WR_HOEHE
+  module: lst-winter
+  include: ["1800", "höhe"]
+  exclude: []
+- id: WR_3X3
+  module: lst-winter
+  include: ["3 3", "3x3", "drei mal drei"]
+  exclude: []
+- id: WR_DEFENSIV
+  module: lst-winter
+  include: ["defensiv", "ausweich", "variante", "plan b"]
+  exclude: []
+- id: SLED_HELM
+  module: lst-winter
+  include: ["helm"]
+  exclude: []
+- id: SLED_TEST
+  module: lst-winter
+  include: ["test", "getestet", "abgefahren"]
+  exclude: []
+- id: SLED_ZONE
+  module: lst-winter
+  include: ["sicherheitszone", "auslauf"]
+  exclude: []
+- id: SLED_AUFSICHT
+  module: lst-winter
+  include: ["aufsicht", "posten", "=start"]
+  exclude: []
+- id: RUECKMELD
+  module: lst-winter
+  include: ["rückmeld", "vertrauensperson", "kontaktperson", "zeitplan", "zurückmelden"]
+  exclude: []

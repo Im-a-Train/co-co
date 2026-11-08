@@ -1,9 +1,9 @@
-/** Cross-source consistency rules (eCamp / MiData / NDS; group 'completeness'). Pure predicates of RuleContext. */
+/** Module `js`, data consistency (eCamp / MiData / NDS): CMP-CON-*, CMP-MD-01, CMP-NDS-*. Pure predicates of RuleContext. */
 import type { CollaboratorFact, MidataQualKey, NdsAggregate, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
-import { effectiveKeys, midataDateRange, normalizeName } from '@/domain/midata'
-import { participantsDiffer } from '@/domain/nds'
-import { daysBetween } from '../../../deadlines'
-import { formatDateDe, formatStand, midataEvidence, midataSourceText, ndsEvidence, ndsSourceText } from './util'
+import { datesDiffer, effectiveKeys, locationDiffers, midataDateRange, normalizeName } from '@/domain/midata'
+import { ndsDatesDiffer, participantsDiffer } from '@/domain/nds'
+import { daysBetween } from '../../../lib/deadlines'
+import { formatDateDe, formatStand, midataEvidence, midataSourceText, ndsEvidence, ndsSourceText } from '../../../lib/util'
 
 const MAX_NAMES = 10
 
@@ -15,19 +15,23 @@ function names(list: string[]): string {
   return list.length > MAX_NAMES ? `${shown} +${list.length - MAX_NAMES}` : shown
 }
 
+/** Camp hit; the message comes from the rule YAML filled with `params`. */
 const campHit = (
   ctx: RuleContext,
-  message: string,
+  params: Record<string, string | number>,
   evidence: RuleHit['evidence'],
-  stand?: string,
   inputs?: RuleHit['inputs'],
   redKeys?: string[],
+  extra: Partial<RuleHit> = {},
 ): RuleHit => ({
   targets: [ctx.facts.camp.iri],
-  params: { _message: message, ...(stand ? { stand } : {}) },
+  params,
   evidence,
   ...(inputs ? { inputs, redKeys: redKeys ?? Object.keys(inputs) } : {}),
+  ...extra,
 })
+
+const range = (a: string, b: string) => `${formatDateDe(a)}–${formatDateDe(b)}`
 
 /** Active eCamp collaborators working in the team (no guests, no open invitations). */
 export function activeCollaborators(ctx: RuleContext): CollaboratorFact[] {
@@ -49,16 +53,16 @@ export const cmpCon01: RulePredicate = (ctx) => {
   const { midata: md, nds } = ctx
   const { start, end } = ctx.facts.camp
   if (!md || !nds || !nds.start || !nds.end || !start) return []
-  const range = midataDateRange(md, start, end ?? start)
-  if (!range) return []
-  if (range.start === nds.start.slice(0, 10) && range.end === nds.end.slice(0, 10)) return []
+  const r = midataDateRange(md, start, end ?? start)
+  if (!r) return []
+  if (r.start === nds.start.slice(0, 10) && r.end === nds.end.slice(0, 10)) return []
   const sm = formatStand(md.fetchedAt)
   const sn = formatStand(nds.fetchedAt)
-  const msg = `Die Lagerdaten in MiData (${formatDateDe(range.start)}–${formatDateDe(range.end)}) und NDS (${formatDateDe(nds.start)}–${formatDateDe(nds.end)}) stimmen nicht überein (${midataSourceText(sm)}; ${ndsSourceText(sn)})`
+  const params = { midata: range(r.start, r.end), nds: range(nds.start, nds.end), midataStand: sm, ndsStand: sn }
   return [
-    campHit(ctx, msg, [midataEvidence(sm), ndsEvidence(sn)], undefined, {
-      midataStart: range.start,
-      midataEnd: range.end,
+    campHit(ctx, params, [midataEvidence(sm), ndsEvidence(sn)], {
+      midataStart: r.start,
+      midataEnd: r.end,
       ndsStart: nds.start.slice(0, 10),
       ndsEnd: nds.end.slice(0, 10),
     }),
@@ -90,10 +94,10 @@ export const cmpCon02: RulePredicate = (ctx) => {
     src.push(ndsSourceText(s))
     evidence.push(ndsEvidence(s))
   }
-  const msg = `Die Anzahl Leitende stimmt zwischen den Quellen nicht überein: ${parts.map((p) => `${p.label} ${p.n}`).join(', ')}${src.length ? ` (${src.join('; ')})` : ''}`
+  const params = { counts: parts.map((p) => `${p.label} ${p.n}`).join(', '), src: src.length ? ` (${src.join('; ')})` : '' }
   const counts: Record<string, number> = {}
   for (const p of parts) counts[`${p.label.toLowerCase()}Leaders`] = p.n
-  return [campHit(ctx, msg, evidence, undefined, counts, Object.keys(counts).filter((k) => !k.startsWith('ecamp')))]
+  return [campHit(ctx, params, evidence, counts, Object.keys(counts).filter((k) => !k.startsWith('ecamp')))]
 }
 
 // CMP-CON-03 ---------------------------------------------------------------------------------
@@ -113,15 +117,14 @@ export const cmpCon03: RulePredicate = (ctx) => {
   const onlyMidata = md.leaders.filter((l) => !ecampNorms.has(normalizeName(l.nickname))).map((l) => l.nickname)
   if (onlyEcamp.length === 0 && onlyMidata.length === 0) return []
   const stand = formatStand(md.fetchedAt)
-  const parts: string[] = []
-  if (onlyEcamp.length) parts.push(`In eCamp, aber nicht in MiData: ${names(onlyEcamp)}`)
-  if (onlyMidata.length) parts.push(`In MiData, aber nicht in eCamp: ${names(onlyMidata)}`)
+  const parts: NonNullable<RuleHit['fragments']>[string] = []
+  if (onlyEcamp.length) parts.push({ variant: 'onlyEcamp', params: { names: names(onlyEcamp) } })
+  if (onlyMidata.length) parts.push({ variant: 'onlyMidata', params: { names: names(onlyMidata) } })
   return [
     campHit(
       ctx,
-      `${parts.join('. ')} (Abgleich über Namen, ${midataSourceText(stand)})`,
+      { stand },
       [midataEvidence(stand)],
-      stand,
       {
         ecampTeam: team.length,
         midataLeaders: md.leaders.length,
@@ -130,6 +133,7 @@ export const cmpCon03: RulePredicate = (ctx) => {
         onlyInMidata: onlyMidata.length,
       },
       ['midataLeaders', 'matchedByName', 'onlyInEcamp', 'onlyInMidata'],
+      { fragments: { parts } },
     ),
   ]
 }
@@ -146,9 +150,8 @@ export const cmpCon04: RulePredicate = (ctx) => {
   if (planned <= valid) return []
   const sm = formatStand(md.fetchedAt)
   const sn = formatStand(nds.fetchedAt)
-  const msg = `In der NDS sind ${planned} J+S-Leitende geplant, in MiData haben nur ${valid} eine über die ganze Lagerdauer gültige Anerkennung (${midataSourceText(sm)}; ${ndsSourceText(sn)})`
   return [
-    campHit(ctx, msg, [midataEvidence(sm), ndsEvidence(sn)], undefined, {
+    campHit(ctx, { planned, valid, midataStand: sm, ndsStand: sn }, [midataEvidence(sm), ndsEvidence(sn)], {
       ndsPlannedJsLeaders: planned,
       midataValidLeaders: valid,
     }),
@@ -157,6 +160,7 @@ export const cmpCon04: RulePredicate = (ctx) => {
 
 // CMP-CON-05 ---------------------------------------------------------------------------------
 
+/** MiData qualification keys whose expiry matters (data, not keywords; catalog §4.2 extends it with sb* later). */
 const RECOGNITION_KEYS: readonly MidataQualKey[] = ['leiterLsT', 'lagerleiter', 'wasser', 'berg', 'winter', 'slrg']
 
 /** MiData recognitions that expired (before or during the camp) for relevant qualification kinds. */
@@ -169,13 +173,16 @@ export const cmpCon05: RulePredicate = (ctx) => {
   )
   if (rows.length === 0) return []
   const stand = formatStand(md.fetchedAt)
-  const list = rows.map((k) => `${k.label}: ${k.expiredLeaders} Leitende`).join('; ')
-  const msg = `Folgende Anerkennungen sind nicht für die ganze Lagerdauer gültig (vor oder während des Lagers abgelaufen): ${list} (${midataSourceText(stand)})`
+  const list = rows.map((k) => ({ variant: 'item', params: { label: k.label, count: k.expiredLeaders } }))
   return [
-    campHit(ctx, msg, [midataEvidence(stand)], stand, {
-      qualificationKindsExpired: rows.length,
-      leadersExpired: rows.reduce((n, k) => n + k.expiredLeaders, 0),
-    }),
+    campHit(
+      ctx,
+      { stand },
+      [midataEvidence(stand)],
+      { qualificationKindsExpired: rows.length, leadersExpired: rows.reduce((n, k) => n + k.expiredLeaders, 0) },
+      undefined,
+      { fragments: { list } },
+    ),
   ]
 }
 
@@ -188,7 +195,7 @@ export const cmpCon06: RulePredicate = (ctx) => {
   if (md.leaders.some((l) => l.mainLeader === true)) return []
   const stand = formatStand(md.fetchedAt)
   return [
-    campHit(ctx, `In MiData ist keine Hauptleitung eingetragen (${midataSourceText(stand)})`, [midataEvidence(stand)], stand, {
+    campHit(ctx, { stand }, [midataEvidence(stand)], {
       midataLeaders: md.leaders.length,
       mainLeaders: 0,
     }),
@@ -207,7 +214,7 @@ export const cmpCon07: RulePredicate = (ctx) => {
     ctx.facts.days.length > 0 ? ctx.facts.days.length : start && end ? daysBetween(start.slice(0, 10), end.slice(0, 10)) + 1 : 0
   if (days <= 0 || days === planned) return []
   const stand = formatStand(nds.fetchedAt)
-  return [campHit(ctx, `In der NDS sind ${planned} Lagertage geplant, in eCamp ${days} (${ndsSourceText(stand)})`, [ndsEvidence(stand)], stand, {
+  return [campHit(ctx, { planned, days, stand }, [ndsEvidence(stand)], {
       ndsPlannedDays: planned,
       ecampDays: days,
     }, ['ndsPlannedDays']),
@@ -225,9 +232,8 @@ export const cmpCon08: RulePredicate = (ctx) => {
   return [
     campHit(
       ctx,
-      `In MiData sind ${md.participantsCount} Teilnehmende angemeldet, die Höchstzahl beträgt ${max} (${midataSourceText(stand)})`,
+      { participants: md.participantsCount, max, stand },
       [midataEvidence(stand)],
-      stand,
       { midataParticipants: md.participantsCount, midataMaximum: max },
     ),
   ]
@@ -244,9 +250,8 @@ export const cmpCon09: RulePredicate = (ctx) => {
   return [
     campHit(
       ctx,
-      `Bei ${n} Teilnehmenden fehlt in MiData das Geburtsdatum: das J+S-Alter (5–20 Jahre) kann nicht geprüft werden (${midataSourceText(stand)})`,
+      { count: n, ageMin: ctx.params.get<number>('js.ageMin'), ageMax: ctx.params.get<number>('js.ageMax'), stand },
       [midataEvidence(stand)],
-      stand,
       { participantsWithoutBirthday: n, midataParticipants: md.participantsCount },
     ),
   ]
@@ -258,15 +263,110 @@ export const cmpCon09: RulePredicate = (ctx) => {
 export const cmpCon10: RulePredicate = (ctx) => {
   const { midata: md, nds } = ctx
   if (!md || !nds || !(nds.participantCount > 0)) return []
-  if (!participantsDiffer(nds.participantCount, md.participantsCount)) return []
+  const tolerance = ctx.params.get<number>('js.participantsDiffTolerance')
+  if (!participantsDiffer(nds.participantCount, md.participantsCount, tolerance)) return []
   const sm = formatStand(md.fetchedAt)
   const sn = formatStand(nds.fetchedAt)
-  const msg = `In der NDS sind ${nds.participantCount} Teilnehmende erfasst, in MiData ${md.participantsCount}: Abweichung über 20 % (${ndsSourceText(sn)}; ${midataSourceText(sm)})`
+  const tolerancePercent = Math.round(tolerance * 100)
   return [
-    campHit(ctx, msg, [ndsEvidence(sn), midataEvidence(sm)], undefined, {
-      ndsParticipants: nds.participantCount,
-      midataParticipants: md.participantsCount,
-      tolerancePercent: 20,
-    }),
+    campHit(
+      ctx,
+      { nds: nds.participantCount, midata: md.participantsCount, tolerancePercent, ndsStand: sn, midataStand: sm },
+      [ndsEvidence(sn), midataEvidence(sm)],
+      { ndsParticipants: nds.participantCount, midataParticipants: md.participantsCount, tolerancePercent },
+    ),
   ]
+}
+
+// CMP-MD-01 ----------------------------------------------------------------------------------
+
+/** eCamp camp dates vs. MiData event dates (earliest start, latest finish, date part only). */
+export const cmpMd01: RulePredicate = (ctx) => {
+  const md = ctx.midata
+  const { start, end } = ctx.facts.camp
+  if (!md || !start || !end) return []
+  const r = midataDateRange(md, start, end)
+  const datesOff = datesDiffer(md, start, end)
+  const a = ctx.facts.camp.address
+  const placeOff = locationDiffers(md.location, [a?.city, a?.name])
+  if (!datesOff && !placeOff) return []
+  const stand = formatStand(md.fetchedAt)
+  const diffs: NonNullable<RuleHit['fragments']>[string] = []
+  if (datesOff && r) diffs.push({ variant: 'dates', params: { ecamp: range(start, end), midata: range(r.start, r.end) } })
+  if (placeOff) diffs.push({ variant: 'place', params: { ecampPlace: a?.city ?? a?.name ?? '', midataPlace: md.location ?? '' } })
+  return [{ targets: [ctx.facts.camp.iri], params: { stand }, fragments: { diffs }, evidence: [midataEvidence(stand)] }]
+}
+
+// CMP-NDS-01..03 -----------------------------------------------------------------------------
+
+/** eCamp camp dates vs. NDS camp dates (date part only). */
+export const cmpNds01: RulePredicate = (ctx) => {
+  const nds = ctx.nds
+  const { start, end } = ctx.facts.camp
+  if (!nds || !start || !end || !ndsDatesDiffer(nds, start, end)) return []
+  const stand = formatStand(nds.fetchedAt)
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: { ecamp: range(start, end), nds: range(nds.start ?? '', nds.end ?? ''), stand },
+      evidence: [ndsEvidence(stand)],
+    },
+  ]
+}
+
+/** After the camp: activities in NDS whose attendance check (AWK) is still open. */
+export const cmpNds02: RulePredicate = (ctx) => {
+  const nds = ctx.nds
+  const end = ctx.facts.camp.end ?? nds?.end ?? null
+  if (!nds || !end) return []
+  if (ctx.now.toISOString().slice(0, 10) <= end.slice(0, 10)) return []
+  const open = nds.activities.attendanceOpenCount
+  if (!(open > 0)) return []
+  const stand = formatStand(nds.fetchedAt)
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: { count: open, stand },
+      ...(open === 1 ? { variant: 'one' } : {}),
+      evidence: [ndsEvidence(stand)],
+    },
+  ]
+}
+
+/** NDS planned participants vs. MiData (preferred) or coach-input participant count: more than the tolerance apart. */
+export const cmpNds03: RulePredicate = (ctx) => {
+  const nds = ctx.nds
+  if (!nds) return []
+  const tolerance = ctx.params.get<number>('js.participantsDiffTolerance')
+  const planned = nds.statistics.planned.totalParticipants
+  const md = ctx.midata?.participantsCount ?? null
+  const mine = md ?? ctx.coachInputs?.participantsCount ?? null
+  if (!participantsDiffer(planned, mine, tolerance)) return []
+  const stand = formatStand(nds.fetchedAt)
+  const params = { planned: planned ?? 0, mine: mine ?? 0, tolerancePercent: Math.round(tolerance * 100), stand }
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: md !== null ? { ...params, midataStand: formatStand(ctx.midata!.fetchedAt) } : params,
+      ...(md === null ? { variant: 'coach' } : {}),
+      evidence: [ndsEvidence(stand)],
+    },
+  ]
+}
+
+export const predicates: Record<string, RulePredicate> = {
+  'CMP-CON-01': cmpCon01,
+  'CMP-CON-02': cmpCon02,
+  'CMP-CON-03': cmpCon03,
+  'CMP-CON-04': cmpCon04,
+  'CMP-CON-05': cmpCon05,
+  'CMP-CON-06': cmpCon06,
+  'CMP-CON-07': cmpCon07,
+  'CMP-CON-08': cmpCon08,
+  'CMP-CON-09': cmpCon09,
+  'CMP-CON-10': cmpCon10,
+  'CMP-MD-01': cmpMd01,
+  'CMP-NDS-01': cmpNds01,
+  'CMP-NDS-02': cmpNds02,
+  'CMP-NDS-03': cmpNds03,
 }

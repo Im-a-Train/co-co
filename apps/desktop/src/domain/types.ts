@@ -314,6 +314,12 @@ export interface CoachInputs {
    * done, keyed by milestone id, value = date marked done. Absent = none done.
    */
   milestonesDone?: Record<string, IsoDate>
+  /** Rules v2 (JS-DL-03): planned Leihmaterial delivery date (null/absent = unknown, camp start is used). */
+  leihmaterialDeliveryDate?: IsoDate | null
+  /** Rules v2 (JS-DL-03): planned Landeskarten delivery date (null/absent = unknown). */
+  landeskartenDeliveryDate?: IsoDate | null
+  /** Rules v2: number of J+S leaders (coach input; null/absent = unknown). */
+  jsLeadersCount?: number | null
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -321,8 +327,14 @@ export interface CoachInputs {
 // ever reach the webview; raw person data stays in Rust. Never send any of this to the AI.
 // ---------------------------------------------------------------------------------------------
 
-export type MidataQualKey = 'lagerleiter' | 'leiterLsT' | 'wasser' | 'berg' | 'winter' | 'slrg'
-export const MIDATA_QUAL_KEYS: readonly MidataQualKey[] = ['lagerleiter', 'leiterLsT', 'wasser', 'berg', 'winter', 'slrg']
+/** Qualification columns of the MiData matrix (CMP-CON-05, SAFE-*). */
+export type LegacyMidataQualKey = 'lagerleiter' | 'leiterLsT' | 'wasser' | 'berg' | 'winter' | 'slrg'
+/** Rules v2 keys (catalog §3.7); the Rust mapping fills them later, absent in older aggregates. */
+export type MidataQualKeyV2 = 'sbBerg' | 'sbWasser' | 'sbWinter' | 'waterBath' | 'waterPoolUnsupervised' | 'waterLake' | 'waterRiver'
+export type MidataQualKey = LegacyMidataQualKey | MidataQualKeyV2
+/** Matrix columns (legacy keys only; the v2 keys are read by rules, not shown as columns yet). */
+export const MIDATA_QUAL_KEYS: readonly LegacyMidataQualKey[] = ['lagerleiter', 'leiterLsT', 'wasser', 'berg', 'winter', 'slrg']
+export const MIDATA_QUAL_KEYS_V2: readonly MidataQualKeyV2[] = ['sbBerg', 'sbWasser', 'sbWinter', 'waterBath', 'waterPoolUnsupervised', 'waterLake', 'waterRiver']
 
 export interface MidataAgeBand {
   from: number
@@ -337,7 +349,7 @@ export interface MidataLeader {
   roleLabel: string
   /** Main leader (Hauptleitung); absent in aggregates stored before this field existed. */
   mainLeader?: boolean
-  qualifications: Record<MidataQualKey, boolean>
+  qualifications: Record<LegacyMidataQualKey, boolean> & Partial<Record<MidataQualKeyV2, boolean>>
 }
 
 export interface MidataQualKind {
@@ -358,6 +370,11 @@ export interface MidataAggregate {
   participantsCount: number
   /** Participants aged 5-20 at camp start. */
   participantsJsAgeCount: number
+  /**
+   * Rules v2: participant count per birth year (Jahrgang), for the J+S age by Jahrgang (WEB-C «J+S-Alter»).
+   * Aggregate only (red-derived). Absent in older aggregates.
+   */
+  participantsByBirthYear?: Record<number, number>
   participantsWithoutBirthday: number
   minAge: number | null
   maxAge: number | null
@@ -546,10 +563,76 @@ export interface MidataRecord {
 export type Severity = 'must' | 'should' | 'hint'
 export type Confidence = 'verified' | 'conflict' | 'unverified' | 'best-practice' | 'heuristic'
 export type FindingScope = 'camp' | 'day' | 'activity' | 'scheduleEntry' | 'document'
-export type RuleGroup = 'js' | 'completeness' | 'safety' | 'best-practice'
+/** Rule modules of the bundled packs (catalog v2 §2.2). */
+export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'pbs'
+export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'pbs']
+/** @deprecated Rules v2: the group is the rule's module (`RuleMeta.group === RuleMeta.module`). */
+export type RuleGroup = ModuleId
 export type FindingOrigin = 'rule' | 'ai'
+export type RuleStatus = 'active' | 'retired'
 /** Which extra inputs a rule needs; used by the UI to explain "needs coach input" etc. */
-export type RuleInput = 'mapping' | 'coachInputs' | 'documents' | 'settings'
+export type RuleInput =
+  | 'mapping'
+  | 'coachInputs'
+  | 'documents'
+  | 'settings'
+  | 'midata'
+  | 'nds'
+  | 'campConfig'
+  | 'activityTags'
+  | 'params'
+  | 'keywords'
+
+/** Coach tags per activity (stored in CampRuleConfig.activityTags). Tags override keyword detection. */
+export type ActivityTag =
+  | 'unternehmung'
+  | 'keine-unternehmung'
+  | 'js-aktivitaet'
+  | 'keine-js-aktivitaet'
+  | 'sb-berg'
+  | 'sb-wasser'
+  | 'sb-winter'
+  | 'kein-sb'
+  | 'ebb-a'
+  | 'ebb-b'
+  | 'kein-ebb'
+  | 'ef1'
+  | 'ef2'
+  | 'ef3'
+  | 'ef4'
+  | 'ef5'
+  | 'ef6'
+  | 'gesicherter-bereich'
+  | 'wasser-bad-beaufsichtigt'
+  | 'wasser-pool'
+  | 'wasser-see'
+  | 'wasser-fluss'
+  | 'externe-wasseraufsicht'
+export const ACTIVITY_TAGS: readonly ActivityTag[] = [
+  'unternehmung',
+  'keine-unternehmung',
+  'js-aktivitaet',
+  'keine-js-aktivitaet',
+  'sb-berg',
+  'sb-wasser',
+  'sb-winter',
+  'kein-sb',
+  'ebb-a',
+  'ebb-b',
+  'kein-ebb',
+  'ef1',
+  'ef2',
+  'ef3',
+  'ef4',
+  'ef5',
+  'ef6',
+  'gesicherter-bereich',
+  'wasser-bad-beaufsichtigt',
+  'wasser-pool',
+  'wasser-see',
+  'wasser-fluss',
+  'externe-wasseraufsicht',
+]
 
 export interface Evidence {
   kind: 'camp' | 'day' | 'activity' | 'scheduleEntry' | 'document' | 'text'
@@ -560,25 +643,92 @@ export interface Evidence {
   snippet?: string
 }
 
-/** Static rule metadata, loaded from the rule's YAML. */
+// ---- Sources (packs/sources.yaml) -------------------------------------------------------------
+
+export type SourceWeight = 'binding' | 'binding-quote' | 'didactic' | 'outdated' | 'pbs' | 'info'
+
+/** One entry of the source registry (packs/sources.yaml). */
+export interface SourceRecord {
+  key: string
+  title: string
+  publisher?: string
+  docId?: string
+  edition: string
+  date?: IsoDate
+  /** Web URL; null for local files / J+S tool modules. */
+  url: string | null
+  shortUrl?: string
+  file?: string
+  weight: SourceWeight
+  pageConvention: 'printed' | 'section' | 'slide'
+  partlyRead: string[]
+  notes?: string
+  /** Old keys (e.g. L, C, LT) accepted in rule YAMLs. */
+  formerKeys?: string[]
+  checkedOn?: IsoDate
+}
+
+/** Citation of a source in a rule / param / keyword set. */
+export interface SourceRef {
+  key: string
+  /** «S. 5», ««Lagerdauer»», «slide 6»; '' when not given. */
+  page: string
+  quote?: string
+  /** The cited statement is binding (default: derived from the source weight). */
+  binding?: boolean
+}
+
+/** SourceRef resolved against the registry (shown in findings and the catalog). */
+export interface ResolvedSource extends SourceRef {
+  title: string
+  url: string | null
+  edition: string
+  weight: SourceWeight
+}
+
+// ---- Rule metadata ----------------------------------------------------------------------------
+
+/** Static rule metadata, loaded from the rule's YAML (schema v2, see docs/plans/rules-v2/infra-api.md). */
 export interface RuleMeta {
   id: string
   /** Version of this rule (semver-ish string), bumped on behaviour change. */
   version: string
+  /** Module of the pack this rule belongs to (decides per-camp activation). */
+  module: ModuleId
+  /** @deprecated Derived alias of `module` for callers not yet migrated. */
   group: RuleGroup
+  /** 'retired' rules stay in the catalog (overrides keep resolving) but are never evaluated. Default 'active'. */
+  status: RuleStatus
   title: string
   description: string
   /** Message template with `{param}` placeholders filled from RuleHit.params. */
   message: string
+  /** Alternative templates selected by `RuleHit.variant` (and used for `RuleHit.fragments`). */
+  messageVariants?: Record<string, string>
   severity: Severity
   confidence: Confidence
   scope: FindingScope
   /** Rule applies to camps starting on/after validFrom and on/before validTo. */
   validFrom?: IsoDate
   validTo?: IsoDate
+  /** Citations (keys resolve in packs/sources.yaml). */
+  sources: SourceRef[]
+  /** @deprecated First resolved source with a URL ({title, url}); kept for the UI. */
   source: Source
   inputs?: RuleInput[]
+  /** Param keys the predicate reads (explain + «Parameter angepasst»). */
+  params?: string[]
+  /** Keyword set ids the predicate reads. */
+  keywords?: string[]
+  /** Older rule ids whose overrides / rule state / explain carry over to this rule. */
+  formerIds?: string[]
   tags?: string[]
+}
+
+/** One rendered piece of a composite message: `messageVariants[variant]` filled with `params`. */
+export interface MessageFragment {
+  variant: string
+  params?: Record<string, string | number>
 }
 
 /** What a predicate returns for each violation. Empty array = rule satisfied. */
@@ -587,8 +737,17 @@ export interface RuleHit {
   targets: string[]
   evidence?: Evidence[]
   params?: Record<string, string | number>
+  /** Selects `meta.messageVariants[variant]` instead of `meta.message`. */
+  variant?: string
+  /**
+   * Composite placeholders: `{name}` is replaced by the listed fragments, each rendered from
+   * `messageVariants[fragment.variant]`, joined by `messageVariants['<name>Join']` (default «; »).
+   */
+  fragments?: Record<string, MessageFragment[]>
   /** Optional severity downgrade for this hit (never upgrade above meta.severity). */
   severity?: Severity
+  /** Optional confidence downgrade for this hit (verified > best-practice > heuristic > unverified > conflict). */
+  confidence?: Confidence
   /**
    * Explainability: the input facts the predicate looked at to reach this verdict (e.g.
    * `{ dayDate: '2031-07-12', jsMinutes: 210, requiredMinutes: 240 }`). Shown in the «Warum?» panel.
@@ -598,6 +757,216 @@ export interface RuleHit {
   /** Keys of `inputs` whose values come from MiData/NDS (red-derived; hidden from AI, labelled in UI). */
   redKeys?: string[]
 }
+
+// ---- Params (packs/<pack>/params.yaml) --------------------------------------------------------
+
+export type ParamValue = number | string | boolean | null | ParamValue[] | { [key: string]: ParamValue }
+export type ParamOverridable = 'none' | 'admin' | 'coach'
+
+export interface ParamRow {
+  value: ParamValue
+  validFrom: IsoDate
+  validTo?: IsoDate
+}
+
+export interface ParamDef {
+  key: string
+  label: string
+  description?: string
+  unit: string
+  values: ParamRow[]
+  sources: SourceRef[]
+  overridable: ParamOverridable
+}
+
+export interface ParamOverrideInfo {
+  value: ParamValue
+  default: ParamValue
+}
+
+/** Camp-specific param lookup (resolution: campConfig.params → settings.ruleParams → row by camp start). */
+export interface ParamReader {
+  /** Effective value; throws for unknown keys or when no row covers the camp start. */
+  get<T = ParamValue>(key: string): T
+  /** Non-null when a coach/admin override differs from the row default. */
+  isOverridden(key: string): ParamOverrideInfo | null
+  /** Param definition (label, unit, sources) or undefined. */
+  def(key: string): ParamDef | undefined
+}
+
+/** «Parameter angepasst» note on a finding (UI renders it via i18n `rules.paramNote`). */
+export interface ParamNote {
+  key: string
+  label: string
+  value: ParamValue
+  default: ParamValue
+}
+
+// ---- Keywords (packs/<pack>/keywords/*.yaml) ---------------------------------------------------
+
+/** Include/exclude entry: '=word', '^prefix', '$suffix', 'stem', 'a phrase', or { regex }. */
+export type KeywordEntry = string | { regex: string }
+
+export interface KeywordSetDef {
+  id: string
+  module?: string
+  description?: string
+  extends?: string[]
+  include: KeywordEntry[]
+  exclude?: KeywordEntry[]
+  sources?: SourceRef[]
+}
+
+export type ActivityTextField = 'title' | 'location' | 'storyboard' | 'safety' | 'notes'
+
+export interface KeywordMatch {
+  /** Entry as written (without = ^ $ markers; regex: the matched text). */
+  term: string
+  /** Field the match was found in ('text' for match()). */
+  field: ActivityTextField | 'text'
+}
+
+export interface KeywordMatcher {
+  /** Matches of a set in a free text. Throws for unknown set ids. */
+  match(setId: string, text: string): KeywordMatch[]
+  /** Matches in the given activity fields (default title, location, storyboard, notes); memoised. */
+  matchActivity(setId: string, activity: ActivityFact, fields?: readonly ActivityTextField[]): KeywordMatch[]
+  has(setId: string): boolean
+}
+
+// ---- Modules + per-camp rule config -------------------------------------------------------------
+
+export type ModuleCoachState = 'on' | 'off' | 'auto'
+export type ModuleState = 'on' | 'off' | 'suggested'
+
+/** A trigger of `suggestWhen` / `onWhen` / `appliesWhen` in pack.yaml (exactly one key set). */
+export interface ModuleTrigger {
+  keywordSet?: string
+  minActivities?: number
+  gpxHighestPointAbove?: number | { param: string }
+  campStartMonths?: number[] | { param: string }
+  campConfig?: Record<string, ParamValue[]>
+  activityTag?: ActivityTag | ActivityTag[]
+  coachInput?: Record<string, ParamValue>
+}
+
+export interface ModuleAppliesWhen {
+  jsCamp?: boolean
+  sport?: Array<'lst' | 'other'>
+  organizer?: 'pbs'
+  module?: ModuleId
+}
+
+export interface ModuleDef {
+  id: ModuleId
+  title: string
+  description: string
+  appliesWhen: ModuleAppliesWhen
+  default: 'on' | 'auto'
+  toggleable: boolean
+  suggestWhen: ModuleTrigger[]
+  onWhen: ModuleTrigger[]
+}
+
+/** Why a module is in its state: an i18n key under `rules.module.reason.*` plus its params. */
+export interface ModuleReason {
+  key: string
+  params: Record<string, string | number>
+}
+
+export interface ModuleResolution {
+  state: ModuleState
+  coachState: ModuleCoachState
+  reasons: ModuleReason[]
+}
+
+export type SbApprovalKind = 'experte' | 'bergfuehrer'
+
+/** Per-camp rule configuration (Dexie table `campRuleConfig`, zone green). */
+export interface CampRuleConfig {
+  campIri: Iri
+  zone: 'green'
+  /** null = default lst */
+  sport: 'lst' | 'other' | null
+  modules: Partial<Record<ModuleId, ModuleCoachState>>
+  activityTags: Record<Iri, ActivityTag[]>
+  sbApprovals: Record<Iri | 'camp', { approvedOn: IsoDate | null; kind: SbApprovalKind }>
+  camp: {
+    region: 'mittelland' | 'jura' | 'voralpen' | 'alpen' | 'ausland' | null
+    campForm: 'haus' | 'zelt' | 'gemischt' | null
+    winterSafeAccess: boolean | null
+    abroad: boolean | null
+  }
+  angebot: {
+    other4DayCamp: boolean | null
+    unternehmungElsewhere: boolean | null
+    efCoveredElsewhere: boolean | null
+    lastActivityDate: IsoDate | null
+  }
+  params: Record<string, number | string | boolean>
+  checklist: Record<string, { done: boolean; at: IsoDateTime; note?: string }>
+  updatedAt: IsoDateTime
+}
+
+/** CampRuleConfig with defaults applied and the effective module states (engine input, §2.3). */
+export interface ResolvedCampRuleConfig extends Omit<CampRuleConfig, 'sport'> {
+  sport: 'lst' | 'other'
+  /** true when no record was stored (all defaults). */
+  isDefault: boolean
+  moduleStates: Partial<Record<ModuleId, ModuleResolution>>
+  /** Tags of an activity ([] if none). */
+  tagsOf(activityIri: Iri): ActivityTag[]
+}
+
+// ---- Shared J+S day model (lib/jsDays.ts, §3.9) --------------------------------------------------
+
+export interface JsInterval {
+  /** Minutes since the day's midnight (wall clock), 0..1440. */
+  from: number
+  to: number
+}
+
+export interface JsModelDay {
+  dayIri: Iri
+  date: IsoDate
+  /** 1-based position in the camp (all periods, sorted by date). */
+  number: number
+  isFirst: boolean
+  isLast: boolean
+  /** Union of the day's J+S intervals (parallel entries are united, never summed). */
+  intervals: JsInterval[]
+  /** Units after merging intervals separated by less than js.minGapMinutes. */
+  unitIntervals: JsInterval[]
+  jsMinutes: number
+  units: number
+  /** Sozialzeit gaps shorter than js.minGapMinutes (JS-DAY-03). */
+  shortGaps: Array<JsInterval & { minutes: number }>
+  /** J+S schedule entries shorter than js.minUnitMinutes (dropped; JS-DAY-02). */
+  shortEntryIris: Iri[]
+  /** J+S schedule entries starting (or continuing) on this day. */
+  entryIris: Iri[]
+  bwzMinutes: number
+  /** At least one J+S entry of the day has a movement-time value. */
+  bwzKnown: boolean
+  isJsDay: boolean
+  /** Ids of js.timeWindows covered (lib/timeWindows.ts). */
+  windowsCovered: string[]
+}
+
+export interface JsDayModel {
+  /** 'unknown' = no confirmed mapping and no J+S activity tags: day rules stay silent (JS-CAMP-01 hints). */
+  status: 'ok' | 'unknown'
+  days: JsModelDay[]
+  /** Interior J+S days + end-day contribution (0, 1 or 2). */
+  jsDayCount: number
+  endDaysMode: 'single' | 'combined' | 'none'
+  /** Interior days that are not J+S days. */
+  trainingFreeDays: JsModelDay[]
+  /** J+S status of an activity: tags first, then the mapping; null = unknown. */
+  isJsActivity(activityIri: Iri): boolean | null
+}
+
+// ---- Context, rules, packs ----------------------------------------------------------------------
 
 export interface RuleContext {
   facts: CampFacts
@@ -614,7 +983,22 @@ export interface RuleContext {
   /** Display name of the logged-in coach (for CMP-CAMP-01). */
   userDisplayName: string | null
   overrides: Override[]
+  /** Rules v2: per-camp rule config with effective module states. */
+  campConfig: ResolvedCampRuleConfig
+  /** Rules v2: camp-specific param values. */
+  params: ParamReader
+  /** Rules v2: keyword sets of all loaded packs. */
+  keywords: KeywordMatcher
+  /** Rules v2: shared J+S day model (computed lazily on first access). */
+  js: JsDayModel
 }
+
+/** What callers pass to evaluate(): the v2 fields are built by the engine when absent. */
+export type RuleContextInput = Omit<RuleContext, 'campConfig' | 'params' | 'keywords' | 'js'> &
+  Partial<Pick<RuleContext, 'params' | 'keywords' | 'js'>> & {
+    /** Stored per-camp config (null/absent = defaults) or an already resolved one. */
+    campConfig?: CampRuleConfig | ResolvedCampRuleConfig | null
+  }
 
 export type RulePredicate = (ctx: RuleContext) => RuleHit[]
 
@@ -625,12 +1009,17 @@ export interface Rule {
 
 export interface RulePack {
   id: string
-  /** Display name, e.g. "co-co Basis 2026.1" */
+  /** Display name, e.g. "co-co J+S Lagersport/Trekking 2026.2" */
   name: string
   version: string
   description: string
   validFrom?: IsoDate
   validTo?: IsoDate
+  /** Old pack ids accepted in settings.rulePacks. */
+  aliases?: string[]
+  modules?: ModuleDef[]
+  params?: ParamDef[]
+  keywordSets?: KeywordSetDef[]
   rules: Rule[]
 }
 
@@ -640,6 +1029,8 @@ export interface Finding {
   ruleId: string
   ruleVersion: string
   packId: string | null
+  /** Module of the rule (null for AI findings). */
+  module?: ModuleId | null
   severity: Severity
   confidence: Confidence
   title: string
@@ -647,7 +1038,14 @@ export interface Finding {
   scope: FindingScope
   targets: string[]
   evidence: Evidence[]
+  /** Primary source ({title, url}) for existing UI. */
   source: Source | null
+  /** All citations, resolved from the registry. */
+  sources?: ResolvedSource[]
+  /** Params of this rule that were overridden for this camp. */
+  paramNotes?: ParamNote[]
+  /** Set when the rule's module is only suggested (i18n `rules.module.suggestedNote`). */
+  moduleNote?: ModuleReason | null
   origin: FindingOrigin
   /** e.g. ['KI-Einschätzung'] for AI findings. */
   tags: string[]
@@ -659,7 +1057,7 @@ export interface Finding {
 
 /** Availability of one rule input for this evaluation (see RuleMeta.inputs). */
 export interface ExplainInput {
-  key: RuleInput | 'midata' | 'nds'
+  key: RuleInput
   /** 'used' = present and fed to the rule; 'missing' = the rule would use it but it is absent. */
   state: 'used' | 'missing'
   /** Short German detail, e.g. «bestätigt am 03.05.2031», «Stand MiData 01.05.2031», «3 Dokumente». */
@@ -686,7 +1084,12 @@ export interface FindingExplanation {
   evaluatedAt: IsoDateTime
   baseSeverity: Severity
   /** How the final severity came about. */
-  severityReason: 'rule' | 'hit-downgrade' | 'confidence-clamp'
+  severityReason: 'rule' | 'hit-downgrade' | 'confidence-clamp' | 'module-suggested'
+  /** Module of the rule and its effective state for this camp. */
+  module?: ModuleId
+  moduleState?: ModuleState
+  /** Former ids of the rule (stored overrides / rule state under these ids still apply). */
+  formerIds?: string[]
   inputs: ExplainInput[]
   /** Facts from RuleHit.inputs followed by RuleHit.params (without `_message`), deduplicated by key. */
   facts: ExplainFact[]
@@ -1059,8 +1462,12 @@ export interface AppSettings {
     remindAfterRound: boolean
     lastExportAt: IsoDateTime | null
   }
-  /** Enabled rule pack ids (empty = all bundled packs). */
+  /** Enabled rule pack ids (empty = all bundled packs). Old ids (pack `aliases`, e.g. coco-basis) are accepted. */
   rulePacks: string[]
+  /** Rules v2: admin/coach overrides of pack params (`overridable: admin|coach`), keyed by param key. */
+  ruleParams?: Record<string, ParamValue>
+  /** Rules v2: last seen `edition` per source key (sources.yaml), for «Quelle aktualisiert – erneut prüfen». */
+  sourceEditions?: Record<string, string>
   /** M7: MiData connection settings (no secrets; token/cookies live in Rust/keychain). */
   midata: {
     /** Base URL of the MiData instance (default https://db.scout.ch). */

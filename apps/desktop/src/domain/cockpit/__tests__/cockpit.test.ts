@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CampFacts, Finding } from '../../types'
-import type { JsDayReport } from '../../rules/jsDays'
+import type { JsDayReport } from '../../rules/lib/jsDays'
 import {
   assignLanes,
   buildGrid,
@@ -132,20 +132,19 @@ describe('findings helpers', () => {
   })
   const list = [
     finding('JS-DAY-01', 'must'),
-    finding('SAFE-WX-01', 'should', { targets: ['/api/activities/a1'] }),
+    finding('SAFE-WX-01', 'should', { targets: ['/api/activities/a1'], module: 'lst-lager' }),
     finding('BP-REST-01', 'hint'),
     overridden,
   ]
   it('derives rule groups', () => {
-    expect(ruleGroupOf('JS-DAY-01')).toBe('js')
-    expect(ruleGroupOf('SAFE-WX-01')).toBe('safety')
-    expect(ruleGroupOf('CMP-ACT-01')).toBe('completeness')
-    expect(ruleGroupOf('BP-REST-01')).toBe('best-practice')
+    expect(ruleGroupOf({ ruleId: 'JS-DAY-01', module: 'lst' })).toBe('lst')
+    expect(ruleGroupOf({ ruleId: 'BP-REST-01', module: 'pbs' })).toBe('pbs')
+    expect(ruleGroupOf({ ruleId: 'AI-1', module: null })).toBeNull()
   })
   it('filters and groups', () => {
     expect(filterFindings(list, DEFAULT_FINDING_FILTER)).toHaveLength(3)
     expect(filterFindings(list, { ...DEFAULT_FINDING_FILTER, showOverridden: true })).toHaveLength(4)
-    expect(filterFindings(list, { ...DEFAULT_FINDING_FILTER, groups: ['safety'] })).toHaveLength(1)
+    expect(filterFindings(list, { ...DEFAULT_FINDING_FILTER, groups: ['lst-lager'] })).toHaveLength(1)
     expect(filterFindings(list, { ...DEFAULT_FINDING_FILTER, activityIri: '/api/activities/a1' })).toHaveLength(1)
     expect(filterFindings(list, { ...DEFAULT_FINDING_FILTER, search: 'bp-rest' })).toHaveLength(1)
     expect(groupBySeverity(list).map((g) => g.severity)).toEqual(['must', 'should', 'hint'])

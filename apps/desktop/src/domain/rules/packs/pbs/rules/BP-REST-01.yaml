@@ -1,15 +1,17 @@
 id: BP-REST-01
 version: 1.0.0
-group: best-practice
+module: pbs
+status: active
 title: "Freier Block pro Tag"
 description: "Jeder Tag hat mindestens einen freien Block (Freizeit oder Pause von mindestens 60 Minuten)."
-message: "{date}: kein freier Block (Freizeit oder Pause von mindestens 60 Min.)"
+message: "{date}: kein freier Block (Freizeit oder Pause von mindestens {gap} Min.)"
 severity: hint
 confidence: best-practice
 scope: day
 validFrom: 2026-01-01
-inputs: [mapping]
+inputs: [mapping, params]
+params: [pbs.restGapMinutes, pbs.restWindow]
 tags: [rhythmus]
-source:
-  title: "Hering (PBS)"
-  url: https://hering.scout.ch/de
+sources:
+  - key: H
+    page: ""

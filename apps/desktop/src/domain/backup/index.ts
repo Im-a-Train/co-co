@@ -76,6 +76,7 @@ const PRIMARY_KEY: Record<string, string> = {
   midata: 'campIri',
   nds: 'campIri',
   selfChecks: 'id',
+  campRuleConfig: 'campIri',
 }
 
 export interface ExportOptions {

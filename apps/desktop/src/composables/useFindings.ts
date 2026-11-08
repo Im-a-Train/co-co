@@ -9,14 +9,14 @@ import { liveQuery } from 'dexie'
 import { getDb } from '@/domain/storage/db'
 import { getAppSettings } from '@/domain/storage/settings'
 import { countFindings, evaluate } from '@/domain/rules/engine'
-import { computeJsDays, lastJsDate, type JsDayReport } from '@/domain/rules/jsDays'
-import { loadBundledPacks } from '@/domain/rules/packs'
+import { computeJsDays, lastJsDate, type JsDayReport } from '@/domain/rules/lib/jsDays'
+import { loadBundledPacks, selectPacks } from '@/domain/rules/packs'
 import { addOverride, listOverrides, removeOverride, saveCampSummary } from '@/domain/rules/store'
 import { disabledRuleIds, disablePromptCount, isGloballyDisabled } from '@/domain/rules/ruleState'
 import { disableRuleStored, enableRuleStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
 import { useRuleState } from '@/composables/useRuleState'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
-import type { AppSettings, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
+import type { AppSettings, CampRuleConfig, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
 import { getMidataRecord } from '@/domain/midata/store'
 import { midataVersion } from '@/composables/midataSignal'
 import { getNdsRecord } from '@/domain/nds/store'
@@ -58,8 +58,7 @@ export interface DisablePrompt {
 const aiFindingsByCamp = ref<Record<Iri, Finding[]>>({})
 
 function enabledPacks(settings: AppSettings): RulePack[] {
-  const all = loadBundledPacks()
-  return settings.rulePacks.length === 0 ? all : all.filter((p) => settings.rulePacks.includes(p.id))
+  return selectPacks(loadBundledPacks(), settings.rulePacks)
 }
 
 /** Subscribes to a Dexie live query; failures (no IndexedDB, e.g. in tests) are swallowed. */
@@ -82,6 +81,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const appSettings = shallowRef<AppSettings>(DEFAULT_APP_SETTINGS)
   const midata = shallowRef<MidataAggregate | null>(null)
   const nds = shallowRef<NdsAggregate | null>(null)
+  const campRuleConfig = shallowRef<CampRuleConfig | null>(null)
   const evalError = ref<string | null>(null)
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
@@ -103,6 +103,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
         subscribe(() => listOverrides(value), (v) => (overrides.value = v)),
         subscribe(() => getDb().documents.where('campIri').equals(value).toArray(), (v) => (documents.value = v)),
         subscribe(() => getAppSettings(), (v) => (appSettings.value = v)),
+        subscribe(() => getDb().campRuleConfig.get(value), (v) => (campRuleConfig.value = v ?? null)),
       ]
     },
     { immediate: true },
@@ -170,6 +171,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
         now: new Date(),
         userDisplayName: facts.collaborators.find((c) => c.isCurrentUser)?.displayName ?? null,
         overrides: overrides.value,
+        campConfig: campRuleConfig.value,
       }, { disabledRuleIds: disabledRuleIds(ruleState.value, iri.value) })
       return { findings, error: null }
     } catch (e) {

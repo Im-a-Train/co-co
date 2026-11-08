@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { predicates as p } from '../packs/basis/predicates'
-import { coachNameMatches } from '../packs/basis/predicates/completeness'
-import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, makeMidata, makeNds, mappingOf } from './factory'
+import { allPredicates as p } from './predicates'
+import { coachNameMatches } from '../packs/jslst/predicates/js'
+import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, makeMidata, makeNds, mappingOf, msg } from './factory'
 
 const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
@@ -111,14 +111,14 @@ describe('CMP-CAMP-01 with MiData', () => {
     const f = new FactsBuilder().facts
     const hits = p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: false }) }))
     expect(hits).toHaveLength(1)
-    expect(hits[0].params?.detail).toContain('Quelle: MiData, Stand 01.01.2031')
+    expect(msg(hits[0])).toContain('Quelle: MiData, Stand 01.01.2031')
   })
   it('names the MiData coach in the hint when known', () => {
     const f = new FactsBuilder().facts
     const withName = p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: false, coachNickname: 'Falk' }) }))
-    expect(withName[0].params?.detail).toContain('«Falk»')
+    expect(msg(withName[0])).toContain('«Falk»')
     const without = p['CMP-CAMP-01'](makeCtx(f, { userDisplayName: 'Muster Max', midata: makeMidata({ coachMatch: false, coachNickname: null }) }))
-    expect(without[0].params?.detail).toContain('eine andere Person')
+    expect(msg(without[0])).toContain('eine andere Person')
   })
   it('stays quiet for match true / unknown', () => {
     const f = new FactsBuilder().facts
@@ -139,9 +139,9 @@ describe('CMP-NDS rules', () => {
     expect(p['CMP-NDS-01'](makeCtx(f, { nds: makeNds({ start: null }) }))).toEqual([])
     const hits = p['CMP-NDS-01'](makeCtx(f, { nds: makeNds({ end: '2031-07-18' }) }))
     expect(hits).toHaveLength(1)
-    expect(String(hits[0].params?._message)).toContain('12.07.2031–16.07.2031')
-    expect(String(hits[0].params?._message)).toContain('12.07.2031–18.07.2031')
-    expect(String(hits[0].params?._message)).toContain('Quelle: NDS, Stand 01.01.2031')
+    expect(msg(hits[0])).toContain('12.07.2031–16.07.2031')
+    expect(msg(hits[0])).toContain('12.07.2031–18.07.2031')
+    expect(msg(hits[0])).toContain('Quelle: NDS, Stand 01.01.2031')
   })
 
   it('CMP-NDS-02 flags open AWK only after the camp end', () => {
@@ -149,7 +149,7 @@ describe('CMP-NDS rules', () => {
     expect(p['CMP-NDS-02'](makeCtx(f, { nds }))).toEqual([]) // now = 2031-01-01, before the camp
     const hits = p['CMP-NDS-02'](makeCtx(f, { nds, now: after }))
     expect(hits).toHaveLength(1)
-    expect(String(hits[0].params?._message)).toContain('2 Aktivitäten')
+    expect(msg(hits[0])).toContain('2 Aktivitäten')
     expect(p['CMP-NDS-02'](makeCtx(f, { nds: makeNds(), now: after }))).toEqual([])
     expect(p['CMP-NDS-02'](makeCtx(f, { now: after }))).toEqual([])
   })
@@ -160,10 +160,10 @@ describe('CMP-NDS rules', () => {
     expect(p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(22), midata: makeMidata({ participantsCount: 20 }) }))).toEqual([])
     const hits = p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(30), midata: makeMidata({ participantsCount: 20 }) }))
     expect(hits).toHaveLength(1)
-    expect(String(hits[0].params?._message)).toContain('MiData')
+    expect(msg(hits[0])).toContain('MiData')
     const own = p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(30), coachInputs: makeCoachInputs({ participantsCount: 20 }) }))
     expect(own).toHaveLength(1)
-    expect(String(own[0].params?._message)).toContain('Angabe des Coachs')
+    expect(msg(own[0])).toContain('Angabe des Coachs')
     expect(p['CMP-NDS-03'](makeCtx(f, { nds: withPlanned(30) }))).toEqual([])
   })
 })
@@ -178,7 +178,7 @@ describe('CMP-MD-01', () => {
     const md = makeMidata({ eventDates: [{ startAt: '2031-07-13T00:00:00', finishAt: '2031-07-16' }] })
     const hits = p['CMP-MD-01'](makeCtx(f, { midata: md }))
     expect(hits).toHaveLength(1)
-    expect(String(hits[0].params?._message)).toContain('12.07.2031–16.07.2031')
-    expect(String(hits[0].params?._message)).toContain('13.07.2031–16.07.2031')
+    expect(msg(hits[0])).toContain('12.07.2031–16.07.2031')
+    expect(msg(hits[0])).toContain('13.07.2031–16.07.2031')
   })
 })

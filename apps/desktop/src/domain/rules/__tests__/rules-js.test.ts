@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { predicates as p } from '../packs/basis/predicates'
+import { allPredicates as p } from './predicates'
 import { evaluate } from '../engine'
 import { loadBundledPacks } from '../packs'
-import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, mappingOf } from './factory'
+import { CAT_ES, CAT_LA, CAT_LS, FactsBuilder, makeCoachInputs, makeCtx, mappingOf, msg } from './factory'
 
 const ids = (hits: { targets: string[] }[]) => hits.map((h) => h.targets.join('|'))
 
@@ -26,7 +26,7 @@ describe('JS-CAMP-02', () => {
   const f = new FactsBuilder().facts
   it('asks for input when missing (hint), fails below 12, passes at 12', () => {
     expect(p['JS-CAMP-02'](makeCtx(f))[0].severity).toBe('hint')
-    expect(p['JS-CAMP-02'](makeCtx(f, { coachInputs: makeCoachInputs({ participantsCount: 11 }) }))[0].params?.detail).toMatch(/11/)
+    expect(msg(p['JS-CAMP-02'](makeCtx(f, { coachInputs: makeCoachInputs({ participantsCount: 11 }) }))[0])).toMatch(/11/)
     expect(p['JS-CAMP-02'](makeCtx(f, { coachInputs: makeCoachInputs({ participantsCount: 12 }) }))).toEqual([])
   })
   it('prefers the J+S-age count', () => {
@@ -155,21 +155,21 @@ describe('JS-DL-01/02 NDS source', () => {
     const inputs = makeCoachInputs({ ndsRegistered: false, ndsFields: { ndsRegistered: '2031-06-14T10:00:00.000Z' } })
     const hits = p['JS-DL-01'](at('2031-06-20T00:00:00Z', inputs))
     expect(hits).toHaveLength(1)
-    expect(String(hits[0].params?.detail)).toContain('Quelle: NDS, Stand 14.06.2031')
+    expect(msg(hits[0])).toContain('Quelle: NDS, Stand 14.06.2031')
     expect(hits[0].evidence?.[0].label).toBe('Quelle: NDS, Stand 14.06.2031')
     const found = evaluate(loadBundledPacks(), at('2031-06-20T00:00:00Z', inputs)).find((f) => f.ruleId === 'JS-DL-01')
     expect(found?.tags).toContain('nds-quelle')
   })
   it('JS-DL-01 without NDS badge has no NDS source and no nds-quelle tag', () => {
     const hits = p['JS-DL-01'](at('2031-06-13T00:00:00Z'))
-    expect(String(hits[0].params?.detail)).not.toContain('NDS')
+    expect(msg(hits[0])).not.toContain('Quelle: NDS')
     const found = evaluate(loadBundledPacks(), at('2031-06-13T00:00:00Z')).find((f) => f.ruleId === 'JS-DL-01')
     expect(found?.tags).not.toContain('nds-quelle')
   })
   it('JS-DL-02 cites Quelle: NDS for an adopted closed flag closed late', () => {
     const inputs = makeCoachInputs({ ndsClosed: true, ndsClosedOn: '2031-08-16', ndsFields: { ndsClosed: '2031-09-01T10:00:00.000Z' } })
     const hits = p['JS-DL-02'](at('2031-09-02T00:00:00Z', inputs))
-    expect(String(hits[0].params?.detail)).toContain('Quelle: NDS, Stand 01.09.2031')
+    expect(msg(hits[0])).toContain('Quelle: NDS, Stand 01.09.2031')
   })
 })
 
@@ -279,26 +279,26 @@ describe('MiData source on JS rules', () => {
   it('JS-CAMP-02 names the MiData source when the relied-on field was adopted', () => {
     const inputs = makeCoachInputs({ participantsJsAgeCount: 9, midataFields: { participantsJsAgeCount: stand } })
     const hit = p['JS-CAMP-02'](makeCtx(f, { coachInputs: inputs }))[0]
-    expect(hit.params?.detail).toContain('Quelle: MiData, Stand 01.01.2031')
+    expect(msg(hit)).toContain('Quelle: MiData, Stand 01.01.2031')
     expect(hit.evidence?.[0].label).toBe('Quelle: MiData, Stand 01.01.2031')
   })
   it('JS-CAMP-02 falls back to participantsCount field', () => {
     const inputs = makeCoachInputs({ participantsCount: 9, midataFields: { participantsCount: stand } })
-    expect(p['JS-CAMP-02'](makeCtx(f, { coachInputs: inputs }))[0].params?.detail).toContain('Stand 01.01.2031')
+    expect(msg(p['JS-CAMP-02'](makeCtx(f, { coachInputs: inputs }))[0])).toContain('Stand 01.01.2031')
   })
   it('JS-CAMP-02 has no source for manual values', () => {
     const hit = p['JS-CAMP-02'](makeCtx(f, { coachInputs: makeCoachInputs({ participantsCount: 9 }) }))[0]
-    expect(hit.params?.detail).not.toContain('MiData')
+    expect(msg(hit)).not.toContain('MiData')
     expect(hit.evidence).toBeUndefined()
   })
   it('JS-LL-01 says no Lagerleiter was found in MiData', () => {
     const inputs = makeCoachInputs({ lagerleiterAttested: false, midataFields: { lagerleiterAttested: stand } })
-    const detail = p['JS-LL-01'](makeCtx(f, { coachInputs: inputs }))[0].params?.detail
+    const detail = msg(p['JS-LL-01'](makeCtx(f, { coachInputs: inputs }))[0])
     expect(detail).toContain('in MiData wurde keine Leitung mit «Zusatz Lagerleiter» gefunden')
     expect(detail).toContain('Stand 01.01.2031')
   })
   it('JS-LL-01 stays «nicht bestätigt» without MiData origin', () => {
     const inputs = makeCoachInputs({ lagerleiterAttested: false })
-    expect(p['JS-LL-01'](makeCtx(f, { coachInputs: inputs }))[0].params?.detail).toBe('nicht bestätigt')
+    expect(msg(p['JS-LL-01'](makeCtx(f, { coachInputs: inputs }))[0])).toBe('Zusatz Lagerleiter: nicht bestätigt')
   })
 })

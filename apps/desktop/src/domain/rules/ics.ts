@@ -9,7 +9,7 @@
  * - Done deadlines are skipped unless includeDone.
  */
 import type { Deadline } from '../types'
-import { addDays } from './deadlines'
+import { addDays } from './lib/deadlines'
 
 export interface IcsOptions {
   /** Title per deadline (UI passes the translated kind title; milestones use deadline.title). */

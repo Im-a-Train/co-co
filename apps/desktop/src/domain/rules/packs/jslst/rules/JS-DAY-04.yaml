@@ -1,15 +1,17 @@
 id: JS-DAY-04
 version: 1.0.0
-group: js
+module: lst
+status: active
 title: "Anreise- und Abreisetag zusammen"
 description: "Anreise- und Abreisetag zählen zusammen als ein Lagertag, wenn sie gemeinsam mindestens 240 Minuten J+S-Zeit erreichen."
-message: "Anreise- und Abreisetag (Tag {first} und {last}) ergeben zusammen nur {minutes} Min. J+S-Zeit (nötig: 240 Min., damit sie als ein Lagertag zählen)"
+message: "Anreise- und Abreisetag (Tag {first} und {last}) ergeben zusammen nur {minutes} Min. J+S-Zeit (nötig: {min} Min., damit sie als ein Lagertag zählen)"
 severity: must
 confidence: verified
 scope: day
 validFrom: 2026-01-01
-inputs: [mapping]
+inputs: [mapping, params]
+params: [js.minDayMinutes, js.minDayUnits, js.minUnitMinutes, js.minGapMinutes]
 tags: [lagertag]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

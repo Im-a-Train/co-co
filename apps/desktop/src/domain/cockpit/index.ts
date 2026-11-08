@@ -3,7 +3,7 @@
  * eCamp times are camp-local wall clock, so we slice the ISO strings
  * instead of using Date getters (see domain/types.ts).
  */
-import type { JsDayReport } from '../rules/jsDays'
+import type { JsDayReport } from '../rules/lib/jsDays'
 import type {
   CampFacts,
   CategoryClass,
@@ -271,11 +271,9 @@ export const DEFAULT_FINDING_FILTER: FindingFilter = {
   activityIri: null,
 }
 
-export function ruleGroupOf(ruleId: string): RuleGroup {
-  if (ruleId.startsWith('JS-')) return 'js'
-  if (ruleId.startsWith('CMP-')) return 'completeness'
-  if (ruleId.startsWith('SAFE-')) return 'safety'
-  return 'best-practice'
+/** Module of a finding's rule (rules v2: from the finding / rule meta, no longer guessed from the id prefix). */
+export function ruleGroupOf(finding: Pick<Finding, 'ruleId' | 'module'>): RuleGroup | null {
+  return finding.module ?? null
 }
 
 export function filterFindings(findings: Finding[], f: FindingFilter): Finding[] {
@@ -283,7 +281,7 @@ export function filterFindings(findings: Finding[], f: FindingFilter): Finding[]
   return findings.filter((x) => {
     if (!f.severities.includes(x.severity)) return false
     if (!f.showOverridden && x.override) return false
-    if (f.groups.length && !f.groups.includes(ruleGroupOf(x.ruleId))) return false
+    if (f.groups.length && !f.groups.includes(ruleGroupOf(x) as RuleGroup)) return false
     if (f.activityIri && !x.targets.includes(f.activityIri) && !x.evidence.some((e) => e.iri === f.activityIri)) {
       return false
     }

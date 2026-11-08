@@ -1,14 +1,21 @@
 id: SAFE-ROPE-01
 version: 1.0.0
-group: safety
+module: lst-lager
+status: active
 title: "Seilaktivität: Sicherungskonzept"
 description: "Aktivitäten mit Seilen haben einen Sicherheitstext von mindestens 200 Zeichen, der Sicherung, Verankerung oder Bremse erwähnt."
 message: "«{title}» (Seil/Pionier): {reasons}"
+messageVariants:
+  tooShort: "Sicherheitstext zu kurz ({chars} von {min} Zeichen)"
+  noTopics: "weder Sicherung, Verankerung noch Bremse erwähnt"
 severity: should
 confidence: heuristic
 scope: activity
 validFrom: 2026-01-01
+inputs: [params, keywords]
+params: [lst.ropeMinSafetyChars]
+keywords: [ROPE, ROPE_SAFETY]
 tags: [sicherheit, seil]
-source:
-  title: "Lagersport/Trekking"
-  url: https://www.jugendundsport.ch/de/lagersport-trekking
+sources:
+  - key: WEB-LT
+    page: ""

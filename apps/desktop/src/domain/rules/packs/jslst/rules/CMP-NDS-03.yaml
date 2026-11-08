@@ -1,14 +1,19 @@
 id: CMP-NDS-03
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Teilnehmende in NDS und Lagerangaben abgleichen"
 description: "Die in der NDS geplante Teilnehmerzahl weicht nicht um mehr als 20 % von der Zahl aus MiData oder deiner Angabe ab."
-message: "Geplante Teilnehmende in der NDS weichen um mehr als 20 % ab (Quelle: NDS, Stand {stand})"
+message: "In der NDS sind {planned} Teilnehmende geplant, laut MiData {mine}: Abweichung über {tolerancePercent} % (Quelle: NDS, Stand {stand} / Quelle: MiData, Stand {midataStand})"
+messageVariants:
+  coach: "In der NDS sind {planned} Teilnehmende geplant, laut Angabe des Coachs {mine}: Abweichung über {tolerancePercent} % (Quelle: NDS, Stand {stand})"
 severity: hint
 confidence: best-practice
 scope: camp
 validFrom: 2026-01-01
+inputs: [nds, params]
+params: [js.participantsDiffTolerance]
 tags: [vollstaendigkeit, nds]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

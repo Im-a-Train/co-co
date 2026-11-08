@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, computeAllDeadlines, computeDeadlines, daysBetween, deadlineStatus, landeskartenLeadDays } from '../deadlines'
+import { addDays, computeAllDeadlines, computeDeadlines, daysBetween, deadlineStatus, landeskartenLeadDays } from '../lib/deadlines'
 import { makeCoachInputs } from './factory'
 
 const camp = (start: string | null, end: string | null = null, lastJsDate: string | null = null) => ({

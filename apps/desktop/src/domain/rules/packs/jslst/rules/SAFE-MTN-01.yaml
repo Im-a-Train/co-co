@@ -1,6 +1,7 @@
 id: SAFE-MTN-01
 version: 1.0.0
-group: safety
+module: lst-trekking
+status: active
 title: "Berg/Wanderung: Zeitberechnung und Alternativroute"
 description: "Wanderungen und Bergaktivitäten haben eine Zeitberechnung, eine Alternativroute oder eine Karte (GPX/Dokument). Erkennung über Stichwörter (Heuristik)."
 message: "«{title}» (Berg/Wanderung: {keywords}): keine Zeitberechnung, Alternativroute oder Karte/GPX hinterlegt"
@@ -8,8 +9,9 @@ severity: should
 confidence: heuristic
 scope: activity
 validFrom: 2026-01-01
-inputs: [documents]
+inputs: [documents, keywords]
+keywords: [MOUNTAIN, MARSCHZEIT, ALT_ROUTE]
 tags: [sicherheit, berg]
-source:
-  title: "Lagersport/Trekking"
-  url: https://www.jugendundsport.ch/de/lagersport-trekking
+sources:
+  - key: WEB-LT
+    page: ""

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { predicates as p } from '../packs/basis/predicates'
+import { allPredicates as p } from './predicates'
 import { evaluate } from '../engine'
 import { loadBundledPacks } from '../packs'
 import type { CollaboratorFact, MidataAggregate, MidataLeader, MidataQualKey, NdsAggregate, NdsCounts, RuleContext } from '@/domain/types'
-import { CAT_LA, FactsBuilder, makeCtx, makeMidata, makeNds } from './factory'
+import { CAT_LA, FactsBuilder, makeCtx, makeMidata, makeNds, msg } from './factory'
 
 const NO_COUNTS: NdsCounts = { children: null, adolescents: null, totalParticipants: null, totalInstructors: null, jsInstructors: null, campDays: null, totalActivities: null }
 const ndsWith = (planned: Partial<NdsCounts>, over: Partial<NdsAggregate> = {}) =>
@@ -29,7 +29,7 @@ describe('CMP-CON-01', () => {
   it('hits when MiData and NDS dates differ', () => {
     const h = one('CMP-CON-01', makeCtx(f, { midata: makeMidata(), nds: makeNds({ end: '2031-07-18' }) }))
     expect(h).toHaveLength(1)
-    const m = String(h[0].params?._message)
+    const m = msg(h[0])
     expect(m).toContain('12.07.2031–16.07.2031')
     expect(m).toContain('12.07.2031–18.07.2031')
     expect(m).toContain('Quelle: MiData, Stand 01.01.2031')
@@ -52,11 +52,11 @@ describe('CMP-CON-02', () => {
   it('hits listing every present source', () => {
     const h = one('CMP-CON-02', makeCtx(team(), { midata: makeMidata({ leadersCount: 3 }), nds: ndsWith({ totalInstructors: 4 }) }))
     expect(h).toHaveLength(1)
-    expect(String(h[0].params?._message)).toContain('eCamp 2, MiData 3, NDS 4')
+    expect(msg(h[0])).toContain('eCamp 2, MiData 3, NDS 4')
   })
   it('falls back to supervisorCounts', () => {
     const h = one('CMP-CON-02', makeCtx(team(), { nds: makeNds({ supervisorCounts: { INSTRUCTOR: 2, ASSISTANT_INSTRUCTOR: 1 } }) }))
-    expect(String(h[0].params?._message)).toContain('NDS 3')
+    expect(msg(h[0])).toContain('NDS 3')
   })
   it('is silent when equal or fewer than two sources', () => {
     expect(one('CMP-CON-02', makeCtx(team(), { midata: makeMidata({ leadersCount: 2 }), nds: ndsWith({ totalInstructors: 2 }) }))).toEqual([])
@@ -75,14 +75,14 @@ describe('CMP-CON-03', () => {
   it('lists unmatched people on both sides', () => {
     const h = one('CMP-CON-03', makeCtx(team('Blitz', 'Funke'), { midata: makeMidata({ leaders: [leader('blitz'), leader('Rakete')] }) }))
     expect(h).toHaveLength(1)
-    const m = String(h[0].params?._message)
+    const m = msg(h[0])
     expect(m).toContain('In eCamp, aber nicht in MiData: «Funke»')
     expect(m).toContain('In MiData, aber nicht in eCamp: «Rakete»')
   })
   it('caps names at 10 with +n', () => {
     const many = Array.from({ length: 13 }, (_, i) => `Mi${i}x`)
     const h = one('CMP-CON-03', makeCtx(team('Blitz'), { midata: makeMidata({ leaders: [leader('Blitz'), ...many.map((n) => leader(n))] }) }))
-    expect(String(h[0].params?._message)).toContain('+3')
+    expect(msg(h[0])).toContain('+3')
   })
   it('is silent when all match, nothing matches, or MiData is missing', () => {
     expect(one('CMP-CON-03', makeCtx(team('Blitz'), { midata: makeMidata({ leaders: [leader('Blitz')] }) }))).toEqual([])
@@ -96,7 +96,7 @@ describe('CMP-CON-04', () => {
   it('hits when NDS plans more J+S leaders than qualified in MiData', () => {
     const h = one('CMP-CON-04', makeCtx(f, { midata: md([leader('A', { leiterLsT: true }), leader('B')]), nds: ndsWith({ jsInstructors: 3 }) }))
     expect(h).toHaveLength(1)
-    expect(String(h[0].params?._message)).toContain('In der NDS sind 3 J+S-Leitende geplant, in MiData haben nur 1 eine über die ganze Lagerdauer gültige Anerkennung')
+    expect(msg(h[0])).toContain('In der NDS sind 3 J+S-Leitende geplant, in MiData haben nur 1 eine über die ganze Lagerdauer gültige Anerkennung')
   })
   it('is silent when enough, unreadable, or a source is missing', () => {
     const ok = md([leader('A', { lagerleiter: true }), leader('B', { leiterLsT: true })])
@@ -117,14 +117,14 @@ describe('CMP-CON-05', () => {
   it('lists expired relevant kinds in one hit', () => {
     const h = one('CMP-CON-05', makeCtx(f, { midata: makeMidata({ qualificationKinds: kinds }) }))
     expect(h).toHaveLength(1)
-    const m = String(h[0].params?._message)
+    const m = msg(h[0])
     expect(m).toContain('Leiter*in Lagersport: 2 Leitende')
     expect(m).not.toContain('Erste Hilfe')
   })
   it('honours the settings mapping override', () => {
     const settings = { ...makeCtx(f).settings, midata: { ...makeCtx(f).settings.midata, qualMapping: { 'Erste Hilfe': ['wasser' as const] } } }
     const h = one('CMP-CON-05', makeCtx(f, { settings, midata: makeMidata({ qualificationKinds: kinds }) }))
-    expect(String(h[0].params?._message)).toContain('Erste Hilfe: 1 Leitende')
+    expect(msg(h[0])).toContain('Erste Hilfe: 1 Leitende')
   })
   it('is silent without expiry, kinds, readable data or MiData', () => {
     expect(one('CMP-CON-05', makeCtx(f, { midata: makeMidata({ qualificationKinds: [kinds[2]] }) }))).toEqual([])
@@ -150,7 +150,7 @@ describe('CMP-CON-07', () => {
   it('hits when camp days differ', () => {
     const h = one('CMP-CON-07', makeCtx(f, { nds: ndsWith({ campDays: 4 }) }))
     expect(h).toHaveLength(1)
-    expect(String(h[0].params?._message)).toContain('4 Lagertage geplant, in eCamp 5')
+    expect(msg(h[0])).toContain('4 Lagertage geplant, in eCamp 5')
   })
   it('uses the date range when no days are loaded', () => {
     const g = { ...f, days: [] }
@@ -180,7 +180,7 @@ describe('CMP-CON-08', () => {
 describe('CMP-CON-09', () => {
   it('hits when birthdays are missing', () => {
     const h = one('CMP-CON-09', makeCtx(f, { midata: makeMidata({ participantsWithoutBirthday: 3 }) }))
-    expect(String(h[0].params?._message)).toContain('Bei 3 Teilnehmenden')
+    expect(msg(h[0])).toContain('Bei 3 Teilnehmenden')
   })
   it('is silent with none missing or without MiData', () => {
     expect(one('CMP-CON-09', makeCtx(f, { midata: makeMidata() }))).toEqual([])
@@ -211,7 +211,7 @@ describe('SAFE-MTN-03', () => {
   it('hits when matched responsibles lack the mountain qualification', () => {
     const h = one('SAFE-MTN-03', makeCtx(camp().facts, { midata: makeMidata({ leaders: [leader('blitz')] }) }))
     expect(h).toHaveLength(1)
-    expect(String(h[0].params?._message)).toContain('Quelle: MiData, Stand 01.01.2031')
+    expect(msg(h[0])).toContain('Quelle: MiData, Stand 01.01.2031')
   })
   it('is silent when qualified, unmatched, non-mountain, unreadable or without MiData', () => {
     expect(one('SAFE-MTN-03', makeCtx(camp().facts, { midata: makeMidata({ leaders: [leader('Blitz', { berg: true })] }) }))).toEqual([])

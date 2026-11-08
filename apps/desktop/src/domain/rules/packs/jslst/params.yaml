@@ -1,0 +1,396 @@
+- key: js.consecutiveMode
+  label: "Modus aufeinanderfolgende Tage"
+  description: "calendar = Kalendertage (2026); jsDaysSkipping = J+S-Tage, trainingsfreie Tage werden übersprungen (ab 2027)."
+  unit: enum
+  values:
+    - { value: calendar, validFrom: 2026-01-01, validTo: 2026-12-31 }
+    - { value: jsDaysSkipping, validFrom: 2027-01-01 }
+  sources: [{ key: LEITFADEN, page: "«Lagerdauer»" }, { key: TOOL-V }]
+  overridable: none
+- key: js.minConsecutiveDays
+  label: "Mindestdauer Lager (Tage)"
+  unit: days
+  values:
+    - { value: 4, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: TOOL-V }]
+  overridable: none
+- key: js.minConsecutiveDaysWithOfferPartner
+  label: "Mindestdauer Lager mit Angebotspartner (Tage)"
+  unit: days
+  values:
+    - { value: 3, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN, page: "Art. 14 Abs. 6" }, { key: TOOL-V }]
+  overridable: none
+- key: js.minParticipants
+  label: "Mindestanzahl Teilnehmende"
+  unit: persons
+  values:
+    - { value: 12, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: WEB-L }, { key: PBS27, page: "Folie 9" }]
+  overridable: none
+- key: js.ageMin
+  label: "J+S-Alter von (Jahrgang)"
+  unit: years
+  values:
+    - { value: 5, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C, page: "«J+S-Alter»" }]
+  overridable: none
+- key: js.ageMax
+  label: "J+S-Alter bis (Jahrgang)"
+  unit: years
+  values:
+    - { value: 20, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C, page: "«J+S-Alter»" }]
+  overridable: none
+- key: js.minLeaders
+  label: "Mindestanzahl Leitende"
+  unit: persons
+  values:
+    - { value: 2, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN, page: "«Lagerleitung»" }]
+  overridable: none
+- key: js.subsidyGroupSizePerLeader
+  label: "Gruppengrösse Beitrag pro Leitende"
+  unit: persons
+  values:
+    - { value: 16, validFrom: 2026-01-01 }
+  sources: [{ key: PBS27, page: "Folie 9" }, { key: WEB-GR }]
+  overridable: admin
+- key: js.minUnitMinutes
+  label: "Mindestdauer J+S-Einheit"
+  unit: minutes
+  values:
+    - { value: 30, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: MAN, page: "S. 21" }]
+  overridable: none
+- key: js.minGapMinutes
+  label: "Mindestabstand zwischen J+S-Einheiten"
+  unit: minutes
+  values:
+    - { value: 30, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: WEB-L }]
+  overridable: none
+- key: js.minDayMinutes
+  label: "Mindestdauer J+S-Aktivitäten pro J+S-Tag"
+  unit: minutes
+  values:
+    - { value: 240, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: TOOL-V }]
+  overridable: none
+- key: js.minDayUnits
+  label: "Mindestanzahl Einheiten pro J+S-Tag"
+  unit: units
+  values:
+    - { value: 2, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: WEB-L }]
+  overridable: none
+- key: js.minBwzDayMinutes
+  label: "Bewegungszeit pro J+S-Tag"
+  description: "Sportlich-aktive Bewegungszeit pro J+S-Tag; bis 2026 kein Kriterium (null)."
+  unit: minutes
+  values:
+    - { value: null, validFrom: 2026-01-01, validTo: 2026-12-31 }
+    - { value: 120, validFrom: 2027-01-01 }
+  sources: [{ key: MAN, page: "S. 21" }, { key: TOOL-V, page: "«Sportlich-aktive Bewegungszeit»" }, { key: PBS27, page: "Folie 6" }]
+  overridable: none
+- key: js.minBwzActivityMinutes
+  label: "Bewegungszeit pro J+S-Aktivität"
+  description: "Mindestdauer, ab der Bewegungszeit ausgewiesen werden muss; bis 2026 kein Kriterium (null)."
+  unit: minutes
+  values:
+    - { value: null, validFrom: 2026-01-01, validTo: 2026-12-31 }
+    - { value: 30, validFrom: 2027-01-01 }
+  sources: [{ key: TOOL-V }]
+  overridable: none
+- key: js.bwzStepMinutes
+  label: "Schrittweite Bewegungszeit"
+  description: "Bewegungszeit wird in diesen Schritten ausgewiesen; bis 2026 kein Kriterium (null)."
+  unit: minutes
+  values:
+    - { value: null, validFrom: 2026-01-01, validTo: 2026-12-31 }
+    - { value: 15, validFrom: 2027-01-01 }
+  sources: [{ key: TOOL-V }, { key: MAN, page: "S. 21" }]
+  overridable: none
+- key: js.timeWindows
+  label: "Tageszeiten"
+  description: "Definition der Tageszeiten (im Regelwerk nicht definiert, co-co Auslegung)."
+  unit: windows
+  values:
+    - value:
+        - { id: morgen, label: Morgen, from: "00:00", to: "12:00" }
+        - { id: nachmittag, label: Nachmittag, from: "12:00", to: "18:00" }
+        - { id: abend, label: Abend, from: "18:00", to: "24:00" }
+      validFrom: 2026-01-01
+  overridable: coach
+- key: js.timeWindowMinOverlap
+  label: "Mindestüberlappung mit Tageszeit"
+  unit: minutes
+  values:
+    - { value: 30, validFrom: 2026-01-01 }
+  overridable: coach
+- key: js.minTimeWindows
+  label: "Mindestanzahl Tageszeiten pro J+S-Tag"
+  unit: windows
+  values:
+    - { value: 2, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: TOOL-V }]
+  overridable: none
+- key: js.freeDaysFirstAt
+  label: "Erster trainingsfreier Tag ab Lagerdauer"
+  unit: days
+  values:
+    - { value: 5, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: WEB-L }]
+  overridable: none
+- key: js.freeDaysEveryFurther
+  label: "Weiterer trainingsfreier Tag alle"
+  unit: days
+  values:
+    - { value: 2, validFrom: 2026-01-01 }
+  sources: [{ key: LEITFADEN }, { key: WEB-L }]
+  overridable: none
+- key: js.ndsRegistrationLeadDays
+  label: "Vorlauf Anmeldung in NDS"
+  unit: days
+  values:
+    - { value: 30, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C }]
+  overridable: none
+- key: js.ndsClosingDays
+  label: "Frist Abschluss in NDS nach Lagerende"
+  unit: days
+  values:
+    - { value: 30, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C }]
+  overridable: none
+- key: js.leihmaterialLeadDays
+  label: "Vorlauf Leihmaterial-Bestellung"
+  unit: days
+  values:
+    - { value: 35, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C }, { key: PBS27, page: "Folie 16" }]
+  overridable: none
+- key: js.landeskartenLeadDays
+  label: "Vorlauf Landeskarten-Bestellung"
+  unit: days
+  values:
+    - { value: 21, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C }]
+  overridable: none
+- key: js.landeskartenLeadDaysSummer
+  label: "Vorlauf Landeskarten-Bestellung (Sommer)"
+  unit: days
+  values:
+    - { value: 35, validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C }]
+  overridable: none
+- key: js.landeskartenSummerMonths
+  label: "Sommermonate Landeskarten"
+  unit: months
+  values:
+    - { value: [6, 7, 8], validFrom: 2026-01-01 }
+  sources: [{ key: WEB-C }]
+  overridable: none
+- key: js.deadlineSoonDays
+  label: "Frist bald fällig"
+  description: "Ab so vielen Tagen vor einer Frist gilt sie als bald fällig."
+  unit: days
+  values:
+    - { value: 14, validFrom: 2026-01-01 }
+  overridable: admin
+- key: js.leihmaterialOutage
+  label: "Lieferunterbruch Leihmaterial"
+  description: "Zeitraum ohne Auslieferung; orderBy = letzter Bestelltermin."
+  unit: dates
+  values:
+    - value: { outageFrom: "2026-12-11", outageTo: "2027-01-10", orderBy: "2026-11-04" }
+      validFrom: 2026-01-01
+      validTo: 2027-01-17
+    - { value: null, validFrom: 2027-01-18 }
+  sources: [{ key: WEB-LU }]
+  overridable: none
+- key: js.publicHolidays
+  label: "Feiertage"
+  description: "Feste Daten als MM-DD, bewegliche relativ zu Ostern (easter-2 = Karfreitag, easter+1 = Ostermontag, easter+39 = Auffahrt, easter+50 = Pfingstmontag)."
+  unit: dates
+  values:
+    - { value: ["01-01", "easter-2", "easter+1", "easter+39", "easter+50", "08-01", "12-25", "12-26"], validFrom: 2026-01-01 }
+  sources: [{ key: PBS27, page: "Folie 16" }]
+  overridable: admin
+- key: js.participantsDiffTolerance
+  label: "Toleranz Abweichung Teilnehmendenzahl"
+  unit: ratio
+  values:
+    - { value: 0.2, validFrom: 2026-01-01 }
+  overridable: admin
+- key: lst.sbMinAgeByYear
+  label: "Mindestalter Sicherheitsbereich (Jahrgang)"
+  unit: years
+  values:
+    - { value: 10, validFrom: 2026-01-01 }
+  sources: [{ key: MB-UP, page: "S. 2" }, { key: WEB-C }]
+  overridable: none
+- key: lst.sbSafetyMinChars
+  label: "Mindestlänge Sicherheitskonzept (Zeichen)"
+  unit: chars
+  values:
+    - { value: 300, validFrom: 2026-01-01 }
+  overridable: coach
+- key: lst.hikeSafetyMinChars
+  label: "Mindestlänge Sicherheitsüberlegung Wanderung (Zeichen)"
+  unit: chars
+  values:
+    - { value: 150, validFrom: 2026-01-01 }
+  overridable: coach
+- key: lst.ropeMinSafetyChars
+  label: "Mindestlänge Sicherheitsbeschrieb Seilaktivität (Zeichen)"
+  unit: chars
+  values:
+    - { value: 200, validFrom: 2026-01-01 }
+  overridable: coach
+- key: lst.treelineM
+  label: "Waldgrenze (m ü. M.)"
+  description: "Heuristik von co-co."
+  unit: m
+  values:
+    - { value: 2000, validFrom: 2026-01-01 }
+  overridable: coach
+- key: lst.bergSuggestAltitude
+  label: "Höhe für Vorschlag Modul Berg (m ü. M.)"
+  unit: m
+  values:
+    - { value: 1000, validFrom: 2026-01-01 }
+  overridable: admin
+- key: lst.winterMonths
+  label: "Wintermonate"
+  unit: months
+  values:
+    - { value: [11, 12, 1, 2, 3, 4], validFrom: 2026-01-01 }
+  overridable: coach
+- key: lst.winterMaxAltitude
+  label: "Maximale Höhe Winterlager (m ü. M.)"
+  unit: m
+  values:
+    - { value: 1800, validFrom: 2026-01-01 }
+  sources: [{ key: MB-UP, page: "S. 4" }]
+  overridable: none
+- key: lst.snowshoeSbMinutes
+  label: "Dauer Schneeschuhtour ab Sicherheitsbereich"
+  description: "Heuristik von co-co."
+  unit: minutes
+  values:
+    - { value: 180, validFrom: 2026-01-01 }
+  overridable: coach
+- key: lst.snowGroupMax
+  label: "Maximale Gruppengrösse Schnee"
+  unit: persons
+  values:
+    - { value: 12, validFrom: 2026-01-01 }
+  sources: [{ key: WINTER, page: "S. 16" }]
+  overridable: coach
+- key: lst.paceLkmPerHour
+  label: "Marschtempo (Leistungskilometer pro Stunde)"
+  unit: lkmPerHour
+  values:
+    - { value: 4, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 14" }]
+  overridable: coach
+- key: lst.paceKidsLkmPerHour
+  label: "Marschtempo Kinder (Leistungskilometer pro Stunde)"
+  unit: lkmPerHour
+  values:
+    - { value: 3, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 14" }]
+  overridable: coach
+- key: lst.descentHmPerLkm
+  label: "Abstieg pro Leistungskilometer (Hm)"
+  unit: hm
+  values:
+    - { value: 150, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 14" }]
+  overridable: coach
+- key: lst.pauseMinutesPerHour
+  label: "Pause pro Marschstunde"
+  unit: minutes
+  values:
+    - { value: 10, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 21" }]
+  overridable: coach
+- key: lst.hikeKidsMaxMinutes
+  label: "Maximale Marschzeit Kinder"
+  unit: minutes
+  values:
+    - { value: 180, validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 4" }]
+  overridable: coach
+- key: lst.thunderstormMonths
+  label: "Gewittermonate"
+  unit: months
+  values:
+    - { value: [6, 7, 8, 9], validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 6" }]
+  overridable: coach
+- key: lst.thunderstormEnd
+  label: "Ende der Gewittergefahr (Uhrzeit)"
+  unit: hhmm
+  values:
+    - { value: "16:00", validFrom: 2026-01-01 }
+  sources: [{ key: BERG, page: "S. 6" }]
+  overridable: coach
+- key: lst.sunsetTable
+  label: "Sonnenuntergang pro Monat"
+  description: "Richtwerte für Sonnenuntergang um Monatsmitte bei 46.8° N in lokaler Zivilzeit (MEZ/MESZ), Monatsnummer auf Uhrzeit."
+  unit: map
+  values:
+    - value: { 1: "17:00", 2: "17:40", 3: "18:15", 4: "20:20", 5: "21:00", 6: "21:25", 7: "21:20", 8: "20:45", 9: "19:55", 10: "18:55", 11: "16:55", 12: "16:40" }
+      validFrom: 2026-01-01
+  sources: [{ key: WINTER, page: "S. 20" }]
+  overridable: admin
+- key: lst.nightEndTime
+  label: "Beginn Nachtruhe"
+  unit: hhmm
+  values:
+    - { value: "22:00", validFrom: 2026-01-01 }
+  sources: [{ key: LAGER, page: "S. 22" }, { key: H }]
+  overridable: coach
+- key: lst.minRestMinutes
+  label: "Mindest-Nachtruhe"
+  unit: minutes
+  values:
+    - { value: 510, validFrom: 2026-01-01 }
+  sources: [{ key: LAGER, page: "S. 22" }, { key: H }]
+  overridable: coach
+- key: lst.morningWindow
+  label: "Zeitfenster Morgenprogramm"
+  unit: window
+  values:
+    - { value: { from: "05:00", to: "14:00" }, validFrom: 2026-01-01 }
+  sources: [{ key: LAGER, page: "S. 22" }, { key: H }]
+  overridable: coach
+- key: lst.buildQuietWindow
+  label: "Ruhezeit Lagerbau"
+  unit: window
+  values:
+    - { value: { from: "22:00", to: "07:00" }, validFrom: 2026-01-01 }
+  sources: [{ key: LAGER, page: "S. 40" }]
+  overridable: coach
+- key: lst.warmupHeadChars
+  label: "Textanfang für Aufwärmen (Zeichen)"
+  unit: chars
+  values:
+    - { value: 400, validFrom: 2026-01-01 }
+  overridable: admin
+- key: lst.varMinUnits
+  label: "Mindestanzahl Einheiten für Abwechslung"
+  unit: units
+  values:
+    - { value: 4, validFrom: 2026-01-01 }
+  sources: [{ key: MAN, page: "S. 38" }]
+  overridable: admin
+- key: lst.varMinDistinct
+  label: "Mindestanzahl verschiedene Erscheinungsformen"
+  unit: units
+  values:
+    - { value: 2, validFrom: 2026-01-01 }
+  sources: [{ key: MAN, page: "S. 38" }]
+  overridable: admin

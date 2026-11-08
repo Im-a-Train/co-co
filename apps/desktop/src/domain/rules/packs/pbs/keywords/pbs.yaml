@@ -1,0 +1,10 @@
+- id: PBS_METHODS
+  module: pbs
+  description: "provisorisch (§11 Q15): die 8 Methoden des Pfadiprofils"
+  include: ["pfadigesetz", "versprechen", "symbolrahmen", "gruppe", "learning by doing", "selber machen", "mitbestimmung", "natur", "spiel", "pfadistufe", "persönliche progression", "erwachsene"]
+  exclude: []
+- id: PBS_RELATIONS
+  module: pbs
+  description: "provisorisch (§11 Q15): die 5 Beziehungen des Pfadiprofils"
+  include: ["beziehung zu sich", "beziehung zu anderen", "beziehung zur umwelt", "beziehung zur gesellschaft", "spiritualität", "sinn"]
+  exclude: []

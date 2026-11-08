@@ -1,14 +1,16 @@
 id: CMP-CON-02
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Anzahl Leitende in den Quellen abgleichen"
 description: "Die Anzahl Leitender in eCamp, MiData und NDS stimmt überein (soweit die Quelle vorhanden ist)."
-message: "Die Anzahl Leitende stimmt zwischen eCamp, MiData und NDS nicht überein"
+message: "Die Anzahl Leitende stimmt zwischen den Quellen nicht überein: {counts}{src}"
 severity: hint
 confidence: conflict
 scope: camp
 validFrom: 2026-01-01
+inputs: [midata, nds]
 tags: [vollstaendigkeit, midata, nds]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

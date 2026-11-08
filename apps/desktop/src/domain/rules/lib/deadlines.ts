@@ -4,7 +4,7 @@
  * Leihmaterial T-5w, Landeskarten T-3w (T-5w when the camp starts in Jun-Aug) (JS-DL-03),
  * Lagerbewilligung T-21.
  */
-import type { CoachInputs, Deadline, DeadlineKind, Iri, IsoDate, Source } from '../types'
+import type { CoachInputs, Deadline, DeadlineKind, Iri, IsoDate, Source } from '../../types'
 
 export interface DeadlineCamp {
   iri: Iri
@@ -33,10 +33,45 @@ export function daysBetween(a: IsoDate, b: IsoDate): number {
   return Math.round((t(b) - t(a)) / 86400000)
 }
 
+/** Lead times in days (defaults = today's values; rules pass the camp's params, see leadTimesFromParams). */
+export interface DeadlineLeadTimes {
+  ndsRegistration: number
+  ndsClosing: number
+  leihmaterial: number
+  landeskarten: number
+  landeskartenSummer: number
+  landeskartenSummerMonths: number[]
+  /** «soon» window of deadlineStatus / hints. */
+  soonDays: number
+}
+
+export const DEFAULT_LEAD_TIMES: DeadlineLeadTimes = {
+  ndsRegistration: 30,
+  ndsClosing: 30,
+  leihmaterial: 35,
+  landeskarten: 21,
+  landeskartenSummer: 35,
+  landeskartenSummerMonths: [6, 7, 8],
+  soonDays: 14,
+}
+
+/** Lead times of a camp from its params (js.ndsRegistrationLeadDays, …). */
+export function leadTimesFromParams(params: { get<T>(key: string): T }): DeadlineLeadTimes {
+  return {
+    ndsRegistration: params.get<number>('js.ndsRegistrationLeadDays'),
+    ndsClosing: params.get<number>('js.ndsClosingDays'),
+    leihmaterial: params.get<number>('js.leihmaterialLeadDays'),
+    landeskarten: params.get<number>('js.landeskartenLeadDays'),
+    landeskartenSummer: params.get<number>('js.landeskartenLeadDaysSummer'),
+    landeskartenSummerMonths: params.get<number[]>('js.landeskartenSummerMonths'),
+    soonDays: params.get<number>('js.deadlineSoonDays'),
+  }
+}
+
 /** Landeskarten need 3 weeks lead time, 5 weeks when the camp starts in Jun-Aug. */
-export function landeskartenLeadDays(start: IsoDate): number {
+export function landeskartenLeadDays(start: IsoDate, lead: DeadlineLeadTimes = DEFAULT_LEAD_TIMES): number {
   const month = Number(start.slice(5, 7))
-  return month >= 6 && month <= 8 ? 35 : 21
+  return lead.landeskartenSummerMonths.includes(month) ? lead.landeskartenSummer : lead.landeskarten
 }
 
 export const LEIHMATERIAL_LEAD_DAYS = 35
@@ -61,20 +96,20 @@ export function computeAllDeadlines(camps: DeadlineCamp[], inputsByCamp: Record<
     .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.campTitle.localeCompare(b.campTitle) || a.kind.localeCompare(b.kind)))
 }
 
-export function computeDeadlines(camp: DeadlineCamp, inputs: CoachInputs | null): Deadline[] {
+export function computeDeadlines(camp: DeadlineCamp, inputs: CoachInputs | null, lead: DeadlineLeadTimes = DEFAULT_LEAD_TIMES): Deadline[] {
   if (!camp.start) return []
   const base = { campIri: camp.iri, campTitle: camp.title }
   const out: Deadline[] = []
   const push = (kind: DeadlineKind, due: IsoDate, done: boolean, ruleId: string | null, source: Source) =>
     out.push({ ...base, kind, due, done, ruleId, source })
 
-  push('nds-registration', addDays(camp.start, -NDS_REGISTRATION_LEAD_DAYS), inputs?.ndsRegistered ?? false, 'JS-DL-01', SOURCE_JS_LAGER)
+  push('nds-registration', addDays(camp.start, -lead.ndsRegistration), inputs?.ndsRegistered ?? false, 'JS-DL-01', SOURCE_JS_LAGER)
   const lastJs = camp.lastJsDate ?? camp.end ?? camp.start
-  push('nds-closing', addDays(lastJs, NDS_CLOSING_DAYS), inputs?.ndsClosed ?? false, 'JS-DL-02', SOURCE_JS_LAGER)
-  push('leihmaterial', addDays(camp.start, -LEIHMATERIAL_LEAD_DAYS), inputs?.leihmaterialOrdered ?? false, 'JS-DL-03', SOURCE_JS_LAGER)
+  push('nds-closing', addDays(lastJs, lead.ndsClosing), inputs?.ndsClosed ?? false, 'JS-DL-02', SOURCE_JS_LAGER)
+  push('leihmaterial', addDays(camp.start, -lead.leihmaterial), inputs?.leihmaterialOrdered ?? false, 'JS-DL-03', SOURCE_JS_LAGER)
   push(
     'landeskarten',
-    addDays(camp.start, -landeskartenLeadDays(camp.start)),
+    addDays(camp.start, -landeskartenLeadDays(camp.start, lead)),
     inputs?.landeskartenOrdered ?? false,
     'JS-DL-03',
     SOURCE_JS_LAGER,

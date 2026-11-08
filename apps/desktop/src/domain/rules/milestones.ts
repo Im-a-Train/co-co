@@ -8,7 +8,7 @@
  */
 import { parse } from 'yaml'
 import type { CoachInputs, Confidence, Deadline, IsoDate, Source } from '../types'
-import { addDays, daysBetween, type DeadlineCamp } from './deadlines'
+import { addDays, daysBetween, type DeadlineCamp } from './lib/deadlines'
 
 export interface Milestone {
   id: string

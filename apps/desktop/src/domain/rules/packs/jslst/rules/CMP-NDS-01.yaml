@@ -1,14 +1,16 @@
 id: CMP-NDS-01
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Lagerdaten in eCamp und NDS abgleichen"
 description: "Die Lagerdaten in eCamp stimmen mit dem Lager in der NDS überein. Grundlage ist der zuletzt abgerufene Stand aus der NDS."
-message: "Lagerdaten in eCamp und NDS stimmen nicht überein (Quelle: NDS, Stand {stand})"
+message: "Lagerdaten in eCamp ({ecamp}) und NDS ({nds}) stimmen nicht überein (Quelle: NDS, Stand {stand})"
 severity: hint
 confidence: best-practice
 scope: camp
 validFrom: 2026-01-01
+inputs: [nds]
 tags: [vollstaendigkeit, nds]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

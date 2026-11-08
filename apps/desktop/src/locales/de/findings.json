@@ -17,12 +17,6 @@
       "activity": "Nur Aktivität: {title}",
       "clearActivity": "Filter entfernen"
     },
-    "group": {
-      "js": "J+S",
-      "completeness": "Vollständigkeit",
-      "safety": "Sicherheit",
-      "best-practice": "Best Practice"
-    },
     "groupTitle": "{severity} ({count})",
     "ruleId": "Regel {id}",
     "source": "Quelle",

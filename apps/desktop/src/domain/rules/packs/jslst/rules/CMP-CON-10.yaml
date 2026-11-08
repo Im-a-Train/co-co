@@ -1,14 +1,17 @@
 id: CMP-CON-10
 version: 1.0.0
-group: completeness
+module: js
+status: active
 title: "Teilnehmende in NDS und MiData abgleichen"
 description: "Die in der NDS erfassten Teilnehmenden weichen nicht um mehr als 20 % von MiData ab."
-message: "Teilnehmende in NDS und MiData weichen um mehr als 20 % ab"
+message: "In der NDS sind {nds} Teilnehmende erfasst, in MiData {midata}: Abweichung über {tolerancePercent} % (Quelle: NDS, Stand {ndsStand}; Quelle: MiData, Stand {midataStand})"
 severity: hint
 confidence: conflict
 scope: camp
 validFrom: 2026-01-01
+inputs: [midata, nds, params]
+params: [js.participantsDiffTolerance]
 tags: [vollstaendigkeit, midata, nds]
-source:
-  title: "J+S Lager"
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: ""

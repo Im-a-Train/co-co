@@ -1,5 +1,5 @@
 /** Pure row model for "Meine Lager" (list entry + summary + review + deadlines + rounds). */
-import { computeDeadlines } from '@/domain/rules/deadlines'
+import { computeDeadlines } from '@/domain/rules/lib/deadlines'
 import type {
   CampListEntry,
   CampSummaryRecord,

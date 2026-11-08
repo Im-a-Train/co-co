@@ -1,14 +1,21 @@
 id: SAFE-NIGHT-01
 version: 1.0.0
-group: safety
+module: lst-lager
+status: active
 title: "Nachtaktivität: Sicherheit und Ruhezeit"
 description: "Aktivitäten nach 22 Uhr oder in der Nacht haben Sicherheitsüberlegungen und lassen bis zum nächsten Programmstart mindestens 8,5 Stunden Ruhe."
 message: "«{title}» (Nachtaktivität): {reasons}"
+messageVariants:
+  noSafety: "keine Sicherheitsüberlegungen"
+  shortRest: "nur {rest} Ruhe bis zum nächsten Programmstart ({next} Uhr, nötig: {need})"
 severity: hint
 confidence: heuristic
 scope: activity
 validFrom: 2026-01-01
+inputs: [params, keywords]
+params: [lst.nightEndTime, lst.minRestMinutes, lst.morningWindow]
+keywords: [NIGHT]
 tags: [sicherheit, nacht]
-source:
-  title: "Hering (PBS)"
-  url: https://hering.scout.ch/de
+sources:
+  - key: H
+    page: ""

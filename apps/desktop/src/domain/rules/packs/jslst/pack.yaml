@@ -1,5 +1,76 @@
-id: coco-basis
-name: co-co Basis 2026.1
-version: 2026.1.0
-description: J+S-Lagerregeln, Vollständigkeit, Sicherheits-Heuristiken und PBS Best Practice.
+id: coco-js-lst
+name: "co-co J+S Lagersport/Trekking 2026.2"
+version: 2026.2.0
+description: "J+S-Lagerregeln (allgemein + LS/T Nutzergruppe 3), Sicherheit LS/T, Datenkonsistenz."
 validFrom: 2026-01-01
+aliases: [coco-basis]
+modules:
+  - id: js
+    title: "J+S Lager allgemein"
+    description: "Allgemeine J+S-Lagerregeln aller Sportarten: Anmeldung, Teilnehmende, Fristen, Datenabgleich mit MiData und NDS."
+    appliesWhen: { jsCamp: true }
+    default: on
+    toggleable: false
+  - id: lst
+    title: "Lagersport/Trekking – Kern"
+    description: "Kernregeln der Sportart Lagersport/Trekking (Nutzergruppe 3, MAN S. 21 Abb. 4): J+S-Tage, Aktivitäten, Programm."
+    appliesWhen: { jsCamp: true, sport: [lst] }
+    default: on
+    toggleable: false
+  - id: lst-lager
+    title: "Lagerleben und Organisation"
+    description: "Sicherheitskonzept, Nachtaktivitäten, Seil- und Pionierbauten, Schlechtwetter, Tagesverantwortung."
+    appliesWhen: { module: lst }
+    default: on
+    toggleable: true
+  - id: lst-trekking
+    title: "Unterwegs / Trekking"
+    description: "Wanderungen, Unternehmungen, Marschzeit, Routenplanung, Velo."
+    appliesWhen: { module: lst }
+    default: on
+    toggleable: true
+  - id: lst-berg
+    title: "Berg"
+    description: "SAC-Skala, Sicherheitsbereich Berg, Rekognoszierung, Gewitter, Altschnee."
+    appliesWhen: { module: lst }
+    default: auto
+    toggleable: true
+    suggestWhen:
+      - { keywordSet: MOUNTAIN, minActivities: 1 }
+      - { gpxHighestPointAbove: { param: lst.bergSuggestAltitude } }
+      - { campConfig: { region: [voralpen, alpen] } }
+    onWhen:
+      - { activityTag: sb-berg }
+  - id: lst-wasser
+    title: "Wasser"
+    description: "Baden, Schwimmen, Boote, Flösse, Wasseraufsicht und Sicherheitsbereich Wasser."
+    appliesWhen: { module: lst }
+    default: auto
+    toggleable: true
+    suggestWhen:
+      - { keywordSet: WATER, minActivities: 1 }
+    onWhen:
+      - { activityTag: [sb-wasser, wasser-bad-beaufsichtigt, wasser-pool, wasser-see, wasser-fluss, externe-wasseraufsicht] }
+  - id: lst-winter
+    title: "Winter"
+    description: "Winterlager, Schneeschuh, Schlitteln, Iglu, Sicherheitsbereich Winter."
+    appliesWhen: { module: lst }
+    default: auto
+    toggleable: true
+    suggestWhen:
+      - { campStartMonths: { param: lst.winterMonths } }
+      - { keywordSet: WINTER, minActivities: 1 }
+      - { campConfig: { winterSafeAccess: [false] } }
+    onWhen:
+      - { activityTag: sb-winter }
+  - id: lst-ebb
+    title: "Ergänzende Bewegungsblöcke"
+    description: "Ergänzende Bewegungsblöcke A (andere J+S-Sportarten) und B (Angebote Dritter)."
+    appliesWhen: { module: lst }
+    default: auto
+    toggleable: true
+    suggestWhen:
+      - { keywordSet: EBB_A, minActivities: 1 }
+      - { keywordSet: EBB_B, minActivities: 1 }
+    onWhen:
+      - { activityTag: [ebb-a, ebb-b] }
