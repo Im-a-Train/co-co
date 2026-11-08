@@ -1021,14 +1021,32 @@ export interface Zoned<T> {
   redacted?: boolean
 }
 
+/** Whitelisted Claude models of the Anthropic provider (the OpenAI-compatible provider takes any model name). */
 export type AiModel = 'claude-sonnet-5-5' | 'claude-opus-5-5' | 'claude-haiku-5-5'
 export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview'
+
+/** ADR 0011: 'anthropic' = Anthropic Messages API; 'openai' = any OpenAI-compatible Chat Completions server (incl. local LLMs). */
+export type AiProvider = 'anthropic' | 'openai'
+/** UI presets for the OpenAI-compatible provider ('custom' = own base URL). */
+export type OpenAiPreset = 'ollama' | 'lmstudio' | 'openai' | 'custom'
+
+export interface OpenAiSettings {
+  /** Base URL incl. version path, e.g. 'http://localhost:11434/v1'. https, http only for loopback hosts. */
+  baseUrl: string
+  /** Free model name, e.g. 'llama3.1:8b' or 'gpt-4o-mini'. Empty = not configured. */
+  model: string
+  /** Preset picked last (UI only). */
+  preset: OpenAiPreset
+}
 
 export interface AiLogEntry {
   id?: number
   at: IsoDateTime
   feature: AiFeature
-  model: AiModel
+  /** AiModel for Anthropic, free model name for the OpenAI-compatible provider. */
+  model: string
+  /** Absent in entries written before ADR 0011 (= 'anthropic'). */
+  provider?: AiProvider
   campIri: Iri | null
   inputTokens: number
   outputTokens: number
@@ -1045,7 +1063,12 @@ export interface AiLogEntry {
 export interface AppSettings {
   ai: {
     enabled: boolean
+    /** ADR 0011. Default 'anthropic'. */
+    provider: AiProvider
+    /** Anthropic model (whitelisted). */
     model: AiModel
+    /** OpenAI-compatible provider settings (used when provider === 'openai'). Patch it as a whole object. */
+    openai: OpenAiSettings
   }
   gpx: {
     /** Leistungskilometer per hour (default 4). */
@@ -1074,15 +1097,43 @@ export interface AppSettings {
   nds: {
     enabled: boolean
   }
+  /** ADR 0011: local MCP server (runs only while ai.enabled AND mcp.enabled). The token lives in the OS keychain. */
+  mcp: McpSettings
+}
+
+export interface McpSettings {
+  enabled: boolean
+  /** TCP port on 127.0.0.1 (1024-65535). */
+  port: number
+  /** Tool name -> enabled. Missing entry = the tool's default (read tools on, write tools off). */
+  tools: Record<string, boolean>
+  /** Ask in co-co before every write tool call (default true). */
+  confirmWrites: boolean
+  /** Ask in co-co before every read tool call too (default false). */
+  confirmReads: boolean
+}
+
+export const MCP_DEFAULT_PORT = 41731
+
+export const OPENAI_PRESET_URLS: Record<Exclude<OpenAiPreset, 'custom'>, string> = {
+  ollama: 'http://localhost:11434/v1',
+  lmstudio: 'http://localhost:1234/v1',
+  openai: 'https://api.openai.com/v1',
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
-  ai: { enabled: false, model: 'claude-sonnet-5-5' },
+  ai: {
+    enabled: false,
+    provider: 'anthropic',
+    model: 'claude-sonnet-5-5',
+    openai: { baseUrl: OPENAI_PRESET_URLS.ollama, model: '', preset: 'ollama' },
+  },
   gpx: { paceLkmPerHour: 4, paceWoelfeLkmPerHour: 3.5, includeDescent: false },
   backup: { remindAfterRound: true, lastExportAt: null },
   rulePacks: [],
   midata: { baseUrl: 'https://db.scout.ch', personId: null, qualMapping: {} },
   nds: { enabled: false },
+  mcp: { enabled: false, port: MCP_DEFAULT_PORT, tools: {}, confirmWrites: true, confirmReads: false },
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -328,7 +328,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
 <header class="hero">
   <canvas id="topo" aria-hidden="true"></canvas>
   <div class="wrap">
-    <span class="eyebrow">co-co · spec + status · updated 07.11.2026 · M0–M10 built (M7-0 spike pending)</span>
+    <span class="eyebrow">co-co · spec + status · updated 09.11.2026 · M0–M11 built (M7-0 spike pending)</span>
     <h1>co-co: the <em>Coach</em> Cockpit for eCamp camps</h1>
     <p class="lede">A standalone Tauri desktop app for J+S-Coaches. It signs in to any eCamp v3 instance with your eCamp account and checks camps with a basic set of J+S and PBS rules. Safety concepts and hike plans can be dropped in from Dropbox or network shares. Feedback goes out as eCamp comments or as a ready-to-paste WhatsApp or e-mail message. It has no backend of its own, and personal data never reaches an AI.</p>
     <div class="badges">
@@ -337,7 +337,7 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
       <span class="badge">UI: <b>Vue 3 + Vuetify</b>, the same stack as eCamp</span>
       <span class="badge">Storage: <b>IndexedDB</b>, local only</span>
       <span class="badge">Language: <b>German</b>, ready for more</span>
-      <span class="badge">Status: <b>M0–M10 built (M7-0 spike pending)</b></span>
+      <span class="badge">Status: <b>M0–M11 built (M7-0 spike pending)</b></span>
     </div>
   </div>
 </header>
@@ -374,11 +374,12 @@ details.rs .tbl{border:0;border-top:1px solid var(--line);border-radius:0 0 10px
   <div class="zones">
     <div class="zone g"><h3>Green · co-co's own data</h3><ul><li>Rule packs, rule results, category mappings</li><li>Review status, rounds, snapshot hashes</li><li>Feedback drafts with no names in them</li></ul><span class="ai">AI: allowed</span></div>
     <div class="zone y"><h3>Yellow · camp content</h3><ul><li>eCamp program, storyboards, safety considerations</li><li>Leader names and nicknames (responsibles, collaborators)</li><li>Dropped documents (safety concepts, hike plans)</li></ul><span class="ai">AI: only with opt-in, after redaction (names → «Leiter A», phone numbers, e-mail addresses, AHV numbers and addresses removed) and a preview</span></div>
-    <div class="zone r"><h3>Red · MiData / NDS (built)</h3><ul><li>Participant lists, birth dates, AHV numbers, health data</li><li>Leader qualifications with personal details</li><li>Reduced to aggregates in Rust; only the aggregate is stored, tagged red-derived, and left out of backups by default</li></ul><span class="ai">AI: never. Only aggregates (e.g. «28 TN, 10–14 J.», «Otter: SLRG Modul See gültig ✓») reach the rule engine.</span></div>
+    <div class="zone r"><h3>Red · MiData / NDS (built)</h3><ul><li>Participant lists, birth dates, AHV numbers, health data</li><li>Leader qualifications with personal details</li><li>Reduced to aggregates in Rust; only the aggregate is stored, tagged red-derived, and left out of backups by default</li></ul><span class="ai">AI: never (MCP clients included). Only aggregates (e.g. «28 TN, 10–14 J.», «Otter: SLRG Modul See gültig ✓») reach the rule engine.</span></div>
   </div>
   <div class="grid3">
     <div class="card"><h3>How it is enforced</h3><p>Data objects are wrapped as <span class="mono">Zoned&lt;T&gt;</span>. The single <span class="mono">aiGateway.send()</span> function accepts only green data or yellow data that has been redacted. A lint rule bans imports of the AI client anywhere else.</p></div>
     <div class="card"><h3>Documents default to yellow</h3><p>A safety concept usually contains phone numbers and names. Each document carries the flag «Für KI freigegeben», which is off by default. The text analysis without AI always runs locally.</p></div>
+    <div class="card"><h3>MCP clients count as external AI</h3><p>Everything the local MCP server returns passes the same zone rules: red data (MiData/NDS) is never returned, yellow text is pseudonymised, and every result is checked by <span class="mono">assertMcpSendable()</span> before it leaves co-co.</p></div>
     <div class="card"><h3>Secrets</h3><p>The Claude API key and the eCamp refresh cookies are kept in the OS keychain (Tauri Stronghold or keyring), never in IndexedDB.</p></div>
   </div>
 </div></section>
@@ -801,6 +802,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><span class="eyebrow">M8 · ✓ built (live check pending)</span><h3>NDS (read-only)</h3><ul><li>NDS web API spec from redacted captures</li><li>Rust NDS module: AGOV login, aggregates only</li><li>«Aus NDS übernehmen» + NDS card in Lager-Angaben</li><li>JS-DL-01/02 with «Quelle: NDS»; CMP-NDS-01/02/03</li><li>Pending: live run with a real camp (attendance state code, paging, login detection)</li></ul></div>
     <div class="card"><span class="eyebrow">M9 · ✓ built</span><h3>eCamp links + cross-source checks</h3><ul><li>eCamp activity link in every activity feedback item (WhatsApp, e-mail, text) and «In eCamp öffnen»</li><li><span class="mono">open_ecamp_url</span>: validated in Rust, system browser via tauri-plugin-opener</li><li>Consistency rules eCamp ↔ MiData ↔ NDS (CMP-CON-*): dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participants</li><li>SAFE-MTN-03: mountain activities without a responsible with a Berg qualification (MiData)</li></ul></div>
     <div class="card"><span class="eyebrow">M10 · ✓ built</span><h3>Feedback loop + transparency</h3><ul><li>Comment sync: resolved and answered eCamp comments flow back into the feedback items («In eCamp erledigt», «n Antworten», «vermutlich Antwort», missing in eCamp)</li><li>Explainability panel «Warum?»: rule + pack version, validity date, how the severity came about, inputs used/missing and the checked values (red values badged, never sent to the AI)</li><li>Leader self-check: tab «Selbstcheck», draft rounds (own table, not counted as review rounds), fixed / open / new since the last run, report for the Lagerleitung</li><li>Deadline radar: PBS milestones (Hering, unverified offsets) in Fristen, radar lanes, done flags, ICS export</li><li>Plan: Documents v2 (camp folder scanned recursively, PDF preview, usability) – <span class="mono">docs/plans/documents-v2.md</span></li></ul></div>
+    <div class="card"><span class="eyebrow">M11 · ✓ built</span><h3>Free AI provider + MCP server</h3><ul><li>AI provider choice: Claude or OpenAI-compatible (Ollama, LM Studio, OpenAI, custom URL); http only for localhost, key bound to its origin</li><li>Local MCP server on 127.0.0.1 with bearer token, off by default, runs only while AI is enabled</li><li>9 read tools + 5 write tools, each with its own switch; write tools off by default</li><li>Write confirmation dialog in co-co; activity log without payloads</li><li>Zones apply to MCP: no red data, yellow redacted</li><li>Connection guide (Claude Desktop, Claude Code, generic) in Settings > KI – ADR 0011</li></ul></div>
   </div>
 </div></section>
 
@@ -818,6 +820,9 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><h3>PBS milestones: offsets unverified</h3><p>The deadline radar's PBS milestones (Lagerplatz T−180, Grobprogramm T−75, Lagermeldung T−60, Elterninformation T−42, Sicherheitskonzept T−28, Lagerdossier T−14, Lagerbericht E+14, Lagerabrechnung E+60) are co-co defaults, not taken from Hering. They show «unbestätigt» until a PBS owner confirms or corrects <span class="mono">milestones/pbs.yaml</span>.</p></div>
     <div class="card"><h3>Documents v2: decisions needed</h3><p>Plan in <span class="mono">docs/plans/documents-v2.md</span> (one camp folder scanned recursively, in-app PDF preview with page jumps, three-pane layout). Open: per-camp folder vs. one global root, shared folders between camps, limits (depth 8, 2000 files, 25 MB, cloud-only files skipped), broad folders refused or warned, more file types, CSP changes for pdf.js.</p></div>
     <div class="card"><h3>Comment sync: live check</h3><p>Tested with mocks only. Check on dev.ecamp3.ch whether replies carry the <span class="mono">parent</span> link; without it co-co only infers answers («vermutlich Antwort»).</p></div>
+    <div class="card"><h3>MCP: window must stay open</h3><p>MCP tools run inside the co-co webview, so the co-co window has to be open (it may be in the background) while a client is connected. Write tools bring it to the front for the confirmation dialog.</p></div>
+    <div class="card"><h3>MCP: Claude Desktop needs Node.js</h3><p>Claude Desktop only speaks stdio to local servers, so the guide uses <span class="mono">mcp-remote</span> (needs Node.js). Claude Code connects to the HTTP URL directly. Still to test with the real clients Claude Desktop and Claude Code.</p></div>
+    <div class="card"><h3>MCP token visible in the UI</h3><p>The bearer token is shown (masked, with copy and regenerate) in Settings > KI so you can paste it into a client. This is an accepted exception to «secrets never reach the UI» (ADR 0011); the server only listens on 127.0.0.1.</p></div>
     <div class="card"><h3>Rule confirmation</h3><p>The leader ratio, the training-free days and the 2027 Bewegungszeit stay «Soll / Quelle unsicher» until PBS or BASPO confirms them.</p></div>
     <div class="card"><h3>IndexedDB durability</h3><p>The webview's storage can be wiped by an uninstall or a profile reset. co-co reminds you to export a backup after each review round.</p></div>
     <div class="card"><h3>OAuth callback</h3><p>eCamp does not validate the callback URL (a possible open redirect). Report it to the eCamp team; co-co doesn't rely on it.</p></div>
@@ -993,6 +998,9 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['German UI, i18n-ready','vue-i18n; UI, rule texts and templates in locales/de.','v1'],
       ['JSON backup','Export and import all co-co data; a reminder after each round.','v1'],
       ['Data zones','Green/yellow/red labels and an AI gateway with redaction; MiData-backed findings and feedback are refused.','v1'],
+      ['OpenAI-compatible / local AI','Choose the AI provider: Claude or any OpenAI-compatible endpoint (Ollama, LM Studio, llama.cpp, vLLM, OpenAI). http only for localhost; the optional key is bound to its origin. Zone rules apply to every provider.','v1','ai'],
+      ['MCP server for AI assistants','Local MCP server on 127.0.0.1 with a bearer token; Claude Desktop, Claude Code and other clients can read camp data and (if allowed) write feedback. Connection guide in Settings > KI.','v1','ai'],
+      ['MCP tool switches (read/write)','9 read tools (on by default) and 5 write tools (off by default, confirmation in co-co), each switchable on its own. Only posting a feedback comment writes to eCamp.','v1','ai'],
       ['Auto-update + signing','When other coaches start using it.','later'],
       ['MiData (read-only, red zone)','Fills Lager-Angaben from MiData: participant counts, age band, leader qualifications, coach match. Only aggregates; see the MiData section.','v1'],
       ['Cross-source consistency checks','eCamp, MiData and NDS compared with each other: dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participant counts. Findings are red-derived and never reach the AI.','v1'],
@@ -1025,7 +1033,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     ]],
   ];
   const lab={v1:['t-mvp','v1'],next:['t-p2','Next'],later:['t-p3','Later']};
-  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list','eCamp links in feedback','Cross-source consistency checks','Explainability panel','Hering deadline radar','Comment sync','Leader self-check']);
+  const DONE=new Set(['Multi-instance login','My camps','Category guess + confirm','Lagertag calculator + grid','Findings with sources','Rounds + diff','Deadline overview','Camp or activity feedback','Post as eCamp comment','WhatsApp / e-mail / text message','Templates per review moment','Rephrase with AI','Drag & drop','Watched folders','Safety-concept checklist','GPX analysis','Document ↔ activity linking','Full-text search','AI document summary','German UI, i18n-ready','JSON backup','Data zones','NDS status','MiData (read-only, red zone)','Qualification matrix','Back to the finding','Activity list','eCamp links in feedback','Cross-source consistency checks','Explainability panel','Hering deadline radar','Comment sync','Leader self-check','OpenAI-compatible / local AI','MCP server for AI assistants','MCP tool switches (read/write)']);
   ['Befunde-Triage','Ignorieren with a reason','Rule disabling','Versioned rule packs','Confidence badges','Safety-activity detector','Soft safety review (AI)'].forEach(n=>DONE.add(n));
   const WIP=new Set([]);
   const st=n=>DONE.has(n)?'done':WIP.has(n)?'wip':'open';

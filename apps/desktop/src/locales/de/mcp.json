@@ -1,0 +1,78 @@
+{
+  "mcp": {
+    "server": {
+      "title": "MCP-Server",
+      "intro": "Andere KI-Programme (z. B. Claude Desktop oder Claude Code) können sich mit co-co verbinden und die unten aktivierten Werkzeuge nutzen.",
+      "aiDisabled": "Aktiviere zuerst oben die KI-Funktionen.",
+      "enable": "MCP-Server aktivieren",
+      "statusRunning": "läuft auf Port {port}",
+      "statusStopped": "gestoppt",
+      "statusError": "Fehler: {error}",
+      "port": "Port",
+      "portApply": "Übernehmen",
+      "url": "Adresse",
+      "copy": "Kopieren",
+      "copied": "kopiert",
+      "token": "Token",
+      "reveal": "Anzeigen",
+      "hide": "Verbergen",
+      "regenerate": "Neu erzeugen",
+      "tokenHint": "Der Token gilt nur für diesen Computer (127.0.0.1) und liegt im Schlüsselbund des Betriebssystems.",
+      "regenerateTitle": "Token neu erzeugen?",
+      "regenerateText": "Alle verbundenen Programme müssen den neuen Token erhalten.",
+      "regenerateConfirm": "Neu erzeugen",
+      "cancel": "Abbrechen",
+      "confirmWrites": "Schreibende Aufrufe in co-co bestätigen",
+      "confirmReads": "Auch lesende Aufrufe bestätigen",
+      "confirmHint": "co-co fragt vor dem Aufruf in einem Dialog nach, bevor das Werkzeug läuft."
+    },
+    "log": {
+      "title": "Aktivität",
+      "empty": "Noch keine Aufrufe seit dem Start von co-co.",
+      "at": "Zeit",
+      "tool": "Werkzeug",
+      "kind": "Art",
+      "status": "Ergebnis",
+      "duration": "Dauer",
+      "ok": "OK",
+      "failed": "Fehler",
+      "none": "–",
+      "ms": "{ms} ms"
+    },
+    "kind": {
+      "read": "Lesen",
+      "write": "Schreiben"
+    },
+    "guide": {
+      "title": "So verbindest du co-co",
+      "step1": "MCP-Server oben aktivieren.",
+      "step2": "Token kopieren.",
+      "step3": "Im KI-Programm eintragen (siehe unten).",
+      "openNote": "co-co muss dabei geöffnet bleiben.",
+      "tabClaudeDesktop": "Claude Desktop",
+      "tabClaudeCode": "Claude Code",
+      "tabGeneric": "Andere",
+      "noteClaudeDesktop": "Öffne in Claude Desktop Einstellungen > Entwickler > Konfiguration bearbeiten (Datei claude_desktop_config.json) und füge den Eintrag ein. Node.js wird für npx mcp-remote benötigt. Starte Claude Desktop danach neu.",
+      "noteClaudeCode": "Führe den Befehl im Terminal aus.",
+      "noteGeneric": "Verwende Streamable HTTP mit der Adresse und dem Header «Authorization: Bearer» gefolgt vom Token.",
+      "snippetMasked": "Im Ausschnitt ist der Token verdeckt; «Mit Token kopieren» kopiert den echten Wert.",
+      "copy": "Mit Token kopieren",
+      "copied": "kopiert"
+    },
+    "toolList": {
+      "intro": "Jedes Werkzeug lässt sich einzeln ein- und ausschalten. Ausschalten wirkt sofort. Neu eingeschaltete Werkzeuge sieht ein bereits verbundenes KI-Programm erst, wenn es sich neu verbindet (in Claude Code «/mcp» → neu verbinden, Claude Desktop neu starten).",
+      "readTitle": "Lesen",
+      "readNote": "Liefern anonymisierte Daten, nie MiData/NDS.",
+      "writeTitle": "Schreiben",
+      "writeWarning": "Schreibende Tools ändern Daten in co-co oder posten Kommentare in eCamp; standardmässig aus.",
+      "writes": "schreibt",
+      "activeCount": "{n} von {m} aktiv"
+    },
+    "confirm": {
+      "title": "KI-Assistent möchte …",
+      "queue": "Weitere Anfragen warten: {n}",
+      "deny": "Ablehnen",
+      "allow": "Erlauben"
+    }
+  }
+}

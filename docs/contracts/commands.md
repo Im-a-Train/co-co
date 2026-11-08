@@ -74,11 +74,56 @@ The frontend re-watches persisted folders from IndexedDB (`watchedFolders`) at s
 | `ai_set_key` | `key: string` | `void` | Stores the Anthropic API key in the OS keychain (`keyring` crate, service `ch.imatrain.coco`, user `anthropic-api-key`). Never logged or returned. |
 | `ai_has_key` | – | `boolean` | |
 | `ai_clear_key` | – | `void` | Idempotent. |
-| `ai_complete` | `request: { model, system, prompt, maxTokens }` | `{ text, inputTokens, outputTokens }` | `POST https://api.anthropic.com/v1/messages` with headers `x-api-key` (from the keychain), `anthropic-version: 2023-06-01`, body `{ model, max_tokens, system, messages:[{role:'user',content:prompt}] }`. `model` must be one of `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-5-5`, `maxTokens` ≤ 4096. Rejects with "Kein API-Schlüssel hinterlegt" when no key is stored. Uses its own reqwest client **without** the eCamp cookie jar. Logs only model and token counts. |
+| `ai_complete` | `request: { provider?: 'anthropic' \| 'openai', baseUrl?: string, model, system, prompt, maxTokens }` | `{ text, inputTokens, outputTokens }` | `provider` missing = `anthropic`: `POST https://api.anthropic.com/v1/messages` with headers `x-api-key` (from the keychain), `anthropic-version: 2023-06-01`, body `{ model, max_tokens, system, messages:[{role:'user',content:prompt}] }`. `model` must be one of `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-5-5`. Rejects with "Kein API-Schlüssel hinterlegt" when no key is stored. **`openai` (ADR 0011):** `POST {baseUrl}/chat/completions`, body `{ model, messages:[{role:'system'},{role:'user'}], max_tokens, stream:false }` (`max_completion_tokens` instead of `max_tokens` for `api.openai.com`); `Authorization: Bearer <key>` only when a key is stored for exactly the origin of `baseUrl` (no key needed for local servers). `baseUrl` https, http only for loopback hosts, no userinfo/query/fragment. `model` free text (1–200 chars, no control chars). Reads `choices[0].message.content` (string or text parts, leading `<think>…</think>` removed) and `usage.prompt_tokens`/`completion_tokens` (missing = 0). Timeout 300 s for loopback, 120 s otherwise; no redirects; body cap 4 MB. Both: `maxTokens` 1–4096, prompt non-empty, own reqwest client **without** the eCamp cookie jar, logs only provider, model and token counts. |
+| `ai_openai_set_key` | `baseUrl: string`, `key: string` | `void` | ADR 0011. Stores the optional key of the OpenAI-compatible provider **bound to the origin** of `baseUrl` (keychain service `ch.imatrain.coco`, user `openai-compatible-api-key`, value `{"origin","key"}`); replaces a key bound to another origin. Key: no whitespace/control chars, ≤ 500 chars. Never logged or returned. |
+| `ai_openai_has_key` | `baseUrl: string` | `boolean` | `true` only when the stored key is bound to the origin of `baseUrl`. Invalid URL → `false`. |
+| `ai_openai_clear_key` | – | `void` | Idempotent. |
+| `ai_openai_models` | `baseUrl: string` | `string[]` | `GET {baseUrl}/models` (bearer key only if bound to this origin), ids of `data[].id` (also `models[].name`), deduplicated, sorted, ≤ 500. Used for «Modelle laden» and «Verbindung testen»; sends no camp data. Timeout 15 s. Errors: «Server nicht erreichbar», «Server lehnt den API-Schlüssel ab» (401/403), «HTTP <code>: <message>». |
 
 CSP: `connect-src` does **not** need `api.anthropic.com`, because the call happens in Rust. pdf.js
 loads its worker from a same-origin asset (`script-src 'self'` covers it). If pdf.js needs WASM
 decoders, add `'wasm-unsafe-eval'` to `script-src`.
+
+## ADR 0011: local MCP server
+
+Decision: [ADR 0011](../adr/0011-openai-compatible-and-mcp.md). Rust: `src-tauri/src/mcp.rs` (I/O) +
+`coco-core::mcp` (pure checks and JSON-RPC). TS types: `src/domain/mcp/types.ts`, catalogue
+`src/domain/mcp/catalog.ts`, bridge `src/composables/mcpBridge.ts`.
+
+| Command | Args | Returns | Notes |
+| --- | --- | --- | --- |
+| `mcp_status` | – | `McpStatus { running, port, url, error, toolCount, log: McpLogEntry[] }` | `McpLogEntry { atMs, tool, kind: 'read' \| 'write' \| null, ok, durationMs, error }`, newest first, ≤ 50, in memory only, never arguments or results. |
+| `mcp_start` | `port: number` | `McpStatus` | Binds `127.0.0.1:<port>` only (1024–65535). Same port while running = no-op; other port = restart. Creates the token if none exists. Port in use → rejects with «Port <n> ist bereits belegt» (also in `McpStatus.error`). Emits `mcp://status`. |
+| `mcp_stop` | – | `McpStatus` | Idempotent. Pending tool calls get an error outcome. Emits `mcp://status`. |
+| `mcp_set_tools` | `tools: McpToolRegistration[]` (`{ name, title, description, kind: 'read' \| 'write', inputSchema }`) | `void` | The **enabled** tools only; replaces the list. Validated: names `^[a-z][a-z0-9_]{0,63}$`, unique, ≤ 64, `inputSchema.type == 'object'`. Unregistered tools are not listed and `tools/call` answers «Unknown tool». |
+| `mcp_tool_result` | `callId: string`, `outcome: { text: string, isError: boolean }` | `void` | Answer to `mcp://tool-call`. Unknown or late `callId` → ignored (Ok). `text` longer than 512 K chars → replaced by an error outcome. |
+| `mcp_get_token` | – | `string` | Bearer token (`coco_` + 43 base64url chars), keychain service `ch.imatrain.coco`, user `mcp-token`; created when missing. **ADR 0011 exception:** returned to the UI because the coach pastes it into the MCP client config. Never logged. |
+| `mcp_regenerate_token` | – | `string` | New random token (32 bytes, `getrandom`), replaces the stored one; a running server uses it immediately. |
+
+Events (main window only):
+
+- `mcp://tool-call` payload `{ callId, name, kind, arguments, deadlineMs }`. The frontend answers exactly
+  once with `mcp_tool_result`. Rust waits 55 s (read and write, including the confirmation; below the
+  60 s default request timeout of MCP TypeScript SDK clients) and answers the client with
+  `isError: true` «Zeitüberschreitung» otherwise. `deadlineMs` (epoch ms) is when that happens; the
+  bridge gives up 5 s earlier. At most 4 calls in flight. For write tools Rust calls `unminimize()` +
+  `set_focus()` on the main window.
+- `mcp://tool-cancel` payload `{ callId }`: the call was answered without the frontend (client sent
+  `notifications/cancelled`, timeout, `mcp_stop`). The frontend closes its confirmation dialog and never
+  starts the handler.
+- `mcp://status` payload `McpStatus` after start/stop/failure and after every finished call.
+
+HTTP (`POST http://127.0.0.1:<port>/mcp`, JSON-RPC 2.0, `Content-Type: application/json` answers, no SSE):
+`Host` must be loopback, an `Origin` header must be a loopback origin (403 otherwise), `Authorization:
+Bearer <token>` (401 + `WWW-Authenticate: Bearer`), body ≤ 1 MB (413), `GET`/`DELETE`/`OPTIONS` → 405,
+other paths → 404, unsupported `MCP-Protocol-Version` header → 400. Methods: `initialize` (versions
+`2025-06-18`, `2025-03-26`, `2024-11-05`; unknown → `2025-06-18`), `ping`, `tools/list`, `tools/call`;
+notifications and client responses → 202; `notifications/cancelled` `{ requestId }` cancels the waiting
+call with that id (only when exactly one matches, the server has no sessions). Batches (2025-03-26 /
+2024-11-05) are handled element by element: array of replies, or 202 when no element needs one; ≤ 32
+elements. Input the server cannot accept (parse error, invalid request, `id: null`, empty batch) → HTTP
+400 with a JSON-RPC error body. `tools.listChanged` is `false`: a newly enabled tool shows up in a
+connected client only after it reconnects. No CORS headers, no sessions.
 
 ## M7: MiData (read-only, red zone)
 

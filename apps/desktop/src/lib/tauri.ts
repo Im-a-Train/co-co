@@ -139,6 +139,16 @@ export type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain
 import type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
 export const EVENT_NDS_STATUS = 'nds://status'
 
+// ADR 0011: local MCP server. Types live in domain/mcp/types.ts.
+export type { McpLogEntry, McpStatus, McpToolCallEvent, McpToolCancelEvent, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
+import type { McpStatus, McpToolCallEvent, McpToolCancelEvent, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
+/** Rust -> main window: run a tool and answer with commands.mcpToolResult(callId, outcome). */
+export const EVENT_MCP_TOOL_CALL = 'mcp://tool-call'
+/** Rust -> main window: server started/stopped/failed or a call finished (payload McpStatus incl. log). */
+export const EVENT_MCP_STATUS = 'mcp://status'
+/** Rust -> main window: a call ended without the frontend's answer (client cancelled, timeout, server stopped). */
+export const EVENT_MCP_TOOL_CANCEL = 'mcp://tool-cancel'
+
 export const commands = {
   // M0
   discoverInstance: (baseUrl: string) => call<InstanceInfo>('discover_instance', { baseUrl }),
@@ -183,6 +193,29 @@ export const commands = {
   aiSetKey: (key: string) => call<void>('ai_set_key', { key }),
   aiHasKey: () => call<boolean>('ai_has_key'),
   aiClearKey: () => call<void>('ai_clear_key'),
+  // ADR 0011: OpenAI-compatible provider. The optional key is bound to the origin of baseUrl (keychain).
+  /** Stores the key for the origin of `baseUrl` (replaces any key stored for another origin). */
+  aiOpenaiSetKey: (baseUrl: string, key: string) => call<void>('ai_openai_set_key', { baseUrl, key }),
+  /** True only if a key is stored for exactly the origin of `baseUrl`. */
+  aiOpenaiHasKey: (baseUrl: string) => call<boolean>('ai_openai_has_key', { baseUrl }),
+  aiOpenaiClearKey: () => call<void>('ai_openai_clear_key'),
+  /** GET {baseUrl}/models -> sorted model ids. Also the «Verbindung testen» action (sends no camp data). */
+  aiOpenaiModels: (baseUrl: string) => call<string[]>('ai_openai_models', { baseUrl }),
+
+  // ADR 0011: local MCP server (127.0.0.1 only, bearer token).
+  mcpStatus: () => call<McpStatus>('mcp_status'),
+  /** Starts (or restarts on another port) the server; creates the token if none exists. Emits EVENT_MCP_STATUS. */
+  mcpStart: (port: number) => call<McpStatus>('mcp_start', { port }),
+  /** Idempotent. Pending tool calls are answered with an error. Emits EVENT_MCP_STATUS. */
+  mcpStop: () => call<McpStatus>('mcp_stop'),
+  /** Replaces the registered tool list (enabled tools only). Disabled tools are neither listed nor callable. */
+  mcpSetTools: (tools: McpToolRegistration[]) => call<void>('mcp_set_tools', { tools }),
+  /** Answers a `mcp://tool-call` event. Unknown or already answered callIds are ignored. */
+  mcpToolResult: (callId: string, outcome: McpToolOutcome) => call<void>('mcp_tool_result', { callId, outcome }),
+  /** The bearer token for the MCP client config (ADR 0011 exception: shown in the KI tab). Created when missing. */
+  mcpGetToken: () => call<string>('mcp_get_token'),
+  /** Replaces the token; configured clients must be updated. */
+  mcpRegenerateToken: () => call<string>('mcp_regenerate_token'),
 
   // M7: MiData (read-only). Refreshed only on explicit user action.
   midataStatus: () => call<MidataStatus>('midata_status'),
@@ -252,4 +285,19 @@ export async function onNdsStatus(handler: (status: NdsStatus) => void): Promise
 export async function onAuthLog(handler: (log: AuthLogEvent) => void): Promise<UnlistenFn> {
   if (!isTauri()) return noop
   return listen<AuthLogEvent>(EVENT_LOG, (e) => handler(e.payload))
+}
+
+export async function onMcpToolCall(handler: (call: McpToolCallEvent) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<McpToolCallEvent>(EVENT_MCP_TOOL_CALL, (e) => handler(e.payload))
+}
+
+export async function onMcpToolCancel(handler: (event: McpToolCancelEvent) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<McpToolCancelEvent>(EVENT_MCP_TOOL_CANCEL, (e) => handler(e.payload))
+}
+
+export async function onMcpStatus(handler: (status: McpStatus) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<McpStatus>(EVENT_MCP_STATUS, (e) => handler(e.payload))
 }

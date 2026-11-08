@@ -1,0 +1,46 @@
+{
+  "ai": {
+    "provider": {
+      "title": "KI-Anbieter",
+      "anthropic": "Anthropic (Claude)",
+      "openai": "OpenAI-kompatibel (auch lokal)",
+      "preset": "Voreinstellung",
+      "presets": {
+        "ollama": "Ollama (lokal)",
+        "lmstudio": "LM Studio (lokal)",
+        "openai": "OpenAI",
+        "custom": "Eigene URL"
+      },
+      "help": {
+        "ollama": "Ollama starten (ollama serve) und ein Modell laden, z. B. «ollama pull llama3.1». Danach hier «Modelle laden» wählen.",
+        "lmstudio": "In LM Studio ein Modell laden und den lokalen Server starten (Tab «Developer»). Standardport 1234.",
+        "openai": "Offizielle OpenAI-API. Ein API-Schlüssel ist nötig, die Daten verlassen deinen Computer.",
+        "custom": "Beliebiger Server mit OpenAI-kompatibler Schnittstelle (llama.cpp, vLLM, OpenRouter, ...). Die URL endet meist auf /v1."
+      },
+      "baseUrl": "Basis-URL",
+      "baseUrlHint": "Zum Beispiel http://localhost:11434/v1. Ohne den Teil /chat/completions.",
+      "baseUrlInvalid": "Nur https erlaubt. http geht nur für lokale Adressen (localhost, 127.x.x.x, [::1]). Keine Zugangsdaten, kein Query und kein # in der URL.",
+      "model": "Modell",
+      "modelHint": "Name des Modells, z. B. llama3.1:8b oder gpt-4o-mini. Eigene Eingabe ist möglich.",
+      "loadModels": "Modelle laden",
+      "modelsLoaded": "{n} Modelle geladen.",
+      "test": "Verbindung testen",
+      "testOk": "Verbunden – {n} Modelle gefunden",
+      "testFailed": "Verbindung fehlgeschlagen: {message}",
+      "key": {
+        "title": "API-Schlüssel (optional)",
+        "label": "API-Schlüssel",
+        "stored": "Schlüssel hinterlegt",
+        "missing": "Kein Schlüssel hinterlegt",
+        "hint": "Für lokale Server (Ollama, LM Studio) nicht nötig. Der Schlüssel wird nur an {origin} gesendet.",
+        "hintNoOrigin": "Für lokale Server (Ollama, LM Studio) nicht nötig. Der Schlüssel wird nur an die eingetragene Adresse gesendet.",
+        "save": "Schlüssel speichern",
+        "clear": "Schlüssel löschen",
+        "saved": "Schlüssel im Schlüsselbund des Betriebssystems gespeichert."
+      },
+      "zonesNote": "Die Datenzonen gelten für jeden Anbieter, auch für lokale Modelle: Texte werden anonymisiert und vor dem Senden in einer Vorschau gezeigt. Personendaten (MiData/NDS) werden nie gesendet.",
+      "notReady": "Zum Aktivieren der KI-Buttons: gültige Basis-URL und ein Modellname.",
+      "desktopOnly": "Nur in der Desktop-App verfügbar."
+    }
+  }
+}

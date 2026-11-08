@@ -18,6 +18,8 @@ import { listAllRounds, markAllRoundsExported } from '@/domain/rounds/store'
 import { getAppSettings, updateAppSettings } from '@/domain/storage/settings'
 import type { CocoExport } from '@/domain/types'
 import { commands } from '@/lib/tauri'
+import { useAi } from '@/composables/useAi'
+import { useMcp } from '@/composables/useMcp'
 
 export interface PendingImport {
   fileName: string
@@ -115,6 +117,9 @@ async function confirmImport(mode: ImportMode): Promise<boolean> {
     report.value = await importAll(pending.value.data, mode)
     pending.value = null
     await refreshBackupState()
+    // Every import switches AI and MCP off: refresh the in-memory state so a running MCP server stops now.
+    await useAi().reload()
+    await useMcp().reload()
     return true
   } catch (e) {
     fail(e)

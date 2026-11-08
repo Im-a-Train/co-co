@@ -11,6 +11,7 @@ mod error;
 mod files;
 mod instance;
 mod login_window;
+mod mcp;
 mod midata;
 mod nds;
 mod session;
@@ -34,6 +35,7 @@ pub fn run() {
         .manage(state)
         .manage(midata::MidataState::new().expect("MiData-HTTP-Client konnte nicht erstellt werden"))
         .manage(nds::NdsState::new().expect("NDS-HTTP-Client konnte nicht erstellt werden"))
+        .manage(mcp::McpState::new())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             app.manage(files::FileState::load(&dir));
@@ -70,6 +72,17 @@ pub fn run() {
             commands::ai_has_key,
             commands::ai_clear_key,
             commands::ai_complete,
+            commands::ai_openai_set_key,
+            commands::ai_openai_has_key,
+            commands::ai_openai_clear_key,
+            commands::ai_openai_models,
+            mcp::mcp_status,
+            mcp::mcp_start,
+            mcp::mcp_stop,
+            mcp::mcp_set_tools,
+            mcp::mcp_tool_result,
+            mcp::mcp_get_token,
+            mcp::mcp_regenerate_token,
             midata::midata_status,
             midata::midata_open_login,
             midata::midata_set_token,

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-mcp-tool-result"
+description = "Enables the mcp_tool_result command without any pre-configured scope."
+commands.allow = ["mcp_tool_result"]
+
+[[permission]]
+identifier = "deny-mcp-tool-result"
+description = "Denies the mcp_tool_result command without any pre-configured scope."
+commands.deny = ["mcp_tool_result"]

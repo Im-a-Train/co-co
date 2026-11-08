@@ -28,6 +28,8 @@ describe('MiData guard', () => {
     ...walk(join(SRC, 'components/ai')),
     join(SRC, 'composables/useAi.ts'),
     join(SRC, 'lib/tauriAi.ts'),
+    ...walk(join(SRC, 'domain/mcp')),
+    join(SRC, 'composables/mcpBridge.ts'),
   ]
 
   it('finds the AI files it guards', () => {

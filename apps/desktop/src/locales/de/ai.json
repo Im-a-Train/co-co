@@ -4,6 +4,11 @@
     "enable": "KI-Funktionen aktivieren",
     "enableHint": "Standardmässig aus. Ohne Aktivierung wird nie etwas an die KI gesendet.",
     "model": "Modell",
+    "sections": {
+      "provider": "Anbieter",
+      "mcp": "MCP-Server",
+      "log": "Protokoll"
+    },
     "noFacts": "Lagerdaten sind noch nicht geladen.",
     "zones": {
       "text": "Datenzonen: Grün (Regeln, Vorlagen) darf gesendet werden. Gelb (Feedback-Texte, Dokumente, Lagerdaten) nur anonymisiert und nach Bestätigung der Vorschau. Rot (Personendaten, MiData/NDS) wird nie gesendet. Namen werden durch Leiter A, B, ... ersetzt, E-Mail-Adressen, Telefonnummern, AHV-Nummern und Adressen entfernt."
@@ -36,6 +41,7 @@
       "empty": "Noch keine KI-Anfragen.",
       "at": "Zeit",
       "feature": "Funktion",
+      "model": "Modell",
       "tokens": "Tokens (ein / aus)",
       "redactions": "Anonymisiert",
       "status": "Status",
