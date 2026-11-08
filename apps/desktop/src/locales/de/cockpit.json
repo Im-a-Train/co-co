@@ -38,21 +38,31 @@
       "inputsBanner": "Lager-Angaben fehlen (Teilnehmende, Stufe, NDS-Status). Einige Regeln brauchen sie."
     },
     "grid": {
-      "title": "Lagertag-Rechner",
-      "intro": "Tage als Spalten, 07 bis 23 Uhr. Farbe = Kategorie, gestreift = Sozialzeit unter 30 Minuten zwischen zwei J+S-Einheiten.",
+      "title": "Grobprogramm (GP)",
+      "intro": "Tage als Spalten, Stunden passen sich den Programmpunkten an (mindestens 07 bis 23 Uhr). Farbe = Kategorie, gestreift = Sozialzeit unter 30 Minuten zwischen zwei J+S-Einheiten.",
       "day": "Tag {n}",
       "jsMinutes": "J+S {time}",
       "jsMeter": "J+S-Zeit dieses Tages, Linie bei 4 Stunden",
       "valid": "J+S-Tag gültig",
       "invalid": "J+S-Tag nicht gültig",
       "calcMissing": "J+S-Berechnung nicht verfügbar",
-      "hidden": "{count} Eintrag ausserhalb 07–23 Uhr | {count} Einträge ausserhalb 07–23 Uhr",
+      "hidden": "{count} Eintrag ausserhalb der Anzeige | {count} Einträge ausserhalb der Anzeige",
       "gap": "Sozialzeit nur {minutes} min",
       "legend": "Legende",
       "legendGap": "Sozialzeit < 30 min",
       "legendNotJs": "Gestrichelt = zählt nicht als J+S-Einheit",
       "empty": "Keine Tage oder Programmpunkte vorhanden.",
-      "mappingHint": "Zuordnung noch nicht bestätigt: die J+S-Zeit ist ein Vorschlag."
+      "mappingHint": "Zuordnung noch nicht bestätigt: die J+S-Zeit ist ein Vorschlag.",
+      "mappingCheck": "Zuordnung prüfen",
+      "mappingSection": "Zuordnung der Aktivitätstypen",
+      "whyInvalid": "Warum?",
+      "invalidReasons": {
+        "fewUnits": "Nur {units} J+S-Einheit(en), mindestens {required} nötig",
+        "tooShort": "Nur {time} J+S-Zeit, mindestens {required} nötig",
+        "shortUnit": "Einheit {start}–{end} ist nur {minutes} min lang, mindestens {required} min nötig",
+        "gap": "Sozialzeit {start}–{end} nur {minutes} min, mindestens {required} min nötig",
+        "combinedOnly": "Zählt nur zusammen mit dem An-/Abreisetag als gültig"
+      }
     },
     "drawer": {
       "time": "Zeit",

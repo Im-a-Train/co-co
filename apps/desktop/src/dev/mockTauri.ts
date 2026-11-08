@@ -172,7 +172,20 @@ function midataAggregate(
       { from: 13, to: 14, count: 6 },
     ],
     leadersCount: 5,
-    leaders: Object.keys(roles).map((nickname) => ({ nickname, ...roles[nickname], qualifications: quals(nickname) })),
+    leaders: Object.keys(roles).map((nickname) => {
+      const qualifications = quals(nickname)
+      const held = MOCK_HELD[nickname] ?? []
+      return {
+        nickname,
+        ...roles[nickname],
+        qualifications,
+        roleLabels: nickname === 'Otter' ? [roles[nickname].roleLabel, 'Küche'] : [roles[nickname].roleLabel],
+        expiredQualifications: [...new Set(held.filter((h) => h.expired).flatMap((h) => keysOf(h.label)))].filter((k) => !qualifications[k]),
+        qualificationDetails: held
+          .map((h) => ({ label: h.label, keys: keysOf(h.label), validAtCamp: !h.expired, finishAt: h.expired ? '2025-12-31' : null }))
+          .sort((x, y) => x.label.localeCompare(y.label)),
+      }
+    }),
     coachMatch: coachPersonId ? coachPersonId === '4711' : null,
     coachNickname: 'Falk',
     qualificationsReadable: true,
@@ -218,6 +231,25 @@ function ndsAggregate(offerBusinessId: string, campBusinessId: string) {
   }
 }
 
+// Past camps for the "ended / older" filters: one ended ~1 month ago, one ended >3 months ago.
+function withPastCamps(res: unknown): unknown {
+  const list = res as { _embedded: { items: Record<string, unknown>[] }; totalItems?: number }
+  const day = (offset: number) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10)
+  const past = (id: string, title: string, startOff: number, endOff: number) => ({
+    id,
+    title,
+    shortTitle: null,
+    motto: null,
+    isPrototype: false,
+    _links: { self: { href: `/api/camps/${id}` } },
+    _embedded: {
+      periods: [{ id: `${id}p`, start: `${day(startOff)}T00:00:00+00:00`, end: `${day(endOff)}T00:00:00+00:00`, description: 'Lager', _links: { self: { href: `/api/periods/${id}p` } } }],
+    },
+  })
+  const items = [...list._embedded.items, past('mockended01', 'Pfingstlager (abgeschlossen)', -38, -32), past('mockold0001', 'Sommerlager (älter)', -140, -130)]
+  return { ...list, _embedded: { ...list._embedded, items }, totalItems: items.length }
+}
+
 export function installMockTauri(): void {
   ;(globalThis as unknown as { isTauri: boolean }).isTauri = true
   mockWindows('main')
@@ -261,6 +293,7 @@ export function installMockTauri(): void {
             return { nickname: 'Coach', firstname: 'Test', surname: 'Coach', email: 'coach@example.invalid', _links: {} }
           if (clean.startsWith('/api/users')) return { _embedded: { items: [] }, totalItems: 0, _links: {} }
           if (clean.startsWith('/api/comments?')) return withPostedComments(await api.apiGet(path))
+          if (clean.startsWith('/api/camps?')) return withPastCamps(await api.apiGet(path))
           return await api.apiGet(path)
         }
         case 'api_post_comment': {
@@ -314,6 +347,8 @@ export function installMockTauri(): void {
         case 'midata_logout':
           midataConnected = false
           return null
+        case 'midata_find_self':
+          return { personId: '4711', nickname: 'Falk', count: 1 }
         case 'midata_find_events':
           return midataEvents(String(a.campStart ?? a.from), String(a.campEnd ?? a.to))
         case 'midata_fetch_aggregate':
@@ -363,6 +398,12 @@ export function installMockTauri(): void {
               offerItemState: null,
             },
           ]
+        case 'persons_load_midata':
+          return mockMidataPersons(String(a.eventId))
+        case 'persons_load_nds':
+          return mockNdsPersons(String(a.ndsCampId))
+        case 'persons_clear':
+          return null
         case 'nds_fetch_aggregate':
           return ndsAggregate(String(a.offerBusinessId), String(a.campBusinessId))
         case 'nds_probe':
@@ -389,4 +430,73 @@ export function installMockTauri(): void {
     },
     { shouldMockEvents: true },
   )
+}
+
+// ---- «Personen» tab mocks (ADR 0008). SYNTHETIC people only (invented names, no real data).
+function mockMidataPersons(eventId: string) {
+  const none = { lagerleiter: 'none', leiterLsT: 'none', wasser: 'none', berg: 'none', winter: 'none', slrg: 'none' }
+  const row = (
+    id: string,
+    firstName: string,
+    lastName: string,
+    nickname: string | null,
+    birthDate: string | null,
+    gender: string | null,
+    kind: string,
+    roleLabels: string[],
+    qualifications: Record<string, string> = {},
+  ) => ({ __red: true as const, id, firstName, lastName, nickname, birthDate, gender, kind, roleLabels, qualifications })
+  return {
+    __red: true as const,
+    eventId,
+    qualificationsReadable: true,
+    fetchedAt: new Date().toISOString(),
+    persons: [
+      row('9001', 'Anna', 'Muster', 'Wiesel', '2012-05-04', 'w', 'participant', ['Teilnehmer/in']),
+      row('9002', 'Ben', 'Beispiel', null, '2011-09-09', 'm', 'participant', ['Teilnehmer/in']),
+      row('9003', 'Jörg', 'Müller', 'Jöri', '2010-11-30', 'm', 'participant', ['Teilnehmer/in']),
+      row('9004', 'Clara', 'Fehlt', null, '2013-02-14', 'w', 'participant', ['Teilnehmer/in']),
+      row('9005', 'Lena', 'Zwilling', null, '2012-03-03', 'w', 'participant', ['Teilnehmer/in']),
+      row('9006', 'Dora', 'Leiter', 'Falke', '1996-04-01', 'w', 'leader', ['Hauptleitung'], {
+        ...none,
+        lagerleiter: 'valid',
+        leiterLsT: 'valid',
+      }),
+      row('9007', 'Emil', 'Experte', 'Emu', '1999-08-12', 'm', 'leader', ['Leitung'], {
+        ...none,
+        lagerleiter: 'invalid',
+        leiterLsT: 'valid',
+        wasser: 'valid',
+      }),
+      row('9008', 'Fritz', 'Küchlin', null, '1985-06-06', 'm', 'kitchen', ['Küche']),
+      row('guest:77', 'Gustav', 'Gast', null, null, null, 'guest', ['Gast']),
+    ],
+  }
+}
+
+function mockNdsPersons(ndsCampId: string) {
+  const row = (
+    id: string,
+    personNumber: string | null,
+    firstName: string,
+    lastName: string,
+    birthDate: string | null,
+    kind: 'participant' | 'leader',
+    roleLabel: string | null,
+  ) => ({ __red: true as const, id, personNumber, firstName, lastName, birthDate, kind, roleLabel })
+  return {
+    __red: true as const,
+    ndsCampId,
+    fetchedAt: new Date().toISOString(),
+    persons: [
+      row('5001', '100001', 'Anna', 'Muster', '2012-05-04', 'participant', 'CHILD'),
+      row('5002', '100002', 'Ben', 'Beispiel', '2011-09-19', 'participant', 'CHILD'),
+      row('5003', '100003', 'Joerg', 'Mueller', '2010-11-30', 'participant', 'ADOLESCENT'),
+      row('5004', '100004', 'Lena', 'Zwilling', '2012-01-01', 'participant', 'CHILD'),
+      row('5005', '100005', 'Lena', 'Zwilling', '2012-02-02', 'participant', 'CHILD'),
+      row('5006', '100006', 'Olga', 'Nurnds', '2012-12-12', 'participant', 'CHILD'),
+      row('5101', '100101', 'Dora', 'Leiter', '1996-04-01', 'leader', 'MAIN_SUPERVISOR'),
+      row('5102', '100102', 'Emil', 'Experte', '1999-08-12', 'leader', 'SUPERVISOR'),
+    ],
+  }
 }

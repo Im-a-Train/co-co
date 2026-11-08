@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** /lager/:campId/zuordnung: category -> LS/LA/LP/ES/NONE mapping, confirm once. */
+/** Category -> LS/LA/LP/ES/NONE mapping, confirm once. Shown inside the GP view (collapsible section). */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { buildMappingRows, mappingDirty, MAPPING_CLASSES } from '@/components/camps/mappingRows'
@@ -69,7 +69,6 @@ async function confirm(): Promise<void> {
 
 <template>
   <div>
-    <h1 class="text-h5 mb-2">{{ t('camps.mapping.title') }}</h1>
     <p class="text-medium-emphasis mb-4">{{ t('camps.mapping.intro') }}</p>
 
     <v-alert v-if="confirmed" type="success" variant="tonal" class="mb-4" data-testid="mapping-confirmed">

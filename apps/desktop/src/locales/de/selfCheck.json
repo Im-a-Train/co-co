@@ -1,6 +1,7 @@
 {
   "selfCheck": {
     "title": "Selbstcheck",
+    "introToggle": "Was ist der Selbstcheck?",
     "introLeader": "Mit der Entwurfsrunde prüfst du dein Lager mit denselben Regeln wie später der Coach. Behebe die offenen Befunde, bevor du das Lager einreichst, so braucht es weniger Prüfrunden.",
     "introCoach": "Die Entwurfsrunde lässt dieselben Regeln laufen wie die Prüfung, hier als Vorab-Check für die Lagerleitung. Sie zählt nicht als Prüfrunde und ändert weder Rundennummern noch Status.",
     "kpi": {
@@ -45,6 +46,9 @@
         "hint": "Hinweis ({n})"
       },
       "link": "In eCamp",
+      "openInEcampFailed": "eCamp konnte nicht geöffnet werden",
+      "openFinding": "Im Befund öffnen",
+      "jsDaysChip": "J+S-Tage {valid}/{total}",
       "none": "Keine offenen Befunde.",
       "fixedHeading": "Behoben seit letztem Selbstcheck ({n})"
     },

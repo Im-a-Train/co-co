@@ -67,6 +67,7 @@ describe('rule state', () => {
     expect(normalizeRuleState({ disabled: [{ ruleId: 'R', campIri: null }, 5], muted: 'x' })).toEqual({
       disabled: [{ ruleId: 'R', campIri: null }],
       muted: [],
+      excludedCategories: [],
     })
   })
 })

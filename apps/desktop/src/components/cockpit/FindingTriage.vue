@@ -46,6 +46,7 @@ const emit = defineEmits<{
   unignore: [finding: Finding]
   openActivity: [iri: Iri]
   openFeedback: [itemId: string]
+  excludeCategory: [finding: Finding]
 }>()
 const { t } = useI18n()
 
@@ -56,6 +57,10 @@ const current = computed<Finding | null>(() => props.findings[index.value] ?? nu
 const currentStatus = computed<FindingStatus | null>(() => statuses.value[index.value] ?? null)
 const existingFeedback = computed(() => (current.value ? feedbackForFinding(current.value, props.feedbackItems) : null))
 const activityIri = computed(() => (current.value ? activityIriOfFinding(current.value, props.facts) : null))
+
+const hasCategory = computed(
+  () => !!activityIri.value && !!props.facts?.activities.find((a) => a.iri === activityIri.value)?.categoryIri,
+)
 
 const STATUS_COLOR: Record<FindingStatus, string | undefined> = { open: undefined, feedback: 'success', ignored: 'grey' }
 const STATUS_ICON: Record<FindingStatus, string> = {
@@ -223,6 +228,17 @@ watch(
                 prepend-icon="mdi-calendar-week"
                 :text="t('findings.triage.openInGrid')"
                 @click="emit('openActivity', activityIri)"
+              />
+              <v-btn
+                v-if="activityIri && current.origin === 'rule' && hasCategory"
+                size="small"
+                variant="text"
+                prepend-icon="mdi-filter-remove-outline"
+                class="d-block mt-1"
+                style="height: auto; white-space: normal"
+                :text="t('findings.categoryExclusion.forRule')"
+                data-testid="exclude-category-rule"
+                @click="emit('excludeCategory', current)"
               />
             </v-card-text>
           </v-card>

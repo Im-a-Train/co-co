@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-persons-load-nds"
+description = "Enables the persons_load_nds command without any pre-configured scope."
+commands.allow = ["persons_load_nds"]
+
+[[permission]]
+identifier = "deny-persons-load-nds"
+description = "Denies the persons_load_nds command without any pre-configured scope."
+commands.deny = ["persons_load_nds"]

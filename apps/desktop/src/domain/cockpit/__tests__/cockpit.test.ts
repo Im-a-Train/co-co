@@ -75,7 +75,7 @@ describe('time helpers', () => {
 
 describe('buildGrid', () => {
   it('positions blocks and colours by category, counts hidden entries', () => {
-    const g = buildGrid(facts, (iri) => (iri ? 'LS' : 'NONE'), null)
+    const g = buildGrid(facts, (iri) => (iri ? 'LS' : 'NONE'), null, { startHour: 7, endHour: 23 })
     const day = g.days[0]
     expect(day.blocks).toHaveLength(1)
     expect(day.hiddenEntries).toBe(1)
@@ -85,6 +85,50 @@ describe('buildGrid', () => {
     expect(b.color).toBe('#ff0000')
     expect(day.jsMinutes).toBe(150)
     expect(day.valid).toBeNull()
+  })
+  it('extends the hours to show night entries (nothing hidden)', () => {
+    const g = buildGrid(facts, () => 'LS', null)
+    expect(g.startHour).toBe(2)
+    expect(g.endHour).toBe(23)
+    expect(g.days[0].blocks).toHaveLength(2)
+    expect(g.days[0].hiddenEntries).toBe(0)
+  })
+  it('keeps 07-23 without early/late entries and extends to 24 for midnight-crossing entries', () => {
+    const day = { ...facts.scheduleEntries[0] }
+    const plain = { ...facts, scheduleEntries: [day] } as unknown as CampFacts
+    const g = buildGrid(plain, () => 'LS', null)
+    expect([g.startHour, g.endHour]).toEqual([7, 23])
+    const late = {
+      ...day,
+      start: '2031-01-24T22:00:00+00:00',
+      end: '2031-01-25T01:00:00+00:00',
+      durationMinutes: 180,
+    }
+    const g2 = buildGrid({ ...facts, scheduleEntries: [late] } as unknown as CampFacts, () => 'LS', null)
+    expect([g2.startHour, g2.endHour]).toEqual([7, 24])
+    expect(g2.hours).toHaveLength(18)
+  })
+  it('lists invalid reasons of a day', () => {
+    const report = {
+      days: [
+        {
+          dayIri: '/api/days/1',
+          date: '2031-01-24',
+          number: 1,
+          units: [],
+          gaps: [],
+          jsMinutes: 100,
+          unitCount: 1,
+          valid: false,
+          combinedWith: null,
+          validCombined: false,
+        },
+      ],
+      validDayCount: 0,
+      totalDayCount: 1,
+    } as JsDayReport
+    const d = buildGrid(facts, () => 'LS', report).days[0]
+    expect(d.invalidReasons.map((r) => r.code)).toEqual(['fewUnits', 'tooShort'])
   })
   it('uses jsDays report for gaps and validity', () => {
     const report = {

@@ -5,10 +5,13 @@ import { useI18n } from 'vue-i18n'
 import { useMidata } from '@/composables/useMidata'
 import type { MidataProbe } from '@/domain/types'
 import { isTauri } from '@/lib/tauri'
+import { useSession } from '@/composables/useSession'
 
 const { t } = useI18n()
 const md = useMidata()
 const inTauri = isTauri()
+const session = useSession()
+const showManual = ref(false)
 
 const baseUrl = ref(md.baseUrl.value)
 const personId = ref(md.personId.value ?? '')
@@ -22,13 +25,18 @@ onMounted(async () => {
   await md.init()
   baseUrl.value = md.baseUrl.value
   personId.value = md.personId.value ?? ''
+  void md.detectSelf()
 })
+watch(() => [session.user.value?.email, md.status.value.connected], () => void md.detectSelf())
 watch([baseUrl, personId], () => (saved.value = false))
 watch(md.personId, (v) => {
   if (v && !personId.value) personId.value = v
 })
 /** The stored id equals the one detected from the login URL. */
 const personIdDetected = computed(() => !!md.status.value.personId && md.status.value.personId === md.personId.value)
+/** The stored id was found automatically (login URL or e-mail lookup). */
+const autoDetected = computed(() => !!md.personId.value && (md.selfNickname.value !== null || personIdDetected.value))
+const showField = computed(() => showManual.value || !autoDetected.value)
 
 async function saveSettings(): Promise<void> {
   await md.saveSettings({ baseUrl: baseUrl.value, personId: personId.value || null })
@@ -113,7 +121,23 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
           </div>
           <div class="text-caption mt-1 mb-4">{{ t('midata.settings.tokenHint') }}</div>
 
+          <div v-if="autoDetected" class="d-flex align-center flex-wrap ga-2 mb-2" data-testid="midata-personid-auto">
+            <v-icon icon="mdi-account-check" color="success" size="small" />
+            <span>{{ t('midata.settings.personIdAuto', { who: md.selfNickname.value || t('midata.settings.personIdYou'), id: md.personId.value }) }}</span>
+            <v-btn size="x-small" variant="text" data-testid="midata-personid-override" @click="showManual = !showManual">{{ t('midata.settings.personIdOverride') }}</v-btn>
+          </div>
+          <v-alert
+            v-else-if="md.status.value.connected && md.selfProblem.value"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-2"
+            data-testid="midata-personid-problem"
+          >
+            {{ t(`midata.settings.personIdProblem.${md.selfProblem.value}`) }}
+          </v-alert>
           <v-text-field
+            v-if="showField"
             v-model="personId"
             :label="t('midata.settings.personId')"
             :hint="t('midata.settings.personIdHint')"
@@ -123,11 +147,7 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
             inputmode="numeric"
             data-testid="midata-personid"
             @blur="saveSettings"
-          >
-            <template v-if="personIdDetected" #append-inner>
-              <v-chip size="x-small" color="success" variant="tonal" data-testid="midata-personid-detected">{{ t('midata.settings.personIdDetected') }}</v-chip>
-            </template>
-          </v-text-field>
+          />
           <div class="d-flex align-center ga-3 mt-2">
             <v-btn variant="tonal" size="small" @click="saveSettings">{{ t('common.save') }}</v-btn>
             <span v-if="saved" class="text-caption text-success">{{ t('midata.settings.saved') }}</span>

@@ -1,6 +1,6 @@
 {
   "activities": {
-    "title": "Aktivitäten",
+    "title": "Detailprogramm (DP)",
     "intro": "Alle Programmpunkte des Lagers als Liste. Klick auf eine Zeile öffnet die Details.",
     "search": "Suchen (Titel, Ort, Verantwortliche)",
     "filters": {
@@ -31,6 +31,6 @@
     "count": "{shown} von {total} Aktivitäten",
     "empty": "Keine Aktivitäten vorhanden.",
     "noMatch": "Keine Aktivität passt zu den Filtern.",
-    "showInGrid": "Im Raster anzeigen"
+    "showInGrid": "Im GP anzeigen"
   }
 }
