@@ -279,9 +279,27 @@ describe('buildQualificationMatrix', () => {
   it('rows have all cells and ecamp matches by normalized name', () => {
     expect(m.rows).toHaveLength(3)
     expect(Object.keys(m.rows[0]!.cells).sort()).toEqual(['berg', 'lagerleiter', 'leiterLsT', 'slrg', 'wasser', 'winter'])
-    expect(m.rows[0]).toMatchObject({ nickname: 'Fuchs', ecampMatches: ['Fuchs'] })
+    expect(m.rows[0]).toMatchObject({ nickname: 'Fuchs', ecampMatches: ['Fuchs'], roleLabels: ['Leitung'] })
+    expect(m.rows[0]!.cells).toMatchObject({ lagerleiter: 'valid', wasser: 'none' })
     expect(m.rows[1]!.ecampMatches).toEqual(['bär'])
     expect(m.rows[2]!.ecampMatches).toEqual([])
+  })
+  it('expired qualifications are yellow cells and do not count as covered', () => {
+    const a = agg({
+      leaders: [
+        {
+          ...leader('Fuchs'),
+          roleLabels: ['Hauptleitung', 'Küche'],
+          expiredQualifications: ['wasser', 'slrg'],
+          qualificationDetails: [{ label: 'SLRG Modul Pool', keys: ['slrg'], validAtCamp: false, finishAt: '2025-01-01' }],
+        },
+      ],
+    })
+    const r = buildQualificationMatrix(a, facts(), areaOf)
+    expect(r.rows[0]).toMatchObject({ roleLabels: ['Hauptleitung', 'Küche'] })
+    expect(r.rows[0]!.cells).toMatchObject({ slrg: 'invalid', wasser: 'invalid', berg: 'none' })
+    expect(r.rows[0]!.details).toHaveLength(1)
+    expect(r.covered.slrg).toBe(0)
   })
   it('covered counts', () => {
     expect(m.covered).toMatchObject({ lagerleiter: 1, slrg: 2, berg: 0, leiterLsT: 0 })

@@ -21,9 +21,10 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use coco_core::cookies::{jar_cookie_string, RawCookie};
 use coco_core::midata::{
-    leader_person_ids, next_link, normalize_midata_base_url, parse_event_list_with_groups, event_group_ids, group_names_by_id, person_id_from_path, pick_session_cookie, rank_events, probe_classic_fields, reduce_aggregate,
+    is_plausible_email, leader_person_ids, next_link, parse_self_match, SelfMatch, normalize_midata_base_url, parse_event_list_with_groups, event_group_ids, group_names_by_id, person_id_from_path, pick_session_cookie, rank_events, probe_classic_fields, reduce_aggregate,
     MidataAggregate, MidataEventSummary, MidataProbe, MidataStatus, QualKey, RawEventData, JSONAPI_ACCEPT,
 };
+use coco_core::persons::{reduce_midata_persons, MidataPersonsResult};
 use coco_core::types::AuthLog;
 use coco_core::CoreError;
 use reqwest::cookie::Jar;
@@ -384,6 +385,11 @@ fn groups_path(ids: &[String]) -> String {
     format!("/api/groups?filter[id][eq]={}&fields[groups]=name,display_name&page[size]={PAGE_SIZE}", ids.join(","))
 }
 
+fn people_by_email_path(email: &str) -> String {
+    let enc: String = url::form_urlencoded::byte_serialize(email.trim().as_bytes()).collect();
+    format!("/api/people?filter[email][eq]={enc}&fields[people]=nickname,first_name&page[size]=2")
+}
+
 fn event_path(id: &str) -> String {
     format!("/api/events/{id}?include=dates")
 }
@@ -391,6 +397,14 @@ fn event_path(id: &str) -> String {
 fn participations_path(id: &str) -> String {
     format!(
         "/api/event_participations?filter[event_id][eq]={id}&include=participant,roles&fields[people]=nickname,first_name,birthday&page[size]={PAGE_SIZE}"
+    )
+}
+
+/// Participations for the «Personen» tab (ADR 0009): same as `participations_path`, plus the person
+/// attributes the tab shows. Kept separate so the aggregate query stays minimal.
+fn persons_participations_path(id: &str) -> String {
+    format!(
+        "/api/event_participations?filter[event_id][eq]={id}&include=participant,roles&fields[people]=first_name,last_name,nickname,birthday,gender&page[size]={PAGE_SIZE}"
     )
 }
 
@@ -674,6 +688,41 @@ pub async fn fetch_aggregate_impl(
     Ok(aggregate)
 }
 
+/// «Personen» tab: individual MiData people of one event (red zone, ADR 0009). The caller keeps the
+/// result in memory only; nothing here logs or formats person values.
+pub async fn fetch_persons_impl(
+    state: &MidataState,
+    event_id: &str,
+    camp_start: &str,
+    camp_end: &str,
+) -> AppResult<MidataPersonsResult> {
+    validate_id(event_id)?;
+    validate_date(camp_start)?;
+    validate_date(camp_end)?;
+    let ctx = state.ctx().await?;
+    let participations = get_pages(&ctx, api_url(&ctx.base, &persons_participations_path(event_id))?).await?;
+    let leaders = leader_person_ids(&participations);
+    let mut qualifications = Vec::new();
+    let mut readable = true;
+    for chunk in leaders.chunks(QUAL_CHUNK) {
+        match get_pages(&ctx, api_url(&ctx.base, &qualifications_path(chunk))?).await {
+            Ok(pages) => qualifications.extend(pages),
+            Err(_) => {
+                readable = false;
+                break;
+            }
+        }
+    }
+    let persons = reduce_midata_persons(&participations, readable.then_some(qualifications.as_slice()), camp_start, camp_end, None)?;
+    Ok(MidataPersonsResult {
+        red: true,
+        event_id: event_id.to_string(),
+        persons,
+        qualifications_readable: readable,
+        fetched_at: now_rfc3339(),
+    })
+}
+
 fn any_birthday(doc: &Value) -> bool {
     doc.get("included")
         .and_then(Value::as_array)
@@ -923,6 +972,7 @@ pub async fn midata_logout<R: Runtime>(
     state: State<'_, MidataState>,
 ) -> AppResult<()> {
     ensure_main(&webview)?;
+    crate::persons::clear_midata_of(&app);
     state.epoch.fetch_add(1, Ordering::SeqCst);
     let base = {
         let mut g = state.inner.write().await;
@@ -965,6 +1015,41 @@ pub async fn midata_fetch_aggregate<R: Runtime>(
 ) -> AppResult<MidataAggregate> {
     ensure_main(&webview)?;
     fetch_aggregate_impl(&state, &event_id, &camp_start, &camp_end, coach_person_id.as_deref(), qual_mapping.as_ref()).await
+}
+
+#[tauri::command]
+pub async fn persons_load_midata<R: Runtime>(
+    webview: Webview<R>,
+    state: State<'_, MidataState>,
+    persons: State<'_, crate::persons::PersonsState>,
+    event_id: String,
+    camp_start: String,
+    camp_end: String,
+) -> AppResult<MidataPersonsResult> {
+    ensure_main(&webview)?;
+    let res = fetch_persons_impl(&state, &event_id, &camp_start, &camp_end).await?;
+    persons.set_midata(res.clone());
+    Ok(res)
+}
+
+/// Finds the signed-in coach's MiData person by the e-mail of the eCamp account (`filter[email][eq]`).
+pub async fn find_self_impl(state: &MidataState, email: &str) -> AppResult<SelfMatch> {
+    if !is_plausible_email(email) {
+        return Err(AppError::Core(CoreError::Invalid("E-Mail-Adresse ungültig".into())));
+    }
+    let ctx = state.ctx().await?;
+    let doc = get_json(&ctx, api_url(&ctx.base, &people_by_email_path(email))?).await?;
+    Ok(parse_self_match(&doc))
+}
+
+#[tauri::command]
+pub async fn midata_find_self<R: Runtime>(
+    webview: Webview<R>,
+    state: State<'_, MidataState>,
+    email: String,
+) -> AppResult<SelfMatch> {
+    ensure_main(&webview)?;
+    find_self_impl(&state, &email).await
 }
 
 #[tauri::command]
@@ -1033,6 +1118,10 @@ mod tests {
             participations_path("42"),
             "/api/event_participations?filter[event_id][eq]=42&include=participant,roles&fields[people]=nickname,first_name,birthday&page[size]=100"
         );
+        assert_eq!(
+            persons_participations_path("42"),
+            "/api/event_participations?filter[event_id][eq]=42&include=participant,roles&fields[people]=first_name,last_name,nickname,birthday,gender&page[size]=100"
+        );
         assert_eq!(event_path("42"), "/api/events/42?include=dates");
         assert_eq!(
             groups_path(&["1".into(), "2".into()]),
@@ -1067,7 +1156,7 @@ mod tests {
             ("/api/event_participations", &["filter[event_id][eq]"], &["event", "participant", "roles"], &["fields[people]"]),
             ("/api/qualifications", &["filter[person_id][eq]"], &["person", "qualification_kind"], &[]),
         ];
-        let people_attrs = ["first_name", "nickname", "birthday"];
+        let people_attrs = ["first_name", "last_name", "nickname", "birthday", "gender"];
         let group_attrs = ["name", "display_name"];
         let paths = vec![
             events_path("2026-07-01", "2026-07-31", true, true),
@@ -1076,6 +1165,7 @@ mod tests {
             event_path("42"),
             groups_path(&["1".into(), "2".into()]),
             participations_path("42"),
+            persons_participations_path("42"),
             qualifications_path(&["1".into(), "2".into()]),
             token_check_path().to_string(),
         ];

@@ -71,6 +71,27 @@
       "empty": "Keine Fristen: Es sind keine Lager mit Startdatum vorhanden.",
       "loadFailed": "Lager konnten nicht geladen werden",
       "showDone": "Erledigte anzeigen",
+      "showArchived": "Ältere Lager anzeigen",
+      "archivedHint": "Lager, die vor mehr als einem Monat geendet haben, sind ausgeblendet; ihre Fristen gelten als erledigt.",
+      "archivedBadge": "Lager beendet",
+      "filters": {
+        "camps": "Lager",
+        "allCamps": "Alle Lager",
+        "kinds": "Art der Frist",
+        "allKinds": "Alle Arten",
+        "statuses": "Stand",
+        "allStatuses": "Alle Stände",
+        "reset": "Filter zurücksetzen",
+        "noMatch": "Keine Frist passt zu den Filtern."
+      },
+      "kindShort": {
+        "nds-registration": "NDS-Anmeldung",
+        "nds-closing": "NDS-Abschluss",
+        "leihmaterial": "Leihmaterial",
+        "landeskarten": "Landeskarten",
+        "lagerbewilligung": "Lagerbewilligung",
+        "pbs-milestone": "PBS-Meilenstein"
+      },
       "columns": {
         "due": "Fällig am",
         "camp": "Lager",

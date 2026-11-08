@@ -34,11 +34,15 @@
     "allow-midata-find-events",
     "allow-midata-fetch-aggregate",
     "allow-midata-probe",
+    "allow-midata-find-self",
     "allow-nds-status",
     "allow-nds-open-login",
     "allow-nds-logout",
     "allow-nds-find-camps",
     "allow-nds-fetch-aggregate",
-    "allow-nds-probe"
+    "allow-nds-probe",
+    "allow-persons-load-midata",
+    "allow-persons-load-nds",
+    "allow-persons-clear"
   ]
 }

@@ -1,0 +1,111 @@
+{
+  "persons": {
+    "title": "Personen",
+    "banner": "Personendaten · Rote Zone: bleibt auf diesem Gerät, nur im Arbeitsspeicher, nie an die KI",
+    "actions": {
+      "loadMidata": "Aus MiData laden",
+      "loadNds": "Aus NDS laden",
+      "clear": "Aus dem Speicher entfernen",
+      "reload": "Neu laden"
+    },
+    "empty": {
+      "none": "Noch keine Personen geladen. Lade die Personen aus MiData und NDS, um sie abzugleichen.",
+      "filtered": "Keine Person passt zu den Filtern.",
+      "midataNotLinked": "Dieses Lager ist noch nicht mit einem MiData-Anlass verknüpft.",
+      "ndsNotLinked": "Dieses Lager ist noch nicht mit einem NDS-Lager verknüpft.",
+      "toInputs": "Zu «Angaben»"
+    },
+    "chips": {
+      "total": "{n} Personen",
+      "participant": "{n} TN",
+      "leader": "{n} Leitende",
+      "kitchen": "{n} Küche",
+      "coach": "{n} Coach",
+      "guest": "{n} Gäste",
+      "other": "{n} Weitere"
+    },
+    "kind": {
+      "participant": "TN",
+      "leader": "Leitende",
+      "kitchen": "Küche",
+      "coach": "Coach",
+      "guest": "Gast",
+      "other": "Weitere"
+    },
+    "state": {
+      "match": "übereinstimmend",
+      "field_diff": "abweichend",
+      "missing_in_nds": "fehlt in NDS",
+      "only_in_nds": "nur in NDS",
+      "ambiguous": "unklar",
+      "notRelevant": "nicht in NDS erwartet",
+      "notCompared": "–"
+    },
+    "tooltip": {
+      "differences": "Unterschiede: {list}",
+      "suggestions": "Mögliche NDS-Personen (nur Namen, nicht bestätigt):",
+      "suggestion": "{name} · Geb. {birth}",
+      "none": "Keine Unterschiede",
+      "ndsOnly": "In NDS vorhanden, in MiData nicht gefunden"
+    },
+    "diff": {
+      "birthDate": "Geburtsdatum",
+      "name": "Schreibweise des Namens",
+      "kind": "Typ (TN / Leitende)"
+    },
+    "table": {
+      "name": "Name",
+      "kind": "Typ",
+      "roles": "Rolle",
+      "birthDate": "Geburtsdatum",
+      "age": "Alter bei Lagerbeginn",
+      "jsAge": "J+S-Alter",
+      "quals": "Qualifikation",
+      "state": "NDS-Status",
+      "ndsNumber": "NDS-Nr."
+    },
+    "ndsRole": {
+      "CHILD": "Kind",
+      "ADOLESCENT": "Jugendliche:r",
+      "MAIN_SUPERVISOR": "Hauptleitung",
+      "SUPERVISOR": "Leitung",
+      "INSTRUCTOR": "Leiter:in",
+      "ASSISTANT_INSTRUCTOR": "Hilfsleiter:in",
+      "JS_COACH": "J+S-Coach"
+    },
+    "birth": {
+      "reveal": "Geburtsdaten anzeigen",
+      "hide": "Geburtsdaten verbergen"
+    },
+    "jsAge": {
+      "yes": "5–20",
+      "no": "ausserhalb"
+    },
+    "qual": {
+      "valid": "gültig",
+      "invalid": "abgelaufen",
+      "none": "keine",
+      "unreadable": "Qualifikationen nicht lesbar"
+    },
+    "qualKey": {
+      "lagerleiter": "Lagerleiter",
+      "leiterLsT": "Leiter LS/T",
+      "wasser": "Wasser",
+      "berg": "Berg",
+      "winter": "Winter",
+      "slrg": "SLRG"
+    },
+    "filter": {
+      "search": "Suchen",
+      "kind": "Typ",
+      "state": "NDS-Status",
+      "jsAge": "J+S-Alter",
+      "jsAgeYes": "Im J+S-Alter",
+      "jsAgeNo": "Nicht im J+S-Alter"
+    },
+    "loaded": {
+      "midata": "MiData: Stand {time}",
+      "nds": "NDS: Stand {time}"
+    }
+  }
+}

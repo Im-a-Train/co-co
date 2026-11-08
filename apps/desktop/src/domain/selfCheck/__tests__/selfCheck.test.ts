@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { makeFacts } from '../../rounds/__tests__/factsFixture'
 import type { Finding, SelfCheckRun } from '../../types'
-import { compareWithRun, isLeaderRole, planSelfCheckRun, renderSelfCheckReport, toSelfCheckFindings } from '../index'
+import {
+  buildSelfCheckReport,
+  compareWithRun,
+  isLeaderRole,
+  planSelfCheckRun,
+  renderSelfCheckReport,
+  renderSelfCheckReportHtml,
+  toSelfCheckFindings,
+} from '../index'
 
 function finding(id: string, over: Partial<Finding> = {}): Finding {
   return {
@@ -102,8 +110,10 @@ describe('renderSelfCheckReport', () => {
     expect(text.indexOf('Muss (')).toBeGreaterThan(-1)
     expect(text.indexOf('Muss (')).toBeLessThan(iShould)
     expect(iShould).toBeLessThan(text.indexOf('Hinweis ('))
-    expect(text).toContain('- 1.1 Aktivität 1: Titel must:1: Meldung must:1')
-    expect(text).toContain('https://ecamp.example/camps/camp1/Sola/program/activity/a1/s1/Aktivitat-1')
+    expect(text).toContain(
+      '- 1.1 Aktivität 1 (https://ecamp.example/camps/camp1/Sola/program/activity/a1/s1/Aktivitat-1): Titel must:1: Meldung must:1',
+    )
+    expect(text).not.toContain('In eCamp')
     expect(text).not.toContain('KI-Befund')
     expect(text).not.toContain('ign:1')
   })
@@ -133,5 +143,49 @@ describe('renderSelfCheckReport', () => {
     expect(text).toContain('Keine offenen Befunde.')
     expect(renderSelfCheckReport(facts, [], null, progress, { ...base, includeRedDerived: true })).toContain('Behoben Rot')
     expect(renderSelfCheckReport(facts, [], null, null, base)).not.toContain('Behoben seit')
+  })
+})
+
+describe('buildSelfCheckReport + renderSelfCheckReportHtml', () => {
+  const facts = makeFacts()
+  const base = { instanceBaseUrl: 'https://ecamp.example', now: new Date(2026, 10, 7) }
+  const findings = [
+    finding('hint:1', { severity: 'hint', targets: [], scope: 'camp' }),
+    finding('must:1', { severity: 'must', targets: ['/api/activities/a1'] }),
+    finding('lt:1', { severity: 'should', targets: [], scope: 'camp', title: 'A <b>&</b> "B"', message: "it's <i>x</i>" }),
+  ]
+
+  it('builds groups in severity order with label and url', () => {
+    const m = buildSelfCheckReport(facts, findings, { valid: 1, total: 2 }, null, base)
+    expect(m.heading).toBe('Selbstcheck «Sola» vom 07.11.2026')
+    expect(m.counts).toEqual({ must: 1, should: 1, hint: 1 })
+    expect(m.jsDays).toEqual({ valid: 1, total: 2 })
+    expect(m.groups.map((g) => g.severity)).toEqual(['must', 'should', 'hint'])
+    const it = m.groups[0]!.items[0]!
+    expect(it.findingId).toBe('must:1')
+    expect(it.activityLabel).toBe('1.1 Aktivität 1')
+    expect(it.url).toContain('/activity/a1/')
+    expect(m.groups[2]!.items[0]!.activityLabel).toBeNull()
+    expect(m.groups[2]!.items[0]!.url).toBeNull()
+  })
+
+  it('renders html with linked labels, escaped text and no visible raw URL', () => {
+    const m = buildSelfCheckReport(facts, findings, null, null, base)
+    const html = renderSelfCheckReportHtml(m)
+    expect(html).toContain('<h3>')
+    expect(html).toContain('<h4>Muss (1)</h4>')
+    expect(html).toMatch(/<a href="https:\/\/ecamp\.example[^"]*">1\.1 Aktivität 1<\/a>/)
+    expect(html).toContain('A &lt;b&gt;&amp;&lt;/b&gt; &quot;B&quot;')
+    expect(html).toContain('it&#39;s &lt;i&gt;x&lt;/i&gt;')
+    const textNodes = html.replace(/<[^>]*>/g, ' ')
+    expect(textNodes).not.toContain('http')
+  })
+
+  it('shows the none line and lists fixed ones escaped', () => {
+    const fx = { id: 'x', ruleId: 'x', severity: 'must' as const, title: 'Behoben <A>', message: '', targets: [], redDerived: false }
+    const m = buildSelfCheckReport(facts, [], null, { fixed: [fx], remaining: [], added: [] }, base)
+    const html = renderSelfCheckReportHtml(m)
+    expect(html).toContain('Keine offenen Befunde.')
+    expect(html).toContain('<li>Behoben &lt;A&gt;</li>')
   })
 })

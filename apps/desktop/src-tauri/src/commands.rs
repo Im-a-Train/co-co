@@ -84,6 +84,7 @@ pub async fn api_get<R: Runtime>(
 #[tauri::command]
 pub async fn logout<R: Runtime>(app: AppHandle<R>, webview: Webview<R>, state: State<'_, AppState>) -> AppResult<()> {
     ensure_main(&webview)?;
+    crate::persons::clear_all_of(&app);
     crate::auth::logout(&app, &state).await
 }
 

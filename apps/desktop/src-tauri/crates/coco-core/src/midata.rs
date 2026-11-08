@@ -76,6 +76,28 @@ pub struct MidataLeader {
     #[serde(default)]
     pub main_leader: bool,
     pub qualifications: std::collections::BTreeMap<QualKey, bool>,
+    /// ALL event role labels of this person in the camp (deduped, in order; includes non-leader roles).
+    #[serde(default)]
+    pub role_labels: Vec<String>,
+    /// Keys the leader holds only via qualifications that are NOT valid over the whole camp
+    /// (minus keys that are valid).
+    #[serde(default)]
+    pub expired_qualifications: Vec<QualKey>,
+    /// Every qualification the leader holds (label, mapped keys, validity at camp), sorted by label.
+    #[serde(default)]
+    pub qualification_details: Vec<LeaderQualDetail>,
+}
+
+/// One qualification held by a leader.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeaderQualDetail {
+    pub label: String,
+    pub keys: Vec<QualKey>,
+    /// Valid over the whole camp period.
+    pub valid_at_camp: bool,
+    /// YYYY-MM-DD; None = unlimited.
+    pub finish_at: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -385,7 +407,7 @@ fn parse_date(s: &str) -> Option<(i32, u32, u32)> {
 }
 
 /// Normalizes a date or datetime string to `YYYY-MM-DD`, None if unparsable.
-fn day_string(s: &str) -> Option<String> {
+pub(crate) fn day_string(s: &str) -> Option<String> {
     parse_date(s).map(|(y, m, d)| format!("{y:04}-{m:02}-{d:02}"))
 }
 
@@ -412,14 +434,14 @@ fn id_str(v: &Value) -> Option<String> {
     }
 }
 
-fn str_attr(item: &Value, key: &str) -> Option<String> {
+pub(crate) fn str_attr(item: &Value, key: &str) -> Option<String> {
     item.get("attributes")?.get(key)?.as_str().map(str::trim).filter(|s| !s.is_empty()).map(String::from)
 }
 
-type Included = HashMap<(String, String), Value>;
+pub(crate) type Included = HashMap<(String, String), Value>;
 
 /// Index of `included` resources by (type, id).
-fn index_included(docs: &[&Value]) -> Included {
+pub(crate) fn index_included(docs: &[&Value]) -> Included {
     let mut map = HashMap::new();
     for doc in docs {
         if let Some(arr) = doc.get("included").and_then(Value::as_array) {
@@ -444,6 +466,11 @@ fn rel_ids(item: &Value, rel: &str) -> Vec<(String, String)> {
         Value::Object(_) => one(data).into_iter().collect(),
         _ => Vec::new(),
     }
+}
+
+/// Id from `attributes.<key>` (string or number).
+fn attr_id(item: &Value, key: &str) -> Option<String> {
+    item.get("attributes")?.get(key).and_then(id_str)
 }
 
 fn dates_of(item: &Value, included: &Included) -> Vec<EventDate> {
@@ -618,19 +645,23 @@ pub fn rank_events(
     out
 }
 
-struct PersonAgg {
-    leader_label: Option<String>,
-    is_leader: bool,
+pub(crate) struct PersonAgg {
+    pub(crate) leader_label: Option<String>,
+    pub(crate) is_leader: bool,
     /// Main leader (Hauptleitung): role type segment exactly `Leader`.
-    is_main: bool,
-    is_participant: bool,
+    pub(crate) is_main: bool,
+    pub(crate) is_participant: bool,
     /// Has the PBS coach role (`Event::Camp::Role::Coach`).
-    is_coach: bool,
-    person_id: Option<String>,
+    pub(crate) is_coach: bool,
+    pub(crate) person_id: Option<String>,
+    /// All role labels (any role class), deduped in order.
+    pub(crate) role_labels: Vec<String>,
+    /// Has a kitchen role (type segment containing `Cook`/`Kitchen`, or label «Küche»).
+    pub(crate) is_kitchen: bool,
 }
 
 /// One entry per person (deduped over all participations), in first-seen order.
-fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
+pub(crate) fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
     let refs: Vec<&Value> = pages.iter().collect();
     let included = index_included(&refs);
     let mut order: Vec<String> = Vec::new();
@@ -642,8 +673,21 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
                 continue;
             }
             let part = {
-                let r = rel_ids(p, "participant");
-                if r.is_empty() { rel_ids(p, "person") } else { r }
+                let mut r = rel_ids(p, "participant");
+                if r.is_empty() {
+                    r = rel_ids(p, "person");
+                }
+                if r.is_empty() {
+                    // Relationship linkage is only rendered for included relationships: fall back to attributes.
+                    if let Some(id) = attr_id(p, "participant_id") {
+                        let t = match str_attr(p, "participant_type").as_deref() {
+                            Some("Event::Guest") => "event_guests",
+                            _ => "people",
+                        };
+                        r.push((t.to_string(), id));
+                    }
+                }
+                r
             };
             let is_guest = part.first().is_some_and(|(t, _)| t == "event_guests");
             let person = part.into_iter().next().map(|(t, id)| if t == "event_guests" { format!("guest:{id}") } else { id });
@@ -656,10 +700,21 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
             let mut is_main = false;
             let mut is_participant = false;
             let mut is_coach = false;
+            let mut is_kitchen = false;
             let mut label: Option<String> = None;
+            let mut all_labels: Vec<String> = Vec::new();
             for rk in rel_ids(p, "roles") {
                 let Some(role) = included.get(&rk) else { continue };
                 let rtype = str_attr(role, "type").unwrap_or_default();
+                let rseg = rtype.rsplit("::").next().unwrap_or("");
+                is_kitchen |= rseg.contains("Cook")
+                    || rseg.contains("Kitchen")
+                    || str_attr(role, "label").is_some_and(|l| l.trim().to_lowercase() == "küche");
+                if let Some(l) = str_attr(role, "label").or_else(|| rtype.rsplit("::").next().map(String::from)).filter(|l| !l.is_empty()) {
+                    if !all_labels.contains(&l) {
+                        all_labels.push(l);
+                    }
+                }
                 match classify_role(&rtype) {
                     RoleClass::Leader if !is_guest => {
                         is_leader = true;
@@ -675,18 +730,57 @@ fn collect_people(pages: &[Value]) -> Vec<PersonAgg> {
             }
             let agg = map.entry(key.clone()).or_insert_with(|| {
                 order.push(key.clone());
-                PersonAgg { leader_label: None, is_leader: false, is_main: false, is_participant: false, is_coach: false, person_id: person.clone() }
+                PersonAgg { leader_label: None, is_leader: false, is_main: false, is_participant: false, is_coach: false, person_id: person.clone(), role_labels: Vec::new(), is_kitchen: false }
             });
             agg.is_leader |= is_leader;
             agg.is_main |= is_main;
             agg.is_participant |= is_participant;
             agg.is_coach |= is_coach;
+            agg.is_kitchen |= is_kitchen;
             if agg.leader_label.is_none() {
                 agg.leader_label = label;
+            }
+            for l in all_labels {
+                if !agg.role_labels.contains(&l) {
+                    agg.role_labels.push(l);
+                }
             }
         }
     }
     order.into_iter().filter_map(|k| map.remove(&k)).collect()
+}
+
+/// Result of looking the signed-in coach up by e-mail in `GET /api/people`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SelfMatch {
+    /// Set only when exactly one person matched.
+    pub person_id: Option<String>,
+    /// Nickname (else first name, never last name) of that person.
+    pub nickname: Option<String>,
+    /// Number of people returned (0 = none, >1 = ambiguous, e.g. a shared family address).
+    pub count: u32,
+}
+
+/// Reads a people list document (`filter[email][eq]`): a unique match yields id and nickname.
+pub fn parse_self_match(doc: &Value) -> SelfMatch {
+    let data: Vec<&Value> = doc.get("data").and_then(Value::as_array).map(|a| a.iter().collect()).unwrap_or_default();
+    let count = u32::try_from(data.len()).unwrap_or(u32::MAX);
+    if data.len() != 1 {
+        return SelfMatch { person_id: None, nickname: None, count };
+    }
+    let p = data[0];
+    SelfMatch {
+        person_id: p.get("id").and_then(id_str),
+        nickname: str_attr(p, "nickname").or_else(|| str_attr(p, "first_name")),
+        count,
+    }
+}
+
+/// True for a plausible e-mail address (one `@`, no whitespace, bounded length).
+pub fn is_plausible_email(s: &str) -> bool {
+    let s = s.trim();
+    s.len() <= 254 && !s.chars().any(char::is_whitespace) && s.matches('@').count() == 1 && !s.starts_with('@') && !s.ends_with('@')
 }
 
 /// Person ids (as strings) of all participations with a leader role, for the qualifications query.
@@ -713,33 +807,44 @@ fn u32_of(v: Option<&Value>) -> Option<u32> {
 }
 
 /// One qualification of a person: kind label and whether it is valid over the whole camp.
-struct QualRec {
-    person: String,
-    label: String,
-    valid: bool,
+pub(crate) struct QualRec {
+    pub(crate) person: String,
+    pub(crate) label: String,
+    pub(crate) valid: bool,
+    pub(crate) finish_at: Option<String>,
 }
 
 /// Parses qualification pages. Validity (strict): valid over the WHOLE camp, i.e. the start
 /// (`start_at`, else `qualified_at` when `start_at` is null) is empty or `<= camp_start` and
 /// `finish_at` is empty or `>= camp_end`.
-fn parse_qualifications(pages: &[Value], camp_start: &str, camp_end: &str) -> Vec<QualRec> {
+pub(crate) fn parse_qualifications(pages: &[Value], camp_start: &str, camp_end: &str) -> Vec<QualRec> {
     let refs: Vec<&Value> = pages.iter().collect();
     let included = index_included(&refs);
     let mut out = Vec::new();
     for page in pages {
         let Some(data) = page.get("data").and_then(Value::as_array) else { continue };
         for q in data {
-            let Some((_, person)) = rel_ids(q, "person").into_iter().next() else { continue };
-            let Some(kind_key) = rel_ids(q, "qualification_kind").into_iter().next() else { continue };
+            // Relationship `data` is only rendered for included relationships; fall back to attributes.
+            let Some(person) = rel_ids(q, "person").into_iter().next().map(|(_, id)| id).or_else(|| attr_id(q, "person_id")) else {
+                continue;
+            };
+            let Some(kind_key) = rel_ids(q, "qualification_kind")
+                .into_iter()
+                .next()
+                .or_else(|| attr_id(q, "qualification_kind_id").map(|id| ("qualification_kinds".to_string(), id)))
+            else {
+                continue;
+            };
             let Some(kind) = included.get(&kind_key) else { continue };
             let Some(label) = str_attr(kind, "label") else { continue };
             let start = str_attr(q, "start_at")
                 .and_then(|s| day_string(&s))
                 .or_else(|| str_attr(q, "qualified_at").and_then(|s| day_string(&s)));
             let finish = str_attr(q, "finish_at").and_then(|s| day_string(&s));
-            let ok_start = start.is_none_or(|s| s.as_str() <= camp_start);
-            let ok_finish = finish.is_none_or(|f| f.as_str() >= camp_end);
-            out.push(QualRec { person, label, valid: ok_start && ok_finish });
+            let ok_start = start.as_ref().is_none_or(|s| s.as_str() <= camp_start);
+            let ok_finish = finish.as_ref().is_none_or(|f| f.as_str() >= camp_end);
+            let valid = ok_start && ok_finish;
+            out.push(QualRec { person, label, valid, finish_at: finish });
         }
     }
     out
@@ -837,11 +942,38 @@ pub fn reduce_aggregate(raw: &RawEventData<'_>) -> Result<MidataAggregate, CoreE
             });
             let have: BTreeSet<QualKey> = p.person_id.as_ref().and_then(|id| quals.get(id)).cloned().unwrap_or_default();
             let qualifications: BTreeMap<QualKey, bool> = ALL_QUAL_KEYS.iter().map(|k| (*k, have.contains(k))).collect();
+            let mut by_label: BTreeMap<String, LeaderQualDetail> = BTreeMap::new();
+            if let Some(id) = p.person_id.as_deref() {
+                for r in qual_recs.iter().filter(|r| r.person == id) {
+                    let d = by_label.entry(r.label.trim().to_lowercase()).or_insert_with(|| LeaderQualDetail {
+                        label: r.label.clone(),
+                        keys: qual_keys_with_mapping(&r.label, raw.qual_mapping),
+                        valid_at_camp: false,
+                        finish_at: r.finish_at.clone(),
+                    });
+                    if r.valid && !d.valid_at_camp {
+                        d.valid_at_camp = true;
+                        d.finish_at = r.finish_at.clone();
+                    } else if r.valid == d.valid_at_camp && d.finish_at.is_some() && (r.finish_at.is_none() || r.finish_at > d.finish_at) {
+                        d.finish_at = r.finish_at.clone();
+                    }
+                }
+            }
+            let mut qualification_details: Vec<LeaderQualDetail> = by_label.into_values().collect();
+            qualification_details.sort_by_key(|a| a.label.to_lowercase());
+            let expired_qualifications: Vec<QualKey> = ALL_QUAL_KEYS
+                .iter()
+                .copied()
+                .filter(|k| !have.contains(k) && qualification_details.iter().any(|d| !d.valid_at_camp && d.keys.contains(k)))
+                .collect();
             leaders.push(MidataLeader {
                 nickname,
                 main_leader: p.is_main,
                 role_label: p.leader_label.clone().unwrap_or_else(|| "Leitung".into()),
                 qualifications,
+                role_labels: p.role_labels.clone(),
+                expired_qualifications,
+                qualification_details,
             });
         } else if p.is_participant {
             participants_count += 1;

@@ -100,7 +100,7 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     await page.locator('.triage-item').nth(3).click()
     await page.waitForTimeout(400)
     const id = await currentId()
-    await page.locator('.v-tab', { hasText: /Raster/i }).first().click()
+    await page.locator('.v-tab', { hasText: /^GP$/ }).first().click()
     await page.waitForTimeout(700)
     await page.locator('.v-tab', { hasText: /Befunde/i }).first().click()
     await page.waitForSelector('.triage-item')
@@ -123,13 +123,13 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     for (let i = 0; i < n; i++) {
       await page.locator('.triage-item').nth(i).click()
       await page.waitForTimeout(250)
-      if (await page.getByRole('button', { name: /im raster öffnen/i }).count()) {
+      if (await page.getByRole('button', { name: /im gp öffnen/i }).count()) {
         id = await currentId()
         break
       }
     }
     if (!id) throw new Error('no finding with an activity found')
-    await page.getByRole('button', { name: /im raster öffnen/i }).first().click()
+    await page.getByRole('button', { name: /im gp öffnen/i }).first().click()
     await page.waitForURL(/raster\?.*vonBefund=/, { timeout: 5000 })
     await page.waitForSelector('[data-testid="back-to-finding"]', { timeout: 5000 })
     await page.waitForSelector('[data-testid="drawer-back-to-finding"]', { timeout: 5000 })
@@ -149,7 +149,7 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     await shot(page, 'flow-back-to-finding-triage')
 
     // keyboard: Alt+Left from the grid, via history
-    await page.getByRole('button', { name: /im raster öffnen/i }).first().click()
+    await page.getByRole('button', { name: /im gp öffnen/i }).first().click()
     await page.waitForSelector('[data-testid="back-to-finding"]', { timeout: 5000 })
     await page.waitForTimeout(400)
     await page.keyboard.press('Alt+ArrowLeft')

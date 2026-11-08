@@ -350,6 +350,12 @@ export interface MidataLeader {
   /** Main leader (Hauptleitung); absent in aggregates stored before this field existed. */
   mainLeader?: boolean
   qualifications: Record<LegacyMidataQualKey, boolean> & Partial<Record<MidataQualKeyV2, boolean>>
+  /** All event role labels of the person in the camp (incl. non-leader roles). Absent in old aggregates. */
+  roleLabels?: string[]
+  /** Keys held only via qualifications that are not valid during the whole camp. Absent in old aggregates. */
+  expiredQualifications?: MidataQualKey[]
+  /** Every qualification held, sorted by label. Absent in old aggregates. */
+  qualificationDetails?: { label: string; keys: MidataQualKey[]; validAtCamp: boolean; finishAt: string | null }[]
 }
 
 export interface MidataQualKind {
@@ -1148,6 +1154,8 @@ export interface Deadline {
   title?: string
   /** For kind 'pbs-milestone': the milestone list is not verified against Hering yet. */
   confidence?: Confidence
+  /** Computed, never stored: the camp ended more than a month ago, so the deadline counts as done. */
+  archived?: boolean
 }
 
 // ---------------------------------------------------------------------------------------------

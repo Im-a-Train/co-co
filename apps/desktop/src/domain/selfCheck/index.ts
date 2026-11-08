@@ -6,6 +6,7 @@
  */
 import { messages, type MessageTree } from '../../locales/messages'
 import { activityLabel } from '../cockpit'
+import { escapeHtml } from '../feedback'
 import { ecampActivityUrl } from '../ecampLinks'
 import { activityIriOfFinding } from '../triage'
 import type {
@@ -122,11 +123,121 @@ function formatDate(d: Date): string {
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`
 }
 
-/**
- * Plain-text report (German) for the Lagerleitung: header with camp + date + counts + J+S days,
- * then findings grouped Muss / Soll / Hinweis, each with activity label («Nr. Titel») and eCamp link,
- * then «Behoben seit letztem Selbstcheck» when `progress` is given. Ready for the clipboard.
- */
+export interface SelfCheckReportItem {
+  findingId: string
+  title: string
+  message: string
+  /** «Nr. Titel» of the activity the finding points at. */
+  activityLabel: string | null
+  /** eCamp link of that activity (null without base URL). */
+  url: string | null
+}
+
+export interface SelfCheckReportGroup {
+  severity: Severity
+  items: SelfCheckReportItem[]
+}
+
+export interface SelfCheckReportModel {
+  heading: string
+  counts: { must: number; should: number; hint: number }
+  jsDays: { valid: number; total: number } | null
+  groups: SelfCheckReportGroup[]
+  /** «Behoben seit letztem Selbstcheck»: titles only. */
+  fixed: { id: string; title: string }[]
+}
+
+/** Structured report (open findings grouped Muss / Soll / Hinweis, fixed list). Pure. */
+export function buildSelfCheckReport(
+  facts: CampFacts,
+  findings: Finding[],
+  jsDays: { valid: number; total: number } | null,
+  progress: SelfCheckProgress | null,
+  opts: SelfCheckReportOptions,
+): SelfCheckReportModel {
+  const include = opts.includeRedDerived === true
+  const visible = openRuleFindings(findings).filter((f) => include || !isRedDerived(f))
+  const linkFacts = { ...facts, instanceBaseUrl: opts.instanceBaseUrl }
+  const count = (sev: Severity) => visible.filter((f) => f.severity === sev).length
+  const groups: SelfCheckReportGroup[] = []
+  for (const severity of SEVERITY_ORDER) {
+    const group = visible.filter((f) => f.severity === severity).sort((a, b) => a.ruleId.localeCompare(b.ruleId))
+    if (group.length === 0) continue
+    groups.push({
+      severity,
+      items: group.map((f) => {
+        const actIri = activityIriOfFinding(f, facts)
+        return {
+          findingId: f.id,
+          title: f.title,
+          message: f.message,
+          activityLabel: actIri ? activityLabel(facts, actIri) : null,
+          url: actIri && opts.instanceBaseUrl ? ecampActivityUrl(linkFacts, actIri) : null,
+        }
+      }),
+    })
+  }
+  const fixed = progress ? progress.fixed.filter((f) => include || !f.redDerived).map((f) => ({ id: f.id, title: f.title })) : []
+  return {
+    heading: tr('selfCheck.report.heading', { camp: facts.camp.title, date: formatDate(opts.now) }),
+    counts: { must: count('must'), should: count('should'), hint: count('hint') },
+    jsDays,
+    groups,
+    fixed,
+  }
+}
+
+function countsLine(m: SelfCheckReportModel): string {
+  return tr('selfCheck.report.counts', m.counts)
+}
+function jsDaysLine(m: SelfCheckReportModel): string | null {
+  return m.jsDays ? tr('selfCheck.report.jsDays', m.jsDays) : null
+}
+
+/** Plain-text report (German) from the model; the eCamp URL follows the activity label in parentheses. */
+export function renderSelfCheckReportText(m: SelfCheckReportModel): string {
+  const lines: string[] = [m.heading, countsLine(m)]
+  const js = jsDaysLine(m)
+  if (js) lines.push(js)
+  for (const g of m.groups) {
+    lines.push('', tr(`selfCheck.report.group.${g.severity}`, { n: g.items.length }))
+    for (const it of g.items) {
+      const label = it.activityLabel ? `${it.activityLabel}${it.url ? ` (${it.url})` : ''}: ` : ''
+      lines.push(`- ${label}${it.title}: ${it.message}`)
+    }
+  }
+  if (m.groups.length === 0) lines.push('', tr('selfCheck.report.none'))
+  if (m.fixed.length > 0) {
+    lines.push('', tr('selfCheck.report.fixedHeading', { n: m.fixed.length }))
+    for (const f of m.fixed) lines.push(`- ${f.title}`)
+  }
+  return lines.join('\n') + '\n'
+}
+
+/** Mail-friendly HTML: the activity label (or the title) is the link, no raw URL is visible. */
+export function renderSelfCheckReportHtml(m: SelfCheckReportModel): string {
+  const parts: string[] = [`<h3>${escapeHtml(m.heading)}</h3>`]
+  const js = jsDaysLine(m)
+  parts.push(`<p>${escapeHtml(countsLine(m))}${js ? `<br>${escapeHtml(js)}` : ''}</p>`)
+  for (const g of m.groups) {
+    parts.push(`<h4>${escapeHtml(tr(`selfCheck.report.group.${g.severity}`, { n: g.items.length }))}</h4>`, '<ul>')
+    for (const it of g.items) {
+      const link = (text: string) => (it.url ? `<a href="${escapeHtml(it.url)}">${escapeHtml(text)}</a>` : escapeHtml(text))
+      const head = it.activityLabel ? `${link(it.activityLabel)}: ${escapeHtml(it.title)}` : link(it.title)
+      parts.push(`<li>${head}: ${escapeHtml(it.message)}</li>`)
+    }
+    parts.push('</ul>')
+  }
+  if (m.groups.length === 0) parts.push(`<p>${escapeHtml(tr('selfCheck.report.none'))}</p>`)
+  if (m.fixed.length > 0) {
+    parts.push(`<h4>${escapeHtml(tr('selfCheck.report.fixedHeading', { n: m.fixed.length }))}</h4>`, '<ul>')
+    for (const f of m.fixed) parts.push(`<li>${escapeHtml(f.title)}</li>`)
+    parts.push('</ul>')
+  }
+  return parts.join('\n')
+}
+
+/** Plain-text report for the clipboard (built from the model). */
 export function renderSelfCheckReport(
   facts: CampFacts,
   findings: Finding[],
@@ -134,33 +245,5 @@ export function renderSelfCheckReport(
   progress: SelfCheckProgress | null,
   opts: SelfCheckReportOptions,
 ): string {
-  const include = opts.includeRedDerived === true
-  const visible = openRuleFindings(findings).filter((f) => include || !isRedDerived(f))
-  const linkFacts = { ...facts, instanceBaseUrl: opts.instanceBaseUrl }
-  const count = (sev: Severity) => visible.filter((f) => f.severity === sev).length
-  const lines: string[] = []
-  lines.push(tr('selfCheck.report.heading', { camp: facts.camp.title, date: formatDate(opts.now) }))
-  lines.push(tr('selfCheck.report.counts', { must: count('must'), should: count('should'), hint: count('hint') }))
-  if (jsDays) lines.push(tr('selfCheck.report.jsDays', { valid: jsDays.valid, total: jsDays.total }))
-  for (const sev of SEVERITY_ORDER) {
-    const group = visible.filter((f) => f.severity === sev).sort((a, b) => a.ruleId.localeCompare(b.ruleId))
-    if (group.length === 0) continue
-    lines.push('', tr(`selfCheck.report.group.${sev}`, { n: group.length }))
-    for (const f of group) {
-      const actIri = activityIriOfFinding(f, facts)
-      const label = actIri ? activityLabel(facts, actIri) : null
-      lines.push(`- ${label ? `${label}: ` : ''}${f.title}: ${f.message}`)
-      const url = actIri && opts.instanceBaseUrl ? ecampActivityUrl(linkFacts, actIri) : null
-      if (url) lines.push(`  ${tr('selfCheck.report.link')}: ${url}`)
-    }
-  }
-  if (visible.length === 0) lines.push('', tr('selfCheck.report.none'))
-  if (progress) {
-    const fixed = progress.fixed.filter((f) => include || !f.redDerived)
-    if (fixed.length > 0) {
-      lines.push('', tr('selfCheck.report.fixedHeading', { n: fixed.length }))
-      for (const f of fixed) lines.push(`- ${f.title}`)
-    }
-  }
-  return lines.join('\n') + '\n'
+  return renderSelfCheckReportText(buildSelfCheckReport(facts, findings, jsDays, progress, opts))
 }

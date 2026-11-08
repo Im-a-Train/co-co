@@ -47,8 +47,18 @@ export class AiRefusedError extends Error {
 /** Marker of a serialized MiData/NDS aggregate (JSON, any whitespace). */
 const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*(MiData|NDS)|"offerBusinessId"|"campBusinessId"|"redKeys"|"evaluatedFor"/
 
+/** True when `v` (deep) carries the red-zone `__red` brand of the Personen types (ADR 0009). */
+export function containsRedBrand(v: unknown, seen = new Set<object>()): boolean {
+  if (typeof v !== 'object' || v === null) return false
+  if (seen.has(v)) return false
+  seen.add(v)
+  if (Object.prototype.hasOwnProperty.call(v, '__red')) return true
+  return Object.values(v).some((x) => containsRedBrand(x, seen))
+}
+
 /** Pure validation of zone rules; throws AiRefusedError. Exported for tests. */
 export function assertSendable(request: AiGatewayRequest): void {
+  if (containsRedBrand(request)) throw new AiRefusedError('Rote Daten dürfen nie an die KI gesendet werden.')
   if (!request.confirmed) throw new AiRefusedError('Die Vorschau wurde nicht bestätigt.')
   if (request.system.zone !== 'green') throw new AiRefusedError('Der System-Prompt muss grün sein.')
   for (const p of [request.system, ...request.parts]) {

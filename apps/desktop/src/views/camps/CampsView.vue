@@ -3,7 +3,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { buildCampRows, filterCampRows, formatIsoDate, sortCampRows, type CampRow } from '@/components/camps/campRows'
+import { buildCampRows, campPhase, filterCampRows, filterCampsByPhase, formatIsoDate, sortCampRows, type CampRow } from '@/components/camps/campRows'
 import { useCampList } from '@/composables/useCampList'
 import { isLeaderRole } from '@/domain/selfCheck'
 import { listCoachInputs } from '@/domain/campFacts/store'
@@ -43,8 +43,40 @@ watch(
 )
 
 const rows = computed(() => sortCampRows(buildCampRows(camps.value, sources.value)))
-const visible = computed(() => filterCampRows(rows.value, query.value))
 const today = new Date().toISOString().slice(0, 10)
+
+const PHASE_KEY = 'co-co.camps.phaseFilter'
+function readPhase(): { showEnded: boolean; showOld: boolean } {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PHASE_KEY) ?? 'null') as { showEnded?: unknown; showOld?: unknown } | null
+    return { showEnded: raw?.showEnded === true, showOld: raw?.showOld === true }
+  } catch {
+    return { showEnded: false, showOld: false }
+  }
+}
+const initialPhase = readPhase()
+const showEnded = ref(initialPhase.showEnded)
+const showOld = ref(initialPhase.showOld)
+watch([showEnded, showOld], () => {
+  try {
+    localStorage.setItem(PHASE_KEY, JSON.stringify({ showEnded: showEnded.value, showOld: showOld.value }))
+  } catch {
+    /* storage unavailable: the toggles just are not remembered */
+  }
+})
+
+// Search applies first; the phase filter then hides finished camps by default.
+const searched = computed(() => filterCampRows(rows.value, query.value))
+const visible = computed(() => filterCampsByPhase(searched.value, { showEnded: showEnded.value, showOld: showOld.value }, today))
+const hiddenCount = computed(() => searched.value.length - visible.value.length)
+function showHidden(): void {
+  showEnded.value = true
+  showOld.value = true
+}
+function phaseLabel(r: CampRow): string | null {
+  const p = campPhase(r, today)
+  return p === 'ended' ? t('camps.campsView.phaseEnded') : p === 'old' ? t('camps.campsView.phaseOld') : null
+}
 
 function open(r: CampRow): void {
   void router.push(`/lager/${r.id}/uebersicht`)
@@ -101,6 +133,25 @@ function overdueDays(r: CampRow): number {
       </v-btn>
     </div>
 
+    <div class="d-flex align-center flex-wrap ga-2 mb-3" data-testid="camps-phase-filter">
+      <v-chip
+        filter
+        variant="outlined"
+        :model-value="showEnded"
+        data-testid="camps-show-ended"
+        @click="showEnded = !showEnded"
+      >
+        {{ t('camps.campsView.showEnded') }}
+      </v-chip>
+      <v-chip filter variant="outlined" :model-value="showOld" data-testid="camps-show-old" @click="showOld = !showOld">
+        {{ t('camps.campsView.showOld') }}
+      </v-chip>
+      <span v-if="hiddenCount > 0" class="text-caption text-medium-emphasis" data-testid="camps-hidden-hint">
+        {{ t('camps.campsView.hiddenHint', { n: hiddenCount }) }}
+        <v-btn size="x-small" variant="text" data-testid="camps-show-hidden" @click="showHidden">{{ t('camps.campsView.showHidden') }}</v-btn>
+      </span>
+    </div>
+
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" data-testid="camps-error">
       <div>{{ t('camps.failed') }}</div>
       <div class="text-caption">{{ error }}</div>
@@ -151,6 +202,7 @@ function overdueDays(r: CampRow): number {
             <div class="font-weight-medium">
               {{ r.title }}
               <v-chip v-if="r.isPrototype" size="x-small" class="ml-1">{{ t('camps.campsView.prototype') }}</v-chip>
+              <v-chip v-if="phaseLabel(r)" size="x-small" variant="tonal" class="ml-1">{{ phaseLabel(r) }}</v-chip>
             </div>
             <div v-if="r.motto" class="text-caption text-medium-emphasis">{{ r.motto }}</div>
           </td>

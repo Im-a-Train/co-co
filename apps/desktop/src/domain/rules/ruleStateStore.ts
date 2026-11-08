@@ -1,7 +1,7 @@
 /** Persistence of RuleState in the settings table (key 'ruleState', no schema change; included in backups). */
 import { getDb } from '../storage/db'
 import type { Iri } from '../types'
-import { disableRule, enableRule, muteRule, normalizeRuleState, type RuleState } from './ruleState'
+import { disableRule, enableRule, excludeCategory, includeCategory, muteRule, normalizeRuleState, type RuleState } from './ruleState'
 
 const KEY = 'ruleState'
 
@@ -22,6 +22,10 @@ async function mutate(fn: (s: RuleState) => RuleState): Promise<RuleState> {
 export const disableRuleStored = (ruleId: string, campIri: Iri | null) => mutate((s) => disableRule(s, ruleId, campIri))
 export const enableRuleStored = (ruleId: string, campIri?: Iri | null) => mutate((s) => enableRule(s, ruleId, campIri))
 export const muteRuleStored = (ruleId: string, campIri: Iri) => mutate((s) => muteRule(s, ruleId, campIri))
+export const excludeCategoryStored = (campIri: Iri, categoryIri: Iri, ruleId: string | null) =>
+  mutate((s) => excludeCategory(s, campIri, categoryIri, ruleId))
+export const includeCategoryStored = (campIri: Iri, categoryIri: Iri, ruleId: string | null) =>
+  mutate((s) => includeCategory(s, campIri, categoryIri, ruleId))
 
 export function listAllOverrides() {
   return getDb().overrides.toArray()
