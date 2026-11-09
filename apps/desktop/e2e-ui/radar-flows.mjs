@@ -93,4 +93,18 @@ export async function radarFlows({ page, step, shot, BASE }) {
     await page.waitForSelector('[data-testid="export-message"]', { timeout: 4000 })
     await shot(page, 'flow-radar-export')
   })
+
+  await step('flow: NDS Pendenzen load into the radar (memory only)', async () => {
+    await page.goto(`${BASE}#/fristen`)
+    await page.waitForSelector('[data-testid="radar"]', { timeout: 8000 })
+    const load = page.getByTestId('nds-tasks-load')
+    await load.waitFor({ timeout: 5000 })
+    await load.click()
+    await page.getByTestId('nds-tasks-stand').waitFor({ timeout: 5000 })
+    await page.waitForTimeout(500)
+    if (await page.getByTestId('nds-tasks-error').count()) throw new Error('nds tasks error')
+    const t = await text()
+    if (!t.includes('Lagerbericht einreichen')) throw new Error('NDS task not in radar')
+    await shot(page, 'flow-radar-nds-tasks')
+  })
 }

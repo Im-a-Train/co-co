@@ -104,7 +104,8 @@
         "leihmaterial": "Leihmaterial",
         "landeskarten": "Landeskarten",
         "lagerbewilligung": "Lagerbewilligung",
-        "pbs-milestone": "PBS-Meilenstein"
+        "pbs-milestone": "PBS-Meilenstein",
+        "nds-task": "NDS-Pendenz"
       },
       "columns": {
         "due": "Fällig am",
@@ -118,7 +119,18 @@
         "leihmaterial": "Leihmaterial bestellen (5 Wochen vorher)",
         "landeskarten": "Landeskarten bestellen (3 Wochen vorher, Juni bis August 5 Wochen)",
         "lagerbewilligung": "Lagerbewilligung (21 Tage vorher)",
-        "pbs-milestone": "PBS-Meilenstein"
+        "pbs-milestone": "PBS-Meilenstein",
+        "nds-task": "NDS-Pendenz"
+      },
+      "ndsTasks": {
+        "load": "NDS-Pendenzen laden",
+        "reload": "NDS-Pendenzen neu laden",
+        "notConnected": "NDS-Pendenzen: zuerst NDS verbinden (Einstellungen, Verbindung).",
+        "toSettings": "Zu den Einstellungen",
+        "stand": "Stand NDS {time}: {count} Pendenzen mit Frist",
+        "escalation": "(Eskalation {date})",
+        "loadFailed": "NDS-Pendenzen konnten nicht geladen werden",
+        "hint": "Nur im Arbeitsspeicher: Die Pendenzen werden nicht gespeichert und verschwinden beim Verlassen der Seite."
       },
       "showMilestones": "PBS-Meilensteine anzeigen",
       "unconfirmed": "unbestätigt",

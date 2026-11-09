@@ -66,3 +66,7 @@ so co-co talks to NDS from the desktop, through Rust only.
 - **Reuse the eCamp or MiData client.** Rejected: different host and cookies; red data must not share a
   client with other zones.
 - **Do nothing / manual input only.** Remains the fallback: every NDS-derived field is also a coach input.
+
+## Addendum 2026-11-09: NDS-Pendenzen in the Fristen radar
+
+The coach's own NDS tasks («Pendenzen», GraphQL `PersonTaskList`, command `nds_fetch_tasks`) can be loaded on explicit request in the Fristen view and appear there as deadlines of kind `nds-task`, so they are included in the existing ICS export. Red-zone handling is unchanged: the query requests only `businessId`, title, correlation title, `processingStatus`, `dueDate` and `escalationDate` (no assignee names, no team); the result lives in component memory only (no IndexedDB, no localStorage, not in the backup), is never exposed to MCP or AI, and is dropped when the NDS connection ends. The ICS file the coach saves is the only copy that leaves the app, by their explicit action. The schema documents no open-tasks filter, so finished tasks are recognised client-side via `processingStatus`.

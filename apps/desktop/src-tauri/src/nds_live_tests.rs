@@ -7,7 +7,7 @@
 //!
 //! Prints only HTTP status codes, field names and counts – never values.
 
-use crate::nds::{fetch_aggregate_impl, find_camps_impl, probe_impl, NdsState};
+use crate::nds::{fetch_aggregate_impl, fetch_tasks_impl, find_camps_impl, probe_impl, NdsState};
 
 fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
@@ -43,5 +43,23 @@ fn nds_live_find_probe_and_aggregate() {
             a.approved_on.is_some()
         ),
         Err(e) => println!("aggregate failed: {e}"),
+    }
+}
+
+#[test]
+#[ignore = "live network test against NDS, needs NDS_E2E_SESSION"]
+fn nds_live_fetch_tasks() {
+    let Some(session) = env("NDS_E2E_SESSION") else {
+        panic!("NDS_E2E_SESSION must be set");
+    };
+    let state = NdsState::for_test(&session).unwrap();
+    match tauri::async_runtime::block_on(fetch_tasks_impl(&state)) {
+        Ok(t) => println!(
+            "tasks: {} (with dueDate: {}, with escalationDate: {})",
+            t.len(),
+            t.iter().filter(|x| x.due_date.is_some()).count(),
+            t.iter().filter(|x| x.escalation_date.is_some()).count()
+        ),
+        Err(e) => println!("tasks failed: {e}"),
     }
 }
