@@ -351,9 +351,12 @@ function addAi(list: Finding[]) {
         {{ findings.length ? t('findings.empty') : t('findings.emptyAll') }}
       </v-alert>
 
-      <section v-for="g in groups" :key="g.severity" class="mb-5">
+      <section v-for="g in groups" :key="g.key" class="mb-5">
         <h2 class="text-h6 d-flex align-center ga-2 mb-2">
-          <SeverityChip :severity="g.severity" :count="g.findings.length" />
+          <v-chip v-if="g.key === 'coach'" color="coach" size="small" label variant="tonal" data-testid="findings-group-coach">
+            {{ t('findings.manual.group', { n: g.findings.length }) }}
+          </v-chip>
+          <SeverityChip v-else-if="g.severity" :severity="g.severity" :count="g.findings.length" />
         </h2>
         <div class="d-flex flex-column ga-2">
           <FindingCard

@@ -2,6 +2,7 @@
   "findings": {
     "manual": {
       "tag": "Coach",
+      "group": "Coach-Befunde ({n})",
       "add": "Befund erfassen",
       "edit": "Befund bearbeiten",
       "delete": "Befund löschen",

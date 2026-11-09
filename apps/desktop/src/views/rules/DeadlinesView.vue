@@ -25,7 +25,9 @@ import { loadBundledChecklist } from '@/domain/rules/lib/checklist'
 import { planMilestoneToggle } from '@/domain/rules/lib/checklistSync'
 import type { Audience, CampRuleConfig, CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
-import { commands } from '@/lib/tauri'
+import { ndsTasksToDeadlines } from '@/domain/nds/tasks'
+import { useNds } from '@/composables/useNds'
+import { commands, errorMessage, type NdsTask } from '@/lib/tauri'
 
 const { t } = useI18n()
 const { camps, loading, error, load } = useCampList()
@@ -54,7 +56,7 @@ watch(showMilestones, (v) => {
 })
 
 const FILTERS_KEY = 'co-co.deadlines.filters'
-const KIND_OPTIONS: DeadlineKind[] = ['nds-registration', 'nds-closing', 'leihmaterial', 'landeskarten', 'lagerbewilligung', 'pbs-milestone']
+const KIND_OPTIONS: DeadlineKind[] = ['nds-registration', 'nds-closing', 'leihmaterial', 'landeskarten', 'lagerbewilligung', 'pbs-milestone', 'nds-task']
 const STATUS_OPTIONS: DeadlineStatus[] = ['open', 'soon', 'overdue', 'done']
 interface StoredFilters {
   campIris: Iri[]
@@ -129,7 +131,45 @@ async function loadInputs() {
   }
 }
 
+// NDS «Pendenzen» (red zone): component memory only, never persisted, never exported anywhere but the ICS file.
+const nds = useNds()
+const ndsReady = computed(() => nds.enabled.value && nds.connected.value)
+const ndsTasks = ref<NdsTask[]>([])
+const ndsLoadedAt = ref<Date | null>(null)
+const ndsLoading = ref(false)
+const ndsError = ref<string | null>(null)
+async function loadNdsTasks() {
+  ndsLoading.value = true
+  ndsError.value = null
+  try {
+    ndsTasks.value = await commands.ndsFetchTasks()
+    ndsLoadedAt.value = new Date()
+  } catch (e) {
+    ndsError.value = errorMessage(e)
+  } finally {
+    ndsLoading.value = false
+  }
+}
+watch(ndsReady, (ready) => {
+  if (!ready) {
+    ndsTasks.value = []
+    ndsLoadedAt.value = null
+  }
+})
+const ndsDeadlines = computed<Deadline[]>(() =>
+  ndsTasksToDeadlines(ndsTasks.value, today.value, { escalation: (date) => t('rules.deadlines.ndsTasks.escalation', { date: fmt(date) }) }),
+)
+const ndsStand = computed(() =>
+  ndsLoadedAt.value
+    ? t('rules.deadlines.ndsTasks.stand', {
+        time: ndsLoadedAt.value.toLocaleString('de-CH', { dateStyle: 'short', timeStyle: 'short' }),
+        count: ndsDeadlines.value.length,
+      })
+    : null,
+)
+
 onMounted(() => {
+  void nds.init()
   void load()
   void loadInputs()
 })
@@ -149,7 +189,7 @@ const campOptions = computed(() => deadlineCamps.value.map((c) => ({ value: c.ir
 
 /** Every deadline incl. archived ones (camp ended more than a month ago: done, computed, never stored). */
 const allDeadlines = computed<Deadline[]>(() => {
-  const all = computeAllDeadlines(deadlineCamps.value, inputsByCamp.value)
+  const all = [...computeAllDeadlines(deadlineCamps.value, inputsByCamp.value), ...ndsDeadlines.value]
   const ends = Object.fromEntries(deadlineCamps.value.map((c) => [c.iri, c.end]))
   if (!showMilestones.value) return archiveDeadlines(all, ends, today.value)
   const ms = deadlineCamps.value.flatMap((c) =>
@@ -175,7 +215,7 @@ const deadlines = computed<Deadline[]>(() =>
 )
 
 function titleOf(d: Deadline): string {
-  return d.kind === 'pbs-milestone' ? (d.title ?? d.milestoneId ?? '') : t(`rules.deadlines.kind.${d.kind}`)
+  return d.kind === 'pbs-milestone' || d.kind === 'nds-task' ? (d.title ?? d.milestoneId ?? '') : t(`rules.deadlines.kind.${d.kind}`)
 }
 
 function rowKey(d: Deadline): string {
@@ -406,6 +446,17 @@ function relative(left: number): string {
         data-testid="milestones-switch"
       />
       <v-spacer />
+      <v-btn
+        v-if="ndsReady"
+        size="small"
+        variant="tonal"
+        prepend-icon="mdi-shield-lock-outline"
+        :loading="ndsLoading"
+        data-testid="nds-tasks-load"
+        @click="loadNdsTasks"
+      >
+        {{ ndsLoadedAt ? t('rules.deadlines.ndsTasks.reload') : t('rules.deadlines.ndsTasks.load') }}
+      </v-btn>
       <v-progress-circular v-if="loading" indeterminate size="20" width="2" />
       <v-btn
         size="small"
@@ -418,6 +469,16 @@ function relative(left: number): string {
         {{ t('rules.deadlines.exportIcs') }}
       </v-btn>
     </div>
+    <div v-if="!ndsReady" class="text-caption text-medium-emphasis mb-2" data-testid="nds-tasks-hint">
+      {{ t('rules.deadlines.ndsTasks.notConnected') }}
+      <RouterLink to="/einstellungen">{{ t('rules.deadlines.ndsTasks.toSettings') }}</RouterLink>
+    </div>
+    <div v-else-if="ndsStand" class="text-caption text-medium-emphasis mb-2" data-testid="nds-tasks-stand">
+      {{ ndsStand }}. {{ t('rules.deadlines.ndsTasks.hint') }}
+    </div>
+    <v-alert v-if="ndsError" type="error" variant="tonal" density="compact" class="mb-2" data-testid="nds-tasks-error">
+      {{ t('rules.deadlines.ndsTasks.loadFailed') }}: {{ ndsError }}
+    </v-alert>
     <v-alert v-if="exportMessage" type="success" variant="tonal" density="compact" class="mb-2" data-testid="export-message">{{ exportMessage }}</v-alert>
     <v-alert v-if="exportError" type="error" variant="tonal" density="compact" class="mb-2" data-testid="export-error">
       {{ t('rules.deadlines.exportFailed') }}: {{ exportError }}
@@ -462,7 +523,8 @@ function relative(left: number): string {
               <div class="text-caption text-medium-emphasis">{{ relative(row.left) }}</div>
             </td>
             <td>
-              <RouterLink :to="`/lager/${row.campId}/angaben`" :title="t('rules.deadlines.openCamp')">{{ row.campTitle }}</RouterLink>
+              <span v-if="row.kind === 'nds-task'">{{ row.campTitle }}</span>
+              <RouterLink v-else :to="`/lager/${row.campId}/angaben`" :title="t('rules.deadlines.openCamp')">{{ row.campTitle }}</RouterLink>
             </td>
             <td>
               {{ titleOf(row) }}

@@ -296,3 +296,29 @@ fn rega_counts_reduce() {
     let v = serde_json::to_value(c).unwrap();
     assert_eq!(v["participantsTotal"], json!(4));
 }
+
+#[test]
+fn person_tasks_reduce_without_assignee_and_validate_dates() {
+    let raw = json!({ "content": [
+        { "businessId": "t1", "title": { "de": "Lagerbericht einreichen", "fr": "x" },
+          "correlation": { "correlationTitle": { "de": "Sommerlager" } },
+          "assignee": { "lastName": "Muster", "firstName": "Max" },
+          "processingStatus": "OPEN", "dueDate": "2026-07-31T00:00:00Z", "escalationDate": "2026-08-15" },
+        { "businessId": "t2", "title": { "fr": "Rapport" }, "dueDate": "2026-13-45", "escalationDate": "nope" },
+        { "businessId": "t3", "title": {} },
+        { "title": { "de": "ohne Id" } }
+    ]});
+    let tasks = parse_person_tasks(&raw);
+    assert_eq!(tasks.len(), 2);
+    assert_eq!(tasks[0].title, "Lagerbericht einreichen");
+    assert_eq!(tasks[0].correlation_title.as_deref(), Some("Sommerlager"));
+    assert_eq!(tasks[0].due_date.as_deref(), Some("2026-07-31"));
+    assert_eq!(tasks[0].escalation_date.as_deref(), Some("2026-08-15"));
+    assert_eq!(tasks[1].title, "Rapport");
+    assert_eq!(tasks[1].due_date, None);
+    assert_eq!(tasks[1].escalation_date, None);
+    let out = serde_json::to_string(&tasks).unwrap();
+    assert!(!out.contains("Muster") && !out.contains("Max"));
+    assert!(!Q_PERSON_TASKS.contains("assignee"));
+    graphql_body(OP_PERSON_TASKS, json!({}), Q_PERSON_TASKS).unwrap();
+}

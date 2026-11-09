@@ -12,6 +12,7 @@ mod error;
 mod files;
 mod instance;
 mod login_window;
+mod maptiles;
 mod mcp;
 mod midata;
 mod nds;
@@ -39,6 +40,7 @@ pub fn run() {
         .manage(persons::PersonsState::default())
         .manage(nds::NdsState::new().expect("NDS-HTTP-Client konnte nicht erstellt werden"))
         .manage(mcp::McpState::new())
+        .manage(maptiles::MapTileState::new().expect("Kachel-HTTP-Client konnte nicht erstellt werden"))
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             app.manage(files::FileState::load(&dir));
@@ -66,6 +68,7 @@ pub fn run() {
             commands::pick_files,
             commands::pick_folder,
             commands::read_document,
+            commands::map_tile,
             commands::list_folder,
             commands::watch_folder,
             commands::unwatch_folder,
@@ -98,6 +101,7 @@ pub fn run() {
             nds::nds_open_login,
             nds::nds_logout,
             nds::nds_find_camps,
+            nds::nds_fetch_tasks,
             nds::nds_fetch_aggregate,
             nds::nds_probe,
             midata::persons_load_midata,

@@ -1188,6 +1188,8 @@ export type DeadlineKind =
   | 'lagerbewilligung'
   /** Deadline radar: a PBS milestone from the bundled list (see `milestoneId`, `title`). */
   | 'pbs-milestone'
+  /** NDS «Pendenz» (red zone): built in the deadline view from in-memory tasks, never stored, never sent to MCP. */
+  | 'nds-task'
 
 export interface Deadline {
   campIri: Iri

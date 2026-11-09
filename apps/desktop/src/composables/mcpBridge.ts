@@ -183,7 +183,8 @@ export function createMcpContext(): McpContext {
         ...computeAllDeadlines(deadlineCamps, inputs),
         ...deadlineCamps.flatMap((c) => computeMilestoneDeadlines(c, inputs[c.iri] ?? null, milestones)),
       ]
-      return all.sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.campTitle.localeCompare(b.campTitle)))
+      // Red zone: NDS tasks are never built here, and would be dropped if they were.
+      return all.filter((d) => d.kind !== 'nds-task').sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.campTitle.localeCompare(b.campTitle)))
     },
 
     listFeedback: (campIri) => listFeedback(campIri),

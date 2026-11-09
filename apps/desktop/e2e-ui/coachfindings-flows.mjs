@@ -36,6 +36,8 @@ export async function coachFindingsFlows({ page, step, go, shot }) {
     const tag = page.getByTestId('finding-manual-tag').first()
     await tag.waitFor({ timeout: 5000 })
     if (!/Coach/i.test(await tag.innerText())) throw new Error('chip text: ' + (await tag.innerText()))
+    const firstHeading = await page.locator('section h2').first().innerText()
+    if (!/Coach/i.test(firstHeading)) throw new Error('coach group is not first: ' + firstHeading)
     await shot(page, 'flow-coach-findings-list')
   })
 }

@@ -12,6 +12,17 @@ export async function feedbackFlows({ page, step, go, shot }) {
     await shot(page, 'flow-fb-general')
   })
 
+  await step('flow: a general point can be removed for this camp and restored', async () => {
+    await page.getByTestId('feedback-general-point-delete-psa').click()
+    await settle(600)
+    if (await page.getByTestId('feedback-general-point-psa').count()) throw new Error('psa still listed after delete')
+    await page.getByTestId('feedback-general-points-restore').waitFor({ timeout: 3000 })
+    await shot(page, 'flow-fb-general-hidden')
+    await page.getByTestId('feedback-general-points-restore').click()
+    await settle(600)
+    await page.getByTestId('feedback-general-point-psa').waitFor({ timeout: 3000 })
+  })
+
   await step('flow: refine dialog creates feedback from findings under day/activity headings', async () => {
     await go('feedback', 'flow-fb-refine')
     const before = await page.getByTestId('feedback-item').count()

@@ -51,3 +51,9 @@ export function usedGeneralPointIds(items: readonly Pick<FeedbackItem, 'generalP
   for (const i of items) if (i.generalPointId) out.add(i.generalPointId)
   return out
 }
+
+/** The default points that are not hidden for a camp (order kept). */
+export function visibleGeneralPoints(hiddenIds: readonly string[]): GeneralPoint[] {
+  const hidden = new Set(hiddenIds)
+  return GENERAL_POINTS.filter((p) => !hidden.has(p.id))
+}

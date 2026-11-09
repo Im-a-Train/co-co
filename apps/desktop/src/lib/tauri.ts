@@ -91,6 +91,31 @@ export interface FileFilter {
   extensions: string[]
 }
 
+/** One NDS task («Pendenz») with its deadline. Text fields are the German titles from NDS. */
+export interface NdsTask {
+  businessId: string
+  /** Task title (de). */
+  title: string
+  /** What the task is about, e.g. the Angebot/Lager title (de); null if absent. */
+  correlationTitle: string | null
+  /** YYYY-MM-DD or null. */
+  dueDate: string | null
+  /** YYYY-MM-DD or null. */
+  escalationDate: string | null
+  /** Raw processingStatus code (e.g. OPEN, DONE); null if absent. */
+  processingStatus: string | null
+}
+
+/** swisstopo WMTS layers co-co may fetch (ADR 0015); the Rust side maps them to fixed layer ids. */
+export type MapLayer = 'base' | 'hiking' | 'slope'
+
+/** One Web-Mercator (EPSG:3857) map tile from wmts.geo.admin.ch, fetched and cached by Rust. */
+export interface MapTile {
+  /** 'image/jpeg' or 'image/png'. */
+  contentType: string
+  bytesBase64: string
+}
+
 export interface DocumentBytes {
   path: string
   name: string
@@ -181,6 +206,8 @@ export const commands = {
   listFolder: (path: string) => call<FolderEntry[]>('list_folder', { path }),
   watchFolder: (path: string) => call<void>('watch_folder', { path }),
   unwatchFolder: (path: string) => call<void>('unwatch_folder', { path }),
+  /** ADR 0015: swisstopo map tile (z 0..=18, x/y < 2^z). Rejects other layers or out-of-range coordinates. */
+  mapTile: (layer: MapLayer, z: number, x: number, y: number) => call<MapTile>('map_tile', { layer, z, x, y }),
 
   // M4: backup files
   /**
@@ -254,6 +281,11 @@ export const commands = {
   ndsFetchAggregate: (offerBusinessId: string, campBusinessId: string) =>
     call<NdsAggregate>('nds_fetch_aggregate', { offerBusinessId, campBusinessId }),
   ndsProbe: (campBusinessId: string) => call<NdsProbe>('nds_probe', { campBusinessId }),
+  /**
+   * NDS «Pendenzen» (PersonTaskList) of the logged-in coach with due dates. Read-only, explicit user action,
+   * held in memory only (never persisted, backed up, sent to AI or MCP). No assignee names.
+   */
+  ndsFetchTasks: () => call<NdsTask[]>('nds_fetch_tasks'),
   // «Personen» tab (ADR 0009, RED ZONE): individual people, held in Rust memory only, never persisted.
   personsLoadMidata: (eventId: string, campStart: IsoDate, campEnd: IsoDate) =>
     call<MidataPersonsResult>('persons_load_midata', { eventId, campStart, campEnd }),

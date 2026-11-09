@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-nds-fetch-tasks"
+description = "Enables the nds_fetch_tasks command without any pre-configured scope."
+commands.allow = ["nds_fetch_tasks"]
+
+[[permission]]
+identifier = "deny-nds-fetch-tasks"
+description = "Denies the nds_fetch_tasks command without any pre-configured scope."
+commands.deny = ["nds_fetch_tasks"]

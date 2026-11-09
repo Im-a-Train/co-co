@@ -21,6 +21,8 @@ export default createVuetify({
           warning: '#b26a00',
           error: '#c62828',
           info: '#0277bd',
+          // Coach findings (origin 'manual') are violet everywhere.
+          coach: '#7b1fa2',
         },
       },
       dark: {
@@ -34,6 +36,7 @@ export default createVuetify({
           warning: '#ffb74d',
           error: '#ef5350',
           info: '#4fc3f7',
+          coach: '#ce93d8',
         },
       },
     },

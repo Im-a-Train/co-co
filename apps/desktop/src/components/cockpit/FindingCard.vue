@@ -55,11 +55,11 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
     variant="outlined"
     density="compact"
     :class="{ 'opacity-60': finding.override }"
-    :style="{ borderLeft: `4px solid rgb(var(--v-theme-${severityColor(finding.severity)}))` }"
+    :style="{ borderLeft: `4px solid rgb(var(--v-theme-${isManual ? 'coach' : severityColor(finding.severity)}))` }"
   >
     <v-card-text class="py-3">
       <div class="d-flex align-center flex-wrap ga-2 mb-1">
-        <v-chip v-if="isManual" size="x-small" color="primary" label data-testid="finding-manual-tag">
+        <v-chip v-if="isManual" size="x-small" color="coach" label data-testid="finding-manual-tag">
           {{ t('findings.manual.tag') }}
         </v-chip>
         <template v-else>

@@ -128,7 +128,7 @@ never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012
 
 - `src/`: commands (`commands.rs`), session + refresh (`session.rs`, `auth.rs`), login window
   (`login_window.rs`), eCamp API (`api.rs`), instance discovery (`instance.rs`), files/scope/watcher,
-  dialogs, keychain + AI.
+  dialogs, keychain + AI, swisstopo map tiles (`maptiles.rs`, fixed host `wmts.geo.admin.ch`, allowlisted layers, in-memory cache, ADR 0015).
 - `crates/coco-core/`: pure logic (environment.js parsing, JWT payload, cookie selection, URL/path
   validation, scope rules) – unit-tested without Tauri.
 - `build.rs` lists every command (`COMMANDS`) so the ACL applies; `capabilities/default.json` grants
@@ -172,6 +172,7 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 - **Pure logic:** `coco-core::nds` (GraphQL body/response handling, query-only guard, chunk paging,
   `reduce_aggregate`). Raw person data is dropped there; only counts cross to the UI.
 - **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table).
+- **Pendenzen as deadlines:** `nds_fetch_tasks` (`coco-core::nds::parse_person_tasks`, no assignee data) feeds `domain/nds/tasks.ts` (`ndsTasksToDeadlines`), which maps tasks to `nds-task` deadlines inside `DeadlinesView` only. Memory only (no table), filtered out of the MCP deadline list; the ICS export includes them (ADR 0007 addendum).
 - **Storage:** Dexie v3 table `nds` (key `campIri`), tagged `red-derived`. `CoachInputs.ndsFields`
   records which fields the coach accepted from NDS. `AppSettings.nds = { enabled }`.
 

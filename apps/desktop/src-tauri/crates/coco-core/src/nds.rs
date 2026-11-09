@@ -343,6 +343,69 @@ pub fn list_document(items: Vec<Value>) -> Value {
     serde_json::json!({ "content": items })
 }
 
+// ------------------------------------------------------------------ Pendenzen (tasks)
+
+pub const OP_PERSON_TASKS: &str = "PersonTaskList";
+
+/// Coach tasks («Pendenzen») with deadlines. Deliberately NOT requested: `assignee` (names) and
+/// `assigneeTeam`. The `$filter` variable is left unset: no open-tasks filter field is documented
+/// in the spec, so completed tasks are filtered client-side via `processingStatus`.
+pub const Q_PERSON_TASKS: &str = "query PersonTaskList($chunk: Chunk, $filter: PersonTaskFilter) {
+  personTaskList(chunk: $chunk, filter: $filter) {
+    content { businessId title { de fr it } correlation { correlationTitle { de fr it } } processingStatus dueDate escalationDate }
+    totalElements totalPages number size
+  }
+}";
+
+/// One NDS task, reduced to what the Fristen radar needs (no assignee). Red zone: memory only.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NdsTask {
+    pub business_id: String,
+    pub title: String,
+    pub correlation_title: Option<String>,
+    /// YYYY-MM-DD
+    pub due_date: Option<String>,
+    /// YYYY-MM-DD
+    pub escalation_date: Option<String>,
+    pub processing_status: Option<String>,
+}
+
+/// Valid `YYYY-MM-DD` prefix (month 1-12, day 1-31) or `None`.
+fn valid_date_of(v: &Value, key: &str) -> Option<String> {
+    let d = date_of(v, key)?;
+    let m: u32 = d[5..7].parse().ok()?;
+    let day: u32 = d[8..10].parse().ok()?;
+    ((1..=12).contains(&m) && (1..=31).contains(&day)).then_some(d)
+}
+
+/// German text of a `{de, fr, it}` object, falling back to fr, then it.
+fn localized(v: Option<&Value>) -> Option<String> {
+    let v = v?;
+    ["de", "fr", "it"].iter().find_map(|k| text(v, k)).map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+}
+
+/// Reduces raw `personTaskList` items (array or `{content: [...]}`) to [`NdsTask`]s. Items
+/// without id or title are skipped; assignee data is never read.
+pub fn parse_person_tasks(raw: &Value) -> Vec<NdsTask> {
+    items_of(raw)
+        .iter()
+        .filter_map(|it| {
+            let business_id = text(it, "businessId")?;
+            let title = localized(it.get("title"))?;
+            let correlation_title = localized(it.pointer("/correlation/correlationTitle"));
+            Some(NdsTask {
+                business_id,
+                title,
+                correlation_title,
+                due_date: valid_date_of(it, "dueDate"),
+                escalation_date: valid_date_of(it, "escalationDate"),
+                processing_status: text(it, "processingStatus"),
+            })
+        })
+        .collect()
+}
+
 // ------------------------------------------------------------------ helpers
 
 fn text(v: &Value, key: &str) -> Option<String> {

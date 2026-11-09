@@ -34,7 +34,7 @@ async function remove(m: ManualFinding) {
     <v-card v-for="m in items" :key="m.id" variant="outlined" density="compact" data-testid="manual-finding-item">
       <v-card-text :class="compact ? 'py-2' : 'py-3'">
         <div class="d-flex align-center flex-wrap ga-2 mb-1">
-          <v-chip size="x-small" label color="primary" variant="tonal" :text="t(`findings.manual.category.${m.category}`)" />
+          <v-chip size="x-small" label color="coach" variant="tonal" :text="t(`findings.manual.category.${m.category}`)" />
           <span v-if="anchorLabel(m.anchor)" class="text-caption text-medium-emphasis">{{ anchorLabel(m.anchor) }}</span>
           <v-spacer />
           <v-btn

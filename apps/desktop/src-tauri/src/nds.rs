@@ -23,7 +23,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use coco_core::cookies::{jar_cookie_string, RawCookie};
 use coco_core::nds::{
     chunk_variables, graphql_body, graphql_data, is_session_expired_status, list_document, parse_camps_overlapping,
-    parse_chunk, parse_offers_overlapping, probe_fields, rega_transmitted_map, reduce_aggregate, reduce_rega_counts, NdsAggregate, NdsCampSummary, NdsProbe,
+    parse_chunk, parse_offers_overlapping, parse_person_tasks, NdsTask, OP_PERSON_TASKS, Q_PERSON_TASKS, probe_fields, rega_transmitted_map, reduce_aggregate, reduce_rega_counts, NdsAggregate, NdsCampSummary, NdsProbe,
     NdsProbeEndpoint, NdsStatus, RawNdsCamp, NDS_BASE_URL, NDS_LANGUAGE, NDS_LOGIN_PATH, OP_ACTIVITY_LIST,
     OP_CAMP_LIST, OP_OFFER_LIST, OP_PARTICIPANTS_LIST, OP_REGA_PARTICIPANTS, OP_REGA_SUPERVISORS, OP_RENTAL_ORDERS, OP_SUPERVISORS_LIST, Q_ACTIVITY_LIST,
     Q_CAMP_LIST, Q_OFFER_LIST, Q_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, Q_PERSONS_SUPERVISORS, Q_REGA_PARTICIPANTS, Q_REGA_SUPERVISORS, Q_RENTAL_ORDERS, Q_SUPERVISORS_LIST, SESSION_COOKIE,
@@ -383,10 +383,24 @@ fn tolerate(r: AppResult<Value>) -> AppResult<Value> {
 /// All pages of one GraphQL list (`page` 0-based, max 100 pages). `field` is the root field of
 /// the operation (`data.<field>`).
 async fn graphql_list(ctx: &Ctx, service: &str, op: &str, query: &str, field: &str, extra: Value) -> AppResult<Vec<Value>> {
+    graphql_list_paged(ctx, service, op, query, field, extra, PAGE_SIZE, MAX_PAGES).await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn graphql_list_paged(
+    ctx: &Ctx,
+    service: &str,
+    op: &str,
+    query: &str,
+    field: &str,
+    extra: Value,
+    page_size: u32,
+    max_pages: u32,
+) -> AppResult<Vec<Value>> {
     let mut items = Vec::new();
     let mut page = 0u32;
     loop {
-        let f = fetch_graphql(ctx, service, op, query, chunk_variables(extra.clone(), PAGE_SIZE, page)).await?;
+        let f = fetch_graphql(ctx, service, op, query, chunk_variables(extra.clone(), page_size, page)).await?;
         if !(200..300).contains(&f.status) {
             return Err(status_error(f.status));
         }
@@ -400,10 +414,17 @@ async fn graphql_list(ctx: &Ctx, service: &str, op: &str, query: &str, field: &s
         if page >= total_pages || empty {
             return Ok(items);
         }
-        if page >= MAX_PAGES {
-            return Err(AppError::Unexpected(format!("NDS: mehr als {MAX_PAGES} Seiten – abgebrochen")));
+        if page >= max_pages {
+            return Err(AppError::Unexpected(format!("NDS: mehr als {max_pages} Seiten – abgebrochen")));
         }
     }
+}
+
+/// Coach tasks («Pendenzen») with deadlines (red zone, memory only). No assignee names requested.
+pub async fn fetch_tasks_impl(state: &NdsState) -> AppResult<Vec<NdsTask>> {
+    let ctx = state.ctx().await?;
+    let items = graphql_list_paged(&ctx, "youthtraining", OP_PERSON_TASKS, Q_PERSON_TASKS, "personTaskList", json!({}), 100, 10).await?;
+    Ok(parse_person_tasks(&list_document(items)))
 }
 
 pub async fn find_camps_impl(state: &NdsState, from: &str, to: &str) -> AppResult<Vec<NdsCampSummary>> {
@@ -849,6 +870,14 @@ pub async fn nds_find_camps<R: Runtime>(
 ) -> AppResult<Vec<NdsCampSummary>> {
     ensure_main(&webview)?;
     let result = find_camps_impl(&state, &from, &to).await;
+    drop_expired_session(webview.app_handle(), &state, &result).await;
+    result
+}
+
+#[tauri::command]
+pub async fn nds_fetch_tasks<R: Runtime>(webview: Webview<R>, state: State<'_, NdsState>) -> AppResult<Vec<NdsTask>> {
+    ensure_main(&webview)?;
+    let result = fetch_tasks_impl(&state).await;
     drop_expired_session(webview.app_handle(), &state, &result).await;
     result
 }
