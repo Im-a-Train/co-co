@@ -29,6 +29,8 @@ still change, including stored data.
    and a GitHub release marked *pre-release* (while `0.x` / a channel is set) with generated notes and:
    - `co-co_<version>_x64-setup.exe` – NSIS installer (recommended),
    - `co-co_<version>_x64-portable.exe` – the bare app exe, runs without installing (needs WebView2).
+   - `co-co_<version>_universal.dmg` – macOS (Apple Silicon + Intel), ad-hoc signed, not notarised;
+     added since 09.11.2026 when the macOS job succeeded (a failed Mac build does not block the release).
    MSI is not published: WiX only accepts numeric pre-release identifiers.
 5. **Raising the base version is a normal PR**: `npm run version:bump -- minor` (or `patch`/`major`)
    rewrites all manifests. In `0.x`: `minor` for new milestones/features or breaking data changes,

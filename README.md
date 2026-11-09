@@ -81,12 +81,13 @@ CI runs on the **self-hosted runner** (`self-hosted, Linux, X64`) and builds **W
 | `version`: next release version (`scripts/version.mjs next`) | self-hosted Linux | every push and PR |
 | `windows-cross`: NSIS installer + portable exe, cross-compiled with `cargo-xwin` | self-hosted Linux | every push and PR |
 | `windows-native`: NSIS (+ MSI outside releases) + portable exe | self-hosted Windows | repo variable `WINDOWS_BUILD=native` |
-| `release`: tag `v<version>` + GitHub pre-release with the Windows files | self-hosted Linux | every push to `main` |
+| `release`: tag `v<version>` + GitHub pre-release with the Windows files and the macOS DMG | self-hosted Linux | every push to `main` |
 | `linux`: deb + AppImage | self-hosted Linux | manual run, input `linux` |
-| `macos`: dmg | GitHub-hosted `macos-latest` | manual run, input `macos` |
+| `macos`: universal DMG (Apple Silicon + Intel), ad-hoc signed | GitHub-hosted `macos-latest` | every push and PR |
 
 The Linux runner needs the packages in `APT_PACKAGES` (`ci.yml`); CI installs missing ones if the runner
-user has passwordless sudo. Installers are unsigned, so Windows SmartScreen warns on first run.
+user has passwordless sudo. Installers are unsigned (macOS: ad-hoc signed, not notarised), so Windows SmartScreen warns on first
+run and macOS needs right-click → Öffnen once.
 
 ## Versions and downloads
 
