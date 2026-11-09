@@ -24,7 +24,7 @@ const files = walk(SRC).map((p) => ({ rel: relative(SRC, p).split(sep).join('/')
 const DEXIE_ALLOWED = new Set(['composables/useFindings.ts', 'composables/useRuleState.ts', 'composables/useCampRuleConfig.ts'])
 
 /** localStorage keys (boot data + UI toggles); everything else must live in the encrypted store. */
-const LOCAL_STORAGE_KEYS = [/^coco\.instances\.v1$/, /^coco\.selectedInstance\.v1$/, /^co-co\.camps\.phaseFilter$/, /^co-co\.deadlines\./, /^co-co\.gpxMap\.v2$/]
+const LOCAL_STORAGE_KEYS = [/^coco\.instances\.v1$/, /^coco\.selectedInstance\.v1$/, /^co-co\.camps\.phaseFilter$/, /^co-co\.deadlines\./, /^co-co\.gpxMap\.v3$/]
 
 describe('encryption guard', () => {
   it('every table has an encryption config with an allowlist containing its primary key', () => {

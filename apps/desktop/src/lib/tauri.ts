@@ -107,7 +107,22 @@ export interface NdsTask {
 }
 
 /** swisstopo WMTS layers co-co may fetch (ADR 0015); the Rust side maps them to fixed layer ids. */
-export type MapLayer = 'base' | 'hiking' | 'slope'
+export type MapLayer =
+  // Base maps (opaque JPEG, one at a time)
+  | 'base' // ch.swisstopo.pixelkarte-farbe (Landeskarte farbig)
+  | 'grey' // ch.swisstopo.pixelkarte-grau
+  | 'winter' // ch.swisstopo.pixelkarte-farbe-winter
+  | 'aerial' // ch.swisstopo.swissimage (Luftbild)
+  // Overlays (transparent PNG)
+  | 'hiking' // ch.swisstopo.swisstlm3d-wanderwege
+  | 'slope' // ch.swisstopo.hangneigung-ueber_30
+  | 'skitour' // ch.swisstopo-karto.skitouren
+  | 'snowshoe' // ch.swisstopo-karto.schneeschuhrouten
+  | 'mtb' // ch.astra.mountainbikeland
+  | 'bike' // ch.astra.veloland
+  | 'transit' // ch.bav.haltestellen-oev
+  | 'wildlife' // ch.bafu.wrz-wildruhezonen_portal
+  | 'gamereserve' // ch.bafu.bundesinventare-jagdbanngebiete
 
 /** One Web-Mercator (EPSG:3857) map tile from wmts.geo.admin.ch, fetched and cached by Rust. */
 export interface MapTile {

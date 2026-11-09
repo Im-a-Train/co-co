@@ -479,7 +479,7 @@ export function installMockTauri(): void {
         case 'list_folder':
           return []
         case 'map_tile':
-          return { contentType: 'image/png', bytesBase64: a.layer === 'base' ? MOCK_TILE_BASE : MOCK_TILE_OVERLAY }
+          return { contentType: 'image/png', bytesBase64: ['base', 'grey', 'winter', 'aerial'].includes(String(a.layer)) ? MOCK_TILE_BASE : MOCK_TILE_OVERLAY }
         case 'read_document': {
           const f = files[String(a.path)]
           if (!f) throw 'Datei nicht erlaubt'
