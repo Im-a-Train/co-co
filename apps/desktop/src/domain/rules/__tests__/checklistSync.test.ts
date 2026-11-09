@@ -18,7 +18,7 @@ const ms = (id: string, due: string, done = false): Deadline => ({
   milestoneId: id,
 })
 const raw = (extra: Record<string, unknown> = {}) => [
-  { id: 'CL-LST-04', module: 'lst', text: 'x', sources: [{ key: 'WEB-C', page: '' }], kind: 'B', ...extra },
+  { id: 'CL-LST-04', module: 'lst', audience: 'coach', text: 'x', sources: [{ key: 'WEB-C', page: '' }], kind: 'B', ...extra },
 ]
 
 describe('checklist milestone link', () => {
@@ -44,7 +44,7 @@ describe('checklist milestone link', () => {
 
 describe('buildChecklistRows', () => {
   const items = parseChecklist(
-    [...raw({ milestone: 'M-A' }), { id: 'CL-LST-05', module: 'lst', text: 'y', sources: [{ key: 'WEB-C', page: '' }], kind: 'B' }],
+    [...raw({ milestone: 'M-A' }), { id: 'CL-LST-05', module: 'lst', audience: 'coach', text: 'y', sources: [{ key: 'WEB-C', page: '' }], kind: 'B' }],
     't',
   )
   it('linked rows take done, due and status from the milestone', () => {

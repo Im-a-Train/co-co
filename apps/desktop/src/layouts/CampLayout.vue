@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
 import ConnectionStatusChips from '@/components/settings/ConnectionStatusChips.vue'
+import CampSearch from '@/components/search/CampSearch.vue'
 import ReviewStatusMenu from '@/components/rounds/ReviewStatusMenu.vue'
 import { CAMP_TABS } from '@/router'
 
@@ -35,6 +36,8 @@ watch(campIri, () => void load(), { immediate: true })
         <div v-if="dates" class="text-body-2 text-medium-emphasis">{{ dates }}</div>
       </div>
       <ReviewStatusMenu :camp-iri="campIri" class="ms-2" />
+      <v-spacer />
+      <CampSearch />
       <v-spacer />
       <ConnectionStatusChips />
       <v-btn

@@ -13,6 +13,7 @@ const emit = defineEmits<{
   removeOverride: [finding: Finding]
   openActivity: [iri: string]
   excludeCategory: [finding: Finding]
+  editRule: [finding: Finding]
 }>()
 const { t, te } = useI18n()
 const moduleNote = computed(() => {
@@ -110,6 +111,15 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
             :text="t('findings.categoryExclusion.forRule')"
             data-testid="exclude-category-rule"
             @click="emit('excludeCategory', finding)"
+          />
+          <v-btn
+            v-if="finding.origin === 'rule'"
+            size="small"
+            variant="text"
+            prepend-icon="mdi-pencil-ruler"
+            :text="t('findings.triage.editRule')"
+            data-testid="edit-rule"
+            @click="emit('editRule', finding)"
           />
           <v-btn
             v-if="!finding.override"

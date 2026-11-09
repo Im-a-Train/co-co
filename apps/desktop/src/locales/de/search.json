@@ -1,0 +1,10 @@
+{
+  "search": {
+    "placeholder": "Aktivitäten und Dokumente durchsuchen (Strg+K)",
+    "label": "Lager durchsuchen",
+    "empty": "Keine Treffer.",
+    "groupActivity": "Aktivitäten",
+    "groupDocument": "Dokumente",
+    "clear": "Suche leeren"
+  }
+}

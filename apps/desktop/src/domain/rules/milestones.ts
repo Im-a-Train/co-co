@@ -12,7 +12,7 @@
  * Confidence: `unverified` entries are labelled «unbestätigt» in the UI until an owner confirmed them.
  */
 import { parse } from 'yaml'
-import type { CampRuleConfig, CoachInputs, Confidence, Deadline, IsoDate, ModuleId, Source } from '../types'
+import type { Audience, CampRuleConfig, CoachInputs, Confidence, Deadline, IsoDate, ModuleId, Source } from '../types'
 import { MODULE_IDS } from '../types'
 import { addDays, daysBetween, type DeadlineCamp } from './lib/deadlines'
 import { getSourceRegistry } from './packs/registry'
@@ -32,6 +32,8 @@ export interface Milestone {
   /** Different offset when the camp starts in one of `summerMonths` (Landeskarten). */
   summerOffsetDays?: number
   summerMonths?: number[]
+  /** Who acts on it: the coach (receives/reviews/approves) or the camp leaders. */
+  audience: Audience
   /** Module the milestone belongs to (pack module); absent = always shown. */
   module?: ModuleId
   source: Source
@@ -46,6 +48,7 @@ export interface MilestoneList {
 }
 
 const CONFIDENCES: Confidence[] = ['verified', 'conflict', 'unverified', 'best-practice', 'heuristic']
+const AUDIENCES: Audience[] = ['coach', 'leaders']
 const ANCHORS: MilestoneAnchor[] = ['start', 'end', 'leihmaterialDelivery', 'landeskartenDelivery', 'lastActivity', 'firstSb', 'outageOrderBy']
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -107,12 +110,14 @@ export function parseMilestonesYaml(text: string, registry: SourceRegistry = get
     if (m.summerOffsetDays !== undefined && !isInt(m.summerOffsetDays)) errors.push(`${label}: «summerOffsetDays» muss eine ganze Zahl sein`)
     if (m.module !== undefined && !MODULE_IDS.includes(m.module as ModuleId)) errors.push(`${label}: «module» unbekannt`)
     if (!CONFIDENCES.includes(m.confidence as Confidence)) errors.push(`${label}: «confidence» ungültig`)
+    if (!AUDIENCES.includes(m.audience as Audience)) errors.push(`${label}: «audience» muss coach oder leaders sein`)
     const source = sourceOf(m, label, registry, errors)
     milestones.push({
       id: String(m.id ?? ''),
       title: String(m.title ?? ''),
       description: String(m.description ?? ''),
       anchor: m.anchor as MilestoneAnchor,
+      audience: m.audience as Audience,
       offsetDays: m.offsetDays as number,
       ...(isInt(m.offsetEarliestDays) ? { offsetEarliestDays: m.offsetEarliestDays } : {}),
       ...(isInt(m.summerOffsetDays) ? { summerOffsetDays: m.summerOffsetDays } : {}),
@@ -213,6 +218,7 @@ export function computeMilestoneDeadlines(
       milestoneId: m.id,
       title: m.title,
       confidence: m.confidence,
+      audience: m.audience,
     })
   }
   return out

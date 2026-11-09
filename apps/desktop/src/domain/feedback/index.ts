@@ -307,7 +307,7 @@ export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new 
   // Rule messages often lack final punctuation; the template appends a question right after it.
   const message = finding.message.trim()
   const params = { title: finding.title, message: /[.!?…:)]$/.test(message) ? message : `${message}.` }
-  const text = tr(isMust ? 'feedback.fromFinding.must' : 'feedback.fromFinding.other', params)
+  const text = finding.feedbackText?.trim() || tr(isMust ? 'feedback.fromFinding.must' : 'feedback.fromFinding.other', params)
   const activityIri = finding.scope === 'activity' ? finding.targets[0] : undefined
   const iso = now.toISOString()
   const item: FeedbackItem = {

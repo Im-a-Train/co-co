@@ -75,6 +75,7 @@ export function validateRuleMeta(meta: RuleMeta): string[] {
   need(!!meta?.title?.trim(), 'title fehlt')
   need(!!meta?.description?.trim(), 'description fehlt')
   need(!!meta?.message?.trim(), 'message fehlt')
+  need(meta?.feedbackText === undefined || typeof meta.feedbackText === 'string', 'feedbackText muss ein Text sein')
   need(SEVERITIES.includes(meta?.severity), 'severity ungültig')
   need(CONFIDENCES.includes(meta?.confidence), 'confidence ungültig')
   need(SCOPES.includes(meta?.scope), 'scope ungültig')
@@ -121,6 +122,18 @@ export function renderMessage(meta: RuleMeta, hit: RuleHit): string {
       .join(join)
   }
   return fillTemplate(hitTemplate(meta, hit), params)
+}
+
+/** Coach feedback text of a hit (rule `feedbackText` with the same placeholders filled), or undefined. */
+export function renderFeedbackText(meta: RuleMeta, hit: RuleHit): string | undefined {
+  const tpl = meta.feedbackText?.trim()
+  if (!tpl) return undefined
+  const params: Record<string, string | number> = { ...(hit.params ?? {}) }
+  for (const [name, parts] of Object.entries(hit.fragments ?? {})) {
+    const join = meta.messageVariants?.[`${name}Join`] ?? '; '
+    params[name] = parts.map((f) => fillTemplate(meta.messageVariants?.[f.variant] ?? f.variant, { ...params, ...(f.params ?? {}) })).join(join)
+  }
+  return fillTemplate(tpl, params)
 }
 
 export interface HitOutcome {
@@ -216,6 +229,7 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campD
       confidence: outcome.confidence,
       title: meta.title,
       message,
+      ...(renderFeedbackText(meta, hit) ? { feedbackText: renderFeedbackText(meta, hit) } : {}),
       scope: meta.scope,
       targets,
       evidence,

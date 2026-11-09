@@ -56,6 +56,7 @@
       "activity": "Betroffene Aktivität",
       "noActivity": "Dieser Befund betrifft keine einzelne Aktivität.",
       "editor": "Feedback",
+      "editRule": "Regel anpassen",
       "editorOpen": "Feedback-Editor öffnen",
       "kind": "Art",
       "scope": "Bezug",

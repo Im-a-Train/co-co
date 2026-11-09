@@ -62,3 +62,15 @@ unknown ones return HTTP 400.** Query builders live in `apps/desktop/src-tauri/s
 
 - `MidataQualKey` gains `sbBerg`, `sbWasser`, `sbWinter`, `waterBath`, `waterPoolUnsupervised`, `waterLake`, `waterRiver` (legacy `wasser`, `slrg`, `berg`, `winter` unchanged; v2 keys are optional in older stored aggregates). Label mapping (`qual_keys_for_label`, token-based, user `qualMapping` still overrides): «Sicherheitsbereich/SB Berg» -> `sbBerg`; «Sicherheitsbereich Wasser» -> `sbWasser`+`waterRiver`; «Sicherheitsbereich Winter» -> `sbWinter`; «Modul Wasser LS/T», «Aufsichtsperson Wasser», «Modul See» -> `waterBath`+`waterPoolUnsupervised`+`waterLake`; «Basis Pool» -> `waterBath`; «Plus Pool» -> `waterBath`+`waterPoolUnsupervised`; «Modul Fluss» -> `waterRiver`; J+S Kanu/Rudern/Segeln/Triathlon/Windsurfen -> bath+pool+lake.
 - `participantsByBirthYear: { "<year>": count }` (optional, red-derived aggregate only; never names or birthdates). `participantsJsAgeCount` is computed by Jahrgang: J+S age if `campStartYear - birthYear` is in 5..=20 (not by exact birthday).
+
+## AHV number (checked 2026-11-09): not exposed
+
+Coach request: show the AHV number from the MiData registration in «Personen» (for NDS registration of
+first-time participants). `https://db.scout.ch/api/openapi.json` contains no `ahv` at all: the `people`
+attributes (and the `people_readable_attribute` enum) are `first_name`, `last_name`, `nickname`,
+`company_name`, `company`, `email`, `address`, `address_care_of`, `street`, `housenumber`, `postbox`,
+`zip_code`, `town`, `country`, `household_key`, `primary_group_id`, `gender`, `birthday`, `language`,
+`picture`, `updated_at`, `additional_information`, `pronouns`, so `fields[people]=ahv_number` would be
+HTTP 400. There is no resource or include for event application questions/answers either
+(`event_participations` only includes `event`, `participant`, `roles`). Not implemented; re-check the
+OpenAPI if MiData starts publishing `ahv_number` or the answers.

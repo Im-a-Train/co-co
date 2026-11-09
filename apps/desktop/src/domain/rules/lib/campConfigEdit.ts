@@ -1,5 +1,5 @@
 /** Pure edits of a CampRuleConfig used by the coach UI (composables/useCampRuleConfig.ts). */
-import type { ActivityTag, CampRuleConfig, Iri, ModuleCoachState, ModuleId, SbApprovalKind } from '../../types'
+import type { ActivityTag, CampRuleConfig, CustomChecklistItem, Iri, IsoDate, ModuleCoachState, ModuleId, SbApprovalKind } from '../../types'
 
 export const SB_TAGS: readonly ActivityTag[] = ['sb-berg', 'sb-wasser', 'sb-winter']
 
@@ -80,4 +80,28 @@ export function withChecklistItem(
   const note = noteRaw?.trim() ? noteRaw : undefined
   if (!done && !note) return { ...c, checklist: rest }
   return { ...c, checklist: { ...rest, [id]: { done, at: patch.done !== undefined ? now : (prev?.at ?? now), ...(note ? { note } : {}) } } }
+}
+
+/** Adds a coach-written checklist point (text trimmed; empty text is ignored). `due` is optional. */
+export function withCustomChecklistItem(
+  c: CampRuleConfig,
+  item: { id: string; text: string; due?: IsoDate | null },
+  now: string = new Date().toISOString(),
+): CampRuleConfig {
+  const text = item.text.trim()
+  if (!text) return c
+  const entry: CustomChecklistItem = { id: item.id, text, ...(item.due ? { due: item.due } : {}), createdAt: now }
+  return { ...c, customChecklist: [...(c.customChecklist ?? []).filter((i) => i.id !== item.id), entry] }
+}
+
+/** Removes a custom point together with its done state. */
+export function withoutCustomChecklistItem(c: CampRuleConfig, id: string): CampRuleConfig {
+  const { [id]: _drop, ...checklist } = c.checklist
+  return { ...c, customChecklist: (c.customChecklist ?? []).filter((i) => i.id !== id), checklist }
+}
+
+/** Hides (true) or restores (false) a bundled checklist item id or deadline key for this camp. */
+export function withChecklistHidden(c: CampRuleConfig, id: string, hidden: boolean): CampRuleConfig {
+  const rest = (c.hiddenChecklist ?? []).filter((x) => x !== id)
+  return { ...c, hiddenChecklist: hidden ? [...rest, id] : rest }
 }

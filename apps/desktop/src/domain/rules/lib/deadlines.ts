@@ -103,7 +103,7 @@ export function computeDeadlines(camp: DeadlineCamp, inputs: CoachInputs | null,
   const base = { campIri: camp.iri, campTitle: camp.title }
   const out: Deadline[] = []
   const push = (kind: DeadlineKind, due: IsoDate, done: boolean, ruleId: string | null, source: Source) =>
-    out.push({ ...base, kind, due, done, ruleId, source })
+    out.push({ ...base, kind, due, done, ruleId, source, audience: 'coach' })
 
   push('nds-registration', addDays(camp.start, -lead.ndsRegistration), inputs?.ndsRegistered ?? false, 'JS-DL-01', SOURCE_JS_LAGER)
   const lastJs = camp.lastActivityDate ?? camp.lastJsDate ?? camp.end ?? camp.start

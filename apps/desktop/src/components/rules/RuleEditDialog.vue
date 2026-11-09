@@ -140,6 +140,7 @@ const CONFIDENCES = ['verified', 'best-practice', 'heuristic', 'unverified', 'co
             <v-text-field v-model="form.title" :label="t('rules.edit.fields.title')" density="compact" variant="outlined" data-testid="rule-edit-title" />
             <v-textarea v-model="form.description" :label="t('rules.edit.fields.description')" rows="3" auto-grow density="compact" variant="outlined" />
             <v-textarea v-model="form.message" :label="t('rules.edit.fields.message')" :hint="t('rules.edit.hints.placeholders')" persistent-hint rows="2" auto-grow density="compact" variant="outlined" class="mb-3" />
+            <v-textarea v-model="form.feedbackText" :label="t('rules.edit.fields.feedbackText')" :hint="t('rules.edit.hints.feedbackText')" persistent-hint rows="2" auto-grow density="compact" variant="outlined" class="mb-3" data-testid="rule-edit-feedback-text" />
             <template v-if="Object.keys(form.variants).length">
               <div class="text-subtitle-2 mb-1">{{ t('rules.edit.fields.variants') }}</div>
               <v-textarea v-for="(_, name) in form.variants" :key="name" v-model="form.variants[name]" :label="String(name)" rows="1" auto-grow density="compact" variant="outlined" />

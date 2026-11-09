@@ -1,7 +1,7 @@
 /** Pure helpers for the rule edit UI: field diff between two rule metas, form <-> patch conversion. */
 import type { RuleEditPatch, RuleMeta, SourceRef } from '@/domain/types'
 
-export type DiffField = 'title' | 'description' | 'message' | 'variant' | 'severity' | 'confidence' | 'status' | 'validFrom' | 'validTo' | 'sources' | 'tags'
+export type DiffField = 'title' | 'description' | 'message' | 'feedbackText' | 'variant' | 'severity' | 'confidence' | 'status' | 'validFrom' | 'validTo' | 'sources' | 'tags'
 
 export interface FieldDiff {
   field: DiffField
@@ -30,7 +30,7 @@ function show(meta: RuleMeta, field: Exclude<DiffField, 'variant'>): string {
 /** Differences between two metas (editable fields only). */
 export function fieldDiffs(before: RuleMeta, after: RuleMeta): FieldDiff[] {
   const out: FieldDiff[] = []
-  for (const field of ['title', 'description', 'message', 'severity', 'confidence', 'status', 'validFrom', 'validTo', 'sources', 'tags'] as const) {
+  for (const field of ['title', 'description', 'message', 'feedbackText', 'severity', 'confidence', 'status', 'validFrom', 'validTo', 'sources', 'tags'] as const) {
     const b = show(before, field)
     const a = show(after, field)
     if (a !== b) out.push({ field, before: b, after: a })
@@ -49,6 +49,7 @@ export interface RuleForm {
   title: string
   description: string
   message: string
+  feedbackText: string
   variants: Record<string, string>
   severity: RuleMeta['severity']
   confidence: RuleMeta['confidence']
@@ -64,6 +65,7 @@ export function formOf(meta: RuleMeta): RuleForm {
     title: meta.title,
     description: meta.description,
     message: meta.message,
+    feedbackText: meta.feedbackText ?? '',
     variants: { ...(meta.messageVariants ?? {}) },
     severity: meta.severity,
     confidence: meta.confidence,
@@ -82,6 +84,7 @@ export function patchOfForm(form: RuleForm, bundled: RuleMeta): RuleEditPatch {
     title: form.title.trim(),
     description: form.description.trim(),
     message: form.message.trim(),
+    feedbackText: form.feedbackText.trim() || null,
     messageVariants: Object.fromEntries(Object.entries(form.variants).map(([k, v]) => [k, v.trim()])),
     severity: form.severity,
     confidence: form.confidence,

@@ -92,6 +92,8 @@ describe('backup', () => {
       angebot: { other4DayCamp: null, unternehmungElsewhere: null, efCoveredElsewhere: null, lastActivityDate: null },
       params: { 'lst.treelineM': 1900 },
       checklist: { 'CL-1': { done: true, at: '2031-06-01T10:00:00.000Z' } },
+      customChecklist: [{ id: 'CL-CUSTOM-1', text: 'Eigener Punkt', due: '2031-06-15', createdAt: '2031-06-01T10:00:00.000Z' }],
+      hiddenChecklist: ['CL-JS-05', 'pbs-milestone:lagerbericht'],
       updatedAt: '2031-06-01T10:00:00.000Z',
     }
     await a.campRuleConfig!.bulkPut([cfg])
