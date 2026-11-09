@@ -302,6 +302,29 @@ export function unionIntervals(list: readonly JsInterval[]): JsInterval[] {
   return out
 }
 
+/**
+ * Zero-minute Sozialzeit: two J+S blocks of DIFFERENT activities where the second starts exactly when the
+ * running block ends (e.g. 09:00-11:00 then 11:00-13:00) have a gap of 0 minutes and are reported as a short
+ * gap, although unionIntervals merges them for the minute count. Entries of the same activity back to back,
+ * parallel entries (subgroups with the same or overlapping time span) and partial overlaps are NOT reported:
+ * they stay plain unions. Needs a positive minimum gap to have any effect.
+ */
+function touchingGaps(tagged: ReadonlyArray<JsInterval & { activityIri: Iri }>, minGap: number): JsModelDay['shortGaps'] {
+  if (minGap <= 0) return []
+  const sorted = [...tagged].filter((i) => i.to > i.from).sort((a, b) => a.from - b.from || a.to - b.to)
+  const out: JsModelDay['shortGaps'] = []
+  let end = -1
+  let endActivities = new Set<Iri>()
+  for (const iv of sorted) {
+    if (end >= 0 && iv.from === end && !endActivities.has(iv.activityIri)) out.push({ from: end, to: end, minutes: 0 })
+    if (iv.to > end) {
+      end = iv.to
+      endActivities = new Set([iv.activityIri])
+    } else if (iv.to === end) endActivities.add(iv.activityIri)
+  }
+  return out
+}
+
 export interface JsModelInput {
   facts: CampFacts
   mapping: CategoryMapping | null
@@ -311,6 +334,8 @@ export interface JsModelInput {
 
 interface DateSlot {
   intervals: JsInterval[]
+  /** Same intervals tagged with their activity (for the touching-blocks check). */
+  tagged: Array<JsInterval & { activityIri: Iri }>
   short: Iri[]
   entries: Iri[]
   bwz: number
@@ -341,7 +366,7 @@ export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput
   const slot = (date: IsoDate): DateSlot => {
     let s = perDate.get(date)
     if (!s) {
-      s = { intervals: [], short: [], entries: [], bwz: 0, bwzKnown: false }
+      s = { intervals: [], tagged: [], short: [], entries: [], bwz: 0, bwzKnown: false }
       perDate.set(date, s)
     }
     return s
@@ -376,6 +401,7 @@ export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput
       if (to > from) {
         const s = slot(d)
         s.intervals.push({ from, to })
+        s.tagged.push({ from, to, activityIri: e.activityIri })
         s.entries.push(e.iri)
       }
       d = addDays(d, 1)
@@ -385,7 +411,7 @@ export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput
   const days: JsModelDay[] = sorted.map((day, i) => {
     const s = perDate.get(day.date)
     const intervals = unionIntervals(s?.intervals ?? [])
-    const shortGaps: JsModelDay['shortGaps'] = []
+    const shortGaps: JsModelDay['shortGaps'] = touchingGaps(s?.tagged ?? [], t.minGapMinutes)
     const unitIntervals: JsInterval[] = []
     for (const iv of intervals) {
       const last = unitIntervals[unitIntervals.length - 1]
@@ -394,6 +420,7 @@ export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput
         last.to = Math.max(last.to, iv.to)
       } else unitIntervals.push({ ...iv })
     }
+    shortGaps.sort((a, b) => a.from - b.from)
     const jsMinutes = intervals.reduce((n, iv) => n + iv.to - iv.from, 0)
     const bwzMinutes = s?.bwz ?? 0
     const isJsDay =

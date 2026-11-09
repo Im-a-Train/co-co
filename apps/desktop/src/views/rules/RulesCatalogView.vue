@@ -7,22 +7,23 @@ import { useRuleState } from '@/composables/useRuleState'
 import { campsWithDisabled, isGloballyDisabled } from '@/domain/rules/ruleState'
 import { disableRuleStored, enableRuleStored } from '@/domain/rules/ruleStateStore'
 import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
-import type { ModuleId, Rule, RulePack, Severity } from '@/domain/types'
+import type { ModuleId, Rule, RuleMeta, RulePack, Severity } from '@/domain/types'
 
 const { t } = useI18n()
 const { state: ruleState } = useRuleState()
 const stateError = ref<string | null>(null)
 
 /** Disabled state of one rule: everywhere, and in how many camps. */
-function disabledInfo(ruleId: string) {
-  const all = isGloballyDisabled(ruleState.value, ruleId)
-  const camps = campsWithDisabled(ruleState.value, ruleId)
+function disabledInfo(meta: RuleMeta) {
+  const former = meta.formerIds ?? []
+  const all = isGloballyDisabled(ruleState.value, meta.id, former)
+  const camps = campsWithDisabled(ruleState.value, meta.id, former)
   return { all, camps, any: all || camps > 0 }
 }
-async function toggle(ruleId: string, action: 'enable' | 'disableAll') {
+async function toggle(meta: RuleMeta, action: 'enable' | 'disableAll') {
   try {
-    if (action === 'enable') await enableRuleStored(ruleId)
-    else await disableRuleStored(ruleId, null)
+    if (action === 'enable') await enableRuleStored(meta.id, undefined, meta.formerIds ?? [])
+    else await disableRuleStored(meta.id, null, meta.formerIds ?? [])
     stateError.value = null
   } catch (e) {
     stateError.value = e instanceof Error ? e.message : String(e)
@@ -134,26 +135,26 @@ function fmt(iso: string): string {
                     {{ t(`severity.${rule.meta.severity}`) }}
                   </v-chip>
                   <code class="text-caption flex-shrink-0">{{ rule.meta.id }}</code>
-                  <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta.id).all }">{{ rule.meta.title }}</span>
+                  <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta).all }">{{ rule.meta.title }}</span>
                   <v-chip v-if="rule.meta.status === 'retired'" size="x-small" color="grey" label>{{ t('rules.status.retired') }}</v-chip>
-                  <v-chip v-if="disabledInfo(rule.meta.id).all" size="x-small" color="grey" label data-testid="rule-disabled">
+                  <v-chip v-if="disabledInfo(rule.meta).all" size="x-small" color="grey" label data-testid="rule-disabled">
                     {{ t('rules.catalog.state.disabledAll') }}
                   </v-chip>
-                  <v-chip v-else-if="disabledInfo(rule.meta.id).camps" size="x-small" color="grey" label data-testid="rule-disabled">
-                    {{ t('rules.catalog.state.disabledCamps', { count: disabledInfo(rule.meta.id).camps }, disabledInfo(rule.meta.id).camps) }}
+                  <v-chip v-else-if="disabledInfo(rule.meta).camps" size="x-small" color="grey" label data-testid="rule-disabled">
+                    {{ t('rules.catalog.state.disabledCamps', { count: disabledInfo(rule.meta).camps }, disabledInfo(rule.meta).camps) }}
                   </v-chip>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <div class="mb-3">
                   <v-btn
-                    v-if="disabledInfo(rule.meta.id).any"
+                    v-if="disabledInfo(rule.meta).any"
                     size="small"
                     variant="tonal"
                     prepend-icon="mdi-check-circle-outline"
                     :text="t('rules.catalog.state.enable')"
                     data-testid="rule-enable"
-                    @click="toggle(rule.meta.id, 'enable')"
+                    @click="toggle(rule.meta, 'enable')"
                   />
                   <v-btn
                     v-else
@@ -161,7 +162,7 @@ function fmt(iso: string): string {
                     variant="text"
                     prepend-icon="mdi-cancel"
                     :text="t('rules.catalog.state.disableAll')"
-                    @click="toggle(rule.meta.id, 'disableAll')"
+                    @click="toggle(rule.meta, 'disableAll')"
                   />
                 </div>
                 <RuleCard :rule="rule" />

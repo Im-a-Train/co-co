@@ -1,8 +1,8 @@
 - id: WATER
   module: lst-wasser
   description: "Wasserbezug allgemein"
-  include: ["=baden", "badi", "schwimm", "=see", "$see", "fluss", "=bach", "$bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "kanu", "kanadier", "kajak", "kayak", "=boot", "$boot", "wasser", "rafting", "=raft", "tauchen", "weiher", "=teich", "strand", "ruder", "floss", "flösse", "^schlauchboot", "=sup", "stand up paddle", "^seeüberquer", "^streckenschwimm", "^flussschwimm", "^bachtrekking", "^wasserspiel", "^staudamm", "^dämme", "^planschen", "=freibad", "=hallenbad", "=strandbad", "=seebad"]
-  exclude: ["trinkwasser", "wasserflasche", "wasserkanister", "wasserhahn", "wasserstelle", "abwasser", "seeland", "seepferdchen", "seele", "suppe"]
+  include: ["=baden", "badi", "schwimm", "=see", "$see", "^fluss", "=fluss", "bergfluss", "=bach", "$bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "kanu", "kanadier", "kajak", "kayak", "=boot", "$boot", "wasser", "rafting", "=raft", "^tauchen", "weiher", "=teich", "strand", "^ruder", "floss", "flösse", "^schlauchboot", "=sup", "stand up paddle", "^seeüberquer", "^streckenschwimm", "^flussschwimm", "^bachtrekking", "^wasserspiel", "^staudamm", "^dämme", "^planschen", "=freibad", "=hallenbad", "=strandbad", "=seebad"]
+  exclude: ["trinkwasser", "wasserflasche", "wasserkanister", "wasserhahn", "wasserstelle", "abwasser", "seeland", "seepferdchen", "seele", "suppe", "wasser trinken", "genug wasser", "wasser auffüllen", "wasser nachfüllen", "wasser holen", "wasser kochen", "eintauchen"]
   sources: [{ key: WASSER, page: "S. 6–23" }]
 - id: POOL
   module: lst-wasser
@@ -32,7 +32,7 @@
   exclude: []
 - id: RIVER
   module: lst-wasser
-  include: ["fluss", "=bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "^flussfahrt", "fliessgewässer"]
+  include: ["^fluss", "=fluss", "bergfluss", "=bach", "=aare", "=reuss", "=rhein", "=limmat", "=emme", "^flussfahrt", "fliessgewässer"]
   exclude: ["flussdiagramm", "flussbad"]
 - id: LAKE
   module: lst-wasser

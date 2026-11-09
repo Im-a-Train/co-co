@@ -12,6 +12,14 @@ const camp = (start: string | null, end: string | null = null, lastJsDate: strin
 const byKind = (start: string, end: string | null = null, inputs = null as ReturnType<typeof makeCoachInputs> | null, last: string | null = null) =>
   Object.fromEntries(computeDeadlines(camp(start, end, last), inputs).map((d) => [d.kind, d]))
 
+describe('nds-closing anchor', () => {
+  it('prefers the coach-entered lastActivityDate over lastJsDate and camp end', () => {
+    const c = { ...camp('2031-07-01', '2031-07-10', '2031-07-09'), lastActivityDate: '2031-07-20' }
+    const d = Object.fromEntries(computeDeadlines(c, null).map((x) => [x.kind, x]))
+    expect(d['nds-closing'].due).toBe('2031-08-19')
+  })
+})
+
 describe('date helpers', () => {
   it('adds days across month and year borders', () => {
     expect(addDays('2031-03-01', -1)).toBe('2031-02-28')

@@ -12,10 +12,13 @@ import { countFindings, evaluate } from '@/domain/rules/engine'
 import { computeJsDays, lastJsDate, type JsDayReport } from '@/domain/rules/lib/jsDays'
 import { loadBundledPacks, selectPacks } from '@/domain/rules/packs'
 import { addOverride, listOverrides, removeOverride, saveCampSummary } from '@/domain/rules/store'
-import { disabledRuleIds, disablePromptCount, isGloballyDisabled } from '@/domain/rules/ruleState'
+import { disabledRuleIds, disablePromptCount, isGloballyDisabled, resolveRule } from '@/domain/rules/ruleState'
+import { completeContext } from '@/domain/rules/lib/context'
 import { disableRuleStored, enableRuleStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
 import { useRuleState } from '@/composables/useRuleState'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
+import type { RuleContextInput } from '@/domain/types'
+import type { JsDayModel } from '@/domain/types'
 import type { AppSettings, CampRuleConfig, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
 import { getMidataRecord } from '@/domain/midata/store'
 import { midataVersion } from '@/composables/midataSignal'
@@ -23,6 +26,12 @@ import { getNdsRecord } from '@/domain/nds/store'
 import { ndsVersion } from '@/composables/ndsSignal'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampSettings } from '@/composables/useCampSettings'
+
+/** Last date with J+S minutes in the context's day model (null if none). */
+function lastModelJsDate(model: JsDayModel): string | null {
+  for (let i = model.days.length - 1; i >= 0; i--) if (model.days[i].jsMinutes > 0) return model.days[i].date
+  return null
+}
 
 export interface FindingsHandle {
   findings: ComputedRef<Finding[]>
@@ -85,8 +94,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const evalError = ref<string | null>(null)
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
-  const ruleTitle = (ruleId: string) =>
-    loadBundledPacks().flatMap((p) => p.rules).find((r) => r.meta.id === ruleId)?.meta.title ?? ruleId
+  const ruleTitle = (ruleId: string) => resolveRule(loadBundledPacks().flatMap((p) => p.rules), ruleId)?.meta.title ?? ruleId
 
   // Live data: overrides + documents of this camp, app settings once.
   let unsub: Array<() => void> = []
@@ -155,34 +163,57 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     { immediate: true },
   )
 
-  const result = computed<{ findings: Finding[]; error: string | null }>(() => {
+  const contextInput = computed<RuleContextInput | null>(() => {
     const facts = factsHandle.facts.value
     void settingsHandle.version.value
-    if (!facts) return { findings: [], error: null }
+    if (!facts) return null
+    return {
+      facts,
+      mapping: settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null,
+      coachInputs: settingsHandle.coachInputs.value,
+      midata: midata.value,
+      nds: nds.value,
+      documents: documents.value,
+      settings: appSettings.value,
+      now: new Date(),
+      userDisplayName: facts.collaborators.find((c) => c.isCurrentUser)?.displayName ?? null,
+      overrides: overrides.value,
+      campConfig: campRuleConfig.value,
+    }
+  })
+
+  const result = computed<{ findings: Finding[]; error: string | null }>(() => {
+    const input = contextInput.value
+    if (!input) return { findings: [], error: null }
     try {
-      const findings = evaluate(enabledPacks(appSettings.value), {
-        facts,
-        mapping: settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null,
-        coachInputs: settingsHandle.coachInputs.value,
-        midata: midata.value,
-        nds: nds.value,
-        documents: documents.value,
-        settings: appSettings.value,
-        now: new Date(),
-        userDisplayName: facts.collaborators.find((c) => c.isCurrentUser)?.displayName ?? null,
-        overrides: overrides.value,
-        campConfig: campRuleConfig.value,
-      }, { disabledRuleIds: disabledRuleIds(ruleState.value, iri.value) })
+      const findings = evaluate(enabledPacks(appSettings.value), input, {
+        disabledRuleIds: disabledRuleIds(ruleState.value, iri.value),
+      })
       return { findings, error: null }
     } catch (e) {
       return { findings: [], error: e instanceof Error ? e.message : String(e) }
     }
   })
 
+  /** J+S day model of the evaluated context (respects activity tags, params and 2027 rules). */
+  const jsModel = computed<JsDayModel | null>(() => {
+    const input = contextInput.value
+    if (!input) return null
+    try {
+      const model = completeContext(enabledPacks(appSettings.value), input).js
+      return model.status === 'ok' ? model : null
+    } catch {
+      return null
+    }
+  })
+
+  /** Legacy per-day report (grid/bars) with the valid-day count taken from the context model when available. */
   const jsDays = computed<JsDayReport | null>(() => {
     const facts = factsHandle.facts.value
     void settingsHandle.version.value
-    return facts ? computeJsDays(facts, settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null) : null
+    if (!facts) return null
+    const legacy = computeJsDays(facts, settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null)
+    return jsModel.value ? { ...legacy, validDayCount: jsModel.value.jsDayCount } : legacy
   })
 
   const findings = computed(() => {
@@ -191,15 +222,16 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   })
   const counts = computed(() => countFindings(findings.value))
   const disabledRules = computed<DisabledRuleInfo[]>(() => {
-    const ids = [...disabledRuleIds(ruleState.value, iri.value)].sort()
-    return ids.map((ruleId) => ({ ruleId, title: ruleTitle(ruleId), global: isGloballyDisabled(ruleState.value, ruleId) }))
+    const rules = loadBundledPacks().flatMap((p) => p.rules)
+    const ids = [...new Set([...disabledRuleIds(ruleState.value, iri.value)].map((id) => resolveRule(rules, id)?.meta.id ?? id))].sort()
+    return ids.map((ruleId) => ({ ruleId, title: ruleTitle(ruleId), global: isGloballyDisabled(ruleState.value, ruleId, resolveRule(rules, ruleId)?.meta.formerIds ?? []) }))
   })
 
   // Cached summary for "Meine Lager" (rule findings only, no AI).
   let summaryTimer: ReturnType<typeof setTimeout> | undefined
   watch(
-    [() => result.value.findings, jsDays],
-    ([ruleFindings, report]) => {
+    [() => result.value.findings, jsDays, jsModel],
+    ([ruleFindings, report, model]) => {
       const facts = factsHandle.facts.value
       if (!facts) return
       clearTimeout(summaryTimer)
@@ -212,7 +244,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
           counts: countFindings(ruleFindings),
           validJsDays: report ? report.validDayCount : null,
           totalDays: report ? report.totalDayCount : null,
-          lastJsDate: report ? lastJsDate(report) : null,
+          lastJsDate: model ? lastModelJsDate(model) : report ? lastJsDate(report) : null,
           evaluatedAt: new Date().toISOString(),
         }).catch(() => {})
       }, 300)

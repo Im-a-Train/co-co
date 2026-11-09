@@ -1,4 +1,5 @@
 /** Module `lst-berg` (SAC-Skala, Gewitter, Altschnee). Pure predicates of RuleContext; texts live in the rule YAMLs. */
+import { jsOnly } from '../../../lib/gate'
 import type { ActivityFact, RuleContext, RuleHit, RulePredicate, ScheduleEntryFact } from '@/domain/types'
 import { ALL_ACTIVITY_FIELDS } from '../../../lib/keywords'
 import { wallMinutes } from '../../../lib/jsDays'
@@ -28,7 +29,7 @@ export const lstBerg01: RulePredicate = (ctx) => {
       params: { activity: a.title, term: found[0] },
       ...(ebbA ? { variant: 'ebbA', severity: 'hint' as const } : {}),
       inputs: { matchedKeyword: found[0], taggedEbbA: ebbA },
-      evidence: [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)],
+      evidence: [activityEvidence(a, found.slice(0, 3).join(', '))],
     })
   }
   return hits
@@ -63,7 +64,7 @@ export const lstBerg02: RulePredicate = (ctx) => {
       ...(kids ? { variant: 'kids' } : {}),
       inputs: { matchedKeyword: found[0], kidsPresent: kids },
       ...(red ? { redKeys: ['kidsPresent'] } : {}),
-      evidence: [activityEvidence(a, `Stichwort: ${found[0]}`)],
+      evidence: [activityEvidence(a, found[0])],
     })
   }
   return hits
@@ -91,7 +92,7 @@ export const lstBerg03: RulePredicate = (ctx) => {
       targets: [a.iri],
       params: { activity: a.title, end },
       inputs: { matchedKeyword: found[0], entryMonth: monthOf(late), endTime: end, limit: ctx.params.get<string>('lst.thunderstormEnd') },
-      evidence: [activityEvidence(a, `Stichwort: ${found[0]}`)],
+      evidence: [activityEvidence(a, found[0])],
     })
   }
   return hits
@@ -123,15 +124,15 @@ export const lstBerg04: RulePredicate = (ctx) => {
       params: { activity: a.title, m: Math.round(top) },
       fragments: { month: [{ variant: `monthName${month}` }] },
       inputs: { highestPointM: Math.round(top), entryMonth: month },
-      evidence: [activityEvidence(a, `Höchster Punkt ${Math.round(top)} m ü. M.`)],
+      evidence: [activityEvidence(a, `${Math.round(top)} m`)],
     })
   }
   return hits
 }
 
 export const predicates: Record<string, RulePredicate> = {
-  'LST-BERG-01': lstBerg01,
-  'LST-BERG-02': lstBerg02,
+  'LST-BERG-01': jsOnly(lstBerg01),
+  'LST-BERG-02': jsOnly(lstBerg02),
   'LST-BERG-03': lstBerg03,
   'LST-BERG-04': lstBerg04,
 }

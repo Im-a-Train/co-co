@@ -13,6 +13,8 @@ export interface DeadlineCamp {
   end: IsoDate | null
   /** Date of the last J+S unit if known (from CampFacts), else camp end is used. */
   lastJsDate?: IsoDate | null
+  /** Coach-entered last activity date (campRuleConfig.angebot.lastActivityDate); wins over lastJsDate. */
+  lastActivityDate?: IsoDate | null
 }
 
 export const SOURCE_JS_LAGER: Source = { title: 'J+S Lager', url: 'https://www.jugendundsport.ch/de/lager' }
@@ -104,7 +106,7 @@ export function computeDeadlines(camp: DeadlineCamp, inputs: CoachInputs | null,
     out.push({ ...base, kind, due, done, ruleId, source })
 
   push('nds-registration', addDays(camp.start, -lead.ndsRegistration), inputs?.ndsRegistered ?? false, 'JS-DL-01', SOURCE_JS_LAGER)
-  const lastJs = camp.lastJsDate ?? camp.end ?? camp.start
+  const lastJs = camp.lastActivityDate ?? camp.lastJsDate ?? camp.end ?? camp.start
   push('nds-closing', addDays(lastJs, lead.ndsClosing), inputs?.ndsClosed ?? false, 'JS-DL-02', SOURCE_JS_LAGER)
   // JS-DL-03: lead times count back from the delivery date when the coach entered one, else from the camp start.
   const leihAnchor = inputs?.leihmaterialDeliveryDate ?? camp.start

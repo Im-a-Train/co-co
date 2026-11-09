@@ -40,16 +40,39 @@ export function disabledRuleIds(state: RuleState, campIri: Iri): Set<string> {
   return new Set(state.disabled.filter((d) => d.campIri === null || d.campIri === campIri).map((d) => d.ruleId))
 }
 
-export function disableRule(state: RuleState, ruleId: string, campIri: Iri | null): RuleState {
-  if (state.disabled.some((d) => d.ruleId === ruleId && d.campIri === campIri)) return state
+/** Minimal rule identity: current id plus the ids it was published under before. */
+export interface RuleIdentity {
+  id: string
+  formerIds?: readonly string[]
+}
+
+/** Finds the current rule for a stored id (current id or one of its formerIds). */
+export function resolveRule<R extends { meta: RuleIdentity }>(rules: readonly R[], storedId: string): R | undefined {
+  return rules.find((r) => r.meta.id === storedId) ?? rules.find((r) => r.meta.formerIds?.includes(storedId))
+}
+
+export function disableRule(
+  state: RuleState,
+  ruleId: string,
+  campIri: Iri | null,
+  formerIds: readonly string[] = [],
+): RuleState {
+  const ids = [ruleId, ...formerIds]
+  if (state.disabled.some((d) => ids.includes(d.ruleId) && d.campIri === campIri)) return state
   return { ...state, disabled: [...state.disabled, { ruleId, campIri }] }
 }
 
 /** Re-enables a rule: for one scope (campIri or null = global), or everywhere when campIri is undefined. */
-export function enableRule(state: RuleState, ruleId: string, campIri?: Iri | null): RuleState {
+export function enableRule(
+  state: RuleState,
+  ruleId: string,
+  campIri?: Iri | null,
+  formerIds: readonly string[] = [],
+): RuleState {
+  const ids = [ruleId, ...formerIds]
   return {
     ...state,
-    disabled: state.disabled.filter((d) => !(d.ruleId === ruleId && (campIri === undefined || d.campIri === campIri))),
+    disabled: state.disabled.filter((d) => !(ids.includes(d.ruleId) && (campIri === undefined || d.campIri === campIri))),
   }
 }
 
@@ -58,12 +81,14 @@ export function muteRule(state: RuleState, ruleId: string, campIri: Iri): RuleSt
   return { ...state, muted: [...state.muted, { ruleId, campIri }] }
 }
 
-export function campsWithDisabled(state: RuleState, ruleId: string): number {
-  return new Set(state.disabled.filter((d) => d.ruleId === ruleId && d.campIri !== null).map((d) => d.campIri)).size
+export function campsWithDisabled(state: RuleState, ruleId: string, formerIds: readonly string[] = []): number {
+  const ids = [ruleId, ...formerIds]
+  return new Set(state.disabled.filter((d) => ids.includes(d.ruleId) && d.campIri !== null).map((d) => d.campIri)).size
 }
 
-export function isGloballyDisabled(state: RuleState, ruleId: string): boolean {
-  return state.disabled.some((d) => d.ruleId === ruleId && d.campIri === null)
+export function isGloballyDisabled(state: RuleState, ruleId: string, formerIds: readonly string[] = []): boolean {
+  const ids = [ruleId, ...formerIds]
+  return state.disabled.some((d) => ids.includes(d.ruleId) && d.campIri === null)
 }
 
 export interface IgnoreStats {

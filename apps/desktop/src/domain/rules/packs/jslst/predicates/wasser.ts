@@ -1,6 +1,8 @@
 /** Module `lst-wasser` (Baden, Schwimmen, Boote, Flösse, Wasseraufsicht). Pure predicates; texts live in the rule YAMLs. */
-import type { ActivityFact, ActivityTag, MessageFragment, MidataAggregate, MidataQualKeyV2, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
+import { jsOnly } from '../../../lib/gate'
+import type { ActivityFact, ActivityTag, MessageFragment, MidataQualKeyV2, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
 import { ALL_ACTIVITY_FIELDS } from '../../../lib/keywords'
+import { distinctLeadersWithKey } from '../../../lib/midataKeys'
 import { activityEvidence, formatStand, midataEvidence } from '../../../lib/util'
 
 /** Matched terms of a keyword set in the activity's text fields (title, location, storyboard, notes). */
@@ -13,7 +15,7 @@ function termsAll(ctx: RuleContext, a: ActivityFact, set: string): string[] {
   return terms
 }
 
-const ev = (a: ActivityFact, found: string[]) => [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)]
+const ev = (a: ActivityFact, found: string[]) => [activityEvidence(a, found.slice(0, 3).join(', '))]
 
 /** Water keyword hit that is not a supervised bath (WATER and not POOL). */
 const openWater = (ctx: RuleContext, a: ActivityFact): string[] => (termsIn(ctx, a, 'POOL').length > 0 ? [] : termsIn(ctx, a, 'WATER'))
@@ -115,14 +117,6 @@ function settingOf(ctx: RuleContext, a: ActivityFact): { setting: Setting; term:
   return best ? (found.find((f) => f.setting === best) ?? null) : null
 }
 
-/** Leaders with the required qualification; null = not determinable (no MiData, unreadable, or no v2 data). */
-function validLeaders(md: MidataAggregate | null | undefined, key: MidataQualKeyV2): number | null {
-  if (!md || md.qualificationsReadable === false) return null
-  if (md.qualificationKinds) return md.qualificationKinds.filter((k) => k.keys.includes(key)).reduce((n, k) => n + k.validLeaders, 0)
-  if (md.leaders.length > 0 && md.leaders.some((l) => l.qualifications[key] !== undefined)) return md.leaders.filter((l) => l.qualifications[key] === true).length
-  return null
-}
-
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export const lstWasser04: RulePredicate = (ctx) => {
@@ -133,9 +127,9 @@ export const lstWasser04: RulePredicate = (ctx) => {
     const s = settingOf(ctx, a)
     if (!s) continue
     const key = REQUIRED_KEY[s.setting]
-    const n = validLeaders(ctx.midata, key)
+    const n = distinctLeadersWithKey(ctx.midata, key, ctx.settings.midata?.qualMapping ?? {})
     const fragments = { setting: [{ variant: `setting${cap(s.setting)}` }], required: [{ variant: `required${cap(s.setting)}` }] }
-    const evidence = [activityEvidence(a, s.term ? `Stichwort: ${s.term}` : `Setting: ${s.setting}`)]
+    const evidence = [activityEvidence(a, s.term || undefined)]
     if (n === null) {
       hits.push({
         targets: [a.iri],
@@ -263,13 +257,13 @@ export const lstWasser10: RulePredicate = (ctx) => {
 
 export const predicates: Record<string, RulePredicate> = {
   'LST-WASSER-01': lstWasser01,
-  'LST-WASSER-02': lstWasser02,
+  'LST-WASSER-02': jsOnly(lstWasser02),
   'LST-WASSER-03': lstWasser03,
-  'LST-WASSER-04': lstWasser04,
+  'LST-WASSER-04': jsOnly(lstWasser04),
   'LST-WASSER-05': lstWasser05,
   'LST-WASSER-06': lstWasser06,
   'LST-WASSER-07': lstWasser07,
-  'LST-WASSER-08': lstWasser08,
+  'LST-WASSER-08': jsOnly(lstWasser08),
   'LST-WASSER-09': lstWasser09,
   'LST-WASSER-10': lstWasser10,
 }

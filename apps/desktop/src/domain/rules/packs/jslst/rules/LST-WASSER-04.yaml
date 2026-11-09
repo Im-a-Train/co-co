@@ -6,7 +6,7 @@ title: "Wasseraufsicht: Qualifikation fehlt"
 description: "Für Baden und Schwimmen braucht es je nach Setting (beaufsichtigtes Bad, Pool, See, Fluss) eine Person mit passender Wasserqualifikation im Leitungsteam (MiData)."
 message: "Für «{activity}» ({setting}) braucht es eine Person mit {required} – im Leitungsteam ist keine erfasst. Alternativ eine qualifizierte Aufsichtsperson engagieren."
 messageVariants:
-  unknown: "Für «{activity}» ({setting}) sind die Qualifikationen im Leitungsteam nicht prüfbar (MiData nicht geladen oder Qualifikationen nicht lesbar)."
+  unknown: "Für «{activity}» ({setting}) sind die Qualifikationen im Leitungsteam nicht prüfbar (MiData nicht geladen, nicht lesbar oder noch ohne Daten zu den Wasserqualifikationen – MiData neu laden)."
   settingBad: "beaufsichtigtes Bad"
   settingPool: "Pool ohne Badeaufsicht"
   settingSee: "See"

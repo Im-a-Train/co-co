@@ -50,6 +50,8 @@ export interface CampRuleConfigHandle {
   moduleStates: ComputedRef<Partial<Record<ModuleId, ModuleResolution>>>
   /** Checklist items shown for this camp (module on, showWhen holds). */
   checklist: ComputedRef<ChecklistItem[]>
+  /** Camp overlaps lst.winterMonths. */
+  campInWinter: ComputedRef<boolean>
   loaded: ComputedRef<boolean>
   error: ComputedRef<string | null>
   /** Read-modify-write of the stored record. */
@@ -145,9 +147,10 @@ export function useCampRuleConfig(campIri: MaybeRefOrGetter<Iri>): CampRuleConfi
     }
   })
 
-  const checklist = computed(() => {
+  /** Camp overlaps `lst.winterMonths` (false while facts are missing). */
+  const campInWinter = computed(() => {
     const f = facts.value
-    if (!f) return []
+    if (!f) return false
     let winterMonths: number[] = [11, 12, 1, 2, 3, 4]
     try {
       winterMonths = createParamReader({
@@ -159,11 +162,16 @@ export function useCampRuleConfig(campIri: MaybeRefOrGetter<Iri>): CampRuleConfi
     } catch {
       // Param missing (packs in flux): use the documented default.
     }
+    return campOverlapsMonths(f.days.map((d) => d.date), winterMonths)
+  })
+
+  const checklist = computed(() => {
+    if (!facts.value) return []
     return visibleChecklist(loadBundledChecklist(), {
       moduleStates: moduleStates.value,
       config: config.value,
       coachInputs: settingsHandle.coachInputs.value,
-      campInWinter: campOverlapsMonths(f.days.map((d) => d.date), winterMonths),
+      campInWinter: campInWinter.value,
     })
   })
 
@@ -184,6 +192,7 @@ export function useCampRuleConfig(campIri: MaybeRefOrGetter<Iri>): CampRuleConfi
     modules,
     moduleStates,
     checklist,
+    campInWinter,
     loaded: computed(() => loaded.value),
     error: computed(() => error.value),
     update,

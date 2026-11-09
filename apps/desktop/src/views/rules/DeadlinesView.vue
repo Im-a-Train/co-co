@@ -69,7 +69,7 @@ const campById = computed(() => new Map(camps.value.map((c) => [c.iri, c])))
 const deadlineCamps = computed(() =>
   camps.value
     .filter((c) => !c.isPrototype)
-    .map((c) => ({ iri: c.iri, title: c.title, start: c.start, end: c.end, lastJsDate: lastJsByCamp.value[c.iri] ?? null })),
+    .map((c) => ({ iri: c.iri, title: c.title, start: c.start, end: c.end, lastJsDate: lastJsByCamp.value[c.iri] ?? null, lastActivityDate: ruleConfigByCamp.value[c.iri]?.angebot?.lastActivityDate ?? null })),
 )
 
 const deadlines = computed<Deadline[]>(() => {

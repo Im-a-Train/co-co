@@ -4,6 +4,7 @@
  */
 import type { ActivityFact, ActivityTag, MessageFragment, ModuleId, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
 import { campYearOf } from '../../../lib/birthYear'
+import { distinctLeadersWithKey, hasV2Data } from '../../../lib/midataKeys'
 import { ALL_ACTIVITY_FIELDS } from '../../../lib/keywords'
 import { activityEvidence, campEvidence, formatStand, midataEvidence } from '../../../lib/util'
 
@@ -117,15 +118,18 @@ export const lstSb01: RulePredicate = (ctx) => {
 // LST-SB-02: Expertenbewilligung
 // ---------------------------------------------------------------------------------------------
 
-function approved(ctx: RuleContext, key: string): boolean {
+/** A dated approval satisfies every area; the Bergführer exception (WEB-C) only applies to the Berg area. */
+function approved(ctx: RuleContext, key: string, areas: Area[]): boolean {
   const ap = ctx.campConfig.sbApprovals[key]
-  return !!ap && (!!ap.approvedOn || ap.kind === 'bergfuehrer')
+  if (!ap) return false
+  if (ap.approvedOn) return true
+  return ap.kind === 'bergfuehrer' && areas.length > 0 && areas.every((area) => area === 'berg')
 }
 
 export const lstSb02: RulePredicate = (ctx) => {
   const hits: RuleHit[] = []
   for (const { a, areas } of sbActivities(ctx)) {
-    if (approved(ctx, a.iri)) continue
+    if (approved(ctx, a.iri, areas)) continue
     hits.push({
       targets: [a.iri],
       params: { activity: a.title },
@@ -134,7 +138,7 @@ export const lstSb02: RulePredicate = (ctx) => {
       evidence: [activityEvidence(a)],
     })
   }
-  if (campWinterCase(ctx) && !approved(ctx, 'camp')) hits.push(campHit(ctx, { inputs: { winterSafeAccess: false } }))
+  if (campWinterCase(ctx) && !approved(ctx, 'camp', ['winter'])) hits.push(campHit(ctx, { inputs: { winterSafeAccess: false } }))
   return hits
 }
 
@@ -147,15 +151,16 @@ export const lstSb03: RulePredicate = (ctx) => {
   const winterCamp = campWinterCase(ctx)
   if (acts.length === 0 && !winterCamp) return []
   const md = ctx.midata
-  if (!md || md.qualificationsReadable === false || !md.qualificationKinds) {
+  const overrides = ctx.settings.midata?.qualMapping ?? {}
+  // Aggregates stored before rule set v2 carry no v2 key anywhere: unknown, not «nobody qualified».
+  if (!md || md.qualificationsReadable === false || !hasV2Data(md, overrides)) {
     return [{ targets: [ctx.facts.camp.iri], variant: 'unknown', severity: 'hint', evidence: [campEvidence(ctx.facts)] }]
   }
   const stand = formatStand(md.fetchedAt)
-  const valid = (area: Area): number =>
-    md.qualificationKinds!.filter((k) => k.keys.includes(AREA_QUAL[area])).reduce((s, k) => s + k.validLeaders, 0)
+  const valid = (area: Area): number | null => distinctLeadersWithKey(md, AREA_QUAL[area], overrides)
   const hits: RuleHit[] = []
   for (const { a, areas } of acts) {
-    const missing = areas.filter((area) => valid(area) === 0)
+    const missing = areas.filter((area) => (valid(area) ?? 0) === 0)
     if (missing.length === 0) continue
     hits.push({
       targets: [a.iri],
@@ -166,7 +171,7 @@ export const lstSb03: RulePredicate = (ctx) => {
       evidence: [activityEvidence(a), midataEvidence(stand)],
     })
   }
-  if (winterCamp && valid('winter') === 0) {
+  if (winterCamp && (valid('winter') ?? 0) === 0) {
     hits.push(campHit(ctx, { inputs: { validLeaders: 0 }, redKeys: ['validLeaders'], evidence: [campEvidence(ctx.facts), midataEvidence(stand)] }))
   }
   return hits

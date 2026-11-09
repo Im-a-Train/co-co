@@ -20,19 +20,19 @@ modules:
   - id: lst-lager
     title: "Lagerleben und Organisation"
     description: "Sicherheitskonzept, Nachtaktivitäten, Seil- und Pionierbauten, Schlechtwetter, Tagesverantwortung."
-    appliesWhen: { module: lst }
+    appliesWhen: { sport: [lst] }
     default: on
     toggleable: true
   - id: lst-trekking
     title: "Unterwegs / Trekking"
     description: "Wanderungen, Unternehmungen, Marschzeit, Routenplanung, Velo."
-    appliesWhen: { module: lst }
+    appliesWhen: { sport: [lst] }
     default: on
     toggleable: true
   - id: lst-berg
     title: "Berg"
     description: "SAC-Skala, Sicherheitsbereich Berg, Rekognoszierung, Gewitter, Altschnee."
-    appliesWhen: { module: lst }
+    appliesWhen: { sport: [lst] }
     default: auto
     toggleable: true
     suggestWhen:
@@ -44,7 +44,7 @@ modules:
   - id: lst-wasser
     title: "Wasser"
     description: "Baden, Schwimmen, Boote, Flösse, Wasseraufsicht und Sicherheitsbereich Wasser."
-    appliesWhen: { module: lst }
+    appliesWhen: { sport: [lst] }
     default: auto
     toggleable: true
     suggestWhen:
@@ -54,15 +54,15 @@ modules:
   - id: lst-winter
     title: "Winter"
     description: "Winterlager, Schneeschuh, Schlitteln, Iglu, Sicherheitsbereich Winter."
-    appliesWhen: { module: lst }
+    appliesWhen: { sport: [lst] }
     default: auto
     toggleable: true
     suggestWhen:
-      - { campStartMonths: { param: lst.winterMonths } }
+      - { campOverlapsMonths: { param: lst.winterMonths } }
       - { keywordSet: WINTER, minActivities: 1 }
-      - { campConfig: { winterSafeAccess: [false] } }
     onWhen:
       - { activityTag: sb-winter }
+      - { campConfig: { winterSafeAccess: [false] }, campOverlapsMonths: { param: lst.winterMonths } }
   - id: lst-ebb
     title: "Ergänzende Bewegungsblöcke"
     description: "Ergänzende Bewegungsblöcke A (andere J+S-Sportarten) und B (Angebote Dritter)."

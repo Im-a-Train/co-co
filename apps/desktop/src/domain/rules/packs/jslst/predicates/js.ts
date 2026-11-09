@@ -1,6 +1,6 @@
 /** Module `js` (J+S Lager allgemein): participants, staff, deadlines, programme basics, coach. Pure predicates of RuleContext. */
 import type { IsoDate, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
-import { effectiveKeys } from '@/domain/midata'
+import { distinctLeadersWithKey } from '../../../lib/midataKeys'
 import { addDays, computeDeadlines, daysBetween, leadTimesFromParams } from '../../../lib/deadlines'
 import { campYearOf, countJsAgeByYear, jsBirthYearRange } from '../../../lib/birthYear'
 import { isPublicHoliday, weekdayOf } from '../../../lib/holidays'
@@ -46,12 +46,9 @@ function jsAgeParticipants(ctx: RuleContext): { n: number; source: CountSource; 
 /** Valid J+S leaders (MiData kind leiterLsT, else coach input). */
 function jsLeaders(ctx: RuleContext): { n: number; fromMidata: boolean; stand: string | null } | null {
   const md = ctx.midata
-  if (md && md.qualificationsReadable !== false && md.qualificationKinds) {
-    const overrides = ctx.settings.midata?.qualMapping ?? {}
-    const n = md.qualificationKinds
-      .filter((k) => effectiveKeys(k, overrides).includes('leiterLsT'))
-      .reduce((sum, k) => sum + k.validLeaders, 0)
-    return { n, fromMidata: true, stand: formatStand(md.fetchedAt) }
+  if (md && md.qualificationsReadable !== false && (md.qualificationKinds || md.leaders.length > 0)) {
+    const n = distinctLeadersWithKey(md, 'leiterLsT', ctx.settings.midata?.qualMapping ?? {})
+    if (n !== null) return { n, fromMidata: true, stand: formatStand(md.fetchedAt) }
   }
   const c = ctx.coachInputs?.jsLeadersCount ?? null
   return c !== null ? { n: c, fromMidata: false, stand: null } : null

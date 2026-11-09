@@ -257,8 +257,10 @@ export function ruleModuleState(meta: RuleMeta, ctx: RuleContext): ModuleState {
 }
 
 export function evaluate(packs: RulePack[], input: RuleContextInput, opts: EvaluateOptions = {}): Finding[] {
-  const ctx = completeContext(packs, input)
   const campDate: IsoDate = contextDate(input)
+  // No pack covers the camp date (e.g. a 2025 camp): nothing to evaluate, no module resolution.
+  if (!packs.some((p) => isValidOn(p, campDate))) return []
+  const ctx = completeContext(packs, input)
   const seen = new Set<string>()
   const findings: Finding[] = []
   for (const pack of packs) {

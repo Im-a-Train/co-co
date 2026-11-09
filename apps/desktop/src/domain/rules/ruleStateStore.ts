@@ -19,8 +19,10 @@ async function mutate(fn: (s: RuleState) => RuleState): Promise<RuleState> {
   })
 }
 
-export const disableRuleStored = (ruleId: string, campIri: Iri | null) => mutate((s) => disableRule(s, ruleId, campIri))
-export const enableRuleStored = (ruleId: string, campIri?: Iri | null) => mutate((s) => enableRule(s, ruleId, campIri))
+export const disableRuleStored = (ruleId: string, campIri: Iri | null, formerIds: readonly string[] = []) =>
+  mutate((s) => disableRule(s, ruleId, campIri, formerIds))
+export const enableRuleStored = (ruleId: string, campIri?: Iri | null, formerIds: readonly string[] = []) =>
+  mutate((s) => enableRule(s, ruleId, campIri, formerIds))
 export const muteRuleStored = (ruleId: string, campIri: Iri) => mutate((s) => muteRule(s, ruleId, campIri))
 
 export function listAllOverrides() {

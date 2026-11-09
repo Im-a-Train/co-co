@@ -45,6 +45,9 @@ export function paramDefsOf(packs: readonly RulePack[]): ParamDef[] {
 const isResolved = (c: CampRuleConfig | ResolvedCampRuleConfig): c is ResolvedCampRuleConfig =>
   'moduleStates' in c && typeof (c as ResolvedCampRuleConfig).tagsOf === 'function'
 
+const coversDate = (v: { validFrom?: IsoDate; validTo?: IsoDate }, date: IsoDate): boolean =>
+  (!v.validFrom || date.slice(0, 10) >= v.validFrom.slice(0, 10)) && (!v.validTo || date.slice(0, 10) <= v.validTo.slice(0, 10))
+
 export function completeContext(packs: readonly RulePack[], input: RuleContextInput): RuleContext {
   const date = contextDate(input)
   const stored = input.campConfig ?? null
@@ -72,8 +75,9 @@ export function completeContext(packs: readonly RulePack[], input: RuleContextIn
     const base = { ...record, sport: record.sport ?? 'lst', isDefault: !stored, tagsOf } as const
     campConfig = {
       ...base,
+      // Only packs that cover the camp date contribute modules (no covering pack → no module states, no findings).
       moduleStates: resolveModuleStates({
-        modules: packs.flatMap((p) => p.modules ?? []),
+        modules: packs.filter((p) => coversDate(p, date)).flatMap((p) => p.modules ?? []),
         facts: input.facts,
         coachInputs: input.coachInputs,
         documents: input.documents,

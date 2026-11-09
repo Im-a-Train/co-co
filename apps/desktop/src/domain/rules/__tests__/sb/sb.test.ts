@@ -80,7 +80,7 @@ describe('LST-SB-02', () => {
     expect(h).toHaveLength(1)
     expect(msg(h[0])).toContain('Sicherheitsbereich Wasser')
     expect(run({ [a.iri]: { approvedOn: '2027-06-01', kind: 'experte' } })).toEqual([])
-    expect(run({ [a.iri]: { approvedOn: null, kind: 'bergfuehrer' } })).toEqual([])
+    expect(run({ [a.iri]: { approvedOn: null, kind: 'bergfuehrer' } })).toHaveLength(1)
     expect(run({ [a.iri]: { approvedOn: null, kind: 'experte' } })).toHaveLength(1)
   })
   it('camp case: February -> should on camp IRI; July -> none; with camp approval -> none', () => {

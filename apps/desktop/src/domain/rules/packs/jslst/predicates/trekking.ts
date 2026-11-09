@@ -1,4 +1,5 @@
 /** Module `lst-trekking` (Unterwegs / Trekking). Pure predicates of RuleContext; all texts live in the rule YAMLs. */
+import { jsOnly } from '../../../lib/gate'
 import {
   DEFAULT_APP_SETTINGS,
   type ActivityFact,
@@ -312,7 +313,7 @@ export const lstTrek09: RulePredicate = (ctx) => {
 }
 
 export const predicates: Record<string, RulePredicate> = {
-  'LST-TREK-01': lstTrek01,
+  'LST-TREK-01': jsOnly(lstTrek01),
   'LST-TREK-02': lstTrek02,
   'LST-TREK-03': lstTrek03,
   'LST-TREK-04': lstTrek04,

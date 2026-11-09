@@ -4,7 +4,8 @@ import type { ModuleReason } from '@/domain/types'
 type T = (key: string, named?: Record<string, unknown>) => string
 type Te = (key: string) => boolean
 
-const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+const monthName = (month: number): string | null =>
+  month >= 1 && month <= 12 ? new Intl.DateTimeFormat('de-CH', { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2001, month - 1, 1))) : null
 
 /**
  * Translates well-known params (module ids, activity tags, keyword sets, camp config fields/values, month
@@ -16,7 +17,7 @@ export function reasonText(t: T, te: Te, reason: ModuleReason): string {
   if (typeof p.module === 'string') p.module = tr(`rules.catalog.module.${p.module}`, p.module)
   if (typeof p.set === 'string') p.set = tr(`campConfig.keywordSet.${p.set}`, p.set)
   if (typeof p.tag === 'string') p.tag = p.tag.split(', ').map((x) => tr(`rules.activityTag.${x}`, x)).join(', ')
-  if (typeof p.month === 'number') p.month = MONTHS[p.month - 1] ?? p.month
+  if (typeof p.month === 'number') p.month = monthName(p.month) ?? p.month
   if (typeof p.field === 'string') {
     const field = p.field
     if (typeof p.value === 'string') {

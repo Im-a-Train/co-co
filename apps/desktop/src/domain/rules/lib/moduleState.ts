@@ -28,10 +28,15 @@ import type {
   ParamReader,
   ParamValue,
 } from '../../types'
-import { ALL_ACTIVITY_FIELDS } from './keywords'
+import type { ActivityTextField } from '../../types'
 
-export const TRIGGER_KEYS = ['keywordSet', 'gpxHighestPointAbove', 'campStartMonths', 'campConfig', 'activityTag', 'coachInput'] as const
+/** Fields searched by module triggers: the safety text is deliberately excluded (it talks about hazards, not activities). */
+const TRIGGER_FIELDS: readonly ActivityTextField[] = ['title', 'location', 'storyboard']
+
+export const TRIGGER_KEYS = ['keywordSet', 'gpxHighestPointAbove', 'campStartMonths', 'campOverlapsMonths', 'campConfig', 'activityTag', 'coachInput'] as const
 export type TriggerKey = (typeof TRIGGER_KEYS)[number]
+/** Main keys that may be AND-combined within one trigger entry. */
+export const TRIGGER_AND_KEYS: readonly string[] = ['campConfig', 'campOverlapsMonths']
 /** Extra keys allowed next to a trigger key. */
 export const TRIGGER_MODIFIERS = ['minActivities'] as const
 
@@ -56,16 +61,39 @@ export function isPbsOrganizer(facts: CampFacts): boolean {
 
 const reason = (key: string, params: Record<string, string | number> = {}): ModuleReason => ({ key: `rules.module.reason.${key}`, params })
 
+/** A param without a value row for the camp date counts as «not set» (trigger false) instead of throwing. */
+function safeParam<T>(params: ParamReader, key: string): T | null {
+  try {
+    return params.get<T>(key)
+  } catch {
+    return null
+  }
+}
+
 function numberOrParam(v: number | { param: string } | undefined, params: ParamReader): number | null {
   if (v === undefined) return null
   if (typeof v === 'number') return v
-  return params.get<number>(v.param)
+  return safeParam<number>(params, v.param)
 }
 
 function monthsOrParam(v: number[] | { param: string } | undefined, params: ParamReader): number[] {
   if (!v) return []
   if (Array.isArray(v)) return v
-  return params.get<number[]>(v.param)
+  return safeParam<number[]>(params, v.param) ?? []
+}
+
+/** Months (1-12) of every day of the camp (days, else start..end). */
+function campMonths(facts: CampFacts): Set<number> {
+  const dates = facts.days.map((d) => d.date)
+  if (dates.length === 0) dates.push(...[facts.camp.start, facts.camp.end].filter((d): d is string => !!d))
+  const months = new Set<number>(dates.map((d) => Number(d.slice(5, 7))))
+  const { start, end } = facts.camp
+  if (dates.length <= 2 && start && end && start <= end) {
+    for (let d = new Date(`${start}T00:00:00Z`), stop = new Date(`${end}T00:00:00Z`); d <= stop; d.setUTCDate(d.getUTCDate() + 1)) {
+      months.add(d.getUTCMonth() + 1)
+    }
+  }
+  return months
 }
 
 function configField(config: ModuleStateInput['config'], field: string): ParamValue | undefined {
@@ -80,7 +108,7 @@ export function evaluateTrigger(t: ModuleTrigger, input: ModuleStateInput): Modu
   const { facts, config, keywords, params } = input
   if (t.keywordSet) {
     const min = t.minActivities ?? 1
-    const count = facts.activities.filter((a) => keywords.matchActivity(t.keywordSet!, a, ALL_ACTIVITY_FIELDS).length > 0).length
+    const count = facts.activities.filter((a) => keywords.matchActivity(t.keywordSet!, a, TRIGGER_FIELDS).length > 0).length
     return count >= min ? reason('keywordSet', { set: t.keywordSet, count }) : null
   }
   if (t.gpxHighestPointAbove !== undefined) {
@@ -94,11 +122,22 @@ export function evaluateTrigger(t: ModuleTrigger, input: ModuleStateInput): Modu
     const month = Number(start.slice(5, 7))
     return monthsOrParam(t.campStartMonths, params).includes(month) ? reason('campStartMonths', { month }) : null
   }
+  if (t.campOverlapsMonths !== undefined && !t.campConfig) {
+    const wanted = monthsOrParam(t.campOverlapsMonths, params)
+    const month = [...campMonths(facts)].find((m) => wanted.includes(m))
+    return month !== undefined ? reason('campOverlapsMonths', { month }) : null
+  }
   if (t.campConfig) {
     const entries = Object.entries(t.campConfig)
     const ok = entries.every(([field, allowed]) => allowed.some((v) => v === configField(config, field)))
     if (!ok || entries.length === 0) return null
     const [field] = entries[0]
+    if (t.campOverlapsMonths !== undefined) {
+      const wanted = monthsOrParam(t.campOverlapsMonths, params)
+      const month = [...campMonths(facts)].find((m) => wanted.includes(m))
+      if (month === undefined) return null
+      return reason('campConfigAndMonths', { field, value: String(configField(config, field)), month })
+    }
     return reason('campConfig', { field, value: String(configField(config, field)) })
   }
   if (t.activityTag) {

@@ -140,6 +140,8 @@
         "keywordSet": "{count} Aktivität(en) mit {set}-Stichworten",
         "gpxHighestPointAbove": "GPX-Route bis {meters} m ü. M. (über {threshold} m)",
         "campStartMonths": "Lagerstart im {month}",
+        "campOverlapsMonths": "Lager reicht in den Monat {month} (Wintermonat)",
+        "campConfigAndMonths": "Lagerkontext: {field} = {value}, Lager im Monat {month}",
         "campConfig": "Lagerkontext: {field} = {value}",
         "activityTag": "{count} Aktivität(en) markiert als {tag}",
         "coachInput": "Angabe: {field} = {value}",

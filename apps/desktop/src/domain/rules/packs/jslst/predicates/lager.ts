@@ -41,7 +41,7 @@ export const safeRope01: RulePredicate = (ctx) => {
       params: { title: a.title },
       fragments: { reasons },
       inputs: { matchedKeyword: found[0], safetyTextChars: safety.length, requiredChars: min, topicsMentioned: topics.length },
-      evidence: [activityEvidence(a, `Stichwörter: ${found.slice(0, 3).join(', ')}`)],
+      evidence: [activityEvidence(a, found.slice(0, 3).join(', '))],
     })
   }
   return hits

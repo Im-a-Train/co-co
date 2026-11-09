@@ -8,7 +8,7 @@
 - id: EXCLUDED
   module: js
   description: "Von J+S ausgeschlossene Sportarten und Aktivitäten"
-  include: ["canyoning", "bungee", "^gleitschirm", "paragliding", "^deltaseg", "^fallschirm", "^tandemflug", "^heissluftballon", "motocross", "go kart", "=kart", "=quad", "^motorboot", "jetski", "=boxen", "^boxkampf", "^kickbox", "^thaibox", "=mma", "bruchtest"]
+  include: ["canyoning", "bungee", "^gleitschirm", "paragliding", "^deltaseg", "^fallschirm", "^tandemflug", "^heissluftballon", "motocross", "go kart", "=kart", "quad fahren", "^quadfahr", "^quadtour", "quad tour", "=quads", "^quadbike", "^motorboot", "jetski", "^boxkampf", "^kickbox", "^thaibox", "=mma", "bruchtest"]
   exclude: ["boxenstopp", "kartenlesen", "karte", "kartoffel", "schlucht"]
   sources: [{ key: WEB-C, page: "«Verbotene Sportarten»" }]
 - id: MEAL

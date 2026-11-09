@@ -839,12 +839,14 @@ export interface KeywordMatcher {
 export type ModuleCoachState = 'on' | 'off' | 'auto'
 export type ModuleState = 'on' | 'off' | 'suggested'
 
-/** A trigger of `suggestWhen` / `onWhen` / `appliesWhen` in pack.yaml (exactly one key set). */
+/** A trigger of `suggestWhen` / `onWhen` / `appliesWhen` in pack.yaml (one main key; `campConfig` and `campOverlapsMonths` may be AND-combined in one entry). */
 export interface ModuleTrigger {
   keywordSet?: string
   minActivities?: number
   gpxHighestPointAbove?: number | { param: string }
   campStartMonths?: number[] | { param: string }
+  /** Any camp day lies in one of these months (list or param). */
+  campOverlapsMonths?: number[] | { param: string }
   campConfig?: Record<string, ParamValue[]>
   activityTag?: ActivityTag | ActivityTag[]
   coachInput?: Record<string, ParamValue>

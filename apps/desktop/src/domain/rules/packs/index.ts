@@ -26,7 +26,7 @@ import type {
 import { MODULE_IDS } from '../../types'
 import { validateRuleMeta } from '../engine'
 import { compileKeywordSets } from '../lib/keywords'
-import { TRIGGER_KEYS, TRIGGER_MODIFIERS } from '../lib/moduleState'
+import { TRIGGER_AND_KEYS, TRIGGER_KEYS, TRIGGER_MODIFIERS } from '../lib/moduleState'
 import { dateString, parseParamDefs } from '../lib/params'
 import { parseSourceRefs, primarySource, type SourceRegistry } from '../lib/sources'
 import { predicates as jslstPredicates } from './jslst/predicates'
@@ -96,7 +96,10 @@ function parseTrigger(raw: unknown, where: string): ModuleTrigger {
   const main = keys.filter((k) => (TRIGGER_KEYS as readonly string[]).includes(k))
   const unknown = keys.filter((k) => !(TRIGGER_KEYS as readonly string[]).includes(k) && !(TRIGGER_MODIFIERS as readonly string[]).includes(k))
   if (unknown.length) throw new Error(`${where}: unbekannter Auslöser ${unknown.join(', ')}`)
-  if (main.length !== 1) throw new Error(`${where}: genau ein Auslöser pro Eintrag erwartet (${keys.join(', ')})`)
+  const andOk = main.length === 2 && main.every((k) => TRIGGER_AND_KEYS.includes(k))
+  if (main.length !== 1 && !andOk) {
+    throw new Error(`${where}: genau ein Auslöser pro Eintrag erwartet (${keys.join(', ')}); nur ${TRIGGER_AND_KEYS.join(' + ')} sind kombinierbar`)
+  }
   return raw as ModuleTrigger
 }
 

@@ -43,7 +43,7 @@ const kindItems = (['experte', 'bergfuehrer'] as const).map((v) => ({ value: v, 
 const angebotTri = ['other4DayCamp', 'unternehmungElsewhere', 'efCoveredElsewhere'] as const
 
 const campApproval = computed(() => rc.config.value.sbApprovals.camp ?? null)
-const showCampSb = computed(() => rc.config.value.camp.winterSafeAccess === false)
+const showCampSb = computed(() => rc.config.value.camp.winterSafeAccess === false && rc.campInWinter.value)
 
 function setCampSb(kind: SbApprovalKind | null, date?: string | null): void {
   const cur = campApproval.value

@@ -47,6 +47,19 @@ describe('JS-BWZ-02', () => {
     b.entry(b.activity('Essen', '/api/categories/es'), 2, '12:00', '13:00')
     expect(p['JS-BWZ-02'](makeCtx(b.facts))).toEqual([])
   })
+  it('classifies the activity-level value when no entry has one (under30 / step / tooLong)', () => {
+    const run = (value: number) => {
+      const b = new FactsBuilder({ start: Y2027, days: 3 })
+      const a = b.activity('Lauf', CAT_LS, { content: { ysPhysicalActivityDurationMinutes: value } })
+      b.entry(a, 2, '09:00', '10:00')
+      b.entry(a, 3, '09:00', '09:30')
+      return p['JS-BWZ-02'](makeCtx(b.facts))
+    }
+    expect(run(20)[0]).toMatchObject({ variant: 'under30', severity: 'should' })
+    expect(run(50)[0].variant).toBe('step')
+    expect(run(120)[0]).toMatchObject({ variant: 'tooLong', severity: 'should' })
+    expect(run(90)).toEqual([])
+  })
   it('no criterion before 2027 (params null) and without mapping', () => {
     const old = new FactsBuilder({ start: Y2026, days: 3 })
     old.entry(old.activity('Lauf', CAT_LS), 2, '09:00', '10:00')

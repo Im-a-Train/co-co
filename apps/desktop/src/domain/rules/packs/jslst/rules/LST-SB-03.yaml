@@ -7,7 +7,7 @@ description: "Mindestens eine J+S-Leitungsperson braucht einen gültigen Zusatz 
 message: "Für «{activity}» (Sicherheitsbereich {area}) braucht mindestens eine J+S-Leitungsperson einen gültigen Zusatz im Sicherheitsbereich {area} – im Leitungsteam ist keiner erfasst."
 messageVariants:
   camp: "Lager ohne wintersichere Zufahrt gilt als Sicherheitsbereich Winter – im Leitungsteam ist kein gültiger Zusatz Sicherheitsbereich Winter erfasst."
-  unknown: "Zusatzanerkennungen nicht prüfbar (MiData nicht verbunden oder nicht lesbar)."
+  unknown: "Zusatzanerkennungen nicht prüfbar (MiData nicht verbunden, nicht lesbar oder noch ohne Daten zu den neuen Anerkennungen – MiData neu laden)."
   areaBerg: "Berg"
   areaWasser: "Wasser"
   areaWinter: "Winter"

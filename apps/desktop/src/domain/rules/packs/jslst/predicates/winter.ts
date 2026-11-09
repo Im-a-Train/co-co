@@ -1,4 +1,5 @@
 /** Module `lst-winter` (LST-WINTER-01…08). Pure predicates of RuleContext; all texts live in the rule YAMLs. */
+import { jsOnly } from '../../../lib/gate'
 import type { ActivityFact, DocumentRecord, MessageFragment, RuleContext, RuleHit, RulePredicate, ScheduleEntryFact } from '@/domain/types'
 import { ALL_ACTIVITY_FIELDS } from '../../../lib/keywords'
 import { wallDate, wallMinutes } from '../../../lib/jsDays'
@@ -213,12 +214,12 @@ export const lstWinter08: RulePredicate = (ctx) => {
 }
 
 export const predicates: Record<string, RulePredicate> = {
-  'LST-WINTER-01': lstWinter01,
+  'LST-WINTER-01': jsOnly(lstWinter01),
   'LST-WINTER-02': lstWinter02,
   'LST-WINTER-03': lstWinter03,
   'LST-WINTER-04': lstWinter04,
   'LST-WINTER-05': lstWinter05,
   'LST-WINTER-06': lstWinter06,
-  'LST-WINTER-07': lstWinter07,
+  'LST-WINTER-07': jsOnly(lstWinter07),
   'LST-WINTER-08': lstWinter08,
 }

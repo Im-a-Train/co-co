@@ -23,10 +23,11 @@ describe('resolveModuleStates', () => {
     })
   })
 
-  it('not a J+S camp → js and every lst module off (appliesWhen)', () => {
+  it('not a J+S camp → js, lst core and ebb off; safety/organisation modules keep running', () => {
     const ctx = makeCtx(new FactsBuilder().facts, { coachInputs: makeCoachInputs({ isJsCamp: false }) })
     const s = states(ctx)
-    expect([s.js, s.lst, s['lst-lager'], s['lst-berg']]).toEqual(['off', 'off', 'off', 'off'])
+    expect([s.js, s.lst, s['lst-ebb']]).toEqual(['off', 'off', 'off'])
+    expect([s['lst-lager'], s['lst-trekking']]).toEqual(['on', 'on'])
     expect(ctx.campConfig.moduleStates.js!.reasons[0].key).toBe('rules.module.reason.notJsCamp')
   })
 

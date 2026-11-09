@@ -12,12 +12,41 @@ export function withModuleState(c: CampRuleConfig, id: ModuleId, state: ModuleCo
 }
 
 /**
+ * Mutually exclusive tag groups: each group lists «classes»; only one class may be present at a time (several
+ * tags of the same class may combine, e.g. sb-berg + sb-wasser). The newly added tag wins.
+ */
+const EXCLUSIVE_GROUPS: readonly (readonly (readonly ActivityTag[])[])[] = [
+  [['js-aktivitaet'], ['keine-js-aktivitaet']],
+  [['unternehmung'], ['keine-unternehmung']],
+  [SB_TAGS, ['kein-sb']],
+  [['ebb-a'], ['ebb-b'], ['kein-ebb']],
+  [['wasser-bad-beaufsichtigt'], ['wasser-pool'], ['wasser-see'], ['wasser-fluss']],
+]
+
+/** Removes contradicting tags; among conflicting classes the one holding a newly added tag (else the last listed) wins. */
+function resolveExclusive(tags: ActivityTag[], previous: readonly ActivityTag[]): ActivityTag[] {
+  let out = tags
+  for (const classes of EXCLUSIVE_GROUPS) {
+    const present = classes.filter((cls) => out.some((t) => cls.includes(t)))
+    if (present.length <= 1) continue
+    const fresh = present.filter((cls) => out.some((t) => cls.includes(t) && !previous.includes(t)))
+    const pool = fresh.length ? fresh : present
+    const winner = pool.reduce((best, cls) => {
+      const pos = (c: readonly ActivityTag[]) => Math.max(...c.map((t) => out.lastIndexOf(t)))
+      return pos(cls) > pos(best) ? cls : best
+    })
+    out = out.filter((t) => !classes.some((cls) => cls !== winner && cls.includes(t)))
+  }
+  return out
+}
+
+/**
  * Sets the tags of one activity. An empty list removes the entry; dropping the last `sb-*` tag removes
- * the activity's SB approval.
+ * the activity's SB approval. Contradicting tags are resolved: the newly added tag wins.
  */
 export function withActivityTags(c: CampRuleConfig, iri: Iri, tags: readonly ActivityTag[]): CampRuleConfig {
-  const { [iri]: _t, ...restTags } = c.activityTags
-  const next = [...new Set(tags)]
+  const { [iri]: previous, ...restTags } = c.activityTags
+  const next = resolveExclusive([...new Set(tags)], previous ?? [])
   let sb = c.sbApprovals
   if (!hasSbTag(next) && iri in sb) {
     const { [iri]: _s, ...restSb } = sb
