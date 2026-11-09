@@ -22,10 +22,10 @@ export async function campConfigFlows({ page, step, go, shot }) {
     if (!/an/.test(eff)) throw new Error('effective state not «an»: ' + eff)
     // winterSafeAccess = nein reveals the camp-level SB approval
     await page.getByTestId('config-winterSafeAccess').click()
-    await page.getByRole('option', { name: 'nein' }).click()
+    await page.locator('.v-overlay--active').getByRole('option', { name: 'nein', exact: true }).click()
     await page.waitForSelector('[data-testid="sb-camp"]', { timeout: 3000 })
     await page.getByTestId('config-abroad').click()
-    await page.getByRole('option', { name: 'ja' }).click()
+    await page.locator('.v-overlay--active').getByRole('option', { name: 'ja', exact: true }).click()
     await page.waitForTimeout(700)
     await shot(page, 'flow-regelmodule-context')
     // back to defaults so later flows are not affected
