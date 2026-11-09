@@ -13,6 +13,11 @@ name: CI
 # Releases (ADR 0008): every push to main (= every merged PR) gets the next SemVer pre-release version
 # `<base>-<channel>.<n>` (scripts/version.mjs next), the Windows build is stamped with it, and the
 # `release` job publishes a GitHub pre-release + tag `v<version>` with the NSIS installer and the portable exe.
+#
+# Public repo safety: self-hosted runners must never run code from forks. Every self-hosted job therefore
+# skips pull requests whose head lives outside this repository (`github.event.pull_request.head.repo.full_name
+# == github.repository`). push / workflow_dispatch need write access and are owner-only. Do not add
+# pull_request_target, issue_comment or other triggers that outsiders can fire.
 
 on:
   push:
@@ -46,6 +51,7 @@ env:
 jobs:
   check:
     name: Typecheck, unit tests, cargo test
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v7
@@ -104,6 +110,7 @@ jobs:
 
   version:
     name: Release version
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64]
     outputs:
       version: ${{ steps.v.outputs.version }}
@@ -134,7 +141,9 @@ jobs:
 
   windows-cross:
     name: Windows installer (cross-compiled on self-hosted Linux)
-    if: vars.WINDOWS_BUILD != 'native'
+    if: >-
+      vars.WINDOWS_BUILD != 'native' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     needs: [check, version]
     runs-on: [self-hosted, Linux, X64]
     steps:
@@ -188,7 +197,9 @@ jobs:
 
   windows-native:
     name: Windows installers (native, self-hosted Windows)
-    if: vars.WINDOWS_BUILD == 'native'
+    if: >-
+      vars.WINDOWS_BUILD == 'native' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     needs: [check, version]
     runs-on: [self-hosted, Windows, X64]
     steps:
@@ -240,7 +251,7 @@ jobs:
     needs: [version, windows-cross, windows-native]
     # One of the two Windows jobs is always skipped, hence always() + explicit result checks.
     if: >-
-      always() && needs.version.outputs.release == 'true' &&
+      always() && github.event_name != 'pull_request' && needs.version.outputs.release == 'true' &&
       (needs.windows-cross.result == 'success' || needs.windows-native.result == 'success')
     runs-on: [self-hosted, Linux, X64]
     permissions:
