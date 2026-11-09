@@ -1,0 +1,23 @@
+id: JS-STAFF-02
+version: 1.0.0
+module: js
+status: active
+title: "Mindestens zwei J+S-Leitende"
+description: "Ein J+S-Lager Lagersport/Trekking braucht mindestens zwei J+S-Leitende mit gültiger Anerkennung. Gezählt wird nach MiData (Anerkennung Leiter LS/T), sonst nach deiner Angabe."
+message: "Es sind {count} J+S-Leitende Lagersport/Trekking mit gültiger Anerkennung erfasst – nötig sind mindestens {min}."
+messageVariants:
+  missing: "Anzahl J+S-Leitende unbekannt – MiData verbinden oder Anzahl erfassen."
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata, coachInputs, params]
+params: [js.minLeaders]
+tags: [leitung]
+sources:
+  - key: LEITFADEN
+    page: "«Lagerleitung» (Art. 12 VSpoFöP)"
+    quote: "mindestens zwei J+S-Leiterinnen bzw. -Leiter, die in den angemeldeten Sportarten sowie Zielgruppen eine Leiteranerkennung … im Status «gültig» aufweisen"
+    binding: true
+  - { key: WEB-L, page: "«Leitung»", binding: true }
+  - { key: PBS27, page: "Folie 9" }

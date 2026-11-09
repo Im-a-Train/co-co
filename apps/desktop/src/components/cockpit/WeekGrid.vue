@@ -10,7 +10,7 @@ import {
   type GridBlock,
   type GridModel,
 } from '@/domain/cockpit'
-import type { JsDayReason } from '@/domain/rules/jsDays'
+import type { JsDayReason } from '@/domain/rules/lib/jsDays'
 
 defineProps<{ grid: GridModel; selected?: string | null }>()
 const emit = defineEmits<{ select: [activityIri: string] }>()

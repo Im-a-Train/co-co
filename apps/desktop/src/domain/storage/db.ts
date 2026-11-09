@@ -20,6 +20,7 @@ import { LEGACY_DB_NAME } from './legacyDb'
 import { migrateLegacy } from './migrate'
 import type {
   AiLogEntry,
+  CampRuleConfig,
   CampSummaryRecord,
   CategoryMapping,
   CoachInputs,
@@ -75,6 +76,8 @@ export class CocoDb extends Dexie {
   nds!: EntityTable<NdsRecord, 'campIri'>
   /** Owner: selfCheck. Leader self-check runs («Entwurfsrunden»), separate from review rounds. */
   selfChecks!: EntityTable<SelfCheckRun, 'id'>
+  /** Owner: rules (v2). Per-camp rule modules, activity tags, camp/offer context, checklist (zone green). */
+  campRuleConfig!: EntityTable<CampRuleConfig, 'campIri'>
 
   private rwQueue: Promise<void> = Promise.resolve()
 
@@ -99,6 +102,10 @@ export class CocoDb extends Dexie {
       midata: 'campIri',
       nds: 'campIri',
       selfChecks: 'id, campIri',
+    })
+    // v2 (rules v2): per-camp rule config. New table only, no data migration.
+    this.version(2).stores({
+      campRuleConfig: 'campIri',
     })
   }
 
@@ -139,6 +146,7 @@ export const TABLE_NAMES = [
   'midata',
   'nds',
   'selfChecks',
+  'campRuleConfig',
 ] as const
 
 export type TableName = (typeof TABLE_NAMES)[number]

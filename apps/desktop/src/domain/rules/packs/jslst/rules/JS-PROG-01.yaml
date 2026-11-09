@@ -1,0 +1,17 @@
+id: JS-PROG-01
+version: 1.0.0
+module: js
+status: active
+title: "Tag ohne Programm"
+description: "Für sämtliche Lagertage braucht es eine Tagesplanung mit Start- und Endzeiten."
+message: "Für {date} ist kein Programm erfasst. Für sämtliche Lagertage braucht es eine Tagesplanung mit Start- und Endzeiten."
+severity: must
+confidence: verified
+scope: day
+validFrom: 2026-01-01
+tags: [programm, lagertag]
+sources:
+  - key: WEB-L
+    page: "«Lagerprogramm»"
+    quote: "Für sämtliche Tage muss eine Tagesplanung mit Start- und Endzeiten aller Aktivitäten sowie Fixpunkten … angegeben werden"
+    binding: true

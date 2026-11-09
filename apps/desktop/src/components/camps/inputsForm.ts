@@ -20,18 +20,21 @@ export const fromTri = (v: TriState | null): boolean | null => (v === 'yes' ? tr
 
 /** Rule ids that read each coach input (static; titles are resolved from the bundled packs when present). */
 export const INPUT_RULES: Partial<Record<keyof CoachInputs, string[]>> = {
-  isJsCamp: ['JS-CAMP-02', 'JS-LL-01', 'JS-STAFF-01'],
-  participantsCount: ['JS-CAMP-02', 'JS-STAFF-01', 'BP-WATER-01'],
+  isJsCamp: ['JS-CAMP-02', 'JS-LL-01', 'JS-STAFF-02', 'JS-STAFF-03'],
+  participantsCount: ['JS-CAMP-02', 'JS-STAFF-02', 'JS-STAFF-03', 'BP-WATER-01'],
   participantsJsAgeCount: ['JS-CAMP-02'],
   stufe: ['BP-SLEEP-01', 'BP-WOLF-01', 'SAFE-MTN-02'],
-  leadersCount: ['JS-STAFF-01'],
+  leadersCount: ['JS-STAFF-02', 'JS-STAFF-03'],
   slrgCount: ['BP-WATER-01'],
   lagerleiterAttested: ['JS-LL-01'],
   ndsRegistered: ['JS-DL-01'],
   ndsRegisteredOn: ['JS-DL-01'],
   ndsClosed: ['JS-DL-02'],
   ndsClosedOn: ['JS-DL-02'],
+  jsLeadersCount: ['JS-STAFF-02', 'JS-STAFF-03'],
   leihmaterialOrdered: ['JS-DL-03'],
+  leihmaterialDeliveryDate: ['JS-DL-03', 'JS-DL-04', 'JS-DL-06'],
+  landeskartenDeliveryDate: ['JS-DL-03'],
   landeskartenOrdered: ['JS-DL-03'],
 }
 
@@ -45,6 +48,9 @@ export function normalizeInputs(i: CoachInputs): CoachInputs {
     maxAge: parseCount(i.maxAge),
     leadersCount: parseCount(i.leadersCount),
     slrgCount: parseCount(i.slrgCount),
+    ...(i.jsLeadersCount !== undefined ? { jsLeadersCount: parseCount(i.jsLeadersCount) } : {}),
+    ...(i.leihmaterialDeliveryDate !== undefined ? { leihmaterialDeliveryDate: parseDate(i.leihmaterialDeliveryDate) } : {}),
+    ...(i.landeskartenDeliveryDate !== undefined ? { landeskartenDeliveryDate: parseDate(i.landeskartenDeliveryDate) } : {}),
     ndsRegisteredOn: parseDate(i.ndsRegisteredOn),
     ndsClosedOn: parseDate(i.ndsClosedOn),
   }

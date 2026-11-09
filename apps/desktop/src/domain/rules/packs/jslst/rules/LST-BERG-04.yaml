@@ -1,0 +1,30 @@
+id: LST-BERG-04
+version: 2.0.0
+module: lst-berg
+status: active
+title: "Altschnee / Schneefall möglich"
+description: "Der höchste Punkt der GPX-Route liegt in einer Höhe und Jahreszeit, in der mit Altschnee oder Schneefall zu rechnen ist."
+message: "Höchster Punkt von «{activity}» {m} m ü. M. im {month}. Mit Altschnee bzw. Schneefall rechnen; Variante bei Nebel/Schnee planen."
+messageVariants:
+  monthName1: "Januar"
+  monthName2: "Februar"
+  monthName3: "März"
+  monthName4: "April"
+  monthName5: "Mai"
+  monthName6: "Juni"
+  monthName7: "Juli"
+  monthName8: "August"
+  monthName9: "September"
+  monthName10: "Oktober"
+  monthName11: "November"
+  monthName12: "Dezember"
+severity: hint
+confidence: unverified
+scope: activity
+validFrom: 2026-01-01
+inputs: [documents, keywords, params]
+params: [lst.oldSnowHighAltitude, lst.oldSnowHighMonths, lst.oldSnowLowAltitude, lst.oldSnowLowMonths]
+keywords: [SNOW_FOG]
+sources:
+  - { key: BERG, page: "S. 6, 33" }
+tags: [sicherheit, berg, wetter]

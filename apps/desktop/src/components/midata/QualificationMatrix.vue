@@ -3,7 +3,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type QualMatrixRow } from '@/domain/midata'
-import { MIDATA_QUAL_KEYS, type MidataQualKey, type MidataQualKind } from '@/domain/types'
+import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2, type MidataQualKey, type MidataQualKind } from '@/domain/types'
 
 const props = defineProps<{
   matrix: QualificationMatrix
@@ -26,7 +26,7 @@ watch(() => [props.kinds, props.mapping] as const, resetEdited, { immediate: tru
 
 const changed = computed(() => qualMappingChanged(props.kinds, props.mapping, edited.value))
 const unmappedCount = computed(() => props.kinds.filter((k) => isUnmappedKind(k, props.mapping)).length)
-const keyItems = MIDATA_QUAL_KEYS.map((k) => ({ value: k, title: t(`midata.matrix.quals.${k}`) }))
+const keyItems = [...MIDATA_QUAL_KEYS, ...MIDATA_QUAL_KEYS_V2].map((k) => ({ value: k, title: t(`midata.matrix.quals.${k}`) }))
 
 function save(): void {
   emit('saveMapping', nextQualMapping(props.mapping, props.kinds, edited.value))

@@ -1,0 +1,43 @@
+- key: pbs.sleepHours
+  label: "Schlafbedarf pro Stufe"
+  description: "Empfohlene Schlafstunden pro Nacht je Stufe."
+  unit: map
+  values:
+    - { value: { biber: 11, woelfe: 10, pfadi: 9, pios: 8.5, rover: 8, gemischt: 9 }, validFrom: 2026-01-01 }
+  sources: [{ key: H }]
+  overridable: coach
+- key: pbs.wolfParticipantsPerLeader
+  label: "Wölfe pro Leitende"
+  unit: persons
+  values:
+    - { value: 6, validFrom: 2026-01-01 }
+  sources: [{ key: H }]
+  overridable: coach
+- key: pbs.slrgParticipantsPerPerson
+  label: "Teilnehmende pro SLRG-Person"
+  unit: persons
+  values:
+    - { value: 12, validFrom: 2026-01-01 }
+  sources: [{ key: H }]
+  overridable: coach
+- key: pbs.restGapMinutes
+  label: "Mindestpause zwischen Programmblöcken"
+  unit: minutes
+  values:
+    - { value: 60, validFrom: 2026-01-01 }
+  sources: [{ key: H }]
+  overridable: coach
+- key: pbs.restWindow
+  label: "Zeitfenster für Ruhepausen"
+  unit: window
+  values:
+    - { value: { from: "07:00", to: "22:00" }, validFrom: 2026-01-01 }
+  sources: [{ key: H }]
+  overridable: coach
+- key: pbs.progressLeadDays
+  label: "Vorlauf Progression"
+  unit: days
+  values:
+    - { value: 21, validFrom: 2026-01-01 }
+  sources: [{ key: H }]
+  overridable: coach

@@ -1,0 +1,24 @@
+id: LST-LAGER-02
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Lagerdossier unvollständig"
+description: "Das Lagerdossier besteht aus Grob- und Detailprogramm, Routenplanung, Sicherheitskonzept, Lagerregeln, TN-Information und Schlechtwetterprogramm. Co-co schätzt aus den vorhandenen Angaben, was fehlt."
+message: "Im Lagerdossier fehlen voraussichtlich: {missing}."
+messageVariants:
+  missingJoin: ", "
+  partDetail: "Detailprogramm"
+  partRoute: "Routenplanung"
+  partConcept: "Sicherheitskonzept"
+  partRules: "Lagerregeln"
+  partInfo: "TN-Information"
+  partWeather: "Schlechtwetterprogramm"
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [documents, keywords, activityTags]
+keywords: [DOC_LAGERREGELN, DOC_LAGERINFO]
+tags: [dokumente, vollstaendigkeit]
+sources:
+  - { key: LAGER, page: "S. 23" }

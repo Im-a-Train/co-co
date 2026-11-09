@@ -1,0 +1,75 @@
+- id: ANSPRUCHSVOLL
+  module: lst
+  extends: [TREELINE]
+  include: ["anspruchsvoll", "schlüsselstelle", "ausgesetzt", "mehrtägig"]
+  exclude: []
+- id: UNTERNEHMUNG
+  module: lst
+  include: ["wanderung", "wandern", "^wanderlager", "hike", "hajk", "haik", "^velotour", "^radtour", "^fahrradtour", "schnitzeljagd", "^flusswanderung", "^bachtrekking", "^schneeschuhtour", "^schneeschuhwanderung", "ausflug", "^tagesausflug", "unternehmung", "trekking", "^zelttrekking", "^sternwanderung", "unterwegs sein", "^etappe", "^pilger"]
+  exclude: ["wanderweg"]
+- id: OUTDOOR
+  module: lst
+  description: "Draussen-Aktivitäten (bisherige Liste plus Schnee)"
+  include: ["draussen", "outdoor", "wald", "wiese", "gelände", "geländespiel", "wanderung", "wandern", "hike", "berg", "gipfel", "biwak", "trekking", "ausflug", "=feuer", "^feuerstelle", "orientierungslauf", "postenlauf", "schnitzeljagd", "rakete", "bräteln", "zeltplatz", "lagerplatz", "spielplatz", "hajk", "abseil", "seilbahn", "pionier", "kanu", "baden", "schwimm", "velo", "radtour", "schnee", "^schneeschuh", "schlitteln"]
+  exclude: []
+- id: PASSIVE
+  module: lst
+  description: "Keine J+S-Aktivität (TOOL-V Flip-Cards)"
+  include: ["=film", "kino", "^filmabend", "^singen", "^singabend", "^liederabend", "basteln", "bastel", "jass", "^brettspiel", "^gesellschaftsspiel", "quiz", "vortrag", "^vorlesen", "^gottesdienst", "siesta", "nachtruhe", "^znacht", "^zmittag", "^zmorge", "^znüni", "^zvieri", "ämtli", "abwasch", "duschen", "höck", "packen", "knoten am tisch", "^museum"]
+  exclude: []
+  sources: [{ key: TOOL-V }]
+- id: MOVEMENT
+  module: lst
+  description: "Bewegung (hebt PASSIVE auf)"
+  include: ["spiel", "=lauf", "rennen", "stafette", "^geländespiel", "sport", "turnier", "tanz", "bauen", "^lagerbau", "wanderung", "^postenlauf", "^fangis", "^versteck"]
+  exclude: []
+- id: SUBGROUP
+  module: lst
+  description: "Aktivität nur für eine Teilgruppe"
+  include: ["nur für", "leiter", "leitende", "küchenteam", "=pio", "wölfe only", "ausgewählte", "freiwillig"]
+  exclude: ["für alle"]
+- id: WARMUP
+  module: lst
+  include: ["einstimm", "aufwärm", "warm up", "warmup", "einlauf", "einspiel", "ankommen", "einleitung", "einstieg", "^aufwärmspiel", "mobilisation", "warm machen"]
+  exclude: []
+- id: EF1
+  module: lst
+  description: "Erscheinungsform 1: Outdoor-/Lagerbautechniken"
+  include: ["biwak", "iglu", "seil", "knoten", "^seilbrücke", "^seilbahn", "abseil", "^lagerbau", "^aufbau", "^abbau", "pionier", "^feuer", "^werkzeug", "morsen", "^übermittlung", "erste hilfe", "^unfallorganisation", "^alarmierung", "zelt", "blache", "sarasani"]
+  exclude: []
+  sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: EF2
+  module: lst
+  description: "Erscheinungsform 2: Sicher unterwegs"
+  include: ["wanderung", "^velotour", "^fahrradtour", "schatzsuche", "bachtrekking", "orientierungslauf", "ol lauf", "kompass", "karte", "^kartenlesen", "gps", "^höhenmesser", "kroki", "^krokier", "route", "^streckenplanung", "^rucksack packen", "unternehmung", "^risikobeurteilung"]
+  exclude: []
+  sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: EF3
+  module: lst
+  description: "Erscheinungsform 3: Spiel und Sport"
+  include: ["geländespiel", "^spielturnier", "turnier", "olympiade", "stafette", "^sportblock", "volleyball", "alaskaball", "^hindernisparcours", "^fangis", "^ballspiel", "^spiele entwickeln"]
+  exclude: []
+  sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: EF4
+  module: lst
+  description: "Erscheinungsform 4: Bedürfnisse und Ideen"
+  include: ["sinnesparcours", "achtsamkeit", "^prävention", "^grenzen", "^gesundheit", "^mitbestimmung", "atelier", "^wunschprogramm", "^lagerparlament", "theater"]
+  exclude: []
+  sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: EF5
+  module: lst
+  description: "Erscheinungsform 5: Gemeinschaft"
+  include: ["^gruppenchallenge", "^kommunikationsspiel", "kooperation", "^lagerregeln", "fairplay", "fair play", "inklusion", "diversität", "toleranz", "^teamspiel", "^vertrauensspiel"]
+  exclude: []
+  sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: EF6
+  module: lst
+  description: "Erscheinungsform 6: Natur und Umwelt"
+  include: ["upcycling", "recycling", "^waldexkursion", "flora", "fauna", "^wetterkunde", "^sternkunde", "sterne", "^nachhaltig", "insekten", "^kleinstruktur", "^aufräumaktion", "clean walk", "naturschutz", "^tierspuren", "^pflanzen"]
+  exclude: []
+  sources: [{ key: TOOL-G }, { key: MAN, page: "S. 26–27" }]
+- id: TREELINE
+  module: lst
+  description: "Oberhalb der Waldgrenze (Sicherheitsbereich Berg, MB-UP S. 3)"
+  include: ["oberhalb der waldgrenze", "über der waldgrenze"]
+  exclude: []

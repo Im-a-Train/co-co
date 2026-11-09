@@ -1,0 +1,16 @@
+id: CMP-CON-06
+version: 1.0.0
+module: js
+status: active
+title: "Hauptleitung in MiData eingetragen"
+description: "Im MiData-Anlass ist eine Hauptleitung eingetragen."
+message: "In MiData ist keine Hauptleitung eingetragen (Quelle: MiData, Stand {stand})"
+severity: hint
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata]
+tags: [vollstaendigkeit, midata]
+sources:
+  - key: WEB-L
+    page: ""

@@ -1,0 +1,21 @@
+id: CMP-CON-05
+version: 2.0.0
+module: js
+status: active
+title: "Abgelaufene Anerkennungen in MiData"
+description: "Die Anerkennungen der Leitenden (Leiter, Lagerleiter, Wasser, Berg, Winter, SLRG, Sicherheitsbereich Berg/Wasser/Winter) sind für die ganze Lagerdauer gültig."
+message: "Folgende Anerkennungen sind nicht für die ganze Lagerdauer gültig (vor oder während des Lagers abgelaufen): {list} (Quelle: MiData, Stand {stand})"
+messageVariants:
+  item: "{label}: {count} Leitende"
+severity: should
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata]
+tags: [vollstaendigkeit, midata]
+sources:
+  - key: WEB-C
+    page: "«J+S-Anerkennung»"
+    quote: "gültig bis zum Ende des übernächsten Kalenderjahres …; Zusatzanerkennungen Sicherheit … alle vier Jahre"
+    binding: true
+  - { key: WEB-ZA, binding: true }

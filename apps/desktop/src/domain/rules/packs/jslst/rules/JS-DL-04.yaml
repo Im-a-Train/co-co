@@ -1,0 +1,21 @@
+id: JS-DL-04
+version: 1.0.0
+module: js
+status: active
+title: "Leihmaterial: Liefertag kein Werktag"
+description: "Leihmaterial wird nur an Werktagen geliefert. Geprüft wird das angegebene Lieferdatum (Wochenende oder Feiertag)."
+message: "Liefertermin Leihmaterial {date} ist ein {weekdayOrHoliday}. Geliefert wird nur an Werktagen – Termin anpassen."
+messageVariants:
+  weekday0: "Sonntag"
+  weekday6: "Samstag"
+  holiday: "Feiertag"
+severity: hint
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs, params]
+params: [js.publicHolidays]
+tags: [frist]
+sources:
+  - { key: PBS27, page: "Folie 16" }
+  - { key: LAGER, page: "S. 24" }

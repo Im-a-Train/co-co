@@ -1,0 +1,22 @@
+id: JS-CAMP-02
+version: 2.0.0
+module: js
+status: active
+title: "Mindestens 12 Teilnehmende (5–20 Jahre)"
+description: "Für ein J+S-Lager braucht es mindestens 12 Teilnehmende im J+S-Alter (Jahrgänge: 5 bis 20 Jahre). Gezählt wird nach MiData (Jahrgang), sonst nach deiner Angabe."
+message: "Teilnehmende ({ageMin}–{ageMax} Jahre): nur {count} angegeben, nötig sind mindestens {min}{src}. Tage unter der Mindestzahl sind nicht beitragsberechtigt."
+messageVariants:
+  missing: "Teilnehmende ({ageMin}–{ageMax} Jahre): Angabe fehlt (bitte unter «Angaben» erfassen)"
+  ageUnknown: "Teilnehmende: nur {count} angegeben, nötig sind mindestens {min} im J+S-Alter ({ageMin}–{ageMax} Jahre). Das Alter ist nicht bekannt, die Gesamtzahl wird geprüft{src}. Tage unter der Mindestzahl sind nicht beitragsberechtigt."
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata, coachInputs, params]
+params: [js.minParticipants, js.ageMin, js.ageMax]
+tags: [teilnehmende]
+sources:
+  - { key: LEITFADEN, page: "«Minimale Teilnehmerzahl» (Art. 13 Abs. 1 VSpoFöP)", binding: true }
+  - { key: WEB-L, page: "«Voraussetzungen»", binding: true }
+  - { key: WEB-C, page: "«J+S-Alter»", binding: true }
+  - { key: PBS27, page: "Folie 9" }

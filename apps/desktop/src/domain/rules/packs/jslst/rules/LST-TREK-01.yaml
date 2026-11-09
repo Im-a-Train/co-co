@@ -1,0 +1,26 @@
+id: LST-TREK-01
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Planungsunterlagen zur Wanderung"
+description: "Jede Wanderung ist mit Routenplanung (inkl. Alternativroute) und Zeitberechnung vorbereitet. Kartenausschnitt und Sicherheitskonzept werden mit dem Lagerprogramm beim J+S-Coach eingereicht."
+message: "Für «{activity}» fehlen Unterlagen, die mit dem Lagerprogramm beim Coach einzureichen sind: {missing}."
+messageVariants:
+  missingJoin: ", "
+  partRoute: "Route / Kartenausschnitt"
+  partAlt: "Alternativroute"
+  partTime: "Zeitberechnung"
+  partSafety: "Sicherheitskonzept"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [documents, keywords, activityTags, params]
+params: [lst.hikeSafetyMinChars]
+keywords: [HIKE, ROUTE_DOC, ALT_ROUTE, MARSCHZEIT]
+formerIds: [SAFE-MTN-01]
+tags: [sicherheit, wanderung]
+sources:
+  - { key: MB-UP, page: "S. 3", quote: "Jede Wanderung muss mit einer Routenplanung (inkl. Alternativrouten) und Zeitberechnung vorbereitet werden. Die Lagerleitung muss sie mit Kartenausschnitt und Sicherheitskonzept zusammen mit dem gesamten Lagerprogramm beim J+S-Coach einreichen.", binding: true }
+  - { key: WEB-SICH, page: "" }
+  - { key: BERG, page: "S. 12" }

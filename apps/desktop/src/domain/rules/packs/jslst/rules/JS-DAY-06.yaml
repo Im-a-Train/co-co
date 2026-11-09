@@ -1,0 +1,30 @@
+id: JS-DAY-06
+version: 1.0.0
+module: lst
+status: active
+title: "J+S-Aktivitäten auf mindestens zwei Tageszeiten"
+description: "Die J+S-Aktivitäten eines Lagertags sind auf mindestens zwei Tageszeiten (Morgen, Nachmittag, Abend) verteilt. Die Grenzen der Tageszeiten sind in keiner Quelle definiert (co-co Auslegung, Parameter js.timeWindows)."
+message: "Am {date} liegen alle J+S-Aktivitäten in der Tageszeit «{slot}». Sie müssen auf mindestens {min} Tageszeiten (Morgen, Nachmittag, Abend) verteilt sein."
+messageVariants:
+  combined: "Am {first} und am {last} (als ein J+S-Tag gezählt) liegen alle J+S-Aktivitäten in der Tageszeit «{slot}». Sie müssen auf mindestens {min} Tageszeiten (Morgen, Nachmittag, Abend) verteilt sein."
+severity: should
+confidence: verified
+scope: day
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, params]
+params: [js.timeWindows, js.timeWindowMinOverlap, js.minTimeWindows]
+tags: [lagertag]
+sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer»"
+    quote: "je eine am Vormittag und/oder am Nachmittag und/oder am Abend"
+    binding: true
+  - key: WEB-L
+    page: "«Voraussetzungen»"
+    binding: true
+  - key: TOOL-V
+    page: "«Das J+S-Lager»"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true

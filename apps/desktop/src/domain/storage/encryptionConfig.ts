@@ -25,4 +25,5 @@ export const TABLE_ENCRYPTION: Readonly<Record<string, TableEncryptionConfig>> =
   midata: { plain: ['campIri'] },
   nds: { plain: ['campIri'] },
   selfChecks: { plain: ['id', 'campIri'] },
+  campRuleConfig: { plain: ['campIri'] },
 }

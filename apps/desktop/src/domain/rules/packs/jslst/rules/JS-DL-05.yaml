@@ -1,0 +1,20 @@
+id: JS-DL-05
+version: 1.0.0
+module: js
+status: active
+title: "Lagerprogramm nicht in der NDS"
+description: "Das definitive Lagerprogramm muss spätestens beim Abschluss des Angebots in der NDS hochgeladen sein. Vor Lagerende nur ein Hinweis, danach eine Empfehlung, nach der Abschlussfrist Pflicht."
+message: "Das definitive Lagerprogramm ist noch nicht in der NDS hochgeladen. Es muss spätestens beim Abschluss des Angebots vorliegen (Frist {due})."
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds, mapping, activityTags, campConfig, params]
+params: [js.ndsClosingDays]
+tags: [frist, nds]
+sources:
+  - key: WEB-L
+    page: "«Lagerprogramm»"
+    quote: "Das definitive Lagerprogramm muss spätestens beim Abschluss des Angebots in die Nationale Datenbank Sport (NDS) hochgeladen werden."
+    binding: true
+  - { key: WEB-C, page: "«5. Schritt: Abschluss des Angebots»", binding: true }

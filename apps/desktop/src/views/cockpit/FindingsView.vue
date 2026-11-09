@@ -12,9 +12,9 @@ import {
 } from '@/domain/cockpit'
 import { campIdFromIri } from '@/domain/iri'
 import { activityIriOfFinding, gridLocationFromFinding, recallPosition, rememberPosition, statusesOf } from '@/domain/triage'
-import { loadBundledPacks } from '@/domain/rules/packs'
 import { useFeedback } from '@/composables/useFeedback'
 import type { ActivityFact, Finding, Iri, RuleGroup } from '@/domain/types'
+import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import { createFeedbackFromFinding } from '@/components/cockpit/feedbackAction'
 import FindingCard from '@/components/cockpit/FindingCard.vue'
@@ -40,7 +40,14 @@ const filter = reactive<FindingFilter>({
   groups: [],
   activityIri: typeof route.query.activity === 'string' ? route.query.activity : null,
 })
-const groupOptions: RuleGroup[] = ['js', 'completeness', 'safety', 'best-practice']
+/** Module filter options: the modules of the loaded rule packs (catalog v2). */
+const groupOptions: RuleGroup[] = (() => {
+  try {
+    return modulesOf(loadBundledPacks()).map((m) => m.id)
+  } catch {
+    return []
+  }
+})()
 
 const visible = computed(() => filterFindings(findings.value, filter))
 const groups = computed(() => groupBySeverity(visible.value))
@@ -307,7 +314,7 @@ function addAi(list: Finding[]) {
         </v-chip-group>
         <v-chip-group v-model="filter.groups" multiple selected-class="text-primary">
           <v-chip v-for="g in groupOptions" :key="g" :value="g" filter variant="outlined" size="small">
-            {{ t(`findings.group.${g}`) }}
+            {{ t(`rules.catalog.module.${g}`) }}
           </v-chip>
         </v-chip-group>
         <v-switch v-model="filter.showOverridden" :label="t('findings.filters.showOverridden')" density="compact" hide-details color="primary" />

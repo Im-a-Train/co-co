@@ -8,13 +8,15 @@ export function filterExcludedFindings(
   facts: CampFacts | null,
   state: RuleState,
   campIri: Iri,
+  /** Former ids of a rule (rules v2 successors), so exclusions stored under an old id keep working. */
+  formerIdsOf: (ruleId: string) => readonly string[] = () => [],
 ): { kept: Finding[]; excluded: number } {
   if (!facts || !state.excludedCategories.some((e) => e.campIri === campIri)) return { kept: findings, excluded: 0 }
   const kept = findings.filter((f) => {
     if (f.scope !== 'activity' && f.scope !== 'scheduleEntry') return true
     const actIri = activityIriOfFinding(f, facts)
     const categoryIri = actIri ? (facts.activities.find((a) => a.iri === actIri)?.categoryIri ?? null) : null
-    return !categoryIri || !isCategoryExcluded(state, campIri, categoryIri, f.ruleId)
+    return !categoryIri || !isCategoryExcluded(state, campIri, categoryIri, f.ruleId, formerIdsOf(f.ruleId))
   })
   return { kept, excluded: findings.length - kept.length }
 }

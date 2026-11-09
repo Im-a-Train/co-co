@@ -1,0 +1,18 @@
+id: LST-WINTER-08
+version: 1.0.0
+module: lst-winter
+status: active
+title: "Grosse Schneeschuhgruppe"
+description: "Schneeschuhgruppen über der Maximalgrösse werden in Untergruppen mit je einer Leitungsperson aufgeteilt."
+message: "Bei «{activity}» mit {participants} Teilnehmenden sind {responsible} Leitende verantwortlich. Gruppen über {max} in Untergruppen mit je einer Leitungsperson aufteilen."
+severity: hint
+confidence: best-practice
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, coachInputs, midata, params]
+params: [lst.snowGroupMax]
+keywords: [SNOWSHOE]
+tags: [winter, leitung]
+sources:
+  - key: WINTER
+    page: "S. 16"

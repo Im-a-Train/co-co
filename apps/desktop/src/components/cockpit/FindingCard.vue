@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { safeExternalUrl, severityColor } from '@/domain/cockpit'
+import { paramValueText, reasonText } from '@/components/camps/ruleConfigUi'
 import type { Finding } from '@/domain/types'
 import FindingExplainPanel from './FindingExplainPanel.vue'
 
@@ -13,7 +14,12 @@ const emit = defineEmits<{
   openActivity: [iri: string]
   excludeCategory: [finding: Finding]
 }>()
-const { t } = useI18n()
+const { t, te } = useI18n()
+const moduleNote = computed(() => {
+  const n = props.finding.moduleNote
+  if (!n || !props.finding.module) return null
+  return t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason: reasonText(t, te, n) })
+})
 const url = computed(() => safeExternalUrl(props.finding.source?.url))
 const activityEvidence = computed(() =>
   props.finding.evidence.filter((e) => e.kind === 'activity' || e.kind === 'scheduleEntry'),
@@ -39,6 +45,14 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
       </div>
       <div class="text-subtitle-1">{{ finding.title }}</div>
       <div class="text-body-2">{{ finding.message }}</div>
+
+      <div v-if="moduleNote" class="text-caption text-warning mt-1" data-testid="finding-module-note">
+        <v-icon icon="mdi-lightbulb-on-outline" size="x-small" /> {{ moduleNote }}
+      </div>
+      <div v-for="n in finding.paramNotes ?? []" :key="n.key" class="text-caption text-medium-emphasis mt-1" data-testid="finding-param-note">
+        <v-icon icon="mdi-tune-variant" size="x-small" />
+        {{ t('rules.paramNote', { label: n.label, value: paramValueText(n.value), default: paramValueText(n.default) }) }}
+      </div>
 
       <div v-if="finding.override" class="text-caption mt-1">
         {{ t('findings.overrideReason', { reason: finding.override.reason }) }}

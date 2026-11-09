@@ -1,4 +1,4 @@
-/** Synthetic CampFacts fixture factory for rule tests. */
+/** Synthetic CampFacts fixture factory and RuleContext helpers (makeCtx, msg) for rule tests. */
 import {
   DEFAULT_APP_SETTINGS,
   type ActivityContent,
@@ -10,9 +10,20 @@ import {
   type DocumentRecord,
   type MidataAggregate,
   type NdsAggregate,
+  type CampRuleConfig,
+  type ParamValue,
   type RuleContext,
+  type RuleContextInput,
+  type RuleHit,
+  type RuleMeta,
   type ScheduleEntryFact,
 } from '@/domain/types'
+import { renderMessage } from '../engine'
+import { defaultCampRuleConfig } from '../lib/campRuleConfig'
+import { completeContext, contextDate, paramDefsOf } from '../lib/context'
+import { createParamReader } from '../lib/params'
+import { loadBundledPacks } from '../packs'
+import { hitRuleIds } from './predicates'
 
 export const CAMP = '/api/camps/c1'
 export const PERIOD = '/api/periods/p1'
@@ -269,8 +280,20 @@ export function makeDoc(over: Partial<DocumentRecord> = {}): DocumentRecord {
   }
 }
 
-export function makeCtx(facts: CampFacts, over: Partial<RuleContext> = {}): RuleContext {
-  return {
+export interface CtxOverrides extends Partial<Omit<RuleContextInput, 'campConfig'>> {
+  /** Per-camp rule config: fields merged over the default record (modules, activityTags, camp, angebot, params …). */
+  campConfig?: Partial<CampRuleConfig> | null
+  /** Param values forced for this test (bypass `overridable`; reported by isOverridden). */
+  paramValues?: Record<string, ParamValue>
+}
+
+/**
+ * Complete RuleContext for predicate tests: bundled packs' params + keyword sets, resolved campConfig
+ * (module states), lazy ctx.js. Defaults: J+S mapping MAPPING, now 2031-01-01, default settings.
+ */
+export function makeCtx(facts: CampFacts, over: CtxOverrides = {}): RuleContext {
+  const { campConfig, paramValues, ...rest } = over
+  const input: RuleContextInput = {
     facts,
     mapping: MAPPING,
     coachInputs: null,
@@ -279,8 +302,45 @@ export function makeCtx(facts: CampFacts, over: Partial<RuleContext> = {}): Rule
     now: new Date('2031-01-01T12:00:00Z'),
     userDisplayName: null,
     overrides: [],
-    ...over,
+    ...rest,
+    campConfig: campConfig ? { ...defaultCampRuleConfig(facts.camp.iri), ...campConfig } : null,
   }
+  const packs = loadBundledPacks()
+  if (paramValues && !input.params) {
+    const base = createParamReader({
+      defs: paramDefsOf(packs),
+      date: contextDate(input),
+      adminParams: input.settings.ruleParams ?? null,
+      campParams: (campConfig?.params ?? null) as Record<string, ParamValue> | null,
+    })
+    input.params = {
+      get: <T,>(key: string) => (key in paramValues ? (paramValues[key] as T) : base.get<T>(key)),
+      isOverridden: (key) => (key in paramValues ? { value: paramValues[key], default: base.get(key) } : base.isOverridden(key)),
+      def: (key) => base.def(key),
+    }
+  }
+  return completeContext(packs, input)
+}
+
+/** Rule metadata of a bundled rule (throws if unknown). */
+export function ruleMeta(id: string): RuleMeta {
+  const meta = loadBundledPacks()
+    .flatMap((p) => p.rules)
+    .find((r) => r.meta.id === id)?.meta
+  if (!meta) throw new Error(`Regel ${id} nicht gefunden`)
+  return meta
+}
+
+/**
+ * Rendered message of a predicate hit (variants, fragments, placeholders), as the engine would produce it.
+ * `msg(hit)` works for hits returned by `allPredicates` (./predicates.ts); otherwise pass the rule id.
+ */
+export function msg(hitOrRuleId: RuleHit | string | undefined, maybeHit?: RuleHit): string {
+  const hit = typeof hitOrRuleId === 'string' ? maybeHit : hitOrRuleId
+  if (!hit) throw new Error('kein Treffer')
+  const ruleId = typeof hitOrRuleId === 'string' ? hitOrRuleId : hitRuleIds.get(hit)
+  if (!ruleId) throw new Error('Regel-ID unbekannt: msg(ruleId, hit) verwenden')
+  return renderMessage(ruleMeta(ruleId), hit)
 }
 
 const NO_COUNTS = { children: null, adolescents: null, totalParticipants: null, totalInstructors: null, jsInstructors: null, campDays: null, totalActivities: null }

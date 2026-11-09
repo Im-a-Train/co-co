@@ -1,0 +1,20 @@
+id: LST-BERG-01
+version: 2.0.0
+module: lst-berg
+status: active
+title: "Tour ausserhalb Lagersport/Trekking"
+description: "Alpinwandern ab T4, Seil/Abseilen zur Hindernisüberwindung, Gletscher und Klettersteige sind mit einer LS/T-Anerkennung nicht erlaubt."
+message: "«{activity}» enthält «{term}». Mit einer LS/T-Anerkennung nicht erlaubt sind Alpinwandern ab T4, Seil/Abseilen zur Hindernisüberwindung, Gletscher und Klettersteige. Möglich nur als ergänzender Bewegungsblock unter Leitung einer Person mit passender J+S-Anerkennung (z. B. Bergsteigen)."
+messageVariants:
+  ebbA: "«{activity}» enthält «{term}» (Tour ausserhalb Lagersport/Trekking). Leitung durch eine Person mit Anerkennung Bergsteigen sicherstellen."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, documents, activityTags]
+keywords: [ALPINE]
+sources:
+  - { key: MB-UP, page: "S. 3", quote: "Mit einer Anerkennung Lagersport/Trekking nicht erlaubt", binding: true }
+  - { key: MB-UP, page: "S. 6" }
+  - { key: BERG, page: "S. 10–11, 31" }
+tags: [sicherheit, berg]

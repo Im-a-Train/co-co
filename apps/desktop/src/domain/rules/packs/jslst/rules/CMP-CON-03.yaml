@@ -1,0 +1,20 @@
+id: CMP-CON-03
+version: 1.0.0
+module: js
+status: active
+title: "Leitende in eCamp und MiData abgleichen"
+description: "Die Leitenden in eCamp und MiData sind dieselben Personen (Abgleich über Namen, Heuristik)."
+message: "{parts} (Abgleich über Namen, Quelle: MiData, Stand {stand})"
+messageVariants:
+  onlyEcamp: "In eCamp, aber nicht in MiData: {names}"
+  onlyMidata: "In MiData, aber nicht in eCamp: {names}"
+  partsJoin: ". "
+severity: hint
+confidence: heuristic
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata]
+tags: [vollstaendigkeit, midata]
+sources:
+  - key: WEB-L
+    page: ""

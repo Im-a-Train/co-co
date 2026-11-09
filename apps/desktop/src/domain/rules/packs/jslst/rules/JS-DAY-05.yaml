@@ -1,0 +1,24 @@
+id: JS-DAY-05
+version: 2.0.0
+module: lst
+status: active
+title: "Einheit beginnt mit Einstimmen/Aufwärmen"
+description: "Jede J+S-Einheit beginnt mit einem gezielten Aufwärmen oder Einstimmen. Geprüft wird, ob der Beginn des Ablaufs (Storyboard) ein entsprechendes Stichwort enthält."
+message: "«{title}»: Der Ablauf beginnt nicht erkennbar mit einem Einstimmen oder Aufwärmen."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, params, keywords]
+params: [lst.warmupHeadChars]
+keywords: [WARMUP]
+tags: [lagertag, methodik]
+sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer»"
+    quote: "Vor jedem Training ist ein gezieltes Aufwärmen erforderlich"
+    binding: true
+  - key: WEB-L
+    page: "«Lagerprogramm»"
+    quote: "Die Trainingseinheiten starten jeweils mit einem gezielten Aufwärmen"
+    binding: true

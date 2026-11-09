@@ -1,0 +1,22 @@
+id: JS-EXCL-01
+version: 1.0.0
+module: js
+status: active
+title: "Von J+S ausgeschlossene Aktivität"
+description: "Bestimmte Sportarten und Aktivitäten (z. B. Canyoning, Bungee, Kampfsport, Wildwasser ab Grad III) sind von J+S generell ausgeschlossen. Erkennung über Stichwörter in Titel, Ort, Ablauf und Notizen."
+message: "«{activity}» enthält «{term}». Diese Aktivität ist von J+S generell ausgeschlossen (Art. 6 Abs. 2 SpoFöV) und darf auch nicht als ergänzender Bewegungsblock durchgeführt werden."
+messageVariants:
+  ww: "«{activity}»: Wildwasser ab Grad III ist von J+S ausgeschlossen (Ausnahme Kanusport Wildwasser gemäss Art. 3 Abs. 3 VSpoFöP)."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags]
+keywords: [EXCLUDED, WW_HIGH]
+tags: [sicherheit, ausschluss]
+sources:
+  - { key: MB-UP, page: "S. 6", quote: "Von J+S generell ausgeschlossen", binding: true }
+  - { key: WEB-SICH, binding: true }
+  - { key: WEB-C, page: "«Verbotene Sportarten»", quote: "Ausnahme im Kanusport Wildwasser gemäss Art. 3 Abs. 3 VSpoFöP", binding: true }
+  - { key: EBB-C, page: "S. 1", binding: true }
+  - { key: EBB-L, page: "S. 1", binding: true }

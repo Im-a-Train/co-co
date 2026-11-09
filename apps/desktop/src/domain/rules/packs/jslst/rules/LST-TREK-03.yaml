@@ -1,0 +1,16 @@
+id: LST-TREK-03
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Wanderung für Kinder zu lang"
+description: "Mit Kindern (Biber, Wölfe oder jüngster Jahrgang unter 10) sollte die effektive Wanderzeit die empfohlene Dauer nicht überschreiten."
+message: "Geschätzte Marschzeit von «{activity}» {h} h. Mit Kindern sollte die effektive Wanderzeit {max} h nicht überschreiten."
+severity: hint
+confidence: unverified
+scope: activity
+validFrom: 2026-01-01
+inputs: [documents, coachInputs, midata, params]
+params: [lst.hikeKidsMaxMinutes, lst.paceLkmPerHour, lst.paceKidsLkmPerHour, lst.descentHmPerLkm]
+tags: [wanderung, kinder]
+sources:
+  - { key: BERG, page: "S. 4" }

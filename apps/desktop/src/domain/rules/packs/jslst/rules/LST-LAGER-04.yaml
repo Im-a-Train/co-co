@@ -1,0 +1,17 @@
+id: LST-LAGER-04
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Kein täglicher Leiterhöck"
+description: "Jeden Lagertag ausser dem letzten gibt es einen Leiterhöck bzw. Tagesrückblick im Programm."
+message: "Am {date} ist kein Leiterhöck / Tagesrückblick im Programm."
+severity: hint
+confidence: best-practice
+scope: day
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [HOECK]
+tags: [lagerleben]
+sources:
+  - { key: LAGER, page: "S. 20" }
+  - { key: TOOL-P, page: "step 5" }

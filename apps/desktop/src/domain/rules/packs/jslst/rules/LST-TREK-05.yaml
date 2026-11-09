@@ -1,0 +1,17 @@
+id: LST-TREK-05
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Unterwegs mit nur einer Leitungsperson"
+description: "Unterwegs (Wanderung, Velo) sind mindestens zwei Leitende dabei: eine Person an der Spitze, eine am Schluss."
+message: "«{activity}» hat {n} verantwortliche Person(en). Unterwegs sollten mindestens zwei Leitende dabei sein (Spitze und Schluss)."
+severity: hint
+confidence: best-practice
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [HIKE, BIKE]
+tags: [sicherheit, wanderung]
+sources:
+  - { key: BERG, page: "S. 7, 18" }
+  - { key: MB-UP, page: "S. 2", quote: "Verantwortliche Personen am Anfang und am Ende der Gruppe sind bestimmt", binding: true }

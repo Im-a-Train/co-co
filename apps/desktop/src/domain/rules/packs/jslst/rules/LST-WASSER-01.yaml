@@ -1,0 +1,22 @@
+id: LST-WASSER-01
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Wasseraktivität: Aufsicht und Sicherheitsüberlegungen"
+description: "Aktivitäten im oder am Wasser haben eine verantwortliche Leitungsperson und nicht leere Sicherheitsüberlegungen. Erkennung über Stichwörter (Heuristik)."
+message: "Bei «{activity}» fehlt {missing}."
+messageVariants:
+  noResponsible: "eine verantwortliche Leitungsperson – auch beim freien Spielen muss eine Leitungsperson anwesend sein"
+  noSafety: "Sicherheitsüberlegungen"
+  missingJoin: " und "
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [WATER]
+sources:
+  - { key: WASSER, page: "S. 3, 5, 18" }
+  - { key: MB-UP, page: "S. 5", quote: "Die Aktivität, Betreuung und Ausrüstung wird … angepasst" }
+formerIds: [SAFE-WATER-01]
+tags: [sicherheit, wasser]

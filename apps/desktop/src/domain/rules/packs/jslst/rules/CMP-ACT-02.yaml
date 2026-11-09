@@ -1,0 +1,23 @@
+id: CMP-ACT-02
+version: 2.0.0
+module: lst
+status: active
+title: "J+S-Aktivität ohne Beschreibung"
+description: "J+S-Aktivitäten und ihre Inhalte müssen klar beschrieben und im Programm ersichtlich sein: Ablauf (Storyboard) oder Notizen sind nötig."
+message: "«{title}» ist eine J+S-Aktivität, hat aber weder Ablauf (Storyboard) noch Notizen."
+severity: should
+confidence: verified
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping, activityTags]
+tags: [vollstaendigkeit]
+sources:
+  - key: WEB-L
+    page: "«Lagerprogramm»"
+    quote: "Die J+S-Aktivitäten und deren Inhalte müssen klar beschrieben und im Programm ersichtlich sein"
+    binding: true
+  - key: LEITFADEN
+    page: "«Aktivitätendauer»"
+    binding: true
+  - key: MAN
+    page: "S. 38–39"

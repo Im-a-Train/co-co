@@ -1,0 +1,24 @@
+id: LST-ACT-02
+version: 1.0.0
+module: lst
+status: active
+title: "J+S-Aktivität nur für einen Teil der Gruppe?"
+description: "J+S-Aktivitäten richten sich an alle Teilnehmenden. Parallele Blöcke (Untergruppen) gelten als «für alle»."
+message: "«{activity}» scheint sich nur an einen Teil der Gruppe zu richten («{term}»). J+S-Aktivitäten richten sich an alle Teilnehmenden."
+severity: hint
+confidence: heuristic
+scope: activity
+validFrom: 2027-01-01
+inputs: [mapping, activityTags, keywords, params]
+params: [js.minUnitMinutes]
+keywords: [SUBGROUP]
+tags: [programm]
+sources:
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: TOOL-V
+    page: "«Die J+S-Aktivität»"
+    binding: true
+  - key: PBS27
+    page: "Folie 7"

@@ -1,0 +1,26 @@
+id: JS-DAY-02
+version: 1.0.0
+module: lst
+status: active
+title: "J+S-Einheit mindestens 30 Minuten"
+description: "Jede J+S-Einheit dauert mindestens 30 Minuten. Eine kürzere Einheit zählt nicht und darf im Programm nicht als J+S-Aktivität ausgewiesen sein."
+message: "Tag {day}: «{title}» dauert nur {minutes} Min. (J+S-Einheiten brauchen mindestens {min} Min.)"
+severity: must
+confidence: verified
+scope: scheduleEntry
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, params]
+params: [js.minUnitMinutes]
+tags: [lagertag]
+sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer»"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: TOOL-V
+    page: "«Die J+S-Aktivität»"
+    binding: true
+  - key: PBS27
+    page: "Folie 7"

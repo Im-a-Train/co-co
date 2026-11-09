@@ -7,7 +7,10 @@ function meta(over: Partial<RuleMeta> = {}): RuleMeta {
   return {
     id: 'T-RULE-01',
     version: '1.0.0',
+    module: 'js',
     group: 'js',
+    status: 'active',
+    sources: [{ key: 'WEB-L', page: '' }],
     title: 'Test',
     description: 'Beschreibung',
     message: 'Tag {day}: {text}',
@@ -48,7 +51,7 @@ describe('validateRuleMeta', () => {
     expect(validateRuleMeta(meta({ confidence: 'unverified', severity: 'should' }))).toEqual([])
   })
   it('requires a source and valid dates', () => {
-    expect(validateRuleMeta(meta({ source: { title: '', url: '' } })).length).toBeGreaterThan(0)
+    expect(validateRuleMeta(meta({ sources: [] })).length).toBeGreaterThan(0)
     expect(validateRuleMeta(meta({ validFrom: '1.1.2026' })).length).toBeGreaterThan(0)
   })
 })

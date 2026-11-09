@@ -1,0 +1,16 @@
+id: JS-PROG-02
+version: 1.0.0
+module: js
+status: active
+title: "Fixpunkte (Mahlzeiten) fehlen"
+description: "Die Tagesplanung enthält Fixpunkte wie Mahlzeiten. Erkennung über Stichwörter im Titel der Aktivitäten."
+message: "Am {date} sind keine Fixpunkte wie Mahlzeiten im Programm erkennbar."
+severity: hint
+confidence: heuristic
+scope: day
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [MEAL]
+tags: [programm, lagertag]
+sources:
+  - { key: WEB-L, page: "«Lagerprogramm»", binding: true }

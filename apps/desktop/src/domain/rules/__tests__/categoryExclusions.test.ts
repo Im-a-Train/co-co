@@ -51,6 +51,11 @@ describe('ruleState category exclusions', () => {
     expect(categoryExclusionsForCamp(one, 'c')).toHaveLength(1)
     expect(categoryExclusionsForCamp(one, 'x')).toHaveLength(0)
   })
+  it('an exclusion stored under a former rule id still applies to its successor', () => {
+    const old = excludeCategory(EMPTY_RULE_STATE, 'c', 'k', 'SAFE-MTN-03')
+    expect(isCategoryExcluded(old, 'c', 'k', 'LST-SB-03', ['SAFE-MTN-03'])).toBe(true)
+    expect(isCategoryExcluded(old, 'c', 'k', 'LST-SB-03')).toBe(false)
+  })
 })
 
 describe('filterExcludedFindings', () => {

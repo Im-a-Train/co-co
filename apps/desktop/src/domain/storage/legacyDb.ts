@@ -1,11 +1,13 @@
 /**
- * FROZEN legacy IndexedDB database 'coco' (plaintext, schema v1-v4). Kept only so `migrate.ts` can read it
+ * FROZEN legacy IndexedDB database 'coco' (plaintext, schema v1-v5; v5 = rules v2 `campRuleConfig`, shipped
+ * in alpha builds before encryption). Kept only so `migrate.ts` can read it
  * once and copy it into the encrypted database `coco2` (ADR 0010). Do NOT edit the versions below and do not
  * use this class anywhere except the migration and tests.
  */
 import Dexie, { type EntityTable } from 'dexie'
 import type {
   AiLogEntry,
+  CampRuleConfig,
   CampSummaryRecord,
   CategoryMapping,
   CoachInputs,
@@ -40,6 +42,7 @@ export class LegacyCocoDb extends Dexie {
   midata!: EntityTable<MidataRecord, 'campIri'>
   nds!: EntityTable<NdsRecord, 'campIri'>
   selfChecks!: EntityTable<SelfCheckRun, 'id'>
+  campRuleConfig!: EntityTable<CampRuleConfig, 'campIri'>
 
   constructor(name = LEGACY_DB_NAME) {
     super(name)
@@ -65,6 +68,9 @@ export class LegacyCocoDb extends Dexie {
     })
     this.version(4).stores({
       selfChecks: 'id, campIri, createdAt',
+    })
+    this.version(5).stores({
+      campRuleConfig: 'campIri',
     })
   }
 }

@@ -1,72 +1,98 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { assemblePack, loadBundledPacks, parseRuleYaml } from '../packs'
+import { assemblePack, loadBundledPacks, parsePackYaml, parseRuleYaml, selectPacks, validateBundle } from '../packs'
 import { validateRuleMeta, evaluate, countFindings } from '../engine'
-import { predicates } from '../packs/basis/predicates'
-import { DEFAULT_APP_SETTINGS, type CampFacts, type CategoryMapping } from '@/domain/types'
+import { getSourceRegistry } from '../packs/registry'
+import { allPredicates as predicates } from './predicates'
+import { DEFAULT_APP_SETTINGS, MODULE_IDS, type CampFacts, type CategoryMapping, type RulePack } from '@/domain/types'
 import { makeCtx, MAPPING, FactsBuilder } from './factory'
 
-const SOURCES = [
-  'https://www.jugendundsport.ch/de/lager',
-  'https://www.jugendundsport.ch/de/leitfaden-coach',
-  'https://www.jugendundsport.ch/de/lagersport-trekking',
-  'https://hering.scout.ch/de',
-  'https://db.scout.ch',
+const JSLST_IDS = [
+  'BP-VAR-01', 'CMP-ACT-01', 'CMP-ACT-02', 'CMP-ACT-03', 'CMP-CAMP-01', 'CMP-CON-01', 'CMP-CON-02', 'CMP-CON-03', 'CMP-CON-04', 'CMP-CON-05', 'CMP-CON-06', 'CMP-CON-07', 'CMP-CON-08', 'CMP-CON-09', 'CMP-CON-10', 'CMP-DAY-01', 'CMP-LA-01', 'CMP-MD-01', 'CMP-NDS-01', 'CMP-NDS-02', 'CMP-NDS-03', 'JS-AGE-01', 'JS-BWZ-02', 'JS-BWZ-27', 'JS-CAMP-01', 'JS-CAMP-02', 'JS-DAY-01', 'JS-DAY-02', 'JS-DAY-03', 'JS-DAY-04', 'JS-DAY-05', 'JS-DAY-06', 'JS-DL-01', 'JS-DL-02', 'JS-DL-03', 'JS-DL-04', 'JS-DL-05', 'JS-DL-06', 'JS-EXCL-01', 'JS-FREE-01', 'JS-LL-01', 'JS-PROG-01', 'JS-PROG-02', 'JS-STAFF-01', 'JS-STAFF-02', 'JS-STAFF-03', 'LST-ACT-01', 'LST-ACT-02', 'LST-ACT-03', 'LST-ACT-04', 'LST-ACT-05', 'LST-ANG-01', 'LST-ANG-02', 'LST-BERG-01', 'LST-BERG-02', 'LST-BERG-03', 'LST-BERG-04', 'LST-EBB-01', 'LST-EBB-02', 'LST-EBB-03', 'LST-EBB-04', 'LST-LAGER-01', 'LST-LAGER-02', 'LST-LAGER-03', 'LST-LAGER-04', 'LST-LAGER-05', 'LST-LAGER-06', 'LST-LAGER-07', 'LST-SB-01', 'LST-SB-02', 'LST-SB-03', 'LST-SB-04', 'LST-SB-05', 'LST-TREK-01', 'LST-TREK-02', 'LST-TREK-03', 'LST-TREK-04', 'LST-TREK-05', 'LST-TREK-06', 'LST-TREK-07', 'LST-TREK-08', 'LST-TREK-09', 'LST-WASSER-01', 'LST-WASSER-02', 'LST-WASSER-03', 'LST-WASSER-04', 'LST-WASSER-05', 'LST-WASSER-06', 'LST-WASSER-07', 'LST-WASSER-08', 'LST-WASSER-09', 'LST-WASSER-10', 'LST-WINTER-01', 'LST-WINTER-02', 'LST-WINTER-03', 'LST-WINTER-04', 'LST-WINTER-05', 'LST-WINTER-06', 'LST-WINTER-07', 'LST-WINTER-08', 'SAFE-NIGHT-01', 'SAFE-ROPE-01', 'SAFE-WX-01',
 ]
+const PBS_IDS = ['BP-REST-01', 'BP-SLEEP-01', 'BP-WOLF-01', 'BP-WATER-01', 'CMP-PROG-01', 'PBS-METH-01']
+const EXPECTED_IDS = [...JSLST_IDS, ...PBS_IDS]
 
-const EXPECTED_IDS = [
-  'JS-CAMP-01', 'JS-CAMP-02', 'JS-DAY-01', 'JS-DAY-02', 'JS-DAY-03', 'JS-DAY-04', 'JS-DAY-05', 'JS-DL-01', 'JS-DL-02', 'JS-DL-03',
-  'JS-LL-01', 'JS-STAFF-01', 'JS-FREE-01', 'JS-BWZ-27',
-  'CMP-ACT-01', 'CMP-ACT-02', 'CMP-ACT-03', 'CMP-LA-01', 'CMP-DAY-01', 'CMP-CAMP-01', 'CMP-MD-01', 'CMP-NDS-01', 'CMP-NDS-02', 'CMP-NDS-03', 'CMP-PROG-01', 'CMP-CON-01', 'CMP-CON-02', 'CMP-CON-03', 'CMP-CON-04', 'CMP-CON-05', 'CMP-CON-06', 'CMP-CON-07', 'CMP-CON-08', 'CMP-CON-09', 'CMP-CON-10',
-  'SAFE-WATER-01', 'SAFE-MTN-01', 'SAFE-MTN-02', 'SAFE-MTN-03', 'SAFE-ROPE-01', 'SAFE-NIGHT-01', 'SAFE-WX-01', 'SAFE-DOC-01',
-  'BP-REST-01', 'BP-SLEEP-01', 'BP-WOLF-01', 'BP-WATER-01', 'BP-VAR-01',
-]
+const packs = loadBundledPacks()
+const allRules = packs.flatMap((p) => p.rules)
+const byId = Object.fromEntries(allRules.map((r) => [r.meta.id, r.meta]))
 
-describe('bundled basic pack', () => {
-  const [pack] = loadBundledPacks()
-
-  it('is "co-co Basis 2026.1" with all specified rules', () => {
-    expect(loadBundledPacks()).toHaveLength(1)
-    expect(pack.name).toBe('co-co Basis 2026.1')
-    expect(pack.rules.map((r) => r.meta.id).sort()).toEqual([...EXPECTED_IDS].sort())
+describe('bundled packs (rules v2)', () => {
+  it('are coco-js-lst and coco-pbs with all rules', () => {
+    expect(packs.map((p) => p.id)).toEqual(['coco-js-lst', 'coco-pbs'])
+    expect(packs.map((p) => p.version)).toEqual(['2026.2.0', '2026.2.0'])
+    expect(allRules.map((r) => r.meta.id).sort()).toEqual([...EXPECTED_IDS].sort())
+    expect(packs[1].rules.map((r) => r.meta.id).sort()).toEqual([...PBS_IDS].sort())
   })
 
-  it('has valid metadata, official sources and German texts for every rule', () => {
-    for (const { meta } of pack.rules) {
+  it('define all modules of §2.2 once', () => {
+    expect(packs.flatMap((p) => p.modules ?? []).map((m) => m.id).sort()).toEqual([...MODULE_IDS].sort())
+  })
+
+  it('accept the old pack id coco-basis through aliases', () => {
+    expect(selectPacks(packs, ['coco-basis']).map((p) => p.id)).toEqual(['coco-js-lst', 'coco-pbs'])
+    expect(selectPacks(packs, ['coco-pbs']).map((p) => p.id)).toEqual(['coco-pbs'])
+    expect(selectPacks(packs, [])).toHaveLength(2)
+  })
+
+  it('have globally unique rule ids and formerIds; every reference resolves', () => {
+    expect(new Set(allRules.map((r) => r.meta.id)).size).toBe(allRules.length)
+    expect(validateBundle(packs)).toEqual([])
+  })
+
+  it('has valid metadata, a resolvable source with URL and German texts for every rule', () => {
+    const reg = getSourceRegistry()
+    for (const { meta } of allRules) {
       expect(validateRuleMeta(meta), meta.id).toEqual([])
-      expect(SOURCES, meta.id).toContain(meta.source.url)
+      expect(meta.sources.length, meta.id).toBeGreaterThan(0)
+      expect(meta.sources.every((s) => reg.get(s.key)), meta.id).toBe(true)
+      expect(meta.source.url, meta.id).toMatch(/^https:\/\//)
       expect(meta.message, meta.id).toMatch(/\S/)
-      if (meta.confidence === 'unverified' || meta.confidence === 'conflict') expect(meta.severity, meta.id).not.toBe('must')
+      expect(meta.group, meta.id).toBe(meta.module)
     }
   })
 
-  it('has the severities/confidences required by the spec', () => {
-    const m = Object.fromEntries(pack.rules.map((r) => [r.meta.id, r.meta]))
-    expect(m['JS-STAFF-01']).toMatchObject({ severity: 'should', confidence: 'conflict' })
-    expect(m['JS-FREE-01']).toMatchObject({ severity: 'should', confidence: 'conflict' })
-    expect(m['JS-BWZ-27']).toMatchObject({ severity: 'hint', confidence: 'unverified', validFrom: '2027-01-01' })
-    expect(m['JS-DAY-01'].severity).toBe('must')
-    expect(m['JS-DAY-05'].severity).toBe('should')
-    expect(m['CMP-CAMP-01'].severity).toBe('hint')
-    expect(m['CMP-PROG-01'].severity).toBe('hint')
-    expect(m['SAFE-NIGHT-01'].severity).toBe('hint')
-    expect(pack.rules.filter((r) => r.meta.group === 'best-practice').every((r) => r.meta.severity === 'hint')).toBe(true)
+  it('must ⇒ verified (loader and validateRuleMeta)', () => {
+    for (const { meta } of allRules) if (meta.severity === 'must') expect(meta.confidence, meta.id).toBe('verified')
+    expect(validateRuleMeta({ ...byId['JS-DAY-02'], confidence: 'heuristic' })).toEqual([expect.stringMatching(/must.*verified/)])
   })
 
-  it('message placeholders are limited to the keys the predicates provide (smoke: no unfilled {..} for the happy hit)', () => {
-    for (const { meta } of pack.rules) expect(meta.message).not.toMatch(/\{\s*\}/)
+  it('applies the catalog v2 severity decisions (§4)', () => {
+    expect(byId['JS-STAFF-01']).toMatchObject({ status: 'retired' })
+    expect(byId['JS-DAY-01']).toMatchObject({ severity: 'should', confidence: 'verified' })
+    expect(byId['JS-DAY-02']).toMatchObject({ severity: 'must', confidence: 'verified' })
+    expect(byId['JS-BWZ-27']).toMatchObject({ severity: 'should', confidence: 'verified', validFrom: '2027-01-01' })
+    expect(byId['JS-CAMP-01']).toMatchObject({ severity: 'must', confidence: 'verified' })
+    expect(byId['LST-WASSER-01'].formerIds).toEqual(['SAFE-WATER-01'])
+    expect(byId['LST-SB-03'].formerIds).toEqual(['SAFE-MTN-03'])
+    expect(packs[1].rules.every((r) => r.meta.severity === 'hint')).toBe(true)
+  })
+
+  it('assigns the §4 modules', () => {
+    expect(byId['JS-CAMP-01'].module).toBe('lst')
+    expect(byId['JS-CAMP-02'].module).toBe('js')
+    expect(byId['CMP-DAY-01'].module).toBe('lst-lager')
+    expect(byId['BP-VAR-01'].module).toBe('lst')
+    expect(byId['CMP-PROG-01'].module).toBe('pbs')
   })
 
   it('has a predicate for every YAML and vice versa', () => {
     expect(Object.keys(predicates).sort()).toEqual([...EXPECTED_IDS].sort())
   })
+
+  it('every messageVariant placeholder style is valid (no empty {})', () => {
+    for (const { meta } of allRules) {
+      expect(meta.message).not.toMatch(/\{\s*\}/)
+      for (const v of Object.values(meta.messageVariants ?? {})) expect(v).not.toMatch(/\{\s*\}/)
+    }
+  })
 })
 
-describe('parseRuleYaml / assemblePack', () => {
+describe('parseRuleYaml / parsePackYaml / assemblePack', () => {
   const yaml = `id: X-TEST-01
 version: 1.0.0
-group: js
+module: js
 title: T
 description: D
 message: "M {a}"
@@ -74,38 +100,63 @@ severity: should
 confidence: heuristic
 scope: camp
 validFrom: 2026-01-01
-source:
-  title: J+S
-  url: https://www.jugendundsport.ch/de/lager
+sources:
+  - key: WEB-L
+    page: "«Lagerdauer»"
 `
-  it('parses dates as strings', () => {
-    expect(parseRuleYaml(yaml)).toMatchObject({ id: 'X-TEST-01', validFrom: '2026-01-01', version: '1.0.0' })
+  it('parses dates as strings, status defaults to active, group = module', () => {
+    expect(parseRuleYaml(yaml)).toMatchObject({ id: 'X-TEST-01', validFrom: '2026-01-01', version: '1.0.0', status: 'active', group: 'js' })
+    expect(parseRuleYaml(yaml).source.url).toBe('https://www.jugendundsport.ch/de/lager')
   })
-  it('rejects must + unverified', () => {
-    expect(() => parseRuleYaml(yaml.replace('should', 'must').replace('heuristic', 'unverified'))).toThrow(/must/)
+  it('rejects must without verified', () => {
+    expect(() => parseRuleYaml(yaml.replace('should', 'must'))).toThrow(/must/)
   })
-  it('rejects a missing source', () => {
-    expect(() => parseRuleYaml(yaml.replace(/source:[\s\S]*/, ''))).toThrow(/source/)
+  it('rejects a missing or unknown source', () => {
+    expect(() => parseRuleYaml(yaml.replace(/sources:[\s\S]*/, ''))).toThrow(/sources/)
+    expect(() => parseRuleYaml(yaml.replace('WEB-L', 'NOPE'))).toThrow(/NOPE/)
   })
-  it('assemblePack requires matching predicates', () => {
+  it('rejects an unknown module', () => {
+    expect(() => parseRuleYaml(yaml.replace('module: js', 'module: safety'))).toThrow(/module/)
+  })
+  it('accepts the legacy source {title,url} and old source keys', () => {
+    const legacy = yaml.replace(/sources:[\s\S]*/, 'source:\n  title: J+S\n  url: https://www.jugendundsport.ch/de/leitfaden-coach\n')
+    expect(parseRuleYaml(legacy).sources).toEqual([{ key: 'WEB-C', page: '' }])
+    expect(parseRuleYaml(yaml.replace('WEB-L', 'L')).source.url).toBe('https://www.jugendundsport.ch/de/lager')
+  })
+  it('pack.yaml rejects unknown trigger keys', () => {
+    const pack = 'id: p\nname: P\nversion: 1\nmodules:\n  - id: lst-berg\n    title: Berg\n    default: auto\n    suggestWhen:\n      - { weather: rain }\n'
+    expect(() => parsePackYaml(pack)).toThrow(/weather/)
+    expect(parsePackYaml(pack.replace('{ weather: rain }', '{ keywordSet: MOUNTAIN, minActivities: 2 }')).modules?.[0].suggestWhen).toEqual([
+      { keywordSet: 'MOUNTAIN', minActivities: 2 },
+    ])
+  })
+  it('assemblePack requires matching predicates and existing modules', () => {
     const meta = parseRuleYaml(yaml)
     const base = { id: 'p', name: 'P', version: '1', description: '' }
     expect(assemblePack(base, [meta], { 'X-TEST-01': () => [] }).rules).toHaveLength(1)
     expect(() => assemblePack(base, [meta], {})).toThrow(/Prädikat/)
     expect(() => assemblePack(base, [meta], { 'X-TEST-01': () => [], 'Y-OTHER-01': () => [] })).toThrow(/Y-OTHER-01/)
+    expect(() => assemblePack({ ...base, modules: [] }, [meta], { 'X-TEST-01': () => [] })).toThrow(/Modul js/)
+  })
+  it('validateBundle rejects a formerId equal to a live id and unknown params', () => {
+    const meta = { ...parseRuleYaml(yaml), formerIds: ['JS-DAY-01'], params: ['js.nope'] }
+    const extra: RulePack = { id: 'x', name: 'X', version: '1', description: '', rules: [{ meta, check: () => [] }] }
+    const errors = validateBundle([...packs, extra])
+    expect(errors.some((e) => /formerId JS-DAY-01/.test(e))).toBe(true)
+    expect(errors.some((e) => /js\.nope/.test(e))).toBe(true)
   })
 })
 
 describe('end to end', () => {
-  it('a clean synthetic camp has no must findings from the mapping-based J+S rules', () => {
-    const b = new FactsBuilder({ days: 5 })
+  it('a clean synthetic camp has no findings from the mapping-based J+S rules', () => {
+    const b = new FactsBuilder({ days: 5, start: '2026-07-12' })
     for (let d = 1; d <= 5; d++) b.validDay(d, d % 2 ? 'LS' : 'LA')
     const mapping: CategoryMapping = { ...MAPPING, entries: { LS: 'LS', LA: 'LA' } }
     for (const a of b.facts.activities) a.categoryIri = a.categoryIri === 'LS' ? 'LS' : 'LA'
     const findings = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping }))
     const dayRules = findings.filter((f) => ['JS-DAY-01', 'JS-DAY-02', 'JS-DAY-03', 'JS-DAY-04', 'JS-CAMP-01', 'JS-FREE-01'].includes(f.ruleId))
     expect(dayRules).toEqual([])
-    expect(findings.every((f) => f.packId === 'coco-basis' && f.source)).toBe(true)
+    expect(findings.every((f) => ['coco-js-lst', 'coco-pbs'].includes(f.packId ?? '') && f.source && f.module && f.sources?.length)).toBe(true)
   })
 })
 

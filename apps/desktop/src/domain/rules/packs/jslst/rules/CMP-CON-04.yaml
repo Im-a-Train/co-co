@@ -1,0 +1,16 @@
+id: CMP-CON-04
+version: 1.0.0
+module: js
+status: active
+title: "J+S-Leitende in NDS und MiData-Anerkennungen"
+description: "Die in der NDS geplanten J+S-Leitenden haben in MiData eine über die ganze Lagerdauer gültige Leiter- oder Lagerleiteranerkennung."
+message: "In der NDS sind {planned} J+S-Leitende geplant, in MiData haben nur {valid} eine über die ganze Lagerdauer gültige Anerkennung (Quelle: MiData, Stand {midataStand}; Quelle: NDS, Stand {ndsStand})"
+severity: should
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata, nds]
+tags: [vollstaendigkeit, midata, nds]
+sources:
+  - key: WEB-L
+    page: ""

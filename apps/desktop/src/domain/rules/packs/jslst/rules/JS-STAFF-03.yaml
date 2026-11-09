@@ -1,0 +1,18 @@
+id: JS-STAFF-03
+version: 1.0.0
+module: js
+status: active
+title: "Beitragsrelevante Gruppengrösse"
+description: "Pro J+S-Leiter*in werden Beiträge für höchstens 16 Teilnehmende berechnet. Das ist eine Folge für die Beiträge, kein Verbot."
+message: "{participants} Teilnehmende bei {leaders} J+S-Leitenden: Beiträge werden höchstens für {max} Teilnehmende berechnet ({perLeader} pro J+S-Leiter*in)."
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata, coachInputs, params]
+params: [js.subsidyGroupSizePerLeader, js.ageMin, js.ageMax]
+tags: [leitung, teilnehmende]
+sources:
+  - { key: PBS27, page: "Folie 9", quote: "16+16+16" }
+  - { key: WEB-GR, quote: "Pro J+S-Leiterin oder -Leiter wird die maximale Gruppengrösse fortgeführt" }
+  - { key: WEB-C, page: "«Ungenügende Anzahl J+S-Leiterinnen oder -Leiter»", binding: true }
