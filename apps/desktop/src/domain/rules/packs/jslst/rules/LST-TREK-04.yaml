@@ -2,6 +2,7 @@ id: LST-TREK-04
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Umkehrzeit / Abbruchkriterien fehlen"
 description: "Für Wanderungen und Bergaktivitäten sind Umkehrzeit bzw. Abbruch- und Ausweichkriterien im Sicherheitsteil festgehalten. Bei Wasser-, Winter- und Seilaktivitäten ist dies eine Empfehlung."
 message: "Für «{activity}» sind keine Umkehrzeit bzw. Abbruch- und Ausweichkriterien festgehalten."

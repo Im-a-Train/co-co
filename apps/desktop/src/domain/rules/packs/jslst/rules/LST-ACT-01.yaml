@@ -2,6 +2,7 @@ id: LST-ACT-01
 version: 1.0.0
 module: lst
 status: active
+kind: ai
 title: "J+S-Aktivität ohne Bewegung?"
 description: "Nicht-sportliche Programmpunkte (z. B. Film, Basteln, Mahlzeiten) zählen nicht als J+S-Aktivität. Erkennung über Stichwörter im Titel; mit dem Tag «J+S-Aktivität» bestätigt der Coach das Gegenteil."
 message: "«{activity}» ist als J+S-Aktivität eingeteilt, wirkt aber nicht sportlich-aktiv («{term}»). Nicht-sportliche Programmpunkte zählen nicht als J+S-Aktivität."

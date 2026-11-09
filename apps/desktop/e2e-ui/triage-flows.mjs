@@ -9,17 +9,13 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
   const currentId = () => page.locator('.triage-item.active').first().getAttribute('data-finding-id')
   const statusOf = (id) => page.locator(`.triage-item[data-finding-id="${id}"]`).getAttribute('data-status')
 
-  await step('flow: Übersicht "Feedback erstellen" opens triage with editor', async () => {
+  await step('flow: Übersicht progress card links to the triage', async () => {
     await go('uebersicht', 'flow-overview')
-    await page.getByRole('button', { name: /feedback erstellen/i }).first().click({ timeout: 5000 })
-    await page.waitForURL(/befunde\?.*befund=/, { timeout: 5000 })
-    await page.waitForSelector('[data-testid="triage-editor"]', { timeout: 5000 })
-    await page.waitForTimeout(500)
-    await shot(page, 'flow-overview-to-triage')
-    const val = await page.locator('[data-testid="triage-text"] textarea').first().inputValue()
-    if (!val.trim()) throw new Error('editor not prefilled')
-    const focused = await page.evaluate(() => document.activeElement?.tagName)
-    if (focused !== 'TEXTAREA') throw new Error('editor text not focused, got ' + focused)
+    await page.waitForSelector('[data-testid="overview-progress"]', { timeout: 5000 })
+    await page.waitForSelector('[data-testid="overview-datasources"]', { timeout: 5000 })
+    await shot(page, 'flow-overview-progress')
+    await page.locator('[data-testid="overview-progress-triage"]').first().click({ timeout: 5000 })
+    await page.waitForURL(/\/befunde/, { timeout: 5000 })
   })
 
   await step('flow: triage is the default and shows progress + list + activity', async () => {

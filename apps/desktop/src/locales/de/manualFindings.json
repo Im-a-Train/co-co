@@ -1,0 +1,54 @@
+{
+  "findings": {
+    "manual": {
+      "tag": "Coach",
+      "add": "Befund erfassen",
+      "edit": "Befund bearbeiten",
+      "delete": "Befund löschen",
+      "deleteConfirm": "Nochmals klicken zum Löschen",
+      "title": {
+        "new": "Befund erfassen",
+        "edit": "Befund bearbeiten"
+      },
+      "forTarget": "Betrifft: {title}",
+      "scope": {
+        "camp": "Gesamtes Lager",
+        "activity": "Aktivität",
+        "document": "Dokument"
+      },
+      "categoryLabel": "Kategorie",
+      "comment": "Kommentar",
+      "commentHint": "Was ist dir aufgefallen? Kurz und konkret.",
+      "anchor": "Stelle: {label}",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "saveFailed": "Der Befund konnte nicht gespeichert werden: {error}",
+      "empty": "Noch keine eigenen Befunde.",
+      "category": {
+        "positive": "Positiv",
+        "safety": "Sicherheit",
+        "program": "Programm",
+        "js": "J+S",
+        "pedagogy": "Pädagogik",
+        "organisation": "Organisation",
+        "documents": "Dokumente",
+        "question": "Frage",
+        "other": "Sonstiges"
+      }
+    }
+  },
+  "activities": {
+    "manual": {
+      "add": "Befund erfassen",
+      "count": "{count} eigene Befunde",
+      "column": "Eigene"
+    }
+  },
+  "cockpit": {
+    "drawer": {
+      "manual": {
+        "title": "Meine Befunde"
+      }
+    }
+  }
+}

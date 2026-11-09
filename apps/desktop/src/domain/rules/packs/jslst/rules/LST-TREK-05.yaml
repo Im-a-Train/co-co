@@ -2,6 +2,7 @@ id: LST-TREK-05
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Unterwegs mit nur einer Leitungsperson"
 description: "Unterwegs (Wanderung, Velo) sind mindestens zwei Leitende dabei: eine Person an der Spitze, eine am Schluss."
 message: "«{activity}» hat {n} verantwortliche Person(en). Unterwegs sollten mindestens zwei Leitende dabei sein (Spitze und Schluss)."

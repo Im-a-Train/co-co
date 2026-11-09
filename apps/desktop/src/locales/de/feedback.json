@@ -72,6 +72,121 @@
       "unknownAuthor": "Unbekannt",
       "filterNew": "Mit neuen Antworten"
     },
+    "structure": {
+      "general": "Allgemein",
+      "day": "Tag {n} · {date}",
+      "noDate": "Ohne Termin",
+      "weekdays": "So,Mo,Di,Mi,Do,Fr,Sa",
+      "addForActivity": "Punkt für diese Aktivität",
+      "documentPrefix": "Dokument «{name}»",
+      "itemCount": "{n} Punkt | {n} Punkte"
+    },
+    "general": {
+      "siko": {
+        "title": "Sicherheitskonzept (SiKo)",
+        "prompt": "Wie habt ihr das Sicherheitskonzept für das Lager aufgebaut? Welche Risiken seht ihr bei den einzelnen Aktivitäten und wer ist im Ernstfall verantwortlich?",
+        "check1": "Risiken sind je Aktivität erfasst und mit Massnahmen versehen.",
+        "check2": "Notfallnummern und Verantwortliche sind festgelegt und dem Team bekannt.",
+        "check3": "Sicherheitsbereiche von J+S (Berg, Wasser, Winter) sind erkannt und geplant.",
+        "check4": "Das Konzept ist für alle Leitenden zugänglich, auch unterwegs."
+      },
+      "psa": {
+        "title": "PSA-Konzept (Prävention sexueller Ausbeutung)",
+        "prompt": "Wie stellt ihr den Schutz der Teilnehmenden vor sexueller Ausbeutung sicher? Wie sind Schlafen, Duschen und Umziehen geregelt und wer ist Vertrauensperson?",
+        "check1": "Schlafsituation ist klar geregelt (Trennung nach Geschlecht bzw. Alter, Leitende getrennt von Teilnehmenden).",
+        "check2": "Duschen und Umziehen sind geregelt; mehrere Leitende sind anwesend.",
+        "check3": "Eine Vertrauensperson ist bestimmt und den Teilnehmenden bekannt.",
+        "check4": "Verhaltenskodex und Zwei-Personen-Regel sind im Team besprochen.",
+        "check5": "Der PBS-Leitfaden zur Prävention ist dem Leitungsteam bekannt."
+      },
+      "notfall": {
+        "title": "Notfallkonzept und Notfallblatt",
+        "prompt": "Wie ist das Vorgehen im Notfall geregelt? Liegt das Notfallblatt vor und wer ist sanitätsverantwortlich?",
+        "check1": "Notfallblatt ist ausgefüllt und dem Team abgegeben.",
+        "check2": "Ablauf bei Unfall oder Krankheit ist festgelegt (Alarmierung, Betreuung, Information der Eltern).",
+        "check3": "Sanitätsverantwortliche Person ist bestimmt, Notfallapotheke ist vorhanden.",
+        "check4": "Nächstes Spital, Arzt und Rettungsdienst sind mit Telefonnummer und Route bekannt."
+      },
+      "rega": {
+        "title": "Rega-Gönnerschaft",
+        "prompt": "Sind die Teilnehmenden, die dies wünschen, für die Rega-Gönnerschaft in der NDS angemeldet?",
+        "check1": "Interessierte sind vor dem Lager in der NDS angemeldet.",
+        "check2": "Teilnehmende bzw. Eltern sind über die Gönnerschaft informiert.",
+        "check3": "Die Anmeldungen stimmen mit der Teilnehmerliste überein."
+      },
+      "krise": {
+        "title": "Krisenkonzept",
+        "prompt": "Kennt das ganze Leitungsteam das Krisenkonzept und das Krisentelefon der Pfadibewegung Schweiz? Wer informiert wen im Krisenfall?",
+        "check1": "Das Krisenkonzept des Vereins ist dem ganzen Leitungsteam bekannt.",
+        "check2": "Das Krisentelefon der PBS ist als Nummer hinterlegt.",
+        "check3": "Zuständigkeit für Kommunikation (Eltern, Medien) ist geklärt.",
+        "check4": "Das Krisenteam im Verein ist erreichbar und weiss vom Lager."
+      },
+      "wetter": {
+        "title": "Schlechtwetter-Varianten",
+        "prompt": "Welche Varianten habt ihr bei schlechtem Wetter für die wichtigsten Aktivitäten vorbereitet?",
+        "check1": "Für Programmblöcke im Freien gibt es eine Schlechtwetter-Variante.",
+        "check2": "Es gibt einen trockenen Aufenthaltsraum oder ein grosses Zelt.",
+        "check3": "Bei Gewitter, Sturm oder Hitze ist das Vorgehen klar."
+      },
+      "hygiene": {
+        "title": "Lagerhygiene und Küche",
+        "prompt": "Wie stellt ihr Lebensmittelhygiene und den Umgang mit Allergien in der Küche sicher?",
+        "check1": "Lebensmittelhygiene (Kühlkette, Händewaschen, Reinigung) ist geregelt.",
+        "check2": "Allergien und Unverträglichkeiten sind erfasst und bekannt.",
+        "check3": "Trinkwasser ist jederzeit verfügbar und die Qualität geprüft.",
+        "check4": "Toiletten, Abwasser und Abfall sind organisiert."
+      },
+      "nachtruhe": {
+        "title": "Nachtruhe und Erholung",
+        "prompt": "Wie sorgt ihr für genügend Nachtruhe und Erholung, insbesondere für die jüngeren Teilnehmenden?",
+        "check1": "Nachtruhe ist mit genügend Schlaf eingeplant.",
+        "check2": "Auf- und Abbauarbeiten fallen nicht in die Nachtruhe.",
+        "check3": "Es gibt Pausen und freie Zeit im Tagesablauf."
+      },
+      "stufengerecht": {
+        "title": "Stufengerechtigkeit",
+        "prompt": "Wie stellt ihr sicher, dass das Programm zur Stufe und zum Alter der Teilnehmenden passt?",
+        "check1": "Dauer und Anforderung der Aktivitäten passen zum Alter.",
+        "check2": "Die Aktivitäten fördern Selbstständigkeit und Mitbestimmung.",
+        "check3": "Wanderungen und Unternehmungen sind in Länge und Schwierigkeit angemessen.",
+        "check4": "Das Programm ist abwechslungsreich und lässt Spielraum."
+      },
+      "js-admin": {
+        "title": "J+S-Administration",
+        "prompt": "Ist die J+S-Administration (NDS-Anmeldung, Teilnehmerliste, Lagerbudget) auf dem Stand und rechtzeitig erledigt?",
+        "check1": "Das Lager ist in der NDS rechtzeitig angemeldet (mindestens 30 Tage vor Lagerbeginn).",
+        "check2": "Die Teilnehmerliste in der NDS stimmt mit den Anmeldungen überein.",
+        "check3": "Das Lagerbudget liegt vor und ist plausibel.",
+        "check4": "Die Anwesenheitskontrolle wird laufend geführt und nach dem Lager abgeschlossen."
+      }
+    },
+    "generalPoints": {
+      "title": "Standard-Themen",
+      "hint": "Themen, die du bei jedem Lager prüfst. Übernehmen legt einen Lager-Punkt mit der Leitfrage an.",
+      "take": "Übernehmen",
+      "done": "Übernommen",
+      "progress": "{done} von {total} übernommen",
+      "showChecks": "Prüfpunkte anzeigen",
+      "hideChecks": "Prüfpunkte ausblenden",
+      "related": "Verknüpft: {ids}"
+    },
+    "refine": {
+      "button": "Befunde übernehmen",
+      "title": "Befunde ins Feedback übernehmen",
+      "hint": "Alle Befunde ohne Feedback-Punkt. Eigene Befunde sind vorausgewählt. Passe den Text an, bevor du ihn übernimmst.",
+      "empty": "Alle Befunde haben schon einen Feedback-Punkt oder wurden ignoriert.",
+      "loading": "Befunde werden geladen …",
+      "manualSection": "Eigene Befunde",
+      "autoSection": "Befunde aus der Regelprüfung",
+      "selectAll": "Alle auswählen",
+      "selectNone": "Keine auswählen",
+      "selected": "{n} ausgewählt",
+      "submit": "{n} Feedback-Punkte erstellen",
+      "created": "{n} Feedback-Punkte erstellt",
+      "failed": "Feedback konnte nicht erstellt werden",
+      "textLabel": "Feedback-Text"
+    },
     "loadFailed": "Feedback konnte nicht geladen werden",
     "noFacts": "Lagerdaten sind noch nicht geladen. Aktivitätstitel fehlen deshalb."
   }

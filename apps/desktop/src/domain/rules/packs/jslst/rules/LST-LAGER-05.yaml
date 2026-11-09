@@ -2,6 +2,7 @@ id: LST-LAGER-05
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Lagerregeln und Sicherheitsinfo am ersten Tag"
 description: "Am ersten Lagertag werden Lagerregeln und Sicherheitsinformationen besprochen."
 message: "Am ersten Lagertag ist kein Programmpunkt zu Lagerregeln oder Sicherheit erkennbar."

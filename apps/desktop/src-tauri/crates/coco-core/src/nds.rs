@@ -104,8 +104,21 @@ pub struct NdsAggregate {
     pub activities: NdsActivities,
     pub camp_agenda_uploaded: Option<bool>,
     pub rental_orders: Vec<NdsRentalOrder>,
+    /// Rega registration counts (participants / supervisors); `None` if the Rega lists were not readable.
+    #[serde(default)]
+    pub rega: Option<RegaCounts>,
     /// ISO date-time «Stand NDS».
     pub fetched_at: String,
+}
+
+/// Rega registration counts of one camp. Counts only, no names. Mirrors `NdsRegaCounts` in `domain/types.ts`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegaCounts {
+    pub participants_total: u32,
+    pub participants_transmitted: u32,
+    pub supervisors_total: u32,
+    pub supervisors_transmitted: u32,
 }
 
 /// One camp of an offer, for the one-time camp pick.
@@ -175,6 +188,8 @@ pub const OP_CAMP_LIST: &str = "CampList";
 pub const OP_ACTIVITY_LIST: &str = "ActivityListForCamp";
 pub const OP_SUPERVISORS_LIST: &str = "SupervisorsListForCamp";
 pub const OP_PARTICIPANTS_LIST: &str = "ParticipantsListForCamp";
+pub const OP_REGA_PARTICIPANTS: &str = "RegaParticipantsListForCamp";
+pub const OP_REGA_SUPERVISORS: &str = "RegaSupervisorsListForCamp";
 pub const OP_RENTAL_ORDERS: &str = "rentalMaterialOrderListForCamp";
 
 pub const Q_OFFER_LIST: &str = "query OfferList($chunk: Chunk, $filter: OfferFilter) {
@@ -226,6 +241,23 @@ pub const Q_PERSONS_PARTICIPANTS: &str = "query ParticipantsListForCamp($campBus
 pub const Q_PERSONS_SUPERVISORS: &str = "query SupervisorsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
   supervisorsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
     content { businessId involvementType person { businessId personNumber firstName lastName birthDate } }
+    totalElements totalPages number size
+  }
+}";
+
+/// Rega registration status of participants. `privateAddress` (present in the captured operation) is
+/// deliberately NOT requested.
+pub const Q_REGA_PARTICIPANTS: &str = "query RegaParticipantsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
+  regaParticipantsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
+    content { businessId person { businessId personNumber firstName lastName birthDate } transmittedToRega }
+    totalElements totalPages number size
+  }
+}";
+
+/// Supervisors counterpart of [`Q_REGA_PARTICIPANTS`].
+pub const Q_REGA_SUPERVISORS: &str = "query RegaSupervisorsListForCamp($campBusinessId: ID!, $chunk: Chunk) {
+  regaSupervisorsListForCamp(campBusinessId: $campBusinessId, chunk: $chunk) {
+    content { businessId person { businessId personNumber firstName lastName birthDate } transmittedToRega }
     totalElements totalPages number size
   }
 }";
@@ -497,8 +529,52 @@ pub fn reduce_aggregate(raw: &RawNdsCamp<'_>) -> Result<NdsAggregate, CoreError>
         activities,
         camp_agenda_uploaded: Some(camp.get("campAgenda").is_some_and(|a| !a.is_null())),
         rental_orders,
+        rega: None,
         fetched_at: raw.fetched_at.to_string(),
     })
+}
+
+fn tally_rega(pages: &[Value]) -> (u32, u32) {
+    let (mut total, mut sent) = (0u32, 0u32);
+    for item in pages.iter().flat_map(items_of) {
+        total += 1;
+        if item.get("transmittedToRega").and_then(Value::as_bool) == Some(true) {
+            sent += 1;
+        }
+    }
+    (total, sent)
+}
+
+/// Reduces the Rega list pages (`{content: [...]}` or plain arrays) to counts. Counts only.
+pub fn reduce_rega_counts(participant_pages: &[Value], supervisor_pages: &[Value]) -> RegaCounts {
+    let (participants_total, participants_transmitted) = tally_rega(participant_pages);
+    let (supervisors_total, supervisors_transmitted) = tally_rega(supervisor_pages);
+    RegaCounts { participants_total, participants_transmitted, supervisors_total, supervisors_transmitted }
+}
+
+/// Key prefix of [`rega_transmitted_map`] entries keyed by NDS person `businessId`.
+pub const REGA_KEY_ID: &str = "id:";
+/// Key prefix of [`rega_transmitted_map`] entries keyed by `personNumber` (own namespace: both id spaces are
+/// numeric strings and may overlap).
+pub const REGA_KEY_NR: &str = "nr:";
+
+/// Per-person Rega state for the persons path: `id:<person businessId>` and `nr:<personNumber>` -> transmitted.
+/// Items without a person or without a boolean `transmittedToRega` are skipped. Red zone: stays in Rust.
+pub fn rega_transmitted_map(pages: &[Value]) -> BTreeMap<String, bool> {
+    let mut out = BTreeMap::new();
+    for item in pages.iter().flat_map(items_of) {
+        let (Some(person), Some(sent)) =
+            (item.get("person").filter(|p| p.is_object()), item.get("transmittedToRega").and_then(Value::as_bool))
+        else {
+            continue;
+        };
+        for (key, prefix) in [("businessId", REGA_KEY_ID), ("personNumber", REGA_KEY_NR)] {
+            if let Some(id) = text(person, key) {
+                out.insert(format!("{prefix}{id}"), sent);
+            }
+        }
+    }
+    out
 }
 
 /// Which expected field paths are present / missing in a JSON document (names only, never values).

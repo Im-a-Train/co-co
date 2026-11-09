@@ -2,6 +2,7 @@ id: LST-TREK-06
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Notfallausrüstung unterwegs"
 description: "Im Gelände sind eine Notfallapotheke, eine Rettungsdecke oder ein Biwaksack und ein Alarmierungsmittel dabei. Das J+S-Notfallblatt wird empfohlen."
 message: "Im Material/Sicherheitsteil von «{activity}» fehlt: {missing} (Notfallapotheke, Rettungsdecke oder Biwaksack, Alarmierungsmittel)."

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import CommentSyncInfo from '@/components/feedback/CommentSyncInfo.vue'
 import AiRephraseButton from '@/components/ai/AiRephraseButton.vue'
 import { COMMENT_MAX_LENGTH, KIND_ORDER, type FeedbackLint } from '@/domain/feedback'
+import { MANUAL_RULE_ID } from '@/domain/manualFindings'
 import { commands } from '@/lib/tauri'
 import type { CampFacts, FeedbackItem, FeedbackKind } from '@/domain/types'
 
@@ -74,7 +75,7 @@ function save() {
         <v-chip size="small" variant="outlined" :title="activityUrl">
           {{ t(`feedback.scope.${item.scope}`) }}<template v-if="activityTitle">: {{ activityTitle }}</template>
         </v-chip>
-        <v-chip v-if="item.ruleId" size="small" variant="text">{{ item.ruleId }}</v-chip>
+        <v-chip v-if="item.ruleId" size="small" variant="text">{{ item.ruleId === MANUAL_RULE_ID ? t('findings.manual.tag') : item.ruleId }}</v-chip>
         <v-chip size="small" :color="STATUS_COLOR[item.status]" variant="tonal">{{ t(`feedback.status.${item.status}`) }}</v-chip>
       </div>
 

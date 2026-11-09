@@ -4,6 +4,7 @@
  */
 import type { DocumentKind } from '../types'
 import type { GpxPoint } from './index'
+import { cellToText, sheetsToText, type XlsxSheetView } from './xlsxView'
 
 export async function loadPdfjs() {
   const [pdfjs, worker] = await Promise.all([
@@ -19,7 +20,20 @@ export async function loadMammoth() {
   return mod.default ?? mod
 }
 
-function decodeUtf8(bytes: Uint8Array): string {
+export async function loadXlsxReader() {
+  const mod = await import('read-excel-file/universal')
+  return mod.default
+}
+
+/** Reads all sheets of an xlsx file into display strings. */
+export async function readXlsx(bytes: Uint8Array): Promise<XlsxSheetView[]> {
+  const read = await loadXlsxReader()
+  const copy = bytes.slice()
+  const sheets = await read(new Blob([copy]))
+  return sheets.map((s) => ({ name: s.sheet, rows: s.data.map((row) => row.map((c) => cellToText(c))) }))
+}
+
+export function decodeUtf8(bytes: Uint8Array): string {
   return new TextDecoder('utf-8').decode(bytes).replace(/^﻿/, '')
 }
 
@@ -61,6 +75,10 @@ async function extractDocx(bytes: Uint8Array): Promise<string> {
   return res.value.trim()
 }
 
+async function extractXlsx(bytes: Uint8Array): Promise<string> {
+  return sheetsToText(await readXlsx(bytes))
+}
+
 /** Extracts plain text; GPX returns the track name + waypoint names. */
 export async function extractText(kind: DocumentKind, bytes: Uint8Array): Promise<string> {
   switch (kind) {
@@ -68,6 +86,8 @@ export async function extractText(kind: DocumentKind, bytes: Uint8Array): Promis
       return extractPdf(bytes)
     case 'docx':
       return extractDocx(bytes)
+    case 'xlsx':
+      return extractXlsx(bytes)
     case 'txt':
     case 'md':
       return decodeUtf8(bytes)

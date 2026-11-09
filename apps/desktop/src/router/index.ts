@@ -20,13 +20,13 @@ export const CAMP_TABS = [
   { path: 'uebersicht', name: 'camp-overview', titleKey: 'campTabs.overview', icon: 'mdi-view-dashboard-outline' },
   { path: 'raster', name: 'camp-grid', titleKey: 'campTabs.grid', titleLongKey: 'campTabs.gridLong', icon: 'mdi-calendar-week' },
   { path: 'aktivitaeten', name: 'camp-activities', titleKey: 'campTabs.activities', titleLongKey: 'campTabs.activitiesLong', icon: 'mdi-format-list-bulleted' },
+  { path: 'dokumente', name: 'camp-documents', titleKey: 'campTabs.documents', icon: 'mdi-file-document-multiple-outline' },
   { path: 'befunde', name: 'camp-findings', titleKey: 'campTabs.findings', icon: 'mdi-alert-circle-check-outline' },
   { path: 'selbstcheck', name: 'camp-selfcheck', titleKey: 'campTabs.selfCheck', icon: 'mdi-clipboard-check-outline' },
   { path: 'angaben', name: 'camp-inputs', titleKey: 'campTabs.inputs', icon: 'mdi-form-select' },
   { path: 'checkliste', name: 'camp-checklist', titleKey: 'campTabs.checklist', icon: 'mdi-format-list-checks' },
   { path: 'personen', name: 'camp-persons', titleKey: 'campTabs.persons', icon: 'mdi-account-group-outline' },
   { path: 'feedback', name: 'camp-feedback', titleKey: 'campTabs.feedback', icon: 'mdi-message-draw' },
-  { path: 'dokumente', name: 'camp-documents', titleKey: 'campTabs.documents', icon: 'mdi-file-document-multiple-outline' },
   { path: 'runden', name: 'camp-rounds', titleKey: 'campTabs.rounds', icon: 'mdi-history' },
 ] as const
 

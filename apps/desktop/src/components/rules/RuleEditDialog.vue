@@ -42,7 +42,7 @@ const skipped = computed(() => edits.skipped().find((e) => e.ruleId === props.ru
 
 const form = reactive<RuleForm & { reason: string; resourceKeys: string[] }>({ ...formOf(emptyMeta()), reason: '', resourceKeys: [] })
 function emptyMeta(): RuleMeta {
-  return { id: '', version: '', module: 'js', group: 'js', status: 'active', title: '', description: '', message: '', severity: 'hint', confidence: 'heuristic', scope: 'camp', sources: [], source: { title: '', url: '' } }
+  return { id: '', version: '', module: 'js', group: 'js', status: 'active', kind: 'hard', title: '', description: '', message: '', severity: 'hint', confidence: 'heuristic', scope: 'camp', sources: [], source: { title: '', url: '' } }
 }
 function loadForm() {
   const m = effective.value

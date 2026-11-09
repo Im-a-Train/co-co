@@ -13,6 +13,7 @@ import { dispatchToolCall } from '@/domain/mcp/dispatch'
 import { stripRedDerivedInputs } from '@/domain/mcp/sanitize'
 import { McpToolError, type McpContext, type McpToolCallEvent, type McpToolOutcome } from '@/domain/mcp/types'
 import { listFeedback, saveFeedback } from '@/domain/feedback/store'
+import { deleteManualFinding, getManualFinding, listManualFindings, saveManualFinding } from '@/domain/manualFindings/store'
 import { listRounds, getReview, setReviewStatus } from '@/domain/rounds/store'
 import { evaluate } from '@/domain/rules/engine'
 import { computeAllDeadlines, type DeadlineCamp } from '@/domain/rules/lib/deadlines'
@@ -27,12 +28,13 @@ import { getRuleState } from '@/domain/rules/ruleStateStore'
 import { addOverride, listCampSummaries, listOverrides } from '@/domain/rules/store'
 import { getDb, newId } from '@/domain/storage/db'
 import { getAppSettings } from '@/domain/storage/settings'
-import type { AppSettings, CampFacts, Deadline, FeedbackItem, Finding, Iri, RulePack } from '@/domain/types'
+import type { AppSettings, CampFacts, Deadline, FeedbackItem, Finding, Iri, ModuleId, RulePack } from '@/domain/types'
 import { commands, onMcpToolCall, onMcpToolCancel } from '@/lib/tauri'
 import { notifyMcpChange } from './mcpChanges'
 import { requestConfirm } from './mcpConfirm'
 import { useCampFacts } from './useCampFacts'
 import { useCampList } from './useCampList'
+import { useCampRuleConfig } from './useCampRuleConfig'
 import { useFeedback } from './useFeedback'
 import { useSession } from './useSession'
 
@@ -106,6 +108,47 @@ export function createMcpContext(): McpContext {
     },
 
     rulePacks: () => enabledPacks(getSettingsSync()),
+
+    listManualFindings: (campIri) => listManualFindings(campIri),
+    async getManualFinding(id) {
+      return (await getManualFinding(id)) ?? null
+    },
+    async saveManualFinding(item) {
+      await saveManualFinding(item)
+      notifyMcpChange(item.campIri, 'manualFinding')
+    },
+    async deleteManualFinding(id) {
+      const item = await getManualFinding(id)
+      await deleteManualFinding(id)
+      if (item) notifyMcpChange(item.campIri, 'manualFinding')
+    },
+    // Red zone: documents flagged red never reach MCP.
+    async listDocuments(campIri) {
+      return (await getDb().documents.where('campIri').equals(campIri).toArray()).filter((d) => d.zone !== 'red')
+    },
+    async reviewContext(campIri) {
+      await loadFacts(campIri)
+      const inputs = stripRedDerivedInputs(await getCoachInputs(campIri))
+      const disabled = [...disabledRuleIds(await getRuleState(), campIri)]
+      // Same resolution as the Checkliste tab / Übersicht (module states, visible items, milestone-done).
+      const scope = effectScope()
+      try {
+        const rc = scope.run(() => useCampRuleConfig(campIri))
+        if (!rc) throw new McpToolError('Interner Fehler: Regelkonfiguration konnte nicht geöffnet werden.')
+        for (let i = 0; i < 30 && !rc.loaded.value; i++) await new Promise((r) => setTimeout(r, 50))
+        await new Promise((r) => setTimeout(r, 50))
+        const states = rc.config.value.checklist ?? {}
+        const milestonesDone = inputs?.milestonesDone ?? {}
+        const done = rc.checklist.value.filter(
+          (it) => states[it.id]?.done === true || (!!it.milestone && Object.prototype.hasOwnProperty.call(milestonesDone, it.milestone)),
+        ).length
+        const moduleStates: Partial<Record<ModuleId, 'on' | 'suggested' | 'off'>> = {}
+        for (const [id, res] of Object.entries(rc.moduleStates.value)) if (res) moduleStates[id as ModuleId] = res.state
+        return { coachInputsPresent: inputs !== null, checklist: { done, total: rc.checklist.value.length }, moduleStates, disabledRuleIds: disabled }
+      } finally {
+        scope.stop()
+      }
+    },
 
     listResources: () => listResources(),
     getResource: (key) => getResource(key),

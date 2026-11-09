@@ -2,6 +2,7 @@ id: LST-WINTER-02
 version: 1.0.0
 module: lst-winter
 status: active
+kind: ai
 title: "Winteraktivität: fünf Grundregeln"
 description: "Bei Schneeschuh- und Winterwanderungen enthalten die Sicherheitsüberlegungen Bezüge zu den fünf Grundregeln (Hangneigung, Lawinengefahr, Höhe, 3×3, defensive Beurteilung). Erkennung über Stichwörter (Heuristik)."
 message: "In den Sicherheitsüberlegungen zu «{activity}» fehlen Bezüge zu den Grundregeln: {missing} (keine Hänge ab 30°/25° bei Nassschnee, Lawinengefahr nur Stufe 1–2, unter {max} m, 3×3, defensive Beurteilung)."

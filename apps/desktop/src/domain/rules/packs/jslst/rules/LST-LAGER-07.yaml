@@ -2,6 +2,7 @@ id: LST-LAGER-07
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Feuer: Waldbrandgefahr bedenken"
 description: "Aktivitäten mit Feuer haben Überlegungen zu Feuerstelle, Feuerverbot und Waldbrandgefahr im Sicherheitsteil."
 message: "«{activity}» arbeitet mit Feuer. Überlegungen zu Feuerstelle und Waldbrandgefahr fehlen."

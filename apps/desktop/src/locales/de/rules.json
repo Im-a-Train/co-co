@@ -5,6 +5,13 @@
       "intro": "Alle Regeln der eingebauten Regelpakete mit Schweregrad, Konfidenz, Gültigkeit und Quelle. Regeln mit Konfidenz «ungeprüft» oder «widersprüchlich» sind nie ein «Muss».",
       "search": "Regeln durchsuchen",
       "allGroups": "Alle Module",
+      "kind": {
+        "all": "Alle",
+        "hard": "Harte Regeln",
+        "ai": "KI-Leitfaden",
+        "aiChip": "KI-Leitfaden",
+        "aiHint": "Leitfaden für die KI-Lagerprüfung: erzeugt keine eigenen Befunde."
+      },
       "empty": "Keine Regel passt zu deiner Suche.",
       "loadFailed": "Regelpakete konnten nicht geladen werden",
       "pack": {

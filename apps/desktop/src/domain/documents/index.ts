@@ -60,6 +60,8 @@ export function detectKind(fileName: string): DocumentKind {
       return 'pdf'
     case 'docx':
       return 'docx'
+    case 'xlsx':
+      return 'xlsx'
     case 'gpx':
       return 'gpx'
     case 'txt':

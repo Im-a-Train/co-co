@@ -2,6 +2,7 @@ id: LST-LAGER-02
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Lagerdossier unvollständig"
 description: "Das Lagerdossier besteht aus Grob- und Detailprogramm, Routenplanung, Sicherheitskonzept, Lagerregeln, TN-Information und Schlechtwetterprogramm. Co-co schätzt aus den vorhandenen Angaben, was fehlt."
 message: "Im Lagerdossier fehlen voraussichtlich: {missing}."

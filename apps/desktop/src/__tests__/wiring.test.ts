@@ -22,6 +22,9 @@ import { useFeedback } from '@/composables/useFeedback'
 import type { ActivityFact, Diff, GpxStats } from '@/domain/types'
 import { CAT_LS, FactsBuilder, MAPPING, makeCtx, makeDoc } from '@/domain/rules/__tests__/factory'
 
+/** Bundled packs with ai rules forced to hard: these tests check the predicates through the full engine. */
+const hardPacks = () => loadBundledPacks().map((p) => ({ ...p, rules: p.rules.map((r) => ({ ...r, meta: { ...r.meta, kind: 'hard' as const } })) }))
+
 const gpx: GpxStats = {
   name: 'Route',
   pointCount: 10,
@@ -46,12 +49,12 @@ describe('documents -> rules (full engine, bundled packs)', () => {
   it('a linked GPX document covers route + time in LST-TREK-01 and triggers LST-TREK-02 when too slow', () => {
     const { b, a } = build()
     const doc = makeDoc({ id: 'g1', name: 'route.gpx', kind: 'gpx', activityIris: [a.iri], gpx })
-    const withDoc = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [doc] }))
+    const withDoc = evaluate(hardPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [doc] }))
     const trek01With = withDoc.find((f) => f.ruleId === 'LST-TREK-01' && f.targets.includes(a.iri))
     const slow = withDoc.find((f) => f.ruleId === 'LST-TREK-02')
     expect(slow?.targets).toEqual([a.iri, 'g1'])
 
-    const without = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [] }))
+    const without = evaluate(hardPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [] }))
     const trek01Without = without.find((f) => f.ruleId === 'LST-TREK-01' && f.targets.includes(a.iri))
     expect(trek01Without).toBeDefined()
     // With the GPX linked, fewer planning parts are missing (route and time calculation are covered).
@@ -60,7 +63,7 @@ describe('documents -> rules (full engine, bundled packs)', () => {
   })
   it('LST-LAGER-01 (formerly SAFE-DOC-01) reacts to documents (no safety concept)', () => {
     const { b } = build()
-    const none = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [] }))
+    const none = evaluate(hardPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [] }))
     expect(none.some((f) => f.ruleId === 'LST-LAGER-01')).toBe(true)
   })
 })

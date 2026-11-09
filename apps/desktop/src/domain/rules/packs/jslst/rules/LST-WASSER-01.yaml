@@ -2,6 +2,7 @@ id: LST-WASSER-01
 version: 2.0.0
 module: lst-wasser
 status: active
+kind: ai
 title: "Wasseraktivität: Aufsicht und Sicherheitsüberlegungen"
 description: "Aktivitäten im oder am Wasser haben eine verantwortliche Leitungsperson und nicht leere Sicherheitsüberlegungen. Erkennung über Stichwörter (Heuristik)."
 message: "Bei «{activity}» fehlt {missing}."

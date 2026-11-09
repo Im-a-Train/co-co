@@ -17,6 +17,7 @@ import type { ActivityFact, Finding, Iri, RuleGroup } from '@/domain/types'
 import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
 import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import { useRuleEdits } from '@/composables/useRuleEdits'
+import AiCampReviewButton from '@/components/ai/AiCampReviewButton.vue'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import { createFeedbackFromFinding } from '@/components/cockpit/feedbackAction'
 import FindingCard from '@/components/cockpit/FindingCard.vue'
@@ -223,6 +224,7 @@ function addAi(list: Finding[]) {
         <v-btn value="list" prepend-icon="mdi-view-list-outline" :text="t('findings.mode.list')" data-testid="mode-list" />
       </v-btn-toggle>
       <v-spacer />
+      <AiCampReviewButton :facts="facts" :findings="findings" @findings="addAi" />
       <v-btn
         size="small"
         variant="tonal"

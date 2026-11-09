@@ -2,6 +2,7 @@ id: LST-LAGER-01
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Sicherheitskonzept fürs Lager"
 description: "Das Lager hat ein Sicherheitskonzept (Dokument) mit Notrufnummern, Spital, Krisenkontakt, Evakuation, Schlechtwetterplan, 3x3, Notfallapotheke und Lageradresse. Aktivitäten mit erhöhten Sicherheitsanforderungen sollen im Konzept vorkommen."
 message: "Kein Sicherheitskonzept für das Lager gefunden."

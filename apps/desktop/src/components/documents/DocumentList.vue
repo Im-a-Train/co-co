@@ -20,6 +20,7 @@ const titleOf = (iri: Iri) => props.activities.find((a) => a.iri === iri)?.title
 const ICONS: Record<string, string> = {
   pdf: 'mdi-file-pdf-box',
   docx: 'mdi-file-word-box',
+  xlsx: 'mdi-file-excel-box',
   gpx: 'mdi-map-marker-path',
   txt: 'mdi-file-document-outline',
   md: 'mdi-language-markdown',

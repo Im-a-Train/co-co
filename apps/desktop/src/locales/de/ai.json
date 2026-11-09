@@ -30,11 +30,13 @@
     },
     "rephrase": { "button": "Mit KI umformulieren" },
     "summary": { "button": "Mit KI zusammenfassen", "notAllowed": "KI-Nutzung für dieses Dokument nicht erlaubt" },
+    "campReview": { "button": "KI-Lagerreview", "tag": "KI-Lagerreview", "done": "{n} KI-Einschätzungen hinzugefügt.", "none": "Die KI hat nichts Auffälliges gefunden." },
     "safety": { "button": "KI-Einschätzung Sicherheit", "tag": "KI-Einschätzung" },
     "features": {
       "rephrase": "Umformulieren",
       "summarise": "Zusammenfassen",
       "safetyReview": "Sicherheits-Einschätzung",
+      "campReview": "Lagerreview",
       "ruleUpdate": "Regel aktualisieren"
     },
     "log": {

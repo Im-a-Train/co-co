@@ -54,6 +54,7 @@ const samples: Record<string, Record<string, unknown>> = {
   campRuleConfig: { campIri: '/api/camps/1', modules: { js: 'on' }, note: MARKER },
   resources: { key: 'MAN', title: MARKER, origin: 'bundled', modified: true },
   ruleEdits: { ruleId: 'BP-VAR-01', patch: { title: MARKER }, baseVersion: '1.0.0' },
+  manualFindings: { id: 'manual:1', campIri: '/api/camps/1', scope: 'camp', category: 'other', comment: MARKER, createdAt: 'x', updatedAt: 'x' },
 }
 
 beforeEach(async () => {

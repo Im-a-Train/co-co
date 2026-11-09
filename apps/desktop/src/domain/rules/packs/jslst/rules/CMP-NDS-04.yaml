@@ -1,0 +1,17 @@
+id: CMP-NDS-04
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "Teilnehmende bei der Rega angemeldet"
+description: "Alle Teilnehmenden des Lagers sind in der NDS an die Rega übermittelt (Rega-Anmeldung für den Rettungsdienst)."
+message: "Rega: {missing} von {total} Teilnehmenden nicht an die Rega übermittelt (Quelle: NDS, Stand {stand})"
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-L
+    page: ""

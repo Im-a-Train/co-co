@@ -2,6 +2,7 @@ id: LST-TREK-08
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Velo/Trottinett/Inline: Sicherheit"
 description: "Bei Velo, Trottinett und Inline-Skates werden Helme kontrolliert, Fahr- und Bremstechnik instruiert und bei Inline-Skates zusätzliche Schutzausrüstung getragen."
 message: "Für «{activity}» fehlen: {missing} (Helmkontrolle, Instruktion Fahr- und Bremstechnik, bei Inline-Skates Schutzausrüstung)."

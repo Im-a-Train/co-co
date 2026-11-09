@@ -2,6 +2,7 @@ id: LST-WASSER-06
 version: 2.0.0
 module: lst-wasser
 status: active
+kind: ai
 title: "Seeschwimmen ohne Begleitboot"
 description: "Beim Schwimmen einer Strecke im See begleitet mindestens eine Leitungsperson im Boot oder mit Rettungsbrett."
 message: "Bei «{activity}» (Strecke im See) muss mindestens eine Leitungsperson die Gruppe im Boot oder mit Rettungsbrett begleiten."

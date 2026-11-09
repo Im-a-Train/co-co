@@ -1,6 +1,8 @@
 # Documents v2: camp folder, recursive scan, PDF preview, usability
 
-Status: **plan, not implemented**. Maintainer's request: "i would like to add one folder, search the sub
+Status: **plan, partly done**. The in-app viewer (pdf, docx, xlsx, gpx, txt/md) is implemented, see
+[ADR 0014](../adr/0014-coach-findings-ai-guidance-and-viewer.md). Camp folder, recursive scan and the other
+points below are still open. Maintainer's request: "i would like to add one folder, search the sub
 folders. make a pdf preview + make it more usable".
 All paths are relative to `apps/desktop/` unless noted. Line references are as of `feat/next-features`.
 

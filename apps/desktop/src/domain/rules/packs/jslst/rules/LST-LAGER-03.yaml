@@ -2,6 +2,7 @@ id: LST-LAGER-03
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Lagerregeln: Pflichtbereiche"
 description: "Lagerregeln (Dokument) decken Sicherheit, Sucht, Zusammenleben, Elektronik und Umwelt ab. Die Regel prüft nur, wenn ein Dokument «Lagerregeln» vorhanden ist."
 message: "In den Lagerregeln fehlt ein Bezug zu: {missing}."

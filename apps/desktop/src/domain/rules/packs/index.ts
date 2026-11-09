@@ -74,6 +74,7 @@ export function parseRuleYaml(text: string, registry: SourceRegistry = getSource
     module,
     group: module,
     status: raw.status ?? 'active',
+    kind: raw.kind ?? 'hard',
     validFrom: dateString(raw.validFrom),
     validTo: dateString(raw.validTo),
     sources,

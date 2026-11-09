@@ -173,7 +173,7 @@ fn reject_unsafe_grant(p: &Path) -> AppResult<()> {
     Ok(())
 }
 
-const DOCUMENT_EXTENSIONS: [&str; 6] = ["pdf", "docx", "gpx", "txt", "md", "markdown"];
+const DOCUMENT_EXTENSIONS: [&str; 7] = ["pdf", "docx", "xlsx", "gpx", "txt", "md", "markdown"];
 
 fn is_document_path(p: &Path) -> bool {
     let ext = p.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).unwrap_or_default();
@@ -510,6 +510,13 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         dunce::canonicalize(d).unwrap()
+    }
+
+    #[test]
+    fn recognises_document_extensions() {
+        assert!(is_document_path(Path::new("budget.XLSX")));
+        assert!(is_document_path(Path::new("konzept.docx")));
+        assert!(!is_document_path(Path::new("tabelle.xls")));
     }
 
     #[test]

@@ -4,8 +4,10 @@ import { CAMP, CAT_LS, FactsBuilder } from '@/domain/rules/__tests__/factory'
 import type {
   CollaboratorFact,
   Deadline,
+  DocumentRecord,
   FeedbackItem,
   Finding,
+  ManualFinding,
   Override,
   ReviewState,
   ResourceRecord,
@@ -15,7 +17,7 @@ import type {
   RuleEditRecord,
   RulePack,
 } from '@/domain/types'
-import type { McpContext } from '../types'
+import type { McpContext, McpReviewContext } from '../types'
 
 export const NAME = 'Anna Beispiel'
 export const EMAIL = 'anna.beispiel@example.com'
@@ -82,6 +84,9 @@ export interface FakeState {
   packs: RulePack[]
   resources: ResourceRecord[]
   ruleEdits: RuleEditRecord[]
+  manualFindings: ManualFinding[]
+  documents: DocumentRecord[]
+  reviewContext: McpReviewContext
   confirmAnswer: boolean
 }
 
@@ -109,6 +114,9 @@ export function makeFakeContext(over: Partial<FakeState> = {}) {
     packs: [],
     resources: [],
     ruleEdits: [],
+    manualFindings: [],
+    documents: [],
+    reviewContext: { coachInputsPresent: false, checklist: { done: 0, total: 0 }, moduleStates: {}, disabledRuleIds: [] },
     confirmAnswer: true,
     ...over,
   }
@@ -124,6 +132,16 @@ export function makeFakeContext(over: Partial<FakeState> = {}) {
     getMapping: vi.fn(async () => null),
     findings: vi.fn(async () => state.findings),
     rulePacks: () => state.packs,
+    listManualFindings: vi.fn(async () => state.manualFindings),
+    getManualFinding: vi.fn(async (id: string) => state.manualFindings.find((m) => m.id === id) ?? null),
+    saveManualFinding: vi.fn(async (item: ManualFinding) => {
+      state.manualFindings = [...state.manualFindings.filter((m) => m.id !== item.id), item]
+    }),
+    deleteManualFinding: vi.fn(async (id: string) => {
+      state.manualFindings = state.manualFindings.filter((m) => m.id !== id)
+    }),
+    listDocuments: vi.fn(async () => state.documents.filter((d) => d.zone !== 'red')),
+    reviewContext: vi.fn(async () => state.reviewContext),
     listResources: vi.fn(async () => state.resources),
     getResource: vi.fn(async (key: string) => state.resources.find((r) => r.key === key)),
     updateResource: vi.fn(async (key: string, patch: Partial<ResourceRecord>) => {

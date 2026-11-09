@@ -6,8 +6,8 @@ import { LegacyCocoDb } from '../legacyDb'
 import { MIGRATION_KEY, migrateLegacy } from '../migrate'
 import { unlockTestDb } from './testKey'
 
-// Tables the frozen legacy schema has (v3 resources and ruleEdits are newer, nothing to migrate).
-const TABLE_NAMES = ALL_TABLES.filter((n) => n !== 'resources' && n !== 'ruleEdits')
+// Tables the frozen legacy schema has (v3 resources/ruleEdits and v4 manualFindings are newer, nothing to migrate).
+const TABLE_NAMES = ALL_TABLES.filter((n) => n !== 'resources' && n !== 'ruleEdits' && n !== 'manualFindings')
 
 const OPTS = { dbName: 'coco2-mig-test', legacyDbName: 'coco-mig-test' }
 const CAMP = '/api/camps/1'

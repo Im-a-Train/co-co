@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useManualFindings } from '@/composables/useManualFindings'
 import { findingsForActivity } from '@/domain/cockpit'
 import { getDb } from '@/domain/storage/db'
 import type { CampFacts, CategoryClass, DocumentRecord, Finding, Iri } from '@/domain/types'
@@ -8,6 +9,8 @@ import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import ActivityPreview from './ActivityPreview.vue'
 import ActivityTagEditor from './ActivityTagEditor.vue'
 import FindingCard from './FindingCard.vue'
+import ManualFindingDialog from './ManualFindingDialog.vue'
+import ManualFindingList from './ManualFindingList.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -31,7 +34,12 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const activity = computed(() => props.facts?.activities.find((a) => a.iri === props.activityIri) ?? null)
-const own = computed(() => (props.activityIri ? findingsForActivity(props.findings, props.activityIri) : []))
+const own = computed(() =>
+  props.activityIri ? findingsForActivity(props.findings, props.activityIri).filter((f) => f.origin !== 'manual') : [],
+)
+const manualHandle = useManualFindings(() => props.campIri)
+const manualOwn = computed(() => (props.activityIri ? (manualHandle.byActivity.value.get(props.activityIri) ?? []) : []))
+const addOpen = ref(false)
 
 const docs = ref<DocumentRecord[]>([])
 watch(
@@ -104,6 +112,21 @@ watch(
         :text="t('cockpit.drawer.openDocuments')"
         @click="emit('openDocument', docs[0]?.id ?? null)"
       />
+
+      <div class="d-flex align-center mb-2">
+        <div class="text-subtitle-2 flex-grow-1">{{ t('cockpit.drawer.manual.title') }} ({{ manualOwn.length }})</div>
+        <v-btn
+          size="small"
+          variant="tonal"
+          color="primary"
+          prepend-icon="mdi-comment-plus-outline"
+          :text="t('findings.manual.add')"
+          data-testid="drawer-add-finding"
+          @click="addOpen = true"
+        />
+      </div>
+      <ManualFindingList v-if="manualOwn.length" :camp-iri="campIri" :items="manualOwn" compact class="mb-3" data-testid="drawer-manual-list" />
+      <ManualFindingDialog v-model="addOpen" :camp-iri="campIri" scope="activity" :activity-iri="activity.iri" :title="activity.title" />
 
       <div class="d-flex align-center mb-2">
         <div class="text-subtitle-2 flex-grow-1">{{ t('cockpit.drawer.findings') }} ({{ own.length }})</div>

@@ -2,6 +2,7 @@ id: LST-BERG-03
 version: 2.0.0
 module: lst-berg
 status: active
+kind: ai
 title: "Gewitterrisiko am Nachmittag"
 description: "Berg- und Wasseraktivitäten, die im Sommer nach dem Nachmittag enden, brauchen eine Gewitterplanung."
 message: "«{activity}» endet um {end}. Im Sommer treten Gewitter meist nachmittags auf – rechtzeitige Rückkehr und Abbruchkriterium planen."

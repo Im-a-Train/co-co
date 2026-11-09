@@ -72,6 +72,26 @@ describe('buildRows', () => {
   })
 })
 
+describe('manualCount', () => {
+  const a0 = facts.activities[0]!
+  const a1 = facts.activities[1]!
+  const manual = { ...finding('manual:1', 'should', a0.iri), origin: 'manual' } as Finding
+  const rows = buildRows(facts, [manual, { ...manual, id: 'manual:2' }, finding('f1', 'must', a1.iri)], [], classOf)
+
+  it('counts manual findings separately from rule findings', () => {
+    const r0 = rows.find((r) => r.iri === a0.iri)!
+    expect(r0.manualCount).toBe(2)
+    expect(r0.findingCount).toBe(0)
+    expect(rows.find((r) => r.iri === a1.iri)!.manualCount).toBe(0)
+  })
+
+  it('keeps rows with only manual findings in the only-findings filter', () => {
+    const iris = filterRows(rows, { ...DEFAULT_ROW_FILTER, onlyFindings: true }).map((r) => r.iri)
+    expect(iris).toContain(a0.iri)
+    expect(iris).toContain(a1.iri)
+  })
+})
+
 describe('filter and sort', () => {
   const rows = buildRows(facts, [finding('f1', 'must', facts.activities[0]!.iri)], [], classOf)
 

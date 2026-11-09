@@ -271,3 +271,28 @@ fn known_closed_states_constant() {
     assert_eq!(KNOWN_CLOSED_STATES, ["WAITING_FOR_ASSESSMENT", "PAYED_CH", "PARTIALLY_PAYED"]);
     assert_eq!(SESSION_COOKIE, "SESSION");
 }
+
+#[test]
+fn rega_queries_are_read_only_without_address() {
+    use coco_core::nds::{ensure_query_only, Q_REGA_PARTICIPANTS, Q_REGA_SUPERVISORS};
+    for q in [Q_REGA_PARTICIPANTS, Q_REGA_SUPERVISORS] {
+        ensure_query_only(q).unwrap();
+        assert!(!q.contains("privateAddress"), "rega query has no privateAddress");
+        assert!(q.contains("transmittedToRega"));
+    }
+}
+
+#[test]
+fn rega_counts_reduce() {
+    use coco_core::nds::reduce_rega_counts;
+    let p = vec![
+        json!({"content":[{"transmittedToRega":true},{"transmittedToRega":false},{"transmittedToRega":null}]}),
+        json!({"content":[{"transmittedToRega":true}]}),
+    ];
+    let s = vec![json!({"content":[{"transmittedToRega":true}]})];
+    let c = reduce_rega_counts(&p, &s);
+    assert_eq!((c.participants_total, c.participants_transmitted), (4, 2));
+    assert_eq!((c.supervisors_total, c.supervisors_transmitted), (1, 1));
+    let v = serde_json::to_value(c).unwrap();
+    assert_eq!(v["participantsTotal"], json!(4));
+}

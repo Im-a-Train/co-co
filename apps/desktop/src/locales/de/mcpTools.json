@@ -23,7 +23,7 @@
       },
       "get_rule_catalog": {
         "title": "Regelkatalog lesen",
-        "description": "Die Regeln der aktiven Regelpakete mit Beschreibung, Schweregrad und Quelle."
+        "description": "Die Regeln der aktiven Regelpakete mit Art (harte Regel oder KI-Leitfaden), Beschreibung, Schweregrad und Quelle."
       },
       "list_deadlines": {
         "title": "Fristen auflisten",
@@ -36,6 +36,18 @@
       "list_rounds": {
         "title": "Prüfrunden lesen",
         "description": "Prüfrunden eines Lagers und der aktuelle Prüfstatus mit Verlauf."
+      },
+      "add_manual_finding": {
+        "title": "Eigenen Befund hinzufügen",
+        "description": "Erfasst einen eigenen Befund auf Lager, Aktivität oder Dokument (mit Seite, Blatt/Zelle oder km). Bleibt in co-co, wird nirgends gesendet."
+      },
+      "update_manual_finding": {
+        "title": "Eigenen Befund ändern",
+        "description": "Ändert Kategorie und/oder Kommentar eines eigenen Befunds."
+      },
+      "delete_manual_finding": {
+        "title": "Eigenen Befund löschen",
+        "description": "Löscht einen eigenen Befund. Kann in co-co nicht rückgängig gemacht werden."
       },
       "add_feedback": {
         "title": "Feedback-Entwurf hinzufügen",
@@ -68,6 +80,34 @@
       "get_resource": {
         "title": "Hilfsmittel lesen",
         "description": "Ein Hilfsmittel mit Metadaten und hinterlegtem Text, seitenweise (max. 20'000 Zeichen pro Aufruf)."
+      },
+      "list_manual_findings": {
+        "title": "Eigene Befunde auflisten",
+        "description": "Deine eigenen Befunde (nicht von Regeln) mit Kategorie, Kommentar, Aktivität bzw. Dokument und Stelle (Seite, Blatt, Zelle, km). Anonymisiert."
+      },
+      "get_feedback_structure": {
+        "title": "Feedback-Struktur lesen",
+        "description": "Das Feedback eines Lagers gegliedert wie in der Feedback-Ansicht: Allgemein, dann je Tag und Aktivität. Anonymisiert, ohne MiData-/NDS-Angaben."
+      },
+      "list_general_feedback_points": {
+        "title": "Allgemeine Feedback-Punkte auflisten",
+        "description": "Die Standardpunkte für «Allgemein» (Sicherheitskonzept, PSA, Notfall, Rega, …) mit Prüfpunkten und ob sie im Lager schon verwendet sind."
+      },
+      "get_camp_progress": {
+        "title": "Prüffortschritt lesen",
+        "description": "Wie weit die Prüfung eines Lagers ist: Prozent und Schritte (Zuordnung, Angaben, Befunde, Dokumente, Checkliste, Feedback, Status). Nur Zahlen."
+      },
+      "list_documents": {
+        "title": "Dokumente auflisten",
+        "description": "Metadaten der Lagerdokumente (Name, Art, verknüpfte Aktivitäten, Dokumentprüfung, GPX-Werte, KI-Freigabe). Nie der Dateipfad. Anonymisiert."
+      },
+      "get_document_text": {
+        "title": "Dokumenttext lesen",
+        "description": "Der Text eines Dokuments, nur wenn du es für KI freigegeben hast. Anonymisiert, seitenweise (max. 20'000 Zeichen pro Aufruf)."
+      },
+      "get_review_guidance": {
+        "title": "Prüf-Leitfaden lesen",
+        "description": "Was ein gutes Pfadilager ausmacht: die Leitfaden- und Regeltexte der aktiven Regelpakete für dieses Lager als kompakter Text."
       },
       "update_resource": {
         "title": "Hilfsmittel ändern",

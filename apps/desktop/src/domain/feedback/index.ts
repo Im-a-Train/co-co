@@ -2,10 +2,14 @@
  * Feedback domain. Pure (store in ./store.ts).
  * Feedback-Kultur order: kudos -> must -> suggestion -> question.
  */
-import { feedbackTemplates, messages, type MessageTree } from '../../locales/messages'
-import type { FeedbackChannel, FeedbackItem, FeedbackKind, FeedbackTemplateId, Finding, Iri } from '../types'
+import { feedbackTemplates } from '../../locales/messages'
+import { anchorLabel, feedbackKindOf, isManualCategory } from '../manualFindings'
+import type { CampFacts, DocumentRecord, FeedbackChannel, FeedbackItem, FeedbackKind, FeedbackTemplateId, Finding, Iri } from '../types'
+import { tr } from './i18n'
+import { KIND_ORDER, orderItems } from './order'
+import { groupFeedback } from './structure'
 
-export const KIND_ORDER: readonly FeedbackKind[] = ['kudos', 'must', 'suggestion', 'question'] as const
+export { KIND_ORDER, orderItems }
 /** eCamp Comment.textHtml max length. */
 export const COMMENT_MAX_LENGTH = 1024
 
@@ -25,6 +29,10 @@ export interface RenderContext {
   coachName?: string | null
   /** Overrides the bundled template (mainly for tests). */
   template?: string
+  /** Camp facts: needed to group activity items by day (without them: no day headings). */
+  facts?: CampFacts | null
+  /** Documents (names for document items, first linked activity for placement). */
+  documents?: Pick<DocumentRecord, 'id' | 'name' | 'activityIris'>[]
 }
 
 export interface RenderedFeedback {
@@ -41,71 +49,6 @@ export interface FeedbackLint {
   code: 'must-without-next-step' | 'empty-text' | 'too-long-for-comment'
 }
 
-// --- i18n helper (domain stays free of Vue; reads the merged German tree) -------------------------
-
-function tr(key: string, params: Record<string, string | number> = {}): string {
-  let node: string | MessageTree | undefined = messages.de as MessageTree
-  for (const part of key.split('.')) {
-    if (node === undefined || typeof node === 'string') return key
-    node = node[part]
-  }
-  if (typeof node !== 'string') return key
-  return node.replace(/\{(\w+)\}/g, (m, k: string) => (k in params ? String(params[k]) : m))
-}
-
-// --- ordering -------------------------------------------------------------------------------------
-
-/** Stable sort by KIND_ORDER, camp scope before activity scope, then createdAt. */
-export function orderItems(items: FeedbackItem[]): FeedbackItem[] {
-  return items
-    .map((item, index) => ({ item, index }))
-    .sort((a, b) => {
-      const k = KIND_ORDER.indexOf(a.item.kind) - KIND_ORDER.indexOf(b.item.kind)
-      if (k !== 0) return k
-      const s = (a.item.scope === 'camp' ? 0 : 1) - (b.item.scope === 'camp' ? 0 : 1)
-      if (s !== 0) return s
-      if (a.item.createdAt !== b.item.createdAt) return a.item.createdAt < b.item.createdAt ? -1 : 1
-      return a.index - b.index
-    })
-    .map((x) => x.item)
-}
-
-// --- rendering ------------------------------------------------------------------------------------
-
-const WHATSAPP_EMOJI: Record<FeedbackKind, string> = {
-  kudos: '🌟',
-  must: '⚠️',
-  suggestion: '💡',
-  question: '❓',
-}
-
-function itemLine(item: FeedbackItem, channel: FeedbackChannel, ctx: RenderContext): string {
-  const text = item.text.trim().replace(/\n+/g, ' ')
-  const title = itemTitle(item, ctx)
-  const label = title ? (channel === 'whatsapp' ? `*${title}*: ` : `${title}: `) : ''
-  if (channel === 'whatsapp') {
-    // No link: WhatsApp cannot hide URLs; the block number identifies the activity.
-    return `${WHATSAPP_EMOJI[item.kind]} ${label}${text}`
-  }
-  const urls = itemUrls(item, ctx)
-  const url = urls.short ?? urls.long
-  return `- ${label}${text}` + (url ? ` (${tr('feedback.linkLabel')}: ${url})` : '')
-}
-
-/** "{block numbers} {title}" of an activity item (numbers optional), or undefined. */
-function itemTitle(item: FeedbackItem, ctx: RenderContext): string | undefined {
-  if (item.scope !== 'activity' || !item.activityIri) return undefined
-  const title = ctx.activityTitles[item.activityIri]
-  if (!title) return undefined
-  const nr = ctx.activityNumbers?.[item.activityIri]
-  return nr ? `${nr} ${title}` : title
-}
-
-function itemUrls(item: FeedbackItem, ctx: RenderContext): { long?: string; short?: string } {
-  if (ctx.includeLinks === false || item.scope !== 'activity' || !item.activityIri) return {}
-  return { long: ctx.activityUrls?.[item.activityIri], short: ctx.activityShortUrls?.[item.activityIri] }
-}
-
 export function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -119,48 +62,116 @@ function htmlText(s: string): string {
   return escapeHtml(s).replace(/\r?\n/g, '<br>')
 }
 
-function itemHtml(item: FeedbackItem, ctx: RenderContext): { html: string; linked: boolean } {
-  const text = htmlText(item.text.trim().replace(/\n+/g, ' '))
-  const title = itemTitle(item, ctx)
-  const url = itemUrls(item, ctx).long
-  if (url) {
-    const href = escapeHtml(url)
-    if (title) return { html: `- <a href="${href}">${escapeHtml(title)}</a>: ${text}`, linked: true }
-    return { html: `- ${text} <a href="${href}">${escapeHtml(tr('feedback.openInEcamp'))}</a>`, linked: true }
-  }
-  return { html: `- ${title ? `${escapeHtml(title)}: ` : ''}${text}`, linked: false }
+// --- rendering ------------------------------------------------------------------------------------
+// Layout: "Allgemein" first, then one section per day with one sub-heading per activity. Every item line
+// carries its kind (WhatsApp: emoji, others: "- Auflage: ..."). Items stay in Feedback-Kultur order.
+
+const WHATSAPP_EMOJI: Record<FeedbackKind, string> = {
+  kudos: '🌟',
+  must: '⚠️',
+  suggestion: '💡',
+  question: '❓',
 }
 
-/** HTML items block (sections in Feedback-Kultur order, bold headings); `linked` = any item has a link. */
-function renderItemsHtml(items: FeedbackItem[], ctx: RenderContext): { html: string; linked: boolean } {
-  const ordered = orderItems(items.filter((i) => i.text.trim() !== ''))
-  const blocks: string[] = []
-  let linked = false
-  for (const kind of KIND_ORDER) {
-    const group = ordered.filter((i) => i.kind === kind)
-    if (group.length === 0) continue
-    const lines = group.map((i) => {
-      const r = itemHtml(i, ctx)
-      linked ||= r.linked
-      return r.html
+interface RenderGroup {
+  /** "{block numbers} {title}" of the activity; '' for general / unknown. */
+  title: string
+  url?: string
+  shortUrl?: string
+  items: FeedbackItem[]
+}
+interface RenderSection {
+  heading: string | null
+  groups: RenderGroup[]
+}
+
+function singleLine(text: string): string {
+  return text.trim().replace(/\n+/g, ' ')
+}
+
+function buildSections(items: FeedbackItem[], ctx: RenderContext): RenderSection[] {
+  const structure = groupFeedback(
+    items.filter((i) => i.text.trim() !== ''),
+    ctx.facts ?? null,
+    ctx.documents ?? [],
+  )
+  const sections: RenderSection[] = []
+  if (structure.general.length > 0) {
+    sections.push({ heading: tr('feedback.structure.general'), groups: [{ title: '', items: structure.general }] })
+  }
+  for (const day of structure.days) {
+    const groups = day.activities.map((a): RenderGroup => {
+      const known = ctx.activityTitles[a.activityIri] ?? (a.title !== a.activityIri ? a.title : '')
+      const nr = ctx.activityNumbers ? ctx.activityNumbers[a.activityIri] : a.number
+      const urls = ctx.includeLinks === false
+        ? {}
+        : { url: ctx.activityUrls?.[a.activityIri], shortUrl: ctx.activityShortUrls?.[a.activityIri] }
+      return { title: known ? (nr ? `${nr} ${known}` : known) : '', ...urls, items: a.items }
     })
-    blocks.push([`<b>${escapeHtml(`${tr(`feedback.section.${kind}`)}:`)}</b>`, ...lines].join('<br>'))
+    // Without camp facts there is no day information: skip the (only) "Ohne Termin" heading.
+    sections.push({ heading: ctx.facts ? day.label : null, groups })
   }
-  return { html: blocks.join('<br><br>'), linked }
+  return sections
 }
 
-/** Renders grouped items (sections in Feedback-Kultur order) without template. */
+/** "(Dokument «name», S. 3) " for document items, else ''. */
+function documentPrefix(item: FeedbackItem, ctx: RenderContext): string {
+  if (!item.documentId) return ''
+  const name = ctx.documents?.find((d) => d.id === item.documentId)?.name
+  if (!name) return ''
+  const where = anchorLabel(item.documentAnchor)
+  return `(${tr('feedback.structure.documentPrefix', { name })}${where ? `, ${where}` : ''}) `
+}
+
+function itemLine(item: FeedbackItem, channel: FeedbackChannel, ctx: RenderContext): string {
+  const body = `${documentPrefix(item, ctx)}${singleLine(item.text)}`
+  if (channel === 'whatsapp') return `${WHATSAPP_EMOJI[item.kind]} ${body}`
+  return `- ${tr(`feedback.kind.${item.kind}`)}: ${body}`
+}
+
+function groupHeading(g: RenderGroup, channel: FeedbackChannel): string | null {
+  if (channel === 'whatsapp') return g.title ? `_${g.title}_` : null // WhatsApp cannot hide URLs: no link
+  const url = g.shortUrl ?? g.url
+  if (!g.title && !url) return null
+  return `${g.title}${url ? `${g.title ? ' ' : ''}(${tr('feedback.linkLabel')}: ${url})` : ''}`
+}
+
+/** Renders the grouped items (Allgemein, days, activities) without template. */
 export function renderItemsBlock(items: FeedbackItem[], channel: FeedbackChannel, ctx: RenderContext): string {
-  const ordered = orderItems(items.filter((i) => i.text.trim() !== ''))
   const blocks: string[] = []
-  for (const kind of KIND_ORDER) {
-    const group = ordered.filter((i) => i.kind === kind)
-    if (group.length === 0) continue
-    const heading = tr(`feedback.section.${kind}`)
-    const head = channel === 'whatsapp' ? `*${heading}*` : `${heading}:`
-    blocks.push([head, ...group.map((i) => itemLine(i, channel, ctx))].join('\n'))
+  for (const section of buildSections(items, ctx)) {
+    const lines: string[] = []
+    if (section.heading) lines.push(channel === 'whatsapp' ? `*${section.heading}*` : `${section.heading}:`)
+    for (const g of section.groups) {
+      const h = groupHeading(g, channel)
+      if (h) lines.push(h)
+      for (const i of g.items) lines.push(itemLine(i, channel, ctx))
+    }
+    blocks.push(lines.join('\n'))
   }
   return blocks.join('\n\n')
+}
+
+/** HTML items block (bold headings, linked activity titles); `linked` = any activity has a link. */
+function renderItemsHtml(items: FeedbackItem[], ctx: RenderContext): { html: string; linked: boolean } {
+  let linked = false
+  const blocks: string[] = []
+  for (const section of buildSections(items, ctx)) {
+    const lines: string[] = []
+    if (section.heading) lines.push(`<b>${escapeHtml(`${section.heading}:`)}</b>`)
+    for (const g of section.groups) {
+      if (g.url) {
+        linked = true
+        const label = g.title ? escapeHtml(g.title) : escapeHtml(tr('feedback.openInEcamp'))
+        lines.push(`<a href="${escapeHtml(g.url)}">${label}</a>`)
+      } else if (g.title) lines.push(escapeHtml(g.title))
+      for (const i of g.items) {
+        lines.push(`- ${escapeHtml(tr(`feedback.kind.${i.kind}`))}: ${htmlText(`${documentPrefix(i, ctx)}${singleLine(i.text)}`)}`)
+      }
+    }
+    blocks.push(lines.join('<br>'))
+  }
+  return { html: blocks.join('<br><br>'), linked }
 }
 
 /** Replaces {{key}} placeholders; unknown keys become empty. */
@@ -301,8 +312,40 @@ function uuid(): string {
   return `fb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
+/** Document findings: the item keeps the document and the anchor (page / cell / point). */
+function applyDocumentTarget(item: FeedbackItem, finding: Finding): void {
+  if (finding.scope !== 'document' || !finding.targets[0]) return
+  item.documentId = finding.targets[0]
+  const anchor = finding.evidence.find((e) => e.kind === 'document' && e.anchor)?.anchor
+  if (anchor) item.documentAnchor = { ...anchor }
+}
+
+/** Manual (coach) finding: the coach's comment is the text, the kind follows the category. */
+function itemFromManualFinding(finding: Finding, campIri: Iri, now: Date): FeedbackItem {
+  const cat = (finding.tags ?? []).find((t) => t.startsWith('kategorie:'))?.slice('kategorie:'.length)
+  const activityIri = finding.scope === 'activity' ? finding.targets[0] : undefined
+  const iso = now.toISOString()
+  const item: FeedbackItem = {
+    id: uuid(),
+    campIri,
+    scope: activityIri ? 'activity' : 'camp',
+    kind: isManualCategory(cat) ? feedbackKindOf(cat) : 'suggestion',
+    text: finding.message.trim(),
+    ruleId: finding.ruleId,
+    findingId: finding.id,
+    manualFindingId: finding.id,
+    status: 'draft',
+    createdAt: iso,
+    updatedAt: iso,
+  }
+  if (activityIri) item.activityIri = activityIri
+  applyDocumentTarget(item, finding)
+  return item
+}
+
 /** New draft item prefilled from a finding (kind 'must' for must findings, else 'suggestion'). */
 export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new Date()): FeedbackItem {
+  if (finding.origin === 'manual') return itemFromManualFinding(finding, campIri, now)
   const isMust = finding.severity === 'must'
   // Rule messages often lack final punctuation; the template appends a question right after it.
   const message = finding.message.trim()
@@ -323,6 +366,7 @@ export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new 
     updatedAt: iso,
   }
   if (activityIri) item.activityIri = activityIri
+  applyDocumentTarget(item, finding)
   if ((finding.tags ?? []).includes('midata') ||
     (finding.tags ?? []).includes('nds-quelle') ||
     /Quelle:\s*(MiData|NDS)/.test(finding.message)) item.redDerived = true

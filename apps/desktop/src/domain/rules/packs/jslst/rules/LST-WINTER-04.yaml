@@ -2,6 +2,7 @@ id: LST-WINTER-04
 version: 1.0.0
 module: lst-winter
 status: active
+kind: ai
 title: "Schlitteln: Helm und Pistensicherheit"
 description: "Beim Schlitteln sind Helm, Pistentest, Sicherheitszone und Aufsicht an Start und Auslauf in den Sicherheitsüberlegungen festgehalten. Erkennung über Stichwörter (Heuristik)."
 message: "Für «{activity}» fehlen: {missing} (Helm und feste Schuhe, Pistentest durch Leitende, Sicherheitszone/Auslauf, Aufsicht an Start und Auslauf)."

@@ -32,7 +32,7 @@ import type {
   RulePack,
   Severity,
 } from '../types'
-import { MODULE_IDS } from '../types'
+import { MODULE_IDS, RULE_KINDS } from '../types'
 import { buildExplanation, redSources } from './explain'
 import { completeContext, contextDate } from './lib/context'
 import { primarySource } from './lib/sources'
@@ -72,6 +72,7 @@ export function validateRuleMeta(meta: RuleMeta): string[] {
   need(!!meta?.version, 'version fehlt')
   need((MODULE_IDS as readonly string[]).includes(meta?.module), `module ungültig (${String(meta?.module)})`)
   need(STATUSES.includes(meta?.status), 'status ungültig (active | retired)')
+  need((RULE_KINDS as readonly string[]).includes(meta?.kind), `kind ungültig (${String(meta?.kind)})`)
   need(!!meta?.title?.trim(), 'title fehlt')
   need(!!meta?.description?.trim(), 'description fehlt')
   need(!!meta?.message?.trim(), 'message fehlt')
@@ -90,6 +91,7 @@ export function validateRuleMeta(meta: RuleMeta): string[] {
   if (meta?.severity === 'must' && meta.confidence !== 'verified') {
     errors.push(`${id}: severity 'must' verlangt confidence 'verified' (ist '${meta.confidence}')`)
   }
+  if (meta?.kind === 'ai' && meta.severity === 'must') errors.push(`${id}: KI-Regeln (kind 'ai') dürfen nicht severity 'must' haben`)
   return errors
 }
 
@@ -267,6 +269,7 @@ export function evaluate(packs: RulePack[], input: RuleContextInput, opts: Evalu
     if (!isValidOn(pack, campDate)) continue
     for (const rule of pack.rules) {
       if (rule.meta.status === 'retired') continue
+      if (rule.meta.kind === 'ai') continue // guidance for the AI review only (ADR 0014)
       if (!isValidOn(rule.meta, campDate)) continue
       if (isDisabled(rule.meta, opts.disabledRuleIds)) continue
       const moduleState = ruleModuleState(rule.meta, ctx)

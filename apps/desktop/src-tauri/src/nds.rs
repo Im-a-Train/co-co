@@ -23,13 +23,13 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use coco_core::cookies::{jar_cookie_string, RawCookie};
 use coco_core::nds::{
     chunk_variables, graphql_body, graphql_data, is_session_expired_status, list_document, parse_camps_overlapping,
-    parse_chunk, parse_offers_overlapping, probe_fields, reduce_aggregate, NdsAggregate, NdsCampSummary, NdsProbe,
+    parse_chunk, parse_offers_overlapping, probe_fields, rega_transmitted_map, reduce_aggregate, reduce_rega_counts, NdsAggregate, NdsCampSummary, NdsProbe,
     NdsProbeEndpoint, NdsStatus, RawNdsCamp, NDS_BASE_URL, NDS_LANGUAGE, NDS_LOGIN_PATH, OP_ACTIVITY_LIST,
-    OP_CAMP_LIST, OP_OFFER_LIST, OP_PARTICIPANTS_LIST, OP_RENTAL_ORDERS, OP_SUPERVISORS_LIST, Q_ACTIVITY_LIST,
-    Q_CAMP_LIST, Q_OFFER_LIST, Q_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, Q_PERSONS_SUPERVISORS, Q_RENTAL_ORDERS, Q_SUPERVISORS_LIST, SESSION_COOKIE,
+    OP_CAMP_LIST, OP_OFFER_LIST, OP_PARTICIPANTS_LIST, OP_REGA_PARTICIPANTS, OP_REGA_SUPERVISORS, OP_RENTAL_ORDERS, OP_SUPERVISORS_LIST, Q_ACTIVITY_LIST,
+    Q_CAMP_LIST, Q_OFFER_LIST, Q_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, Q_PERSONS_SUPERVISORS, Q_REGA_PARTICIPANTS, Q_REGA_SUPERVISORS, Q_RENTAL_ORDERS, Q_SUPERVISORS_LIST, SESSION_COOKIE,
     SESSION_EXPIRED_MSG,
 };
-use coco_core::persons::{reduce_nds_persons, NdsPersonsResult};
+use coco_core::persons::{attach_rega, reduce_nds_persons, NdsKind, NdsPersonsResult};
 use coco_core::types::AuthLog;
 use coco_core::CoreError;
 use reqwest::cookie::Jar;
@@ -435,7 +435,12 @@ pub async fn fetch_persons_impl(state: &NdsState, camp_id: &str) -> AppResult<Nd
     let vars = json!({ "campBusinessId": camp_id });
     let participants = graphql_list(&ctx, "youthtraining", OP_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, "participantsListForCamp", vars.clone()).await?;
     let supervisors = graphql_list(&ctx, "youthtraining", OP_SUPERVISORS_LIST, Q_PERSONS_SUPERVISORS, "supervisorsListForCamp", vars).await?;
-    let persons = reduce_nds_persons(&[list_document(participants)], &[list_document(supervisors)]);
+    let mut persons = reduce_nds_persons(&[list_document(participants)], &[list_document(supervisors)]);
+    // Rega state per person; optional, a missing list leaves `regaTransmitted` unknown.
+    if let Some((rp, rs)) = fetch_rega_lists(&ctx, &json!({ "campBusinessId": camp_id })).await {
+        attach_rega(&mut persons, NdsKind::Participant, &rega_transmitted_map(&[list_document(rp)]));
+        attach_rega(&mut persons, NdsKind::Leader, &rega_transmitted_map(&[list_document(rs)]));
+    }
     Ok(NdsPersonsResult { red: true, nds_camp_id: camp_id.to_string(), persons, fetched_at: now_rfc3339() })
 }
 
@@ -467,10 +472,14 @@ pub async fn fetch_aggregate_impl(state: &NdsState, offer_id: &str, camp_id: &st
             .await,
     )?;
     let rental_orders = list(
-        graphql_list(&ctx, "material", OP_RENTAL_ORDERS, Q_RENTAL_ORDERS, "rentalMaterialOrderListForCamp", camp_vars).await,
+        graphql_list(&ctx, "material", OP_RENTAL_ORDERS, Q_RENTAL_ORDERS, "rentalMaterialOrderListForCamp", camp_vars.clone()).await,
     )?;
+    // Counts only; names of the Rega lists never leave this function.
+    let rega = fetch_rega_lists(&ctx, &camp_vars)
+        .await
+        .map(|(p, s)| reduce_rega_counts(&[list_document(p)], &[list_document(s)]));
     let fetched_at = now_rfc3339();
-    reduce_aggregate(&RawNdsCamp {
+    let mut aggregate = reduce_aggregate(&RawNdsCamp {
         offer_business_id: offer_id,
         camp_business_id: camp_id,
         offer_details: &offer_details,
@@ -481,8 +490,23 @@ pub async fn fetch_aggregate_impl(state: &NdsState, offer_id: &str, camp_id: &st
         participants: &participants,
         rental_orders: &rental_orders,
         fetched_at: &fetched_at,
-    })
-    .map_err(Into::into)
+    })?;
+    aggregate.rega = rega;
+    Ok(aggregate)
+}
+
+/// Both Rega lists, fully tolerant: any error yields `None` (Rega is optional, never fails the caller).
+/// This includes HTTP 401/403, which `status_error` maps to «session expired»: the Rega lists are only
+/// fetched after other lists of the same session succeeded, so a 403 here means «no access to the Rega
+/// lists» (e.g. role without Rega rights), not an expired session.
+async fn fetch_rega_lists(ctx: &Ctx, camp_vars: &Value) -> Option<(Vec<Value>, Vec<Value>)> {
+    let p = graphql_list(ctx, "youthtraining", OP_REGA_PARTICIPANTS, Q_REGA_PARTICIPANTS, "regaParticipantsListForCamp", camp_vars.clone())
+        .await
+        .ok()?;
+    let s = graphql_list(ctx, "youthtraining", OP_REGA_SUPERVISORS, Q_REGA_SUPERVISORS, "regaSupervisorsListForCamp", camp_vars.clone())
+        .await
+        .ok()?;
+    Some((p, s))
 }
 
 const CAMP_DETAIL_FIELDS: [&str; 8] = [
@@ -636,14 +660,21 @@ pub async fn probe_impl(state: &NdsState, camp_id: &str) -> AppResult<NdsProbe> 
             OP_RENTAL_ORDERS,
             Q_RENTAL_ORDERS,
             "rentalMaterialOrderListForCamp",
-            camp_vars,
+            camp_vars.clone(),
             &["orderState", "dispatchmentDate", "returnDate"],
         )
         .await?,
     );
 
-    // Connected only if the session is still accepted.
+    // Connected only if the session is still accepted. Decided before the optional Rega lists: a 403 there
+    // means «no Rega rights», not an expired session.
     let connected = !endpoints.iter().any(|e| e.status.is_some_and(is_session_expired_status));
+    for (op, q, field) in [
+        (OP_REGA_PARTICIPANTS, Q_REGA_PARTICIPANTS, "regaParticipantsListForCamp"),
+        (OP_REGA_SUPERVISORS, Q_REGA_SUPERVISORS, "regaSupervisorsListForCamp"),
+    ] {
+        endpoints.push(probe_list(&ctx, "youthtraining", op, q, field, camp_vars.clone(), &["transmittedToRega"]).await?);
+    }
     Ok(NdsProbe { connected, endpoints })
 }
 

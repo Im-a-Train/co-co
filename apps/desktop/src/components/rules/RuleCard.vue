@@ -34,6 +34,7 @@ function fmt(iso: string): string {
   <div class="rule-card">
     <div class="d-flex flex-wrap ga-2 mb-3">
       <v-chip size="small" label :color="SEVERITY_COLOR[meta.severity]" variant="flat">{{ t(`severity.${meta.severity}`) }}</v-chip>
+      <v-chip v-if="meta.kind === 'ai'" size="small" label color="secondary" variant="tonal" prepend-icon="mdi-creation" data-testid="kind-ai-chip">{{ t('rules.catalog.kind.aiChip') }}</v-chip>
       <v-chip size="small" label variant="tonal">{{ t(`confidence.${meta.confidence}`) }}</v-chip>
       <v-chip size="small" label variant="outlined">{{ t(`rules.catalog.scope.${meta.scope}`) }}</v-chip>
       <v-chip v-for="input in meta.inputs ?? []" :key="input" size="small" label variant="outlined" prepend-icon="mdi-database-outline">

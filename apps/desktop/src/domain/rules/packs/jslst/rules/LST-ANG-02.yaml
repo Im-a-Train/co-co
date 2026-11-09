@@ -2,6 +2,7 @@ id: LST-ANG-02
 version: 1.0.0
 module: lst
 status: active
+kind: ai
 title: "Erscheinungsformen nicht alle sichtbar"
 description: "Im Angebot werden alle sechs Erscheinungsformen erlebbar. Die J+S-Aktivitäten werden nach EF-Tag, sonst nach Stichwörtern eingeordnet."
 message: "Für folgende Erscheinungsformen ist keine Aktivität erkennbar: {list}. Im Angebot müssen alle erlebbar werden."

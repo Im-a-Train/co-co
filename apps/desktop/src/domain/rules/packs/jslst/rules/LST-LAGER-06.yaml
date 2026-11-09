@@ -2,6 +2,7 @@ id: LST-LAGER-06
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Auf-/Abbau in der Nachtruhe"
 description: "Auf- und Abbau liegen nicht in der Nachtruhe."
 message: "«{activity}» (Auf-/Abbau) liegt zwischen {from} und {to}."

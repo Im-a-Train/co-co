@@ -34,6 +34,8 @@ export interface ActivityRow {
   progressPosition: number
   findings: Record<Severity, number>
   findingCount: number
+  /** Coach findings (origin 'manual') of the activity; not part of `findings` / `findingCount`. */
+  manualCount: number
   documentCount: number
 }
 
@@ -88,9 +90,14 @@ export function buildRows(
     entriesOf.set(e.activityIri, list)
   }
   const findingCounts = new Map<Iri, Record<Severity, number>>()
+  const manualCounts = new Map<Iri, number>()
   for (const f of findings) {
     const iri = activityIriOfFinding(f, facts)
     if (!iri) continue
+    if (f.origin === 'manual') {
+      manualCounts.set(iri, (manualCounts.get(iri) ?? 0) + 1)
+      continue
+    }
     const c = findingCounts.get(iri) ?? { must: 0, should: 0, hint: 0 }
     c[f.severity] += 1
     findingCounts.set(iri, c)
@@ -121,6 +128,7 @@ export function buildRows(
       progressPosition: pl?.position ?? -1,
       findings: fc,
       findingCount: fc.must + fc.should + fc.hint,
+      manualCount: manualCounts.get(a.iri) ?? 0,
       documentCount: docCounts.get(a.iri) ?? 0,
     }
   })
@@ -133,7 +141,7 @@ export function filterRows(rows: ActivityRow[], f: RowFilter): ActivityRow[] {
     if (q && ![r.title, r.location, ...r.responsibles].some((s) => s.toLowerCase().includes(q))) return false
     if (f.categoryClass && r.categoryClass !== f.categoryClass) return false
     if (f.date && !r.entries.some((e) => e.date === f.date)) return false
-    if (f.onlyFindings && r.findingCount === 0) return false
+    if (f.onlyFindings && r.findingCount === 0 && r.manualCount === 0) return false
     if (f.noResponsible && r.responsibles.length > 0) return false
     return true
   })

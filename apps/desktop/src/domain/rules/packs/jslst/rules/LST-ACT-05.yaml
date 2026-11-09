@@ -2,6 +2,7 @@ id: LST-ACT-05
 version: 1.0.0
 module: lst
 status: active
+kind: ai
 title: "Keine Erscheinungsform erkennbar"
 description: "Jede J+S-Aktivität zielt auf die Erscheinungsformen (EF1–EF6) ab. Erkennung über EF-Tags oder Stichwörter."
 message: "«{activity}» lässt sich keiner Erscheinungsform zuordnen. Jede J+S-Aktivität zielt auf die Erscheinungsformen ab – ggf. EF-Tag setzen."

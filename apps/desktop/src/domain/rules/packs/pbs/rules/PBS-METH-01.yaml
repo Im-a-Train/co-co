@@ -2,6 +2,7 @@ id: PBS-METH-01
 version: 1.0.0
 module: pbs
 status: active
+kind: ai
 title: "Pfadimethoden und Beziehungen"
 description: "Im Lagerprogramm ist für die Pfadi-Methoden und -Beziehungen ein Programmpunkt erkennbar. Die Stichwortlisten sind provisorisch, bis das Pfadiprofil vorliegt."
 message: "Für folgende Pfadi-Methoden/Beziehungen ist kein Programmpunkt erkennbar: {list}."

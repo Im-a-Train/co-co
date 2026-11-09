@@ -52,6 +52,12 @@ export function clearManualFindingsCache(): void {
 
 onDataStoreLocked(clearManualFindingsCache)
 
+// One module-level MCP watcher (not one per handle: every FindingCard holds a handle, and N handles would
+// reload the same camp N times per MCP write). Only camps that are already cached are reloaded.
+watch(lastMcpChange, (c) => {
+  if (c?.kind === 'manualFinding' && cache.value.has(c.campIri)) void loadManualFindings(c.campIri, true).catch(() => {})
+})
+
 function group<K>(rows: ManualFinding[], key: (m: ManualFinding) => K | undefined): Map<K, ManualFinding[]> {
   const out = new Map<K, ManualFinding[]>()
   for (const m of rows) {
@@ -77,13 +83,11 @@ export function useManualFindings(campIri: MaybeRefOrGetter<Iri>): ManualFinding
   watch(
     () => toValue(campIri),
     (iri) => {
-      if (iri) void loadManualFindings(iri)
+      // Locked store: getDb() throws; useFindings retries once the store is ready.
+      if (iri) void loadManualFindings(iri).catch(() => {})
     },
     { immediate: true },
   )
-  watch(lastMcpChange, (c) => {
-    if (c?.kind === 'manualFinding' && c.campIri === toValue(campIri)) void reload()
-  })
 
   async function add(input: Omit<NewManualFindingInput, 'campIri'>): Promise<ManualFinding> {
     const iri = toValue(campIri)

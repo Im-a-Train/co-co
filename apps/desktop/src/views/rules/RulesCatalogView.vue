@@ -66,6 +66,7 @@ async function focusRule(id: string) {
   if (!rule) return
   search.value = ''
   group.value = 'all'
+  kindFilter.value = 'all'
   openRule.value = rule.meta.id
   await nextTick()
   setTimeout(() => document.getElementById(`rule-${rule.meta.id}`)?.scrollIntoView({ block: 'center' }), 150)
@@ -73,6 +74,8 @@ async function focusRule(id: string) {
 
 const search = ref('')
 const group = ref<ModuleId | 'all'>('all')
+/** Kind filter: hard engine rules vs. AI guidance (ADR 0014). */
+const kindFilter = ref<'all' | 'hard' | 'ai'>('all')
 /** Filter options: the modules of the loaded packs (catalog v2). */
 const GROUPS = computed<ModuleId[]>(() => modulesOf(packs.value).map((m) => m.id))
 
@@ -101,7 +104,7 @@ const visible = computed(() =>
     byGroup: GROUPS.value.filter((g) => group.value === 'all' || group.value === g)
       .map((g) => ({
         group: g,
-        rules: pack.rules.filter((r) => r.meta.module === g && matches(r, search.value)),
+        rules: pack.rules.filter((r) => r.meta.module === g && (kindFilter.value === 'all' || r.meta.kind === kindFilter.value) && matches(r, search.value)),
       }))
       .filter((entry) => entry.rules.length > 0),
   })),
@@ -136,6 +139,11 @@ function fmt(iso: string): string {
         clearable
         class="search-field"
       />
+      <v-chip-group v-model="kindFilter" mandatory selected-class="text-primary" data-testid="kind-filter">
+        <v-chip value="all" size="small" filter>{{ t('rules.catalog.kind.all') }}</v-chip>
+        <v-chip value="hard" size="small" filter>{{ t('rules.catalog.kind.hard') }}</v-chip>
+        <v-chip value="ai" size="small" filter prepend-icon="mdi-creation">{{ t('rules.catalog.kind.ai') }}</v-chip>
+      </v-chip-group>
       <v-chip-group v-model="group" mandatory selected-class="text-primary">
         <v-chip value="all" size="small" filter>{{ t('rules.catalog.allGroups') }}</v-chip>
         <v-chip v-for="g in GROUPS" :key="g" :value="g" size="small" filter>{{ t(`rules.catalog.module.${g}`) }}</v-chip>

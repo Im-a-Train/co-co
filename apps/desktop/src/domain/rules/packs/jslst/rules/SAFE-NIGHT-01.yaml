@@ -2,6 +2,7 @@ id: SAFE-NIGHT-01
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Nachtaktivität: Sicherheit und Ruhezeit"
 description: "Aktivitäten nach der Nachtruhe-Grenze oder in der Nacht haben Sicherheitsüberlegungen und lassen bis zum nächsten Programmstart genügend Ruhe."
 message: "«{title}» (Nachtaktivität): {reasons}"

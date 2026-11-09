@@ -1,12 +1,17 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AiSummaryButton from '@/components/ai/AiSummaryButton.vue'
-import type { CampFacts, DocumentRecord } from '@/domain/types'
+import type { CampFacts, DocumentAnchor, DocumentRecord } from '@/domain/types'
+import DocumentFindings from './DocumentFindings.vue'
+import DocumentViewer from './DocumentViewer.vue'
 import GpxCard from './GpxCard.vue'
 import SafetyChecklist from './SafetyChecklist.vue'
 
-defineProps<{
+const props = defineProps<{
   doc: DocumentRecord | null
+  /** Deep link target (?page=<n>) applied when the document is opened. */
+  initialAnchor?: DocumentAnchor | null
   facts: CampFacts | null
   paceDefault: number
   paceWoelfe: number
@@ -14,6 +19,22 @@ defineProps<{
 }>()
 const emit = defineEmits<{ aiAllowed: [id: string, value: boolean]; summarised: [id: string, text: string] }>()
 const { t } = useI18n()
+
+const tab = ref<'view' | 'text'>('view')
+/** Anchor the viewer jumps to; a fresh object per request so repeated jumps to the same place still fire. */
+const jumpTarget = ref<DocumentAnchor | null>(null)
+watch(
+  () => [props.doc?.id, props.initialAnchor] as const,
+  () => {
+    tab.value = 'view'
+    jumpTarget.value = props.initialAnchor ? { ...props.initialAnchor } : null
+  },
+  { immediate: true },
+)
+function jump(a: DocumentAnchor) {
+  tab.value = 'view'
+  jumpTarget.value = { ...a }
+}
 
 function fmtSize(n: number): string {
   return n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`
@@ -34,6 +55,18 @@ function fmtSize(n: number): string {
         {{ t('documents.detail.zone') }}
       </v-chip>
 
+      <v-tabs v-model="tab" density="compact">
+        <v-tab value="view" data-testid="document-tab-view">{{ t('documents.detail.tabView') }}</v-tab>
+        <v-tab value="text" data-testid="document-tab-text">{{ t('documents.detail.tabText') }}</v-tab>
+      </v-tabs>
+
+      <!-- v-show keeps the viewer mounted: switching tabs neither re-reads the file nor loses the position. -->
+      <div v-show="tab === 'view'" class="d-flex flex-column ga-3">
+        <DocumentViewer :doc="doc" :target="jumpTarget" />
+        <DocumentFindings :doc="doc" @jump="jump" />
+      </div>
+
+      <template v-if="tab === 'text'">
       <GpxCard
         v-if="doc.gpx"
         :doc="doc"
@@ -66,6 +99,7 @@ function fmtSize(n: number): string {
         <div class="text-subtitle-2">{{ t('documents.detail.preview') }}</div>
         <pre class="preview text-caption">{{ doc.text.slice(0, 1500) }}{{ doc.text.length > 1500 ? ' …' : '' }}</pre>
       </div>
+      </template>
     </v-card-text>
   </v-card>
 </template>
