@@ -8,6 +8,7 @@ import { deleteFeedback, listFeedback, saveFeedback } from '@/domain/feedback/st
 import { newId, nowIso } from '@/domain/storage/db'
 import { syncFeedbackWithComments, type CommentSyncSummary } from '@/domain/feedback/commentSync'
 import type { CampFacts, FeedbackItem, FeedbackKind, FeedbackScope, Iri } from '@/domain/types'
+import { lastMcpChange } from './mcpChanges'
 
 export interface NewFeedback {
   scope: FeedbackScope
@@ -61,6 +62,10 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
   }
 
   watch(() => toValue(campIri), () => void reload(), { immediate: true })
+  // MCP tools write to Dexie directly: reload so later UI edits do not overwrite their changes.
+  watch(lastMcpChange, (c) => {
+    if (c?.kind === 'feedback' && c.campIri === toValue(campIri)) void reload()
+  })
 
   function find(id: string): FeedbackItem {
     const item = items.value.find((i) => i.id === id)

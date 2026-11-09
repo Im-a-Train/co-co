@@ -62,7 +62,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleState`), `coachInputs`,
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
 `documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context). Schema changes: add a new Dexie version with an upgrade,
-never edit an existing one. Backup covers every table in `TABLE_NAMES`.
+never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
 
 ## Key flows
 
@@ -86,7 +86,9 @@ never edit an existing one. Backup covers every table in `TABLE_NAMES`.
 - **Documents:** picker / drag-drop / watched folder → Rust scope check → `read_document` → extract →
   `documents` table → rules SAFE-DOC-01, SAFE-MTN-01/02.
 - **AI:** button → `useAiFlow` → redaction preview dialog → `aiGateway.send` (zone checks) →
-  `ai_complete` (Rust, key from keychain).
+  `ai_complete` (Rust, key from keychain). `ai_complete` takes `provider` (`anthropic` | `openai`) and
+  `baseUrl`: `anthropic` calls the Messages API; `openai` calls `POST {base}/chat/completions` of an
+  OpenAI-compatible server (Ollama, LM Studio, OpenAI, ...), key optional and bound to its origin.
 
 ## Rust side (`src-tauri/`)
 
@@ -208,3 +210,31 @@ packs/
   filename keyword sets (`DocumentKind` has no such kinds); the child age < 10 is the J+S definition
   constant in the trekking predicates; the 90 % threshold of LST-LAGER-02 is a TS constant; the PBS method
   keyword lists are provisional (Pfadiprofil missing).
+
+## ADR 0012: OpenAI-compatible AI + local MCP server
+
+Decision: [adr/0012-openai-compatible-and-mcp.md](adr/0012-openai-compatible-and-mcp.md).
+
+- **Provider:** `AppSettings.ai.provider` (`anthropic` | `openai`) and `ai.openai` (`baseUrl`, `model`, `preset`).
+  `aiGateway` stays the only entry point; zone rules apply to every provider, the Claude model whitelist
+  only to Anthropic. Rust (`src/ai.rs`, `coco-core::ai`): https required, http only for loopback, no
+  redirects; optional key in the keychain bound to its origin; `ai_openai_models` lists models / tests.
+- **MCP server (Rust):** `src/mcp.rs` + `coco-core::mcp` (JSON-RPC, validation, token compare). `tiny_http`
+  on 127.0.0.1 only, `POST /mcp`, bearer token (keychain), Host/Origin loopback check, 1 MB body cap, runs
+  only while AI and MCP are enabled. Activity log (last 50 calls, no payloads) lives in Rust memory and is
+  part of `McpStatus`. Events `mcp://tool-call` (with `deadlineMs`), `mcp://tool-cancel` and `mcp://status`.
+  Client `notifications/cancelled`, the 55 s timeout and a server stop end the call in Rust and emit
+  `mcp://tool-cancel`.
+- **Bridge (webview):** `composables/mcpBridge.ts` receives `mcp://tool-call` and hands it to
+  `domain/mcp/dispatch.ts`: enabled check, confirmation, handler (`catalog.ts` definitions + handlers), zone
+  check `zones/mcpZone.ts` (`assertMcpSendable`), answer via `mcp_tool_result`. `mcp_set_tools` pushes only
+  enabled tools to Rust. Each call gets an `AbortSignal` that fires on `mcp://tool-cancel` or 5 s before
+  `deadlineMs`; it closes the dialog and keeps the handler from starting, so no write runs after the client
+  gave up. MCP writes bump `composables/mcpChanges.ts`; `useFeedback` / `useRounds` reload the camp.
+- **Confirmation:** queue in `composables/mcpConfirm.ts`, dialog `components/mcp/McpConfirmDialog.vue`
+  (mounted in `App.vue`); write tools always, reads optionally.
+- **Settings UI:** KI tab with sub-tabs «Anbieter» (`AiProviderSection`), «MCP-Server»
+  (`McpServerSection`, `McpGuide`, `McpToolList` read/write groups with per-tool switches), «Protokoll».
+- **Guard:** `__tests__/contracts/mcpGuard.test.ts` keeps the MCP code free of MiData/NDS imports.
+- **Dev harness:** `dev/mockTauri.ts` mocks the new commands and exposes `window.__cocoMockMcp`;
+  `e2e-ui/mcp-flows.mjs` drives the KI tab and tool calls through the bridge.

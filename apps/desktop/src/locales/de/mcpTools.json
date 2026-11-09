@@ -1,0 +1,62 @@
+{
+  "mcp": {
+    "tools": {
+      "list_camps": {
+        "title": "Lager auflisten",
+        "description": "Deine eCamp-Lager mit Titel, Motto, Daten und deiner Rolle."
+      },
+      "get_camp_overview": {
+        "title": "Lager-Übersicht",
+        "description": "Abschnitte, Tage, Aktivitäten, Kategorien, gültige J+S-Tage, Anzahl Befunde und Prüfstatus eines Lagers."
+      },
+      "list_activities": {
+        "title": "Programm auflisten",
+        "description": "Programmblöcke mit Nummer, Tag, Zeit, Titel, Kategorie und Ort, auf Wunsch mit Programm- und Sicherheitstexten (anonymisiert)."
+      },
+      "get_activity": {
+        "title": "Aktivität lesen",
+        "description": "Eine Aktivität mit Programm, Sicherheitsüberlegungen, Lernzielen, Material und ihren Befunden (anonymisiert)."
+      },
+      "list_findings": {
+        "title": "Befunde auflisten",
+        "description": "Ergebnisse der Regelprüfung mit Schweregrad, Quelle und Triage-Status. Ohne MiData-/NDS-Angaben."
+      },
+      "get_rule_catalog": {
+        "title": "Regelkatalog lesen",
+        "description": "Die Regeln der aktiven Regelpakete mit Beschreibung, Schweregrad und Quelle."
+      },
+      "list_deadlines": {
+        "title": "Fristen auflisten",
+        "description": "Fristen und PBS-Meilensteine mit Fälligkeit und Status, für ein Lager oder alle Lager."
+      },
+      "list_feedback": {
+        "title": "Feedback lesen",
+        "description": "Deine Feedback-Punkte eines Lagers mit Art, Status und Text (anonymisiert, ohne MiData-/NDS-Angaben)."
+      },
+      "list_rounds": {
+        "title": "Prüfrunden lesen",
+        "description": "Prüfrunden eines Lagers und der aktuelle Prüfstatus mit Verlauf."
+      },
+      "add_feedback": {
+        "title": "Feedback-Entwurf hinzufügen",
+        "description": "Legt einen Feedback-Entwurf an (nur in co-co). Du bestätigst vorher in co-co."
+      },
+      "update_feedback": {
+        "title": "Feedback-Entwurf ändern",
+        "description": "Ändert Text oder Art eines Entwurfs. Gepostete oder versendete Punkte bleiben unverändert."
+      },
+      "ignore_finding": {
+        "title": "Befund ignorieren",
+        "description": "Markiert einen Befund mit Begründung als ignoriert (in co-co rückgängig machbar)."
+      },
+      "set_review_status": {
+        "title": "Prüfstatus setzen",
+        "description": "Setzt deinen Prüfstatus des Lagers (nur in co-co)."
+      },
+      "post_feedback_comment": {
+        "title": "Feedback als eCamp-Kommentar posten",
+        "description": "Postet einen Aktivitäts-Entwurf als Kommentar in eCamp. Für die Lagerleitung sichtbar."
+      }
+    }
+  }
+}

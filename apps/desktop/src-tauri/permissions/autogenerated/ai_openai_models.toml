@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ai-openai-models"
+description = "Enables the ai_openai_models command without any pre-configured scope."
+commands.allow = ["ai_openai_models"]
+
+[[permission]]
+identifier = "deny-ai-openai-models"
+description = "Denies the ai_openai_models command without any pre-configured scope."
+commands.deny = ["ai_openai_models"]

@@ -3,6 +3,9 @@
  * Loaded from main.ts only when `import.meta.env.DEV` and `?mock=1`; tree-shaken from production builds.
  */
 import { mockIPC, mockWindows } from '@tauri-apps/api/mocks'
+import { emit } from '@tauri-apps/api/event'
+import { mcpToolByName } from '@/domain/mcp/catalog'
+import type { McpLogEntry, McpStatus, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
 import { createDevCampApi, DEV_CAMP_IRI } from '@/__tests__/fixtures/devCampApi'
 
 const USER_IRI = '/api/users/9145944210a7'
@@ -231,6 +234,131 @@ function ndsAggregate(offerBusinessId: string, campBusinessId: string) {
   }
 }
 
+// ---- ADR 0012 mock: OpenAI-compatible key/models and the local MCP server --------------------------
+function isLoopbackUrl(url: string): boolean {
+  try {
+    return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(url).hostname)
+  } catch {
+    return false
+  }
+}
+function originOf(url: string): string {
+  try {
+    return new URL(url).origin
+  } catch {
+    return url
+  }
+}
+function mockToken(seed: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let out = ''
+  for (let i = 0; i < 43; i++) out += chars[(seed * 31 + i * 17 + (i % 7) * seed) % chars.length]
+  return 'coco_' + out
+}
+
+declare global {
+  interface Window {
+    __cocoMockMcp?: {
+      call(name: string, args: unknown): Promise<McpToolOutcome>
+      results: { callId: string; name: string; outcome: McpToolOutcome }[]
+      registered(): McpToolRegistration[]
+    }
+  }
+}
+
+function installMcpMock() {
+  let running = false
+  let port: number | null = null
+  let tools: McpToolRegistration[] = []
+  let tokenSeed = 1
+  const log: McpLogEntry[] = []
+  const pending = new Map<string, { name: string; kind: 'read' | 'write'; start: number; resolve: (o: McpToolOutcome) => void }>()
+  let counter = 0
+  const results: { callId: string; name: string; outcome: McpToolOutcome }[] = []
+
+  const status = (): McpStatus => ({
+    running,
+    port: running ? port : null,
+    url: running ? `http://127.0.0.1:${port}/mcp` : null,
+    error: null,
+    toolCount: tools.length,
+    log: [...log],
+  })
+  const pushStatus = () => void emit('mcp://status', status())
+
+  window.__cocoMockMcp = {
+    call(name, args) {
+      const callId = `mock-call-${++counter}`
+      const kind = tools.find((t) => t.name === name)?.kind ?? mcpToolByName(name)?.kind ?? 'read'
+      return new Promise<McpToolOutcome>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          pending.delete(callId)
+          reject(new Error(`mock MCP call ${name} timed out`))
+        }, 10_000)
+        pending.set(callId, {
+          name,
+          kind,
+          start: Date.now(),
+          resolve: (o) => {
+            clearTimeout(timer)
+            resolve(o)
+          },
+        })
+        void emit('mcp://tool-call', { callId, name, kind, arguments: args, deadlineMs: Date.now() + 55_000 })
+      })
+    },
+    results,
+    registered: () => tools,
+  }
+
+  return (cmd: string, a: Record<string, unknown>): { handled: boolean; value?: unknown } => {
+    switch (cmd) {
+      case 'mcp_status':
+        return { handled: true, value: status() }
+      case 'mcp_start':
+        running = true
+        port = Number(a.port)
+        pushStatus()
+        return { handled: true, value: status() }
+      case 'mcp_stop':
+        running = false
+        port = null
+        pushStatus()
+        return { handled: true, value: status() }
+      case 'mcp_set_tools':
+        tools = (a.tools as McpToolRegistration[]) ?? []
+        pushStatus()
+        return { handled: true, value: null }
+      case 'mcp_tool_result': {
+        const p = pending.get(String(a.callId))
+        if (!p) return { handled: true, value: null }
+        pending.delete(String(a.callId))
+        const outcome = a.outcome as McpToolOutcome
+        results.push({ callId: String(a.callId), name: p.name, outcome })
+        log.unshift({
+          atMs: Date.now(),
+          tool: p.name,
+          kind: p.kind,
+          ok: !outcome.isError,
+          durationMs: Date.now() - p.start,
+          error: outcome.isError ? outcome.text.slice(0, 80) : null,
+        })
+        if (log.length > 50) log.length = 50
+        p.resolve(outcome)
+        pushStatus()
+        return { handled: true, value: null }
+      }
+      case 'mcp_get_token':
+        return { handled: true, value: mockToken(tokenSeed) }
+      case 'mcp_regenerate_token':
+        tokenSeed += 1
+        return { handled: true, value: mockToken(tokenSeed) }
+      default:
+        return { handled: false }
+    }
+  }
+}
+
 // Past camps for the "ended / older" filters: one ended ~1 month ago, one ended >3 months ago.
 function withPastCamps(res: unknown): unknown {
   const list = res as { _embedded: { items: Record<string, unknown>[] }; totalItems?: number }
@@ -255,12 +383,18 @@ export function installMockTauri(): void {
   mockWindows('main')
   const api = createDevCampApi()
   let aiKey = false
+  let openaiKeyOrigin: string | null = null
+  const mcpMock = installMcpMock()
   let midataConnected = true
   let midataMethod: 'session' | 'token' = 'session'
   let ndsConnected = true
   mockIPC(
     async (cmd, args) => {
       const a = (args ?? {}) as Record<string, unknown>
+      if (cmd.startsWith('mcp_')) {
+        const r = mcpMock(cmd, a)
+        if (r.handled) return r.value
+      }
       switch (cmd) {
         case 'session_status':
         case 'refresh_session':
@@ -423,6 +557,20 @@ export function installMockTauri(): void {
         case 'ai_clear_key':
           aiKey = false
           return null
+        case 'ai_openai_set_key':
+          openaiKeyOrigin = originOf(String(a.baseUrl))
+          return null
+        case 'ai_openai_has_key':
+          return openaiKeyOrigin !== null && openaiKeyOrigin === originOf(String(a.baseUrl))
+        case 'ai_openai_clear_key':
+          openaiKeyOrigin = null
+          return null
+        case 'ai_openai_models': {
+          const url = String(a.baseUrl)
+          if (isLoopbackUrl(url)) return ['llama3.1:8b', 'mistral:7b', 'qwen2.5:7b']
+          if (!url.startsWith('https://')) throw 'Die Adresse muss https verwenden (http nur für localhost).'
+          return ['gpt-4o-mini', 'gpt-4o']
+        }
         default:
           if (cmd.startsWith('plugin:')) return null
           throw `Mock: Befehl nicht implementiert: ${cmd}`

@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const state = vi.hoisted(() => ({ enabled: true, logs: [] as unknown[] }))
+const state = vi.hoisted(() => ({
+  enabled: true,
+  logs: [] as unknown[],
+  provider: undefined as string | undefined,
+  openai: { baseUrl: 'http://localhost:11434/v1', model: 'llama3.1:8b', preset: 'ollama' } as Record<string, string> | undefined,
+}))
 const complete = vi.hoisted(() => vi.fn())
 
 vi.mock('@/lib/tauriAi', () => ({ aiComplete: complete }))
 vi.mock('../../storage/settings', () => ({
-  getAppSettings: async () => ({ ai: { enabled: state.enabled, model: 'claude-sonnet-5-5' } }),
+  getAppSettings: async () => ({
+    ai: { enabled: state.enabled, model: 'claude-sonnet-5-5', provider: state.provider, openai: state.openai },
+  }),
 }))
 vi.mock('../../storage/db', () => ({ getDb: () => ({ aiLog: { add: async (e: unknown) => state.logs.push(e) } }) }))
 
@@ -26,6 +33,8 @@ function req(over: Partial<AiGatewayRequest> = {}): AiGatewayRequest {
 
 beforeEach(() => {
   state.enabled = true
+  state.provider = undefined
+  state.openai = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.1:8b', preset: 'ollama' }
   state.logs = []
   complete.mockReset()
   complete.mockResolvedValue({ text: 'ok', inputTokens: 10, outputTokens: 5 })
@@ -102,5 +111,46 @@ describe('aiGateway.send', () => {
     complete.mockRejectedValue(new Error('Kein API-Schlüssel hinterlegt'))
     await expect(send(req())).rejects.toThrow(/Schlüssel/)
     expect(state.logs[0]).toMatchObject({ ok: false })
+  })
+})
+
+describe('aiGateway OpenAI-compatible provider', () => {
+  beforeEach(() => {
+    state.provider = 'openai'
+  })
+
+  it('passes provider, baseUrl and the configured model, ignoring the request model', async () => {
+    const res = await send(req({ model: 'claude-opus-5-5' }))
+    expect(complete).toHaveBeenCalledWith({
+      provider: 'openai',
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'llama3.1:8b',
+      system: 'sys',
+      prompt: 'Text',
+      maxTokens: 500,
+    })
+    expect(res.model).toBe('llama3.1:8b')
+    expect(state.logs[0]).toMatchObject({ ok: true, provider: 'openai', model: 'llama3.1:8b' })
+  })
+
+  it('refuses without model or base URL', async () => {
+    state.openai = { baseUrl: 'http://localhost:11434/v1', model: '  ', preset: 'ollama' }
+    await expect(send(req())).rejects.toThrow(/kein Modell/)
+    state.openai = { baseUrl: '', model: 'x', preset: 'custom' }
+    await expect(send(req())).rejects.toThrow(/Basis-URL/)
+    expect(complete).not.toHaveBeenCalled()
+  })
+
+  it('still applies the zone rules', async () => {
+    await expect(send(req({ parts: [{ zone: 'red', value: 'x' }] }))).rejects.toThrow(/Rote/)
+    await expect(send(req({ parts: [{ zone: 'yellow', value: 'Max' }] }))).rejects.toThrow(/anonymisiert/)
+    await expect(send(req({ confirmed: false }))).rejects.toThrow(/Vorschau/)
+    expect(complete).not.toHaveBeenCalled()
+  })
+
+  it('logs provider anthropic by default', async () => {
+    state.provider = undefined
+    await send(req())
+    expect(state.logs[0]).toMatchObject({ provider: 'anthropic', model: 'claude-sonnet-5-5' })
   })
 })
