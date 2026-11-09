@@ -1,6 +1,7 @@
 # Coach checklist (catalog v2 §8). kind: B = binding, E = recommendation, 2014 = outdated source (unverified); "2014 / B" = both.
 # showWhen: list of conditions (any); keys inside one condition must all hold.
 #   campConfig: { field: [values] } | coachInput: { field: value } | coachInputSet: field | activityTag: [tags] | campInWinter: true
+# milestone: M-ID of the deadline milestone (packs/*/milestones.yaml) that is the same task: shared done state + due date.
 - id: CL-JS-01
   module: js
   text: "Organisation ist beim BASPO für J+S-Lager registriert."
@@ -74,6 +75,7 @@
   sources: [{ key: WEB-C, page: "1. Schritt" }, { key: MB-UP, page: "S. 2" }]
   kind: "B"
   showWhen: [{ activityTag: ["sb-berg", "sb-wasser", "sb-winter"] }, { campConfig: { winterSafeAccess: [false] }, campInWinter: true }]
+  milestone: M-LST-SB-BEWILLIGUNG
 - id: CL-LST-05
   module: lst
   text: "Gruppengrösse und nötige fachkompetente Hilfspersonen pro Aktivität bewusst festgelegt."
@@ -114,6 +116,7 @@
   text: "Lagerregeln decken die 5 Pflichtbereiche ab; Konsequenzen ohne bleibenden Schaden."
   sources: [{ key: LAGER, page: "S. 32–33" }, { key: MB-UP, page: "S. 1" }]
   kind: "2014 / B"
+  milestone: M-LST-LAGERREGELN
 - id: CL-LAGER-07
   module: lst-lager
   text: "Gemischte Lager: getrennte Dusch- und Umkleidebereiche; mehrere Leitende anwesend; Untersuchungen im Intimbereich nur durch Fachpersonen."
@@ -175,6 +178,7 @@
   text: "Wanderungen mit Kartenausschnitt, Routenplanung inkl. Alternativen, Zeitberechnung und Sicherheitskonzept zusammen mit dem Lagerprogramm beim Coach eingereicht."
   sources: [{ key: MB-UP, page: "S. 3" }]
   kind: "B"
+  milestone: M-LST-PROGRAMM-COACH
 - id: CL-TREK-06
   module: lst-trekking
   text: "Treffpunkte und Zeiten vereinbart, falls sich die Gruppe auseinanderzieht."

@@ -1,0 +1,91 @@
+{
+  "resources": {
+    "title": "Hilfsmittel",
+    "intro": "Die Unterlagen und Websites, auf die sich die Regeln stützen (Manuals, J+S-Tool-Module, Merkblätter). Mitgeliefert sind Titel, Ausgabe und Link. Du kannst Einträge anpassen, mit eigenem Dokumenttext versehen (durchsuchbar für KI und MCP), ersetzen oder neue hinzufügen. Die Regeln verweisen auf diese Einträge.",
+    "loading": "Hilfsmittel werden geladen …",
+    "loadFailed": "Hilfsmittel konnten nicht geladen werden",
+    "search": "Volltextsuche (auch im Dokumentinhalt)",
+    "allWeights": "Alle",
+    "empty": "Keine Hilfsmittel gefunden.",
+    "count": "{count} Hilfsmittel",
+    "add": "Hilfsmittel hinzufügen",
+    "weight": {
+      "binding": "Verbindlich",
+      "binding-quote": "Verbindlich (zitiert)",
+      "didactic": "Didaktisch",
+      "outdated": "Veraltet",
+      "pbs": "PBS",
+      "info": "Info"
+    },
+    "chip": {
+      "modified": "geändert",
+      "custom": "eigenes",
+      "content": "mit Text",
+      "partlyRead": "teilweise gelesen"
+    },
+    "field": {
+      "key": "Schlüssel",
+      "title": "Titel",
+      "publisher": "Herausgeber",
+      "edition": "Ausgabe",
+      "date": "Datum (JJJJ-MM-TT)",
+      "url": "Link (https://…)",
+      "summary": "Kurzbeschreibung",
+      "notes": "Notizen",
+      "checkedOn": "Zuletzt geprüft (JJJJ-MM-TT)",
+      "weight": "Gewichtung"
+    },
+    "keyHint": "Grossbuchstaben, Ziffern und Bindestriche, z. B. MEIN-MERKBLATT",
+    "detail": {
+      "publisher": "Herausgeber",
+      "edition": "Ausgabe",
+      "date": "Datum",
+      "checkedOn": "Zuletzt geprüft",
+      "partlyRead": "Nur teilweise gelesen",
+      "notes": "Notizen",
+      "noUrl": "Kein öffentlicher Link (z. B. J+S-Tool-Modul oder lokale Datei).",
+      "openLink": "Original öffnen",
+      "file": "Datei",
+      "noContent": "Kein Dokumenttext hinterlegt. Mit «Datei ersetzen/anhängen» oder «Text einfügen» wird das Hilfsmittel für KI und MCP durchsuchbar.",
+      "contentStats": "{words} Wörter, {kb} KB Text",
+      "citedBy": "Zitiert von {count} Regel(n)",
+      "citedNone": "Von keiner Regel zitiert.",
+      "history": "Verlauf",
+      "historyEntry": "{date}: {title} ({edition})",
+      "updated": "Zuletzt geändert {date} ({by})"
+    },
+    "origin": {
+      "manual": "manuell",
+      "ai": "KI",
+      "mcp": "MCP"
+    },
+    "action": {
+      "edit": "Bearbeiten",
+      "attach": "Datei ersetzen/anhängen",
+      "paste": "Text einfügen",
+      "reset": "Zurücksetzen",
+      "delete": "Löschen",
+      "save": "Speichern",
+      "cancel": "Abbrechen"
+    },
+    "dialog": {
+      "editTitle": "Hilfsmittel bearbeiten: {key}",
+      "addTitle": "Hilfsmittel hinzufügen",
+      "pasteTitle": "Dokumenttext einfügen: {key}",
+      "pasteLabel": "Text des Dokuments",
+      "pasteHint": "Der Text ersetzt den bisherigen Dokumenttext. Leer lassen entfernt ihn.",
+      "resetTitle": "Zurücksetzen?",
+      "resetBody": "«{title}» wird auf die mitgelieferten Angaben zurückgesetzt. Eigene Änderungen und der Dokumenttext gehen verloren.",
+      "deleteTitle": "Löschen?",
+      "deleteBody": "«{title}» wird gelöscht."
+    },
+    "attach": {
+      "unsupported": "Dateityp wird nicht unterstützt (PDF, DOCX, TXT, MD).",
+      "tooBig": "Datei ist grösser als 25 MB.",
+      "noText": "Kein Text gefunden (evtl. gescanntes Dokument).",
+      "done": "Dokumenttext aus «{name}» übernommen."
+    },
+    "linkTitle": "Hilfsmittel «{key}» anzeigen",
+    "externalLink": "Original-Link öffnen"
+  }
+}

@@ -56,6 +56,26 @@
       "post_feedback_comment": {
         "title": "Feedback als eCamp-Kommentar posten",
         "description": "Postet einen Aktivitäts-Entwurf als Kommentar in eCamp. Für die Lagerleitung sichtbar."
+      },
+      "list_resources": {
+        "title": "Hilfsmittel auflisten",
+        "description": "Referenzdokumente und Links, die die Regeln zitieren (Handbücher, Merkblätter), mit Ausgabe, Gewicht und zitierenden Regeln."
+      },
+      "search_resources": {
+        "title": "Hilfsmittel durchsuchen",
+        "description": "Volltextsuche in Titel, Zusammenfassung, Notizen und hinterlegtem Dokumenttext der Hilfsmittel."
+      },
+      "get_resource": {
+        "title": "Hilfsmittel lesen",
+        "description": "Ein Hilfsmittel mit Metadaten und hinterlegtem Text, seitenweise (max. 20'000 Zeichen pro Aufruf)."
+      },
+      "update_resource": {
+        "title": "Hilfsmittel ändern",
+        "description": "Ändert Metadaten und/oder den hinterlegten Text eines Hilfsmittels. Wird als «via MCP» markiert."
+      },
+      "update_rule": {
+        "title": "Regel anpassen",
+        "description": "Passt Texte, Quellen, Gültigkeit, Schweregrad oder Sicherheit einer Regel an (mit Begründung). «Muss» und «Verifiziert» kann nur der Coach setzen."
       }
     }
   }

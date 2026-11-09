@@ -1,10 +1,13 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import Dexie from 'dexie'
-import { TABLE_NAMES, getDb, lockDb, resetLocalData } from '../db'
+import { TABLE_NAMES as ALL_TABLES, getDb, lockDb, resetLocalData } from '../db'
 import { LegacyCocoDb } from '../legacyDb'
 import { MIGRATION_KEY, migrateLegacy } from '../migrate'
 import { unlockTestDb } from './testKey'
+
+// Tables the frozen legacy schema has (v3 resources and ruleEdits are newer, nothing to migrate).
+const TABLE_NAMES = ALL_TABLES.filter((n) => n !== 'resources' && n !== 'ruleEdits')
 
 const OPTS = { dbName: 'coco2-mig-test', legacyDbName: 'coco-mig-test' }
 const CAMP = '/api/camps/1'

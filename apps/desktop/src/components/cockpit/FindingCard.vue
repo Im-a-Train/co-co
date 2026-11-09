@@ -21,6 +21,11 @@ const moduleNote = computed(() => {
   return t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason: reasonText(t, te, n) })
 })
 const url = computed(() => safeExternalUrl(props.finding.source?.url))
+/** Hilfsmittel key of the primary source (the cited source whose URL is the finding's source URL). */
+const sourceKey = computed(() => {
+  const list = props.finding.sources ?? []
+  return (list.find((s) => s.url && s.url === props.finding.source?.url) ?? list[0])?.key ?? null
+})
 const activityEvidence = computed(() =>
   props.finding.evidence.filter((e) => e.kind === 'activity' || e.kind === 'scheduleEntry'),
 )
@@ -83,7 +88,15 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
       <FindingExplainPanel v-if="!compact && finding.explain" :finding="finding" />
 
       <div class="d-flex align-center flex-wrap ga-2 mt-2">
-        <a v-if="url" :href="url" target="_blank" rel="noopener noreferrer" class="text-body-2">
+        <template v-if="sourceKey">
+          <router-link :to="{ name: 'resources', query: { key: sourceKey } }" class="text-body-2" data-testid="finding-source-link">
+            {{ t('findings.source') }}: {{ finding.source?.title }}
+          </router-link>
+          <a v-if="url" :href="url" target="_blank" rel="noopener noreferrer" :title="t('resources.externalLink')" :aria-label="t('resources.externalLink')">
+            <v-icon icon="mdi-open-in-new" size="x-small" />
+          </a>
+        </template>
+        <a v-else-if="url" :href="url" target="_blank" rel="noopener noreferrer" class="text-body-2">
           <v-icon icon="mdi-open-in-new" size="x-small" />
           {{ t('findings.source') }}: {{ finding.source?.title }}
         </a>

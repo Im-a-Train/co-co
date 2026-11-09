@@ -21,6 +21,7 @@ const activityId: JsonSchema = {
   minLength: 1,
   maxLength: 200,
 }
+const resourceKey: JsonSchema = { type: 'string', description: 'Resource key as returned by list_resources (e.g. a manual id).', minLength: 1, maxLength: 100 }
 const feedbackId: JsonSchema = { type: 'string', description: 'Feedback item id as returned by list_feedback.', minLength: 1, maxLength: 100 }
 const feedbackKind: JsonSchema = {
   type: 'string',
@@ -127,6 +128,35 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     { campId },
     ['campId'],
   ),
+  def(
+    'list_resources',
+    'read',
+    'List resources',
+    'Lists the «Hilfsmittel» (reference documents and links the rules cite, e.g. J+S manuals): key, title, publisher, edition, date, url, weight, origin (bundled/custom), modified, hasContent, contentLength (characters of the attached text) and the ids of the rules citing it. Public reference material, no camp data.',
+  ),
+  def(
+    'search_resources',
+    'read',
+    'Search resources',
+    'Full-text search over the Hilfsmittel (title, summary, notes and attached document text). Words are AND-ed, case/umlaut-insensitive. Returns hits with key, title, url, snippet, score and where it matched. Use get_resource for the full text.',
+    {
+      query: { type: 'string', minLength: 1, maxLength: 200, description: 'Search words.' },
+      limit: { type: 'integer', minimum: 1, maximum: 20, description: 'Maximum number of hits (default 8).' },
+    },
+    ['query'],
+  ),
+  def(
+    'get_resource',
+    'read',
+    'Get resource',
+    'One Hilfsmittel with all metadata and its attached text `content`, paged: pass offset/length (at most 20000 characters per call); the result has totalLength and nextOffset (null at the end).',
+    {
+      key: resourceKey,
+      offset: { type: 'integer', minimum: 0, maximum: 5000000, description: 'Start character of the content slice (default 0).' },
+      length: { type: 'integer', minimum: 1, maximum: 20000, description: 'Slice length (default and maximum 20000).' },
+    },
+    ['key'],
+  ),
   // ---- write --------------------------------------------------------------------------------
   def(
     'add_feedback',
@@ -189,6 +219,53 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     'Posts an activity feedback draft as comment(s) on the activity in eCamp (the only eCamp write co-co does; long texts are split into parts of at most 1024 characters). Visible to the camp leaders. The coach confirms in co-co.',
     { feedbackId },
     ['feedbackId'],
+  ),
+  def(
+    'update_resource',
+    'write',
+    'Update resource',
+    'Changes metadata and/or the attached text of a Hilfsmittel (key from list_resources). Only the given fields change; `content` replaces the whole attached text. The coach confirms in co-co; the change is marked as made via MCP.',
+    {
+      key: resourceKey,
+      title: { type: 'string', minLength: 1, maxLength: 300 },
+      publisher: { type: 'string', maxLength: 200 },
+      edition: { type: 'string', maxLength: 100 },
+      date: { type: 'string', maxLength: 10, description: 'ISO date YYYY-MM-DD.' },
+      url: { type: 'string', maxLength: 1000, description: 'http(s) URL.' },
+      weight: { type: 'string', enum: ['binding', 'binding-quote', 'didactic', 'outdated', 'pbs', 'info'], description: 'How binding the source is.' },
+      notes: { type: 'string', maxLength: 4000 },
+      summary: { type: 'string', maxLength: 2000 },
+      checkedOn: { type: 'string', maxLength: 10, description: 'ISO date the source was last checked.' },
+      content: { type: 'string', maxLength: 1000000, description: 'Plain text of the document (replaces the stored text).' },
+    },
+    ['key'],
+  ),
+  def(
+    'update_rule',
+    'write',
+    'Update rule',
+    "Adjusts a rule's metadata (not its logic): title, description, message, messageVariants, severity, confidence, status, validFrom/validTo (empty string removes the bound), sources ([{key, page, quote?}], keys from list_resources) and tags. A `reason` is required. MCP cannot set severity `must` or confidence `verified`; only the coach can. Returns the effective rule afterwards. The coach confirms in co-co.",
+    {
+      ruleId: { type: 'string', minLength: 1, maxLength: 100, description: 'Rule id from get_rule_catalog.' },
+      reason: { type: 'string', minLength: 1, maxLength: 500, description: "Why the rule changes, e.g. 'Manual 2027 S. 21 geändert'." },
+      resourceKeys: { type: 'array', items: { type: 'string', maxLength: 100 }, description: 'Resource keys the change relies on.' },
+      title: { type: 'string', minLength: 1, maxLength: 300 },
+      description: { type: 'string', minLength: 1, maxLength: 4000 },
+      message: { type: 'string', minLength: 1, maxLength: 2000, description: 'Message template; keep the {param} placeholders.' },
+      messageVariants: { type: 'object', description: 'Map variant name -> message template.' },
+      severity: { type: 'string', enum: ['should', 'hint'], description: "'must' is not allowed via MCP." },
+      confidence: { type: 'string', enum: ['conflict', 'unverified', 'best-practice', 'heuristic'], description: "'verified' is not allowed via MCP." },
+      status: { type: 'string', enum: ['active', 'retired'] },
+      validFrom: { type: 'string', maxLength: 10, description: 'ISO date; empty string removes the bound.' },
+      validTo: { type: 'string', maxLength: 10, description: 'ISO date; empty string removes the bound.' },
+      sources: {
+        type: 'array',
+        items: { type: 'object', description: '{ key: resource key, page: string, quote?: string }' },
+        description: 'Citations of the rule (replaces the list).',
+      },
+      tags: { type: 'array', items: { type: 'string', maxLength: 60 } },
+    },
+    ['ruleId', 'reason'],
   ),
 ]
 

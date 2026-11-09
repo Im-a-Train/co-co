@@ -3,16 +3,26 @@
  * /einstellungen: composes the section components. Shared by all modules; change with care.
  * Instanzen + Diagnose -> data, KI -> ai, Backup -> rounds.
  */
+import { nextTick, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import AiSection from '@/components/settings/AiSection.vue'
 import BackupSection from '@/components/settings/BackupSection.vue'
 import DataZonesSection from '@/components/settings/DataZonesSection.vue'
 import DiagnosticsSection from '@/components/settings/DiagnosticsSection.vue'
 import InstancesSection from '@/components/settings/InstancesSection.vue'
-import MidataSection from '@/components/settings/MidataSection.vue'
-import NdsSection from '@/components/settings/NdsSection.vue'
 
 const { t } = useI18n()
+const route = useRoute()
+
+/** Scrolls to the section named by the URL hash (the router has no scrollBehavior). */
+function scrollToHash(): void {
+  const id = route.hash.replace(/^#/, '')
+  if (!id) return
+  void nextTick(() => setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 150))
+}
+onMounted(scrollToHash)
+watch(() => route.hash, scrollToHash)
 </script>
 
 <template>
@@ -25,14 +35,6 @@ const { t } = useI18n()
     <section id="ki" class="mb-8">
       <h2 class="text-h6 mb-2">{{ t('settings.sections.ai') }}</h2>
       <AiSection />
-    </section>
-    <section id="midata" class="mb-8">
-      <h2 class="text-h6 mb-2">{{ t('midata.settings.title') }}</h2>
-      <MidataSection />
-    </section>
-    <section id="nds" class="mb-8">
-      <h2 class="text-h6 mb-2">{{ t('nds.settings.title') }}</h2>
-      <NdsSection />
     </section>
     <section id="backup" class="mb-8">
       <h2 class="text-h6 mb-2">{{ t('settings.sections.backup') }}</h2>

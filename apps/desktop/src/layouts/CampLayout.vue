@@ -7,7 +7,7 @@ import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
-import ExportReminder from '@/components/backup/ExportReminder.vue'
+import ConnectionStatusChips from '@/components/settings/ConnectionStatusChips.vue'
 import ReviewStatusMenu from '@/components/rounds/ReviewStatusMenu.vue'
 import { CAMP_TABS } from '@/router'
 
@@ -36,6 +36,7 @@ watch(campIri, () => void load(), { immediate: true })
       </div>
       <ReviewStatusMenu :camp-iri="campIri" class="ms-2" />
       <v-spacer />
+      <ConnectionStatusChips />
       <v-btn
         variant="tonal"
         prepend-icon="mdi-refresh"
@@ -44,8 +45,6 @@ watch(campIri, () => void load(), { immediate: true })
         @click="load(true)"
       />
     </div>
-
-    <ExportReminder class="mb-2" />
 
     <v-progress-linear
       v-if="loading"

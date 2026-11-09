@@ -1436,7 +1436,7 @@ export interface Zoned<T> {
 
 /** Whitelisted Claude models of the Anthropic provider (the OpenAI-compatible provider takes any model name). */
 export type AiModel = 'claude-sonnet-5-5' | 'claude-opus-5-5' | 'claude-haiku-5-5'
-export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview'
+export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview' | 'ruleUpdate'
 
 /** ADR 0012: 'anthropic' = Anthropic Messages API; 'openai' = any OpenAI-compatible Chat Completions server (incl. local LLMs). */
 export type AiProvider = 'anthropic' | 'openai'

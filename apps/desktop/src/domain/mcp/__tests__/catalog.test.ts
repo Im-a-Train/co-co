@@ -21,8 +21,8 @@ describe('MCP catalogue', () => {
   it('defaults: read tools on, write tools off', () => {
     const reads = MCP_TOOLS.filter((t) => t.kind === 'read')
     const writes = MCP_TOOLS.filter((t) => t.kind === 'write')
-    expect(reads).toHaveLength(9)
-    expect(writes).toHaveLength(5)
+    expect(reads).toHaveLength(12)
+    expect(writes).toHaveLength(7)
     for (const t of reads) expect(defaultToolEnabled(t)).toBe(true)
     for (const t of writes) expect(defaultToolEnabled(t)).toBe(false)
     expect(DEFAULT_APP_SETTINGS.mcp.enabled).toBe(false)

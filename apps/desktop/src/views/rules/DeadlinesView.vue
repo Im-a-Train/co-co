@@ -19,7 +19,10 @@ import {
 } from '@/domain/rules/lib/deadlines'
 import { toIcs } from '@/domain/rules/ics'
 import { computeMilestoneDeadlines, loadBundledMilestones, milestoneContextFromConfig, radarBucket, type RadarBucket } from '@/domain/rules/milestones'
-import { listCampRuleConfigs } from '@/domain/rules/campRuleConfigStore'
+import { listCampRuleConfigs, updateCampRuleConfig } from '@/domain/rules/campRuleConfigStore'
+import { withChecklistItem } from '@/domain/rules/lib/campConfigEdit'
+import { loadBundledChecklist } from '@/domain/rules/lib/checklist'
+import { planMilestoneToggle } from '@/domain/rules/lib/checklistSync'
 import type { CampRuleConfig, CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
 import { commands } from '@/lib/tauri'
@@ -103,6 +106,9 @@ const kindItems = computed(() => KIND_OPTIONS.map((k) => ({ value: k, title: t(`
 const statusItems = computed(() => STATUS_OPTIONS.map((k) => ({ value: k, title: t(`rules.deadlines.status.${k}`) })))
 
 const milestoneList = loadBundledMilestones()
+/** Milestones that have a checklist twin (shown with a link to the camp tab «Checkliste»). */
+const checklistItems = loadBundledChecklist()
+const linkedMilestones = new Set(checklistItems.map((i) => i.milestone).filter((m): m is string => !!m))
 
 async function loadInputs() {
   try {
@@ -217,6 +223,10 @@ async function toggleMilestone(row: { campIri: Iri; milestoneId?: string; done: 
     const next: CoachInputs = { ...current, milestonesDone: done }
     await saveCoachInputs(next)
     inputsByCamp.value = { ...inputsByCamp.value, [row.campIri]: next }
+    // Linked checklist items share the state (sequential: the stores are not written atomically).
+    for (const c of planMilestoneToggle(row.milestoneId, !row.done, checklistItems).checklist) {
+      await updateCampRuleConfig(row.campIri, (cfg) => withChecklistItem(cfg, c.id, { done: c.done }))
+    }
     saveError.value = null
   } catch (e) {
     saveError.value = e instanceof Error ? e.message : String(e)
@@ -473,6 +483,15 @@ function relative(left: number): string {
               >
                 {{ row.done ? t('rules.deadlines.markUndone') : t('rules.deadlines.markDone') }}
               </v-btn>
+              <RouterLink
+                v-if="row.milestoneId && linkedMilestones.has(row.milestoneId)"
+                :to="`/lager/${row.campId}/checkliste`"
+                class="text-caption ml-1"
+                :title="t('rules.deadlines.checklistLinkHint')"
+                data-testid="milestone-checklist-link"
+              >
+                {{ t('rules.deadlines.checklistLink') }}
+              </RouterLink>
             </td>
           </tr>
         </tbody>

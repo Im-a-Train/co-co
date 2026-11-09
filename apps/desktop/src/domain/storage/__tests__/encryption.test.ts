@@ -52,6 +52,8 @@ const samples: Record<string, Record<string, unknown>> = {
   nds: { campIri: '/api/camps/1', note: MARKER },
   selfChecks: { id: 'sc1', campIri: '/api/camps/1', createdAt: 'x', title: MARKER },
   campRuleConfig: { campIri: '/api/camps/1', modules: { js: 'on' }, note: MARKER },
+  resources: { key: 'MAN', title: MARKER, origin: 'bundled', modified: true },
+  ruleEdits: { ruleId: 'BP-VAR-01', patch: { title: MARKER }, baseVersion: '1.0.0' },
 }
 
 beforeEach(async () => {

@@ -34,7 +34,7 @@ export async function campConfigFlows({ page, step, go, shot }) {
   })
 
   await step('flow: Coach-Checkliste lists items grouped by module and stores done', async () => {
-    await go('angaben', 'flow-checklist')
+    await go('checkliste', 'flow-checklist')
     await page.waitForSelector('[data-testid="coach-checklist-card"] [data-testid="checklist-CL-JS-01"]', { timeout: 8000 })
     const item = page.getByTestId('checklist-CL-JS-01')
     await item.locator('input[type="checkbox"]').check({ force: true })
@@ -43,6 +43,9 @@ export async function campConfigFlows({ page, step, go, shot }) {
     if (!/1 von \d+ erledigt/.test(progress)) throw new Error('progress not updated: ' + progress)
     await page.getByTestId('checklist-group-js').scrollIntoViewIfNeeded()
     await shot(page, 'flow-checklist-card')
+    await page.getByTestId('camp-deadlines-card').scrollIntoViewIfNeeded()
+    if (!(await page.getByTestId('camp-deadline').count())) throw new Error('camp deadlines missing in checklist tab')
+    await shot(page, 'flow-checklist-deadlines')
     await item.locator('input[type="checkbox"]').uncheck({ force: true })
     await page.waitForTimeout(400)
   })

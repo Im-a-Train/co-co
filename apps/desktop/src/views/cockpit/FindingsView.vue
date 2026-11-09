@@ -15,6 +15,8 @@ import { activityIriOfFinding, gridLocationFromFinding, recallPosition, remember
 import { useFeedback } from '@/composables/useFeedback'
 import type { ActivityFact, Finding, Iri, RuleGroup } from '@/domain/types'
 import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
+import { loadEffectivePacks } from '@/domain/rules/editsStore'
+import { useRuleEdits } from '@/composables/useRuleEdits'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import { createFeedbackFromFinding } from '@/components/cockpit/feedbackAction'
 import FindingCard from '@/components/cockpit/FindingCard.vue'
@@ -59,11 +61,13 @@ const overrideOpen = ref(false)
 const disabledDialog = ref(false)
 const exclusionDialog = ref(false)
 const notice = ref<string | null>(null)
-const allRules = computed(() =>
-  loadBundledPacks()
+const ruleEdits = useRuleEdits()
+const allRules = computed(() => {
+  void ruleEdits.version.value
+  return loadEffectivePacks()
     .flatMap((p) => p.rules)
-    .map((r) => ({ id: r.meta.id, title: r.meta.title })),
-)
+    .map((r) => ({ id: r.meta.id, title: r.meta.title }))
+})
 /** Category IRI of the activity a rule finding is about (null for camp/day findings). */
 function categoryIriOf(f: Finding): Iri | null {
   const actIri = activityIriOfFinding(f, facts.value)

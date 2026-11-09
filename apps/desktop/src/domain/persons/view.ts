@@ -7,7 +7,7 @@ import type { MidataPersonRow, NdsPersonRow, PersonDiffRow, PersonKind, PersonMa
 /** NDS state as shown: `notRelevant` for kinds NDS does not hold, `notCompared` until both sides are loaded. */
 export type ViewState = PersonMatchState | 'notRelevant' | 'notCompared'
 
-/** NDS role codes (`targetAudienceGroup` / `involvementType`) that have a German label in `persons.ndsRole.<code>`. */
+/** NDS role codes (`targetAudienceGroup` / `involvementType`) known to the role mapping (German labels via `roleLabels.ts`, `persons.role.*`). */
 export const NDS_ROLE_CODES = ['CHILD', 'ADOLESCENT', 'MAIN_SUPERVISOR', 'SUPERVISOR', 'INSTRUCTOR', 'ASSISTANT_INSTRUCTOR', 'JS_COACH'] as const
 
 /** i18n key suffix for a known NDS role code, or null (caller shows the raw code). */

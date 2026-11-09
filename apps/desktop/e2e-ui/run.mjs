@@ -23,6 +23,8 @@ import { exclusionFlows } from './exclusion-flows.mjs'
 import { personsFlows } from './persons-flows.mjs'
 import { dataZonesFlows } from './datazones-flows.mjs'
 import { storageFlows } from './storage-flows.mjs'
+import { rulesFlows } from './rules-flows.mjs'
+import { resourcesFlows } from './resources-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const PORT = Number(process.env.UI_PORT || 1420)
@@ -260,6 +262,10 @@ async function main() {
     if (!/Backup gespeichert/i.test(txt)) throw new Error('no export confirmation')
   })
 
+  await resourcesFlows({ page, step, shot, BASE })
+  await rulesFlows({ page, step, shot, BASE })
+
+  // Must stay last: the key-lost flow leaves the harness database encrypted with the second mock key.
   await storageFlows({ page, step, go, shot, BASE })
 
   await browser.close()

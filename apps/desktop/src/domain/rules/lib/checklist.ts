@@ -7,6 +7,8 @@
  * `showWhen`: list of conditions (any); inside one condition all keys must hold:
  *   campConfig { field: [values] }, coachInput { field: value }, coachInputSet field,
  *   activityTag [tags] (some activity carries one of them), campInWinter true.
+ * `milestone` (optional): id of the deadline milestone (packs/<pack>/milestones.yaml) that describes the
+ * same task. A linked pair shares one done state and the milestone's due date (see lib/checklistSync.ts).
  * Items are shown only for modules whose effective state is `on`.
  */
 import { parse } from 'yaml'
@@ -21,6 +23,7 @@ import type {
   SourceRef,
 } from '../../types'
 import { ACTIVITY_TAGS, MODULE_IDS } from '../../types'
+import { loadBundledMilestones } from '../milestones'
 import { getSourceRegistry } from '../packs/registry'
 import { parseSourceRefs, type SourceRegistry } from './sources'
 
@@ -44,6 +47,8 @@ export interface ChecklistItem {
   kinds: ChecklistKind[]
   /** Absent = always shown (when the module is on). */
   showWhen?: ChecklistCondition[]
+  /** Milestone id of the same task (shared done state + due date). */
+  milestone?: string
 }
 
 const CONDITION_KEYS = ['campConfig', 'coachInput', 'coachInputSet', 'activityTag', 'campInWinter'] as const
@@ -96,7 +101,16 @@ export function parseChecklist(raw: unknown, where: string): ChecklistItem[] {
         }
       }
     }
-    out.push({ id, module, text: String(r.text ?? ''), sources, kinds, ...(showWhen ? { showWhen } : {}) })
+    if (r.milestone !== undefined && (typeof r.milestone !== 'string' || !r.milestone.trim())) err('milestone muss eine Meilenstein-ID sein')
+    out.push({
+      id,
+      module,
+      text: String(r.text ?? ''),
+      sources,
+      kinds,
+      ...(showWhen ? { showWhen } : {}),
+      ...(typeof r.milestone === 'string' && r.milestone.trim() ? { milestone: r.milestone.trim() } : {}),
+    })
   }
   if (errors.length) throw new Error(errors.join('; '))
   return out
@@ -105,13 +119,16 @@ export function parseChecklist(raw: unknown, where: string): ChecklistItem[] {
 /** Cross checks: unique ids, sources resolve in the registry, modules exist. Returns error messages. */
 export function validateChecklist(
   items: readonly ChecklistItem[],
-  opts: { registry?: SourceRegistry; moduleIds?: readonly string[] } = {},
+  opts: { registry?: SourceRegistry; moduleIds?: readonly string[]; milestoneIds?: readonly string[] } = {},
 ): string[] {
   const registry = opts.registry ?? getSourceRegistry()
   const modules = new Set<string>(opts.moduleIds ?? MODULE_IDS)
   const errors: string[] = []
   const seen = new Set<string>()
+  const linked = items.some((it) => it.milestone)
+  const milestoneIds = new Set<string>(linked ? (opts.milestoneIds ?? loadBundledMilestones().milestones.map((m) => m.id)) : [])
   for (const it of items) {
+    if (it.milestone && !milestoneIds.has(it.milestone)) errors.push(`${it.id}: Meilenstein ${it.milestone} existiert nicht`)
     if (seen.has(it.id)) errors.push(`${it.id}: doppelte id`)
     seen.add(it.id)
     if (!modules.has(it.module)) errors.push(`${it.id}: Modul ${it.module} existiert nicht`)

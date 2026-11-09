@@ -1,12 +1,16 @@
 <script setup lang="ts">
 /** /regeln: rule catalogue of all bundled packs. */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import RuleCard from '@/components/rules/RuleCard.vue'
+import RuleEditDialog from '@/components/rules/RuleEditDialog.vue'
+import { useRuleEdits } from '@/composables/useRuleEdits'
+import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import { useRuleState } from '@/composables/useRuleState'
 import { campsWithDisabled, isGloballyDisabled } from '@/domain/rules/ruleState'
 import { disableRuleStored, enableRuleStored } from '@/domain/rules/ruleStateStore'
-import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
+import { modulesOf } from '@/domain/rules/packs'
 import type { ModuleId, Rule, RuleMeta, RulePack, Severity } from '@/domain/types'
 
 const { t } = useI18n()
@@ -32,12 +36,39 @@ async function toggle(meta: RuleMeta, action: 'enable' | 'disableAll') {
 
 const SEVERITY_COLOR: Record<Severity, string> = { must: 'error', should: 'warning', hint: 'info' }
 
-const packs = ref<RulePack[]>([])
+const route = useRoute()
+const ruleEdits = useRuleEdits()
 const loadError = ref<string | null>(null)
-try {
-  packs.value = loadBundledPacks()
-} catch (e) {
-  loadError.value = e instanceof Error ? e.message : String(e)
+/** Effective packs (bundled + coach edits); recomputed when an edit is saved or reset. */
+const packs = computed<RulePack[]>(() => {
+  void ruleEdits.version.value
+  try {
+    return loadEffectivePacks()
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : String(e)
+    return []
+  }
+})
+const editedIds = computed(() => new Set(ruleEdits.edits().map((e) => e.ruleId)))
+const editTarget = ref<string | null>(null)
+const editOpen = ref(false)
+const editTab = ref<'edit' | 'changes'>('edit')
+function openEdit(id: string, tab: 'edit' | 'changes' = 'edit') {
+  editTarget.value = id
+  editTab.value = tab
+  editOpen.value = true
+}
+
+/** `?rule=<id>`: expand and scroll to one rule (the Hilfsmittel view links here). */
+const openRule = ref<string | undefined>(undefined)
+async function focusRule(id: string) {
+  const rule = packs.value.flatMap((p) => p.rules).find((r) => r.meta.id === id || r.meta.formerIds?.includes(id))
+  if (!rule) return
+  search.value = ''
+  group.value = 'all'
+  openRule.value = rule.meta.id
+  await nextTick()
+  setTimeout(() => document.getElementById(`rule-${rule.meta.id}`)?.scrollIntoView({ block: 'center' }), 150)
 }
 
 const search = ref('')
@@ -55,6 +86,14 @@ function matches(rule: Rule, query: string): boolean {
     .filter(Boolean)
     .every((word) => hay.includes(word))
 }
+
+watch(
+  () => [route.query.rule, packs.value.length] as const,
+  ([id]) => {
+    if (typeof id === 'string' && id) void focusRule(id)
+  },
+  { immediate: true },
+)
 
 const visible = computed(() =>
   packs.value.map((pack) => ({
@@ -122,10 +161,12 @@ function fmt(iso: string): string {
       <v-card-text>
         <section v-for="entry in byGroup" :key="entry.group" class="mb-4">
           <h2 class="text-subtitle-1 mb-2">{{ t(`rules.catalog.module.${entry.group}`) }}</h2>
-          <v-expansion-panels variant="accordion" density="compact">
+          <v-expansion-panels variant="accordion" density="compact" :model-value="openRule" @update:model-value="openRule = $event as string | undefined">
             <v-expansion-panel
               v-for="rule in entry.rules"
+              :id="`rule-${rule.meta.id}`"
               :key="rule.meta.id"
+              :value="rule.meta.id"
               :class="{ 'opacity-60': rule.meta.status === 'retired' }"
               :data-testid="rule.meta.status === 'retired' ? 'rule-retired' : undefined"
             >
@@ -137,6 +178,9 @@ function fmt(iso: string): string {
                   <code class="text-caption flex-shrink-0">{{ rule.meta.id }}</code>
                   <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta).all }">{{ rule.meta.title }}</span>
                   <v-chip v-if="rule.meta.status === 'retired'" size="x-small" color="grey" label>{{ t('rules.status.retired') }}</v-chip>
+                  <v-chip v-if="editedIds.has(rule.meta.id)" size="x-small" color="warning" label :title="t('rules.edit.chipTitle')" data-testid="rule-edited">
+                    {{ t('rules.edit.chip') }}
+                  </v-chip>
                   <v-chip v-if="disabledInfo(rule.meta).all" size="x-small" color="grey" label data-testid="rule-disabled">
                     {{ t('rules.catalog.state.disabledAll') }}
                   </v-chip>
@@ -146,7 +190,17 @@ function fmt(iso: string): string {
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
-                <div class="mb-3">
+                <div class="mb-3 d-flex flex-wrap ga-2">
+                  <v-btn size="small" variant="tonal" prepend-icon="mdi-pencil" :text="t('rules.edit.button')" data-testid="rule-edit-open" @click="openEdit(rule.meta.id)" />
+                  <v-btn
+                    v-if="editedIds.has(rule.meta.id)"
+                    size="small"
+                    variant="text"
+                    prepend-icon="mdi-compare"
+                    :text="t('rules.edit.viewChanges')"
+                    data-testid="rule-edit-changes"
+                    @click="openEdit(rule.meta.id, 'changes')"
+                  />
                   <v-btn
                     v-if="disabledInfo(rule.meta).any"
                     size="small"
@@ -172,6 +226,8 @@ function fmt(iso: string): string {
         </section>
       </v-card-text>
     </v-card>
+
+    <RuleEditDialog v-model="editOpen" :rule-id="editTarget" :initial-tab="editTab" />
   </div>
 </template>
 

@@ -457,8 +457,11 @@ export function installMockTauri(): void {
           return { id: 'mockcomment1', _links: {}, ...(a.patch as object) }
         case 'open_ecamp_url':
           return null
-        case 'pick_files':
-          return Object.keys(files)
+        case 'pick_files': {
+          // Respect the extension filter (Hilfsmittel only accepts txt/md/pdf/docx, no gpx).
+          const exts = ((a.filters as Array<{ extensions: string[] }> | null) ?? []).flatMap((f) => f.extensions)
+          return Object.keys(files).filter((p) => !exts.length || exts.includes(p.split('.').pop()!.toLowerCase()))
+        }
         case 'pick_folder':
           return null
         case 'list_folder':

@@ -34,7 +34,8 @@
     "features": {
       "rephrase": "Umformulieren",
       "summarise": "Zusammenfassen",
-      "safetyReview": "Sicherheits-Einschätzung"
+      "safetyReview": "Sicherheits-Einschätzung",
+      "ruleUpdate": "Regel aktualisieren"
     },
     "log": {
       "title": "KI-Protokoll (ohne Inhalte)",

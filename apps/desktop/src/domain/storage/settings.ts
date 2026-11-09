@@ -6,7 +6,7 @@
  * Nested objects (`ai.openai`, `mcp.tools`) are merged with their defaults on read; a patch replaces them as a whole
  * (pass `{ ...current.ai.openai, baseUrl }` / `{ ...current.mcp.tools, [name]: on }`).
  */
-import { DEFAULT_APP_SETTINGS, type AppSettings } from '../types'
+import { DEFAULT_APP_SETTINGS, type AppSettings, type ParamValue } from '../types'
 import { getDb } from './db'
 
 const KEY = 'app'
@@ -22,6 +22,7 @@ export function mergeSettings(stored: AppSettingsPatch | null | undefined): AppS
     gpx: { ...DEFAULT_APP_SETTINGS.gpx, ...s.gpx },
     backup: { ...DEFAULT_APP_SETTINGS.backup, ...s.backup },
     rulePacks: s.rulePacks ?? [...DEFAULT_APP_SETTINGS.rulePacks],
+    ...(s.ruleParams && Object.keys(s.ruleParams).length ? { ruleParams: { ...s.ruleParams } as Record<string, ParamValue> } : {}),
     midata: { ...DEFAULT_APP_SETTINGS.midata, ...s.midata },
     nds: { ...DEFAULT_APP_SETTINGS.nds, ...s.nds },
     mcp: {
@@ -48,6 +49,7 @@ export async function updateAppSettings(patch: AppSettingsPatch): Promise<AppSet
       gpx: { ...current.gpx, ...patch.gpx },
       backup: { ...current.backup, ...patch.backup },
       rulePacks: patch.rulePacks ?? current.rulePacks,
+      ruleParams: patch.ruleParams ?? current.ruleParams,
       midata: { ...current.midata, ...patch.midata },
       nds: { ...current.nds, ...patch.nds },
       mcp: { ...current.mcp, ...patch.mcp },

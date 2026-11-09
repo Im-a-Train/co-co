@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import InstanceCard from '@/components/InstanceCard.vue'
 import { useInstances } from '@/composables/useInstances'
 import { useSession } from '@/composables/useSession'
 
@@ -8,6 +9,8 @@ defineProps<{ disabled?: boolean }>()
 
 const { t } = useI18n()
 const { selected } = useInstances()
+const showInstance = ref(false)
+const selectedLabel = computed(() => (selected.value.labelKey ? t(selected.value.labelKey) : selected.value.label))
 const { busy, lastError, isLoggedIn, openLoginWindow, passwordLogin } = useSession()
 
 const identifier = ref('')
@@ -91,6 +94,20 @@ async function submitPassword(): Promise<void> {
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
+
+      <div class="text-body-2 mt-4 d-flex flex-wrap align-center ga-1" data-testid="login-instance-line">
+        <span class="text-medium-emphasis">{{ t('login.instance') }}:</span>
+        <span>{{ selectedLabel }} ({{ selected.baseUrl }})</span>
+        <span class="text-medium-emphasis">·</span>
+        <a href="#" role="button" data-testid="login-instance-change" @click.prevent="showInstance = !showInstance">
+          {{ showInstance ? t('login.instanceClose') : t('login.instanceChange') }}
+        </a>
+      </div>
+      <v-expand-transition>
+        <div v-if="showInstance" class="mt-3">
+          <InstanceCard :disabled="disabled" variant="outlined" />
+        </div>
+      </v-expand-transition>
     </v-card-text>
   </v-card>
 </template>

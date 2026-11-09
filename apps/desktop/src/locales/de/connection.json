@@ -39,7 +39,10 @@
       "identifier": "E-Mail",
       "password": "Passwort",
       "submit": "Anmelden"
-    }
+    },
+    "instance": "Instanz",
+    "instanceChange": "ändern",
+    "instanceClose": "schliessen"
   },
   "session": {
     "title": "Sitzung",
@@ -110,6 +113,25 @@
     "noLog": "Keine Ereignisse aufgezeichnet."
   },
   "connection": {
-    "title": "Verbindung"
+    "title": "Verbindung",
+    "loggedInTitle": "Du bist angemeldet",
+    "loggedInText": "Weitere Verbindungen (MiData, NDS) und die Instanz verwaltest du in den Einstellungen.",
+    "toCamps": "Meine Lager",
+    "manage": "Verbindungen verwalten"
+  },
+  "connectionStatus": {
+    "ecamp": "eCamp",
+    "midata": "MiData",
+    "nds": "NDS",
+    "ecampOk": "eCamp: angemeldet",
+    "ecampExpired": "eCamp: Sitzung abgelaufen",
+    "ecampOff": "eCamp: nicht angemeldet",
+    "midataOk": "MiData: verbunden",
+    "midataOff": "MiData: nicht verbunden",
+    "ndsOk": "NDS: verbunden",
+    "ndsOff": "NDS: nicht verbunden",
+    "ndsDisabled": "NDS: ausgeschaltet",
+    "off": "aus",
+    "open": "Klicken, um die Verbindungen in den Einstellungen zu öffnen."
   }
 }

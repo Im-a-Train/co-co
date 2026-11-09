@@ -8,7 +8,6 @@
 export async function storageFlows({ page, step, shot, BASE }) {
   const text = () => page.evaluate(() => document.body.innerText)
   const settle = (ms = 1200) => page.waitForTimeout(ms)
-  const status = () => page.getByTestId('datastore-status').innerText()
 
   async function overlaysClosed() {
     await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 8000 }).catch(() => {})
@@ -31,7 +30,9 @@ export async function storageFlows({ page, step, shot, BASE }) {
   await step('flow: storage locked start shows only /verbindung', async () => {
     await startLoggedOut('/lager')
     if (!/#\/verbindung/.test(page.url())) throw new Error(`expected /verbindung, got ${page.url()}`)
-    if (!/gesperrt/.test(await status())) throw new Error('status chip not «gesperrt»')
+    // Only the eCamp login is shown on start; the data store card appears only on errors (key lost).
+    await page.getByTestId('login-instance-line').waitFor({ timeout: 5000 })
+    if ((await page.getByTestId('datastore-status').count()) !== 0) throw new Error('data store card shown on a normal locked start')
     // nav entries other than «Verbindung» are disabled
     const disabled = await page.locator('.v-navigation-drawer .v-list-item--disabled').count()
     if (disabled < 4) throw new Error(`expected 4 disabled nav items, got ${disabled}`)
@@ -76,7 +77,7 @@ export async function storageFlows({ page, step, shot, BASE }) {
     await page.evaluate(() => (window.location.hash = '/verbindung'))
     await settle(600)
     await page.getByRole('button', { name: 'Abmelden' }).click()
-    await page.waitForFunction(() => /gesperrt/.test(document.body.innerText), null, { timeout: 8000 })
+    await page.getByTestId('login-instance-line').waitFor({ timeout: 8000 })
     await page.evaluate(() => (window.location.hash = '/fristen'))
     await settle(800)
     if (!/#\/verbindung/.test(page.url())) throw new Error(`/fristen reachable after logout: ${page.url()}`)
@@ -100,7 +101,7 @@ export async function storageFlows({ page, step, shot, BASE }) {
     await page.getByTestId('reset-confirm-check').locator('input').check({ force: true })
     await shot(page, 'storage-reset-confirm')
     await confirm.click()
-    await page.waitForFunction(() => /entsperrt/.test(document.body.innerText) && !document.querySelector('[data-testid="data-reset-dialog"]'), null, { timeout: 10000 })
+    await page.waitForFunction(() => /Du bist angemeldet/.test(document.body.innerText) && !document.querySelector('[data-testid="data-reset-dialog"]'), null, { timeout: 10000 })
     await settle(600)
     await shot(page, 'storage-after-reset')
     await page.evaluate(() => (window.location.hash = '/fristen'))

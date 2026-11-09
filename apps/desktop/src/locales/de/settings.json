@@ -2,7 +2,7 @@
   "settings": {
     "title": "Einstellungen",
     "sections": {
-      "instances": "Instanzen",
+      "instances": "Verbindungen",
       "ai": "KI",
       "backup": "Backup",
       "dataZones": "Datenschutz: So geht co-co mit Daten um",
@@ -21,8 +21,8 @@
       "green": {
         "name": "Grün",
         "title": "co-co-eigene Daten",
-        "examples": "Regeln, Befunde, Feedback-Entwürfe ohne Namen",
-        "source": "Entstehen in co-co selbst.",
+        "examples": "Regeln (auch eigene Anpassungen), Befunde, Feedback-Entwürfe ohne Namen, Hilfsmittel (öffentliche J+S- und PBS-Unterlagen)",
+        "source": "Entstehen in co-co selbst oder sind öffentliche Unterlagen, die du bei den Hilfsmitteln hinterlegst.",
         "stored": "Lokal auf diesem Rechner, verschlüsselt (IndexedDB).",
         "ai": "Ja.",
         "backup": "Ja, aber das Backup ist nicht verschlüsselt.",
@@ -76,6 +76,11 @@
         "backupTitle": "Was passiert mit dem Backup?",
         "backup": "Das Backup enthält alle lokalen Tabellen und ist nicht verschlüsselt: Bewahre die Datei sicher auf. Mit der Standardeinstellung werden MiData/NDS-Daten, daraus übernommene Werte und Befunde, die sie zitieren, weggelassen."
       }
+    },
+    "connections": {
+      "ecamp": "eCamp",
+      "midata": "MiData",
+      "nds": "NDS"
     }
   }
 }

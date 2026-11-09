@@ -18,7 +18,8 @@ import { evaluate } from '@/domain/rules/engine'
 import { computeAllDeadlines, type DeadlineCamp } from '@/domain/rules/lib/deadlines'
 import { computeJsDays, lastJsDate } from '@/domain/rules/lib/jsDays'
 import { computeMilestoneDeadlines, loadBundledMilestones } from '@/domain/rules/milestones'
-import { loadBundledPacks } from '@/domain/rules/packs'
+import { listRuleEdits, loadEffectivePacks, reloadRuleEdits, saveRuleEdit } from '@/domain/rules/editsStore'
+import { getResource, listResources, updateResource } from '@/domain/resources/store'
 import { getCampRuleConfig } from '@/domain/rules/campRuleConfigStore'
 import { filterExcludedFindings } from '@/domain/rules/categoryExclusions'
 import { disabledRuleIds, resolveRule } from '@/domain/rules/ruleState'
@@ -36,7 +37,7 @@ import { useFeedback } from './useFeedback'
 import { useSession } from './useSession'
 
 function enabledPacks(settings: AppSettings): RulePack[] {
-  const all = loadBundledPacks()
+  const all = loadEffectivePacks()
   return settings.rulePacks.length === 0 ? all : all.filter((p) => settings.rulePacks.includes(p.id))
 }
 
@@ -105,6 +106,16 @@ export function createMcpContext(): McpContext {
     },
 
     rulePacks: () => enabledPacks(getSettingsSync()),
+
+    listResources: () => listResources(),
+    getResource: (key) => getResource(key),
+    updateResource: (key, patch) => updateResource(key, patch, 'mcp'),
+    listRuleEdits: () => listRuleEdits(),
+    async saveRuleEdit(ruleId, patch, opts) {
+      const rec = await saveRuleEdit(ruleId, patch, { origin: 'mcp', ...opts })
+      await reloadRuleEdits()
+      return rec
+    },
 
     async deadlines(campIri) {
       const camps = await listCamps()
@@ -220,6 +231,8 @@ export async function handleMcpToolCall(call: McpToolCallEvent, ctx?: McpContext
     const c = ctx ?? (context ??= createMcpContext())
     const settings = await getAppSettings()
     cachedSettings = settings
+    // Rule edits made in the UI since the last call; a locked store just keeps the cached effective packs.
+    await reloadRuleEdits().catch(() => undefined)
     outcome = await dispatchToolCall(call, c, settings, ac.signal)
   } catch (e) {
     outcome = { text: `Interner Fehler: ${errText(e)}`, isError: true }
