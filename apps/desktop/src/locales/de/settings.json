@@ -9,7 +9,7 @@
       "diagnostics": "Diagnose"
     },
     "dataZones": {
-      "intro": "co-co sortiert alle Daten in drei Zonen. Die Farbe sagt, wie vorsichtig die App damit umgeht.",
+      "intro": "co-co sortiert alle Daten in drei Zonen. Die Farbe sagt, wie vorsichtig die App damit umgeht. Alle lokal gespeicherten Daten sind verschlüsselt (AES-256); der Schlüssel liegt im Schlüsselbund des Betriebssystems und wird nach der eCamp-Anmeldung freigegeben.",
       "more": "Mehr erfahren",
       "rows": {
         "source": "Woher?",
@@ -23,9 +23,9 @@
         "title": "co-co-eigene Daten",
         "examples": "Regeln, Befunde, Feedback-Entwürfe ohne Namen",
         "source": "Entstehen in co-co selbst.",
-        "stored": "Lokal auf diesem Rechner (IndexedDB).",
+        "stored": "Lokal auf diesem Rechner, verschlüsselt (IndexedDB).",
         "ai": "Ja.",
-        "backup": "Ja.",
+        "backup": "Ja, aber das Backup ist nicht verschlüsselt.",
         "leaves": "Nein."
       },
       "yellow": {
@@ -33,9 +33,9 @@
         "title": "Lagerinhalt und Dokumente",
         "examples": "Programm aus eCamp, Leiternamen, eigene Dokumente",
         "source": "Aus eCamp (mit deiner Anmeldung) und aus Dokumenten, die du einliest.",
-        "stored": "Lokal auf diesem Rechner (IndexedDB). Anmelde-Cookies bleiben nur im Arbeitsspeicher von Rust.",
+        "stored": "Lokal auf diesem Rechner, verschlüsselt (IndexedDB). Anmelde-Cookies bleiben nur im Arbeitsspeicher von Rust.",
         "ai": "Nur geschwärzt, nach Vorschau und Freigabe. Dokumente nur, wenn du sie freigegeben hast.",
-        "backup": "Ja. Beim Zurückspielen sind Dokumente wieder nicht für die KI freigegeben.",
+        "backup": "Ja, aber das Backup ist nicht verschlüsselt. Beim Zurückspielen sind Dokumente wieder nicht für die KI freigegeben.",
         "leaves": "Nur an eCamp selbst. An die KI nur wie oben beschrieben."
       },
       "red": {
@@ -43,9 +43,9 @@
         "title": "Personendaten aus MiData/NDS",
         "examples": "Namen, Rollen, Geburtsdaten, Qualifikationen",
         "source": "Aus MiData und NDS, abgerufen über Rust. Geladen werden nur Name, Rolle, Geburtsdatum und Qualifikationen. AHV-Nummer, Adresse und Gesundheitsdaten werden nicht geladen.",
-        "stored": "Im Reiter «Personen» siehst du Namen, Rollen und Geburtsdaten. Sie liegen nur im Arbeitsspeicher und werden nie gespeichert. Beim Abmelden oder Lagerwechsel werden sie gelöscht. Lokal gespeichert werden nur Zahlen (z. B. Altersgruppen, Anzahl Qualifikationen).",
+        "stored": "Im Reiter «Personen» siehst du Namen, Rollen und Geburtsdaten. Sie liegen nur im Arbeitsspeicher und werden nie gespeichert. Beim Abmelden oder Lagerwechsel werden sie gelöscht. Lokal gespeichert (verschlüsselt) werden nur Zahlen (z. B. Altersgruppen, Anzahl Qualifikationen).",
         "ai": "Nie.",
-        "backup": "Standardmässig nicht. Du kannst es beim Export bewusst einschalten.",
+        "backup": "Standardmässig nicht. Du kannst es beim Export bewusst einschalten (die Backup-Datei ist dann unverschlüsselt).",
         "leaves": "Nein. Sie werden nur auf deinem Bildschirm angezeigt. Nie an eine KI."
       },
       "flow": {
@@ -68,11 +68,13 @@
       },
       "details": {
         "keychainTitle": "Wo liegen Passwörter und Schlüssel?",
-        "keychain": "Der KI-Schlüssel sowie die Zugangsdaten für MiData und NDS liegen im Schlüsselbund des Betriebssystems. Die eCamp-Anmeldung (Cookies) lebt nur im Arbeitsspeicher von Rust und erreicht nie die Oberfläche. Die lokale Datenbank ist nicht zusätzlich verschlüsselt.",
+        "keychain": "Der KI-Schlüssel sowie die Zugangsdaten für MiData und NDS liegen im Schlüsselbund des Betriebssystems. Die eCamp-Anmeldung (Cookies) lebt nur im Arbeitsspeicher von Rust und erreicht nie die Oberfläche. Auch der Schlüssel der lokalen Datenbank liegt im Schlüsselbund.",
+        "encryptionTitle": "Sind meine lokalen Daten verschlüsselt?",
+        "encryption": "Ja. Die lokale Datenbank ist mit AES-256 verschlüsselt. Der Schlüssel liegt im Schlüsselbund des Betriebssystems und wird erst nach der eCamp-Anmeldung freigegeben. Das schützt kopierte Dateien und andere Benutzer am Gerät, nicht vor Schadsoftware in deiner eigenen Windows-Sitzung.",
         "aiTitle": "Was prüft das KI-Gateway?",
         "ai": "Jeder KI-Aufruf läuft durch eine einzige Stelle. Sie lehnt rote Daten, ungeschwärzte gelbe Daten und alles ab, was nach MiData/NDS aussieht. KI-Befunde sind nie «muss».",
         "backupTitle": "Was passiert mit dem Backup?",
-        "backup": "Das Backup enthält alle lokalen Tabellen. Mit der Standardeinstellung werden MiData/NDS-Daten, daraus übernommene Werte und Befunde, die sie zitieren, weggelassen."
+        "backup": "Das Backup enthält alle lokalen Tabellen und ist nicht verschlüsselt: Bewahre die Datei sicher auf. Mit der Standardeinstellung werden MiData/NDS-Daten, daraus übernommene Werte und Befunde, die sie zitieren, weggelassen."
       }
     }
   }

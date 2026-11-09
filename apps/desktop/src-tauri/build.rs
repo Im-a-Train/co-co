@@ -41,6 +41,8 @@ const COMMANDS: &[&str] = &[
     "persons_load_midata",
     "persons_load_nds",
     "persons_clear",
+    "unlock_data_store",
+    "lock_data_store",
 ];
 
 fn main() {

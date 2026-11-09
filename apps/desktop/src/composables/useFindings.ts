@@ -24,6 +24,7 @@ import { getNdsRecord } from '@/domain/nds/store'
 import { ndsVersion } from '@/composables/ndsSignal'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampSettings } from '@/composables/useCampSettings'
+import { onDataStoreLocked, useDataStore } from '@/composables/useDataStore'
 
 export interface FindingsHandle {
   findings: ComputedRef<Finding[]>
@@ -63,6 +64,9 @@ export interface DisablePrompt {
 
 /** AI findings per camp, in memory only (never persisted). Shared by all handles. */
 const aiFindingsByCamp = ref<Record<Iri, Finding[]>>({})
+onDataStoreLocked(() => {
+  aiFindingsByCamp.value = {}
+})
 
 function enabledPacks(settings: AppSettings): RulePack[] {
   const all = loadBundledPacks()
@@ -101,11 +105,18 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     unsub.forEach((u) => u())
     unsub = []
   }
+  const { ready: storeReady } = useDataStore()
   watch(
-    iri,
-    (value) => {
+    [iri, storeReady],
+    ([value, isReady]) => {
       stop()
-      if (!value) return
+      if (!isReady) {
+        // Locked (logout): drop what was read from the encrypted store.
+        overrides.value = []
+        documents.value = []
+        appSettings.value = DEFAULT_APP_SETTINGS
+      }
+      if (!value || !isReady) return
       unsub = [
         subscribe(() => listOverrides(value), (v) => (overrides.value = v)),
         subscribe(() => getDb().documents.where('campIri').equals(value).toArray(), (v) => (documents.value = v)),

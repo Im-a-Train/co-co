@@ -9,12 +9,19 @@ import type { AiLogEntry, AiModel } from '@/domain/types'
 import type { AiPreview } from '@/domain/zones/features'
 import { aiAvailable } from '@/domain/zones/availability'
 import { commands, isTauri } from '@/lib/tauri'
+import { onDataStoreLocked } from './useDataStore'
 
 const enabled = ref(false)
 const model = ref<AiModel>('claude-sonnet-5-5')
 const hasKey = ref(false)
 const loaded = ref(false)
 const log = ref<AiLogEntry[]>([])
+
+onDataStoreLocked(() => {
+  enabled.value = false
+  loaded.value = false
+  log.value = []
+})
 
 function msg(e: unknown): string {
   return e instanceof Error ? e.message : String(e)

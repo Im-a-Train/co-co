@@ -20,6 +20,7 @@ import {
 } from '@/domain/selfCheck'
 import { createSelfCheckRun, deleteSelfCheck, listSelfChecks } from '@/domain/selfCheck/store'
 import type { CollaboratorRole, Diff, Iri, SelfCheckRun } from '@/domain/types'
+import { onDataStoreLocked } from './useDataStore'
 
 export interface SelfCheckHandle {
   /** Newest first. */
@@ -44,6 +45,12 @@ export interface SelfCheckHandle {
 const runsByCamp = ref<Record<Iri, SelfCheckRun[]>>({})
 const diffs = ref<Record<Iri, Diff | null>>({})
 const errors = ref<Record<Iri, string | null>>({})
+
+onDataStoreLocked(() => {
+  runsByCamp.value = {}
+  diffs.value = {}
+  errors.value = {}
+})
 
 export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
   const iri = () => toValue(campIri)

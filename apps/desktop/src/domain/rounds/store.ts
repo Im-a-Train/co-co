@@ -40,13 +40,25 @@ export async function startRound(facts: CampFacts, note = ''): Promise<Round> {
   const campIri = facts.camp.iri
   const roundId = newId()
   const snapshot = await createSnapshot(facts, roundId)
+  // Not atomic (see CocoDb.transaction): order the writes so a failure never leaves a half round.
+  // snapshot -> new round row -> close the previous round; on failure undo what was written.
   return db.transaction('rw', db.rounds, db.snapshots, async () => {
     const existing = await db.rounds.where('campIri').equals(campIri).toArray()
     const plan = planNewRound(existing, campIri, { roundId, snapshotId: snapshot.id }, note)
-    if (plan.closed) await db.rounds.put(plan.closed)
-    await db.snapshots.put(snapshot)
-    await db.rounds.put(plan.round)
-    return plan.round
+    let snapshotWritten = false
+    let roundWritten = false
+    try {
+      await db.snapshots.put(snapshot)
+      snapshotWritten = true
+      await db.rounds.put(plan.round)
+      roundWritten = true
+      if (plan.closed) await db.rounds.put(plan.closed)
+      return plan.round
+    } catch (e) {
+      if (roundWritten) await db.rounds.delete(plan.round.id).catch(() => undefined)
+      if (snapshotWritten) await db.snapshots.delete(snapshot.id).catch(() => undefined)
+      throw e
+    }
   })
 }
 

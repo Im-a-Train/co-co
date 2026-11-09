@@ -188,6 +188,11 @@ export const commands = {
   aiHasKey: () => call<boolean>('ai_has_key'),
   aiClearKey: () => call<void>('ai_clear_key'),
 
+  // ADR 0010: data key for encryption at rest (OS keychain). Rejects with "Nicht angemeldet"
+  // unless the eCamp session is verified. `key` is base64 of 32 bytes; never persist it.
+  unlockDataStore: () => call<{ key: string; created: boolean }>('unlock_data_store'),
+  lockDataStore: () => call<void>('lock_data_store'),
+
   // M7: MiData (read-only). Refreshed only on explicit user action.
   midataStatus: () => call<MidataStatus>('midata_status'),
   /** Opens the MiData login window (no IPC); emits EVENT_MIDATA_STATUS when the session cookie is captured. */

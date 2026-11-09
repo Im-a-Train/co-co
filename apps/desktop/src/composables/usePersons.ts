@@ -12,6 +12,7 @@ import { useCampFacts } from './useCampFacts'
 import { useCampMidata } from './useMidata'
 import { useCampNds } from './useNds'
 import { useSession } from './useSession'
+import { onDataStoreLocked } from './useDataStore'
 
 const midata = shallowRef<MidataPersonsResult | null>(null)
 const nds = shallowRef<NdsPersonsResult | null>(null)
@@ -21,6 +22,7 @@ const midataError = ref<string | null>(null)
 const ndsError = ref<string | null>(null)
 let currentCamp: Iri | null = null
 let watchingSession = false
+onDataStoreLocked(() => wipeLocal())
 
 function wipeLocal(): void {
   midata.value = null

@@ -6,7 +6,7 @@
  * The logic works on a `BackupStore` (table name -> minimal table interface), so it is testable without
  * Dexie/IndexedDB. A CocoDb is adapted with `storeFromDb`.
  */
-import { TABLE_NAMES, type CocoDb } from '../storage/db'
+import { INTERNAL_KEY_PREFIX, TABLE_NAMES, type CocoDb } from '../storage/db'
 import { MIDATA_FIELDS } from '../midata'
 import { NDS_FIELDS } from '../nds'
 import { EXPORT_FORMAT, EXPORT_VERSION, type CocoExport } from '../types'
@@ -49,12 +49,18 @@ export function storeFromDb(db: CocoDb): BackupStore {
   const out: BackupStore = {}
   for (const name of TABLE_NAMES) {
     const t = db.table(name)
+    // settings rows with an internal key ('_canary', migration progress) never leave the database
+    // and survive a replace-import.
+    const isInternal = (k: unknown) => name === 'settings' && String(k).startsWith(INTERNAL_KEY_PREFIX)
     out[name] = {
-      toArray: () => t.toArray(),
-      clear: () => t.clear(),
+      toArray: async () => (name === 'settings' ? (await t.toArray()).filter((r) => !isInternal((r as { key: string }).key)) : t.toArray()),
+      clear: async () => {
+        if (name !== 'settings') return t.clear()
+        await t.bulkDelete((await t.toCollection().primaryKeys()).filter((k) => !isInternal(k)))
+      },
       bulkPut: (rows) => t.bulkPut(rows),
       bulkAdd: (rows) => t.bulkAdd(rows),
-      keys: () => t.toCollection().primaryKeys(),
+      keys: async () => (await t.toCollection().primaryKeys()).filter((k) => !isInternal(k)),
     }
   }
   return out
@@ -208,7 +214,9 @@ function sanitizeRows(name: string, rows: unknown[] | undefined): unknown[] | un
     })
   }
   if (name === 'settings') {
-    return rows.map((r) => {
+    return rows
+      .filter((r) => !String((r as { key?: string }).key ?? '').startsWith(INTERNAL_KEY_PREFIX))
+      .map((r) => {
       const row = r as { key?: string; value?: { ai?: Record<string, unknown> } }
       if (row.key === 'app' && row.value && typeof row.value === 'object')
         return { ...row, value: { ...row.value, ai: { ...(row.value.ai ?? {}), enabled: false } } }
@@ -259,11 +267,42 @@ export async function importIntoStore(store: BackupStore, data: CocoExport, mode
   return { mode, written, skippedTables }
 }
 
+/**
+ * Import with manual rollback. `CocoDb.transaction()` is not atomic (encrypted store, see storage/db.ts), so:
+ * 1. the whole file is validated BEFORE anything is touched,
+ * 2. an in-memory copy of all current (decrypted) rows is taken,
+ * 3. on any failure that copy is written back (best effort) and a clear German error is thrown.
+ */
+export async function importWithRollback(store: BackupStore, data: CocoExport, mode: ImportMode): Promise<ImportReport> {
+  validateExport(data)
+  const backup: Record<string, unknown[]> = {}
+  for (const name of TABLE_NAMES) backup[name] = (await store[name]?.toArray()) ?? []
+  try {
+    return await importIntoStore(store, data, mode)
+  } catch (e) {
+    let restored = true
+    for (const name of TABLE_NAMES) {
+      const table = store[name]
+      if (!table) continue
+      try {
+        await table.clear()
+        await table.bulkPut(backup[name] ?? [])
+      } catch {
+        restored = false
+      }
+    }
+    throw new Error(
+      restored
+        ? 'Der Import ist fehlgeschlagen. Deine bisherigen Daten wurden unverändert wiederhergestellt.'
+        : 'Der Import ist fehlgeschlagen und die bisherigen Daten konnten nicht vollständig wiederhergestellt werden. Bitte starte co-co neu und prüfe deine Daten.',
+      { cause: e },
+    )
+  }
+}
+
 export async function importAll(data: CocoExport, mode: ImportMode, db?: CocoDb): Promise<ImportReport> {
   const d = db ?? (await import('../storage/db')).getDb()
-  const store = storeFromDb(d)
-  const tables = TABLE_NAMES.map((n) => d.table(n))
-  return d.transaction('rw', tables, () => importIntoStore(store, data, mode))
+  return importWithRollback(storeFromDb(d), data, mode)
 }
 
 /** e.g. `co-co-backup-2026-11-07.json` */

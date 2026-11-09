@@ -10,6 +10,7 @@ use std::time::{Duration, Instant, UNIX_EPOCH};
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
+use coco_core::datakey::{self, AAD_ALLOWED_PATHS, KEY_LEN};
 use coco_core::docs::{check_size, coalesce, ChangeKind, MAX_DOCUMENT_BYTES, MAX_TEXT_FILE_BYTES};
 use coco_core::savefile::{ensure_extension, require_save_filter};
 use coco_core::scope::{is_hidden_name, PathScope};
@@ -17,6 +18,7 @@ use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_dialog::DialogExt;
+use zeroize::Zeroizing;
 
 use crate::error::{AppError, AppResult};
 use crate::session::MAIN_LABEL;
@@ -28,25 +30,65 @@ const DEBOUNCE: Duration = Duration::from_millis(500);
 const MAX_DEBOUNCE_WINDOW: Duration = Duration::from_secs(5);
 
 /// Managed state: the persisted allowed-path scope plus the active watchers.
+///
+/// `allowed-paths.json` is AES-256-GCM encrypted with the data key (ADR 0010). Until
+/// `unlock` has run (eCamp session verified) the scope is empty and nothing is persisted.
 pub struct FileState {
     scope: Mutex<PathScope>,
     file: PathBuf,
+    key: Mutex<Option<Zeroizing<[u8; KEY_LEN]>>>,
     watchers: Mutex<HashMap<PathBuf, RecommendedWatcher>>,
 }
 
 impl FileState {
     pub fn load(data_dir: &Path) -> Self {
-        let file = data_dir.join(SCOPE_FILE);
-        let scope = std::fs::read_to_string(&file).map(|s| PathScope::from_json(&s)).unwrap_or_default();
-        Self { scope: Mutex::new(scope), file, watchers: Mutex::new(HashMap::new()) }
+        Self {
+            scope: Mutex::new(PathScope::default()),
+            file: data_dir.join(SCOPE_FILE),
+            key: Mutex::new(None),
+            watchers: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Installs the data key and loads the persisted scope. Legacy plaintext JSON is read and
+    /// rewritten encrypted; an undecryptable file yields an empty scope.
+    pub fn unlock(&self, key: &[u8; KEY_LEN]) {
+        *self.key.lock().unwrap() = Some(Zeroizing::new(*key));
+        let Ok(text) = std::fs::read_to_string(&self.file) else { return };
+        let (scope, legacy) = if datakey::is_envelope(&text) {
+            let scope = datakey::open(key, AAD_ALLOWED_PATHS, &text)
+                .ok()
+                .and_then(|b| String::from_utf8(b).ok())
+                .map(|s| PathScope::from_json(&s))
+                .unwrap_or_default();
+            (scope, false)
+        } else {
+            (PathScope::from_json(&text), true)
+        };
+        let mut guard = self.scope.lock().unwrap();
+        *guard = scope;
+        if legacy {
+            let _ = self.persist(&guard);
+        }
+    }
+
+    /// Drops the in-memory key copy and the loaded scope (the keychain entry stays).
+    pub fn lock(&self) {
+        *self.key.lock().unwrap() = None;
+        *self.scope.lock().unwrap() = PathScope::default();
     }
 
     fn persist(&self, scope: &PathScope) -> AppResult<()> {
+        let sealed = {
+            let key = self.key.lock().unwrap();
+            let key = key.as_ref().ok_or_else(|| AppError::Unexpected("Datenspeicher ist gesperrt".into()))?;
+            datakey::seal(key, AAD_ALLOWED_PATHS, scope.to_json().as_bytes())?
+        };
         if let Some(dir) = self.file.parent() {
             std::fs::create_dir_all(dir).map_err(io_err)?;
         }
         let tmp = self.file.with_extension("json.tmp");
-        std::fs::write(&tmp, scope.to_json()).map_err(io_err)?;
+        std::fs::write(&tmp, sealed).map_err(io_err)?;
         std::fs::rename(&tmp, &self.file).map_err(io_err)
     }
 
@@ -482,12 +524,44 @@ mod tests {
         let allowed = d.join("docs");
         std::fs::create_dir_all(&allowed).unwrap();
         let allowed = dunce::canonicalize(allowed).unwrap();
+        let key = datakey::generate_key();
         let st = FileState::load(&d);
+        st.unlock(&key);
         st.allow_folder(allowed.clone()).unwrap();
         assert!(st.check(&allowed.join("x.pdf")).is_ok());
         assert!(st.check(&d.join("other.pdf")).is_err());
         let st2 = FileState::load(&d);
+        // locked: nothing readable, file on disk is not plaintext
+        assert!(st2.check(&allowed.join("x.pdf")).is_err());
+        let raw = std::fs::read_to_string(d.join(SCOPE_FILE)).unwrap();
+        assert!(datakey::is_envelope(&raw));
+        assert!(!raw.contains("docs"));
+        st2.unlock(&key);
         assert!(st2.check(&allowed.join("x.pdf")).is_ok());
+        st2.lock();
+        assert!(st2.check(&allowed.join("x.pdf")).is_err());
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn legacy_plaintext_is_migrated_on_unlock() {
+        let d = tmp("legacy");
+        let allowed = d.join("docs");
+        std::fs::create_dir_all(&allowed).unwrap();
+        let allowed = dunce::canonicalize(allowed).unwrap();
+        let mut legacy = PathScope::default();
+        legacy.add_folder(allowed.clone());
+        std::fs::write(d.join(SCOPE_FILE), legacy.to_json()).unwrap();
+        let key = datakey::generate_key();
+        let st = FileState::load(&d);
+        st.unlock(&key);
+        assert!(st.check(&allowed.join("x.pdf")).is_ok());
+        let raw = std::fs::read_to_string(d.join(SCOPE_FILE)).unwrap();
+        assert!(datakey::is_envelope(&raw));
+        // wrong key: empty scope
+        let st2 = FileState::load(&d);
+        st2.unlock(&datakey::generate_key());
+        assert!(st2.check(&allowed.join("x.pdf")).is_err());
         let _ = std::fs::remove_dir_all(&d);
     }
 
@@ -499,6 +573,7 @@ mod tests {
         std::fs::write(d.join("secret.txt"), "x").unwrap();
         let allowed = dunce::canonicalize(allowed).unwrap();
         let st = FileState::load(&d);
+        st.unlock(&datakey::generate_key());
         st.allow_folder(allowed.clone()).unwrap();
         let sneaky = format!("{}/../secret.txt", allowed.display());
         let c = canonical(&sneaky).unwrap();

@@ -1,0 +1,30 @@
+{
+  "storage": {
+    "title": "Lokale Daten",
+    "status": {
+      "locked": "Lokale Daten verschlüsselt · gesperrt",
+      "unlocking": "Daten werden entsperrt…",
+      "creating": "Daten werden verschlüsselt…",
+      "ready": "Lokale Daten verschlüsselt · entsperrt",
+      "keyLost": "Lokale Daten verschlüsselt · Schlüssel fehlt",
+      "error": "Lokale Daten verschlüsselt · Entsperren fehlgeschlagen"
+    },
+    "lockedHint": "Nach der Anmeldung bei eCamp werden die lokalen Daten entsperrt. Ohne Anmeldung sind nur die Verbindungs-Einstellungen erreichbar.",
+    "readyHint": "Der Schlüssel liegt im Schlüsselbund des Betriebssystems. Beim Abmelden werden die Daten wieder gesperrt.",
+    "errorTitle": "Lokale Daten konnten nicht entsperrt werden",
+    "retry": "Erneut versuchen",
+    "reset": {
+      "title": "Lokale Daten können nicht entschlüsselt werden",
+      "text": "Der Schlüssel im Schlüsselbund des Betriebssystems fehlt oder passt nicht mehr zu den gespeicherten Daten. Die bestehenden Daten sind darum nicht lesbar. co-co löscht nichts von selbst.",
+      "options": "Du kannst die lokalen Daten zurücksetzen und mit einem leeren, neu verschlüsselten Speicher weiterarbeiten. Hast du ein Backup (JSON-Datei), kannst du es danach importieren.",
+      "importAfter": "Zurücksetzen und Backup importieren",
+      "resetOnly": "Lokale Daten zurücksetzen",
+      "confirmTitle": "Wirklich zurücksetzen?",
+      "confirmText": "Alle lokalen co-co-Daten (Angaben, Feedback, Runden, Dokument-Auszüge, Einstellungen) werden unwiderruflich gelöscht. Daten in eCamp sind nicht betroffen.",
+      "confirmCheck": "Ja, die lokalen Daten sollen gelöscht werden.",
+      "confirm": "Endgültig zurücksetzen",
+      "back": "Zurück",
+      "failed": "Zurücksetzen fehlgeschlagen: {detail}"
+    }
+  }
+}

@@ -10,6 +10,7 @@ import { dropEditedMidataFields } from '@/domain/midata'
 import { dropEditedNdsFields } from '@/domain/nds'
 import type { CampFacts, CategoryClass, CategoryMapping, CoachInputs, Iri, MidataField, NdsField } from '@/domain/types'
 import { useCampFacts } from './useCampFacts'
+import { onDataStoreLocked } from './useDataStore'
 
 export interface CampSettingsHandle {
   mapping: ComputedRef<CategoryMapping | null>
@@ -30,6 +31,13 @@ const version = ref(0)
 const mappings = shallowRef<Record<Iri, CategoryMapping | null>>({})
 const inputs = shallowRef<Record<Iri, CoachInputs | null>>({})
 const loadedFromDb = new Set<Iri>()
+
+onDataStoreLocked(() => {
+  mappings.value = {}
+  inputs.value = {}
+  loadedFromDb.clear()
+  version.value += 1
+})
 
 /** Adds guessed entries for categories without a stored class; un-confirms when something new appeared. */
 async function ensureMapping(campIri: Iri, facts: CampFacts): Promise<void> {

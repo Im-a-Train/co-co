@@ -19,8 +19,9 @@ export async function deleteSelfCheck(id: string): Promise<void> {
   const db = getDb()
   await db.transaction('rw', db.selfChecks, db.snapshots, async () => {
     const run = await db.selfChecks.get(id)
-    if (run?.snapshotId) await db.snapshots.delete(run.snapshotId)
+    // Run first: a failure then leaves at worst an orphan snapshot, never a run without its snapshot.
     await db.selfChecks.delete(id)
+    if (run?.snapshotId) await db.snapshots.delete(run.snapshotId)
   })
 }
 

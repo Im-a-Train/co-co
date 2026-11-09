@@ -12,6 +12,7 @@ import { commands, errorMessage, isTauri, onMidataStatus } from '@/lib/tauri'
 import i18n from '@/plugins/i18n'
 import { bumpMidata, midataVersion } from './midataSignal'
 import { useSession } from './useSession'
+import { onDataStoreLocked } from './useDataStore'
 
 const t = (key: string): string => i18n.global.t(key)
 
@@ -49,6 +50,19 @@ const status = ref<MidataStatus>({ ...NO_STATUS })
 const busy = ref(false)
 const error = ref<string | null>(null)
 let started: Promise<void> | null = null
+onDataStoreLocked(() => {
+  started = null
+  baseUrl.value = DEFAULT_APP_SETTINGS.midata.baseUrl
+  personId.value = DEFAULT_APP_SETTINGS.midata.personId
+  qualMapping.value = { ...DEFAULT_APP_SETTINGS.midata.qualMapping }
+  viaEcamp.value = false
+  loginRequested = false
+  selfNickname.value = null
+  selfProblem.value = null
+  records.value = {}
+  loadingMap.value = {}
+  errorMap.value = {}
+})
 
 /** Why the coach's MiData person could not be found automatically (null = fine / not tried). */
 export type SelfProblem = 'noEmail' | 'none' | 'ambiguous' | 'failed'

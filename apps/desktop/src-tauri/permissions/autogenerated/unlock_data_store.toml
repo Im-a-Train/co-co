@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-unlock-data-store"
+description = "Enables the unlock_data_store command without any pre-configured scope."
+commands.allow = ["unlock_data_store"]
+
+[[permission]]
+identifier = "deny-unlock-data-store"
+description = "Denies the unlock_data_store command without any pre-configured scope."
+commands.deny = ["unlock_data_store"]
