@@ -107,7 +107,7 @@ PR builds stay available as the artifact `co-co-windows-x64` of the run.
   never reaches AI.
 
 Details: [ADRs](docs/adr/) – 0001 Tauri, 0002 Vue/Vuetify, 0003 login via webview cookies, 0004 no
-backend, 0005 data zones and AI, 0006 MiData red zone, 0007 NDS red zone, 0008 versioning and releases.
+backend, 0005 data zones and AI, 0006 MiData red zone, 0007 NDS red zone, 0008 versioning and releases, 0009 personal data in the UI, 0010 encryption at rest.
 
 ## Licence
 

@@ -11,6 +11,7 @@ import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import { commands, errorMessage, isTauri, onMidataStatus } from '@/lib/tauri'
 import i18n from '@/plugins/i18n'
 import { bumpMidata, midataVersion } from './midataSignal'
+import { useSession } from './useSession'
 
 const t = (key: string): string => i18n.global.t(key)
 
@@ -49,11 +50,51 @@ const busy = ref(false)
 const error = ref<string | null>(null)
 let started: Promise<void> | null = null
 
+/** Why the coach's MiData person could not be found automatically (null = fine / not tried). */
+export type SelfProblem = 'noEmail' | 'none' | 'ambiguous' | 'failed'
+/** Nickname of the automatically detected person (set when the id came from the e-mail lookup). */
+const selfNickname = ref<string | null>(null)
+const selfProblem = ref<SelfProblem | null>(null)
+let detecting = false
+
+/**
+ * Finds the coach's MiData person by the e-mail of the eCamp account (Rust: `GET /api/people?filter[email][eq]`).
+ * Runs when MiData is connected and no person number is stored; never overwrites an existing number.
+ */
+async function detectSelf(force = false): Promise<void> {
+  if (!isTauri() || detecting || !status.value.connected) return
+  if (personId.value && !force) return
+  const email = useSession().user.value?.email?.trim()
+  if (!email) {
+    selfProblem.value = 'noEmail'
+    return
+  }
+  detecting = true
+  try {
+    const m = await commands.midataFindSelf(email)
+    if (m.count === 1 && m.personId) {
+      await updateAppSettings({ midata: { personId: m.personId } })
+      personId.value = m.personId
+      selfNickname.value = m.nickname ?? ''
+      selfProblem.value = null
+    } else {
+      selfProblem.value = m.count > 1 ? 'ambiguous' : 'none'
+    }
+  } catch {
+    selfProblem.value = 'failed'
+  } finally {
+    detecting = false
+  }
+}
+
 /** Adopts a status; a detected MiData person id is stored once when the coach has not entered one. */
 async function applyStatus(s: MidataStatus): Promise<void> {
   status.value = s
   const detected = s.personId?.trim()
-  if (!detected) return
+  if (!detected) {
+    void detectSelf()
+    return
+  }
   if (!personId.value) {
     try {
       await updateAppSettings({ midata: { personId: detected } })
@@ -119,6 +160,9 @@ export interface MidataHandle {
   personId: typeof personId
   qualMapping: typeof qualMapping
   viaEcamp: typeof viaEcamp
+  selfNickname: typeof selfNickname
+  selfProblem: typeof selfProblem
+  detectSelf(force?: boolean): Promise<void>
   status: typeof status
   busy: typeof busy
   error: typeof error
@@ -138,6 +182,9 @@ export function useMidata(): MidataHandle {
     personId,
     qualMapping,
     viaEcamp,
+    selfNickname,
+    selfProblem,
+    detectSelf,
     status,
     busy,
     error,

@@ -1,5 +1,5 @@
 /** Pure row model for "Meine Lager" (list entry + summary + review + deadlines + rounds). */
-import { computeDeadlines } from '@/domain/rules/lib/deadlines'
+import { addMonths, computeDeadlines } from '@/domain/rules/lib/deadlines'
 import type {
   CampListEntry,
   CampSummaryRecord,
@@ -96,5 +96,29 @@ export function sortCampRows(rows: CampRow[]): CampRow[] {
     if (!a.start) return 1
     if (!b.start) return -1
     return a.start < b.start ? -1 : 1
+  })
+}
+
+export type CampPhase = 'upcoming' | 'running' | 'ended' | 'old'
+
+/** Phase relative to `today`: ended = end < today, old = ended more than 3 months ago; no dates = upcoming. */
+export function campPhase(row: Pick<CampRow, 'start' | 'end'>, today: IsoDate): CampPhase {
+  const end = row.end ?? row.start
+  if (!end) return 'upcoming'
+  if (end < today) return today > addMonths(end, 3) ? 'old' : 'ended'
+  if (row.start && row.start > today) return 'upcoming'
+  return row.start ? 'running' : 'upcoming'
+}
+
+export interface CampPhaseFilter {
+  showEnded: boolean
+  showOld: boolean
+}
+
+/** Default view: upcoming + running; ended / old camps only when switched on. */
+export function filterCampsByPhase(rows: CampRow[], filter: CampPhaseFilter, today: IsoDate): CampRow[] {
+  return rows.filter((r) => {
+    const p = campPhase(r, today)
+    return p === 'ended' ? filter.showEnded : p === 'old' ? filter.showOld : true
   })
 }

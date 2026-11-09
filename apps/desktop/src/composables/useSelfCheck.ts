@@ -9,9 +9,12 @@ import { useFindings } from '@/composables/useFindings'
 import { diffEntities, snapshotEntities } from '@/domain/rounds'
 import { getSnapshot } from '@/domain/rounds/store'
 import {
+  buildSelfCheckReport,
   compareWithRun,
   isLeaderRole,
-  renderSelfCheckReport,
+  renderSelfCheckReportHtml,
+  renderSelfCheckReportText,
+  type SelfCheckReportModel,
   type SelfCheckProgress,
   type SelfCheckReportOptions,
 } from '@/domain/selfCheck'
@@ -32,7 +35,8 @@ export interface SelfCheckHandle {
   load(): Promise<void>
   startRun(note?: string): Promise<SelfCheckRun>
   deleteRun(id: string): Promise<void>
-  report(opts?: { includeRedDerived?: boolean; now?: Date }): string
+  /** Structured report + rendered HTML / plain text; null without facts. */
+  report(opts?: { includeRedDerived?: boolean; now?: Date }): { model: SelfCheckReportModel; html: string; text: string } | null
   error: ComputedRef<string | null>
 }
 
@@ -127,20 +131,21 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
     },
     report(opts = {}) {
       const facts = campFacts.facts.value
-      if (!facts) return ''
+      if (!facts) return null
       const js = findingsHandle.jsDays.value
       const options: SelfCheckReportOptions = {
         includeRedDerived: opts.includeRedDerived ?? false,
         instanceBaseUrl: facts.instanceBaseUrl,
         now: opts.now ?? new Date(),
       }
-      return renderSelfCheckReport(
+      const model = buildSelfCheckReport(
         facts,
         findingsHandle.findings.value,
         js ? { valid: js.validDayCount, total: js.totalDayCount } : null,
         progress(),
         options,
       )
+      return { model, html: renderSelfCheckReportHtml(model), text: renderSelfCheckReportText(model) }
     },
   }
 

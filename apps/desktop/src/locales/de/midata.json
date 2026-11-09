@@ -48,7 +48,16 @@
         "none": "keine"
       },
       "oauthHelp": "Meldest du dich bei eCamp über MiData an, übernimmt co-co die MiData-Sitzung automatisch. Bei Passwort- oder Google-Anmeldung musst du dich hier separat bei MiData anmelden.",
-      "personIdDetected": "automatisch erkannt"
+      "personIdDetected": "automatisch erkannt",
+      "personIdAuto": "Automatisch erkannt: {who} (MiData-Nr. {id})",
+      "personIdYou": "du",
+      "personIdOverride": "Manuell ändern",
+      "personIdProblem": {
+        "noEmail": "co-co konnte deine MiData-Person nicht automatisch finden, weil die E-Mail-Adresse deines eCamp-Kontos nicht gelesen werden konnte. Bitte trage die Nummer von Hand ein.",
+        "none": "co-co konnte deine MiData-Person nicht automatisch finden: In MiData gibt es keine Person mit der E-Mail-Adresse deines eCamp-Kontos (oder du darfst sie nicht sehen). Bitte trage die Nummer von Hand ein.",
+        "ambiguous": "co-co konnte deine MiData-Person nicht automatisch finden: Die E-Mail-Adresse deines eCamp-Kontos gehört in MiData zu mehreren Personen. Bitte trage die Nummer von Hand ein.",
+        "failed": "co-co konnte deine MiData-Person nicht automatisch finden, weil die Abfrage bei MiData fehlschlug. Bitte trage die Nummer von Hand ein."
+      }
     },
     "card": {
       "title": "MiData",
@@ -123,13 +132,18 @@
     },
     "matrix": {
       "title": "Qualifikationen der Leitenden",
-      "intro": "Aus MiData, gültig am Lagerbeginn. Zugeordnet zu den Verantwortlichen sicherheitsrelevanter Aktivitäten.",
+      "intro": "Aus MiData: Rollen im Lager und Qualifikationen zum Zeitpunkt des Lagers.",
       "leader": "Leitende:r",
       "role": "Rolle",
       "coverage": "Abdeckung",
       "noLeaders": "Keine Leitenden in MiData gefunden.",
       "has": "vorhanden",
       "hasNot": "fehlt",
+      "invalid": "vorhanden, aber nicht gültig während des Lagers",
+      "invalidTitle": "{labels}: {state}",
+      "validUntil": "gültig bis {date}",
+      "notValidAtCamp": "nicht gültig während des Lagers",
+      "legend": "Legende: grün = gültig während des ganzen Lagers, gelb = vorhanden, aber nicht gültig während des Lagers, rot = fehlt, grau = unbekannt.",
       "quals": {
         "lagerleiter": "Lagerleiter",
         "leiterLsT": "LS/T",
@@ -144,30 +158,6 @@
         "waterPoolUnsupervised": "Pool (unbeaufsichtigt)",
         "waterLake": "See (unbeaufsichtigt)",
         "waterRiver": "Fluss"
-      },
-      "activities": {
-        "title": "Sicherheitsrelevante Aktivitäten",
-        "none": "Keine sicherheitsrelevanten Aktivitäten erkannt.",
-        "area": {
-          "wasser": "Wasser",
-          "berg": "Berg",
-          "winter": "Winter"
-        },
-        "requires": "braucht {quals}",
-        "noResponsible": "keine Verantwortlichen",
-        "ok": "qualifiziert",
-        "warn": "keine qualifizierte Person verantwortlich",
-        "unknown": "nicht zuordenbar",
-        "source": "Woher kommt diese Liste? co-co sucht in Titel, Ort, Ablauf, Sicherheitsüberlegungen und Notizen jeder eCamp-Aktivität nach Stichwörtern (dieselben Wortlisten wie die Regeln zu Wasser und Berg, dazu eine Liste für Winter). Das ist eine Heuristik und kann danebenliegen.",
-        "detectedBy": "erkannt durch: {words}",
-        "dismiss": "keine {area}-Aktivität",
-        "dismissedTitle": "Ausgeblendet ({n})",
-        "restore": "wieder einblenden",
-        "areaLower": {
-          "wasser": "Wasser",
-          "berg": "Berg",
-          "winter": "Winter"
-        }
       },
       "notReadable": "Qualifikationen konnten nicht gelesen werden (keine Berechtigung in MiData). Die Matrix zeigt deshalb nur ✕.",
       "unknownCell": "unbekannt",

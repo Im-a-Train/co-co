@@ -1,22 +1,19 @@
 <script setup lang="ts">
-/** Leaders × required qualifications + qualification kind mapping + safety activities with their responsibles. */
+/** Leaders: roles in the camp × qualifications at camp time + qualification kind mapping. */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type SafetyArea } from '@/domain/midata'
+import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type QualMatrixRow } from '@/domain/midata'
 import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2, type MidataQualKey, type MidataQualKind } from '@/domain/types'
 
 const props = defineProps<{
   matrix: QualificationMatrix
   kinds: MidataQualKind[]
   mapping: QualMapping
-  dismissed: { iri: string; title: string; area: SafetyArea }[]
   loading?: boolean
 }>()
 const emit = defineEmits<{
   saveMapping: [next: QualMapping]
   reload: []
-  dismiss: [iri: string, area: SafetyArea]
-  restore: [iri: string, area: SafetyArea]
 }>()
 const { t } = useI18n()
 
@@ -39,7 +36,23 @@ function setKeys(label: string, keys: MidataQualKey[]): void {
   edited.value = { ...edited.value, [label]: keys }
   justSaved.value = false
 }
-const areaName = (a: SafetyArea): string => t(`midata.matrix.activities.areaLower.${a}`)
+
+function fmtDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return `${d}.${m}.${y}`
+}
+/** Tooltip of a cell: the qualifications behind it, with validity. */
+function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
+  return r.details
+    .filter((d) => d.keys.includes(c))
+    .map((d) => {
+      const state = d.validAtCamp
+        ? d.finishAt ? t('midata.matrix.validUntil', { date: fmtDate(d.finishAt) }) : t('midata.matrix.has')
+        : d.finishAt ? t('midata.matrix.validUntil', { date: fmtDate(d.finishAt) }) + ' (' + t('midata.matrix.notValidAtCamp') + ')' : t('midata.matrix.notValidAtCamp')
+      return t('midata.matrix.invalidTitle', { labels: d.label, state })
+    })
+    .join('\n') ||t('midata.matrix.invalid')
+}
 </script>
 
 <template>
@@ -57,6 +70,7 @@ const areaName = (a: SafetyArea): string => t(`midata.matrix.activities.areaLowe
       >
         {{ t('midata.matrix.notReadable') }}
       </v-alert>
+      <p v-if="matrix.rows.length > 0" class="text-caption text-medium-emphasis mb-2" data-testid="qual-legend">{{ t('midata.matrix.legend') }}</p>
       <div v-if="matrix.rows.length === 0" class="text-medium-emphasis">{{ t('midata.matrix.noLeaders') }}</div>
       <div v-else class="table-wrap">
         <v-table density="compact">
@@ -70,14 +84,27 @@ const areaName = (a: SafetyArea): string => t(`midata.matrix.activities.areaLowe
           <tbody>
             <tr v-for="(r, i) in matrix.rows" :key="i">
               <td>{{ r.nickname }}</td>
-              <td class="text-medium-emphasis">{{ r.roleLabel }}</td>
+              <td>
+                <v-chip v-for="l in r.roleLabels" :key="l" size="x-small" variant="tonal" class="mr-1" data-testid="qual-role-chip">{{ l }}</v-chip>
+              </td>
               <td v-for="c in matrix.columns" :key="c" class="text-center">
                 <v-icon
-                  v-if="r.cells[c]"
+                  v-if="r.cells[c] === 'valid'"
                   icon="mdi-check"
                   color="success"
                   size="small"
+                  :title="cellTip(r, c)"
                   :aria-label="t('midata.matrix.has')"
+                  data-testid="qual-cell-valid"
+                />
+                <v-icon
+                  v-else-if="r.cells[c] === 'invalid'"
+                  icon="mdi-alert-circle-outline"
+                  color="warning"
+                  size="small"
+                  :title="cellTip(r, c)"
+                  :aria-label="t('midata.matrix.invalid')"
+                  data-testid="qual-cell-invalid"
                 />
                 <v-icon
                   v-else-if="!matrix.qualificationsReadable"
@@ -166,55 +193,6 @@ const areaName = (a: SafetyArea): string => t(`midata.matrix.activities.areaLowe
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-
-      <div class="text-subtitle-2 mt-4 mb-1">{{ t('midata.matrix.activities.title') }}</div>
-      <p class="text-caption text-medium-emphasis mb-2" data-testid="qual-activities-source">{{ t('midata.matrix.activities.source') }}</p>
-      <div v-if="matrix.activities.length === 0" class="text-medium-emphasis">{{ t('midata.matrix.activities.none') }}</div>
-      <v-list v-else density="compact" lines="three" class="pa-0">
-        <v-list-item v-for="a in matrix.activities" :key="`${a.activityIri}-${a.area}`" :data-testid="`qual-activity-${a.area}`">
-          <template #prepend>
-            <v-icon
-              :icon="a.ok === true ? 'mdi-check-circle' : a.ok === false ? 'mdi-alert' : 'mdi-help-circle'"
-              :color="a.ok === true ? 'success' : a.ok === false ? 'warning' : undefined"
-            />
-          </template>
-          <template #append>
-            <v-btn size="x-small" variant="text" :data-testid="`qual-dismiss-${a.area}`" @click="emit('dismiss', a.activityIri, a.area)">
-              {{ t('midata.matrix.activities.dismiss', { area: areaName(a.area) }) }}
-            </v-btn>
-          </template>
-          <v-list-item-title>
-            {{ a.activityTitle }}
-            <v-chip size="x-small" variant="tonal" class="ml-1">{{ t(`midata.matrix.activities.area.${a.area}`) }}</v-chip>
-          </v-list-item-title>
-          <v-list-item-subtitle class="text-wrap">
-            {{ t('midata.matrix.activities.requires', { quals: a.required.map((q) => t(`midata.matrix.quals.${q}`)).join(' / ') }) }}
-            ·
-            {{ a.responsibles.length ? a.responsibles.join(', ') : t('midata.matrix.activities.noResponsible') }}
-            ·
-            {{ a.ok === true ? t('midata.matrix.activities.ok') : a.ok === false ? t('midata.matrix.activities.warn') : t('midata.matrix.activities.unknown') }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle v-if="a.keywords.length" class="text-wrap" data-testid="qual-activity-keywords">
-            {{ t('midata.matrix.activities.detectedBy', { words: a.keywords.join(', ') }) }}
-          </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
-      <div v-if="dismissed.length" class="mt-2" data-testid="qual-dismissed">
-        <div class="text-caption text-medium-emphasis">{{ t('midata.matrix.activities.dismissedTitle', { n: dismissed.length }) }}</div>
-        <div class="d-flex flex-wrap ga-2 mt-1">
-          <v-chip
-            v-for="d in dismissed"
-            :key="`${d.iri}-${d.area}`"
-            size="small"
-            variant="outlined"
-            prepend-icon="mdi-undo"
-            :title="t('midata.matrix.activities.restore')"
-            @click="emit('restore', d.iri, d.area)"
-          >
-            {{ d.title }} · {{ t(`midata.matrix.activities.area.${d.area}`) }}
-          </v-chip>
-        </div>
-      </div>
     </v-card-text>
   </v-card>
 </template>

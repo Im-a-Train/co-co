@@ -25,6 +25,12 @@
       "prototype": "Prototyp",
       "open": "Lager öffnen",
       "noDates": "Keine Daten",
+      "showEnded": "Abgeschlossene anzeigen",
+      "showOld": "Ältere anzeigen",
+      "hiddenHint": "{n} abgeschlossene Lager ausgeblendet",
+      "showHidden": "Anzeigen",
+      "phaseEnded": "abgeschlossen",
+      "phaseOld": "älter",
       "columns": {
         "camp": "Lager",
         "dates": "Zeitraum",

@@ -135,10 +135,24 @@ export function resolveEventLink(
 /** Safety areas of a camp detected from its activities (water / mountain / winter / rope …). */
 export type SafetyArea = 'wasser' | 'berg' | 'winter'
 
+/** 'valid' = valid over the whole camp, 'invalid' = held but not valid during the camp, 'none' = not held. */
+export type QualCellState = 'valid' | 'invalid' | 'none'
+
+export interface QualMatrixDetail {
+  label: string
+  keys: MidataQualKey[]
+  validAtCamp: boolean
+  finishAt: string | null
+}
+
 export interface QualMatrixRow {
   nickname: string
   roleLabel: string
-  cells: Record<MidataQualKey, boolean>
+  /** All roles of the person in the camp (falls back to `[roleLabel]` for old aggregates). */
+  roleLabels: string[]
+  cells: Record<MidataQualKey, QualCellState>
+  /** Qualifications held (empty for old aggregates). */
+  details: QualMatrixDetail[]
   /** eCamp collaborator display names matched to this leader (normalized nickname compare). */
   ecampMatches: string[]
 }
@@ -163,7 +177,7 @@ export interface QualificationMatrix {
   /** Columns shown: always 'lagerleiter' + 'leiterLsT', plus the areas the camp needs (+ 'slrg' with water). */
   columns: MidataQualKey[]
   rows: QualMatrixRow[]
-  /** Per column: number of leaders holding it. */
+  /** Per column: number of leaders holding it valid during the camp. */
   covered: Record<MidataQualKey, number>
   /** Safety activities and whether a qualified leader is responsible. */
   activities: QualMatrixActivityCheck[]
@@ -203,11 +217,16 @@ export function buildQualificationMatrix(
   const collabs = facts.collaborators.map((c) => ({ iri: c.iri, name: c.displayName, norm: normalizeName(c.displayName) }))
   const rows: QualMatrixRow[] = agg.leaders.map((l) => {
     const n = normalizeName(l.nickname)
-    const cells = Object.fromEntries(MIDATA_QUAL_KEYS.map((k) => [k, l.qualifications[k] === true])) as Record<MidataQualKey, boolean>
+    const expired = l.expiredQualifications ?? []
+    const cells = Object.fromEntries(
+      MIDATA_QUAL_KEYS.map((k) => [k, l.qualifications[k] === true ? 'valid' : expired.includes(k) ? 'invalid' : 'none']),
+    ) as Record<MidataQualKey, QualCellState>
     return {
       nickname: l.nickname,
       roleLabel: l.roleLabel,
+      roleLabels: l.roleLabels && l.roleLabels.length > 0 ? l.roleLabels : [l.roleLabel],
       cells,
+      details: l.qualificationDetails ?? [],
       ecampMatches: n ? collabs.filter((c) => c.norm === n).map((c) => c.name) : [],
     }
   })

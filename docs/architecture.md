@@ -70,9 +70,18 @@ never edit an existing one. Backup covers every table in `TABLE_NAMES`.
   requests for schedule entries and day responsibles.
 - **Evaluation:** `useFindings` builds the `RuleContext` (facts, confirmed mapping or `null`, coach
   inputs, documents, ignores, disabled rules) → `evaluate(packs, ctx, { disabledRuleIds })`.
+- **Category exclusions:** the coach can exclude eCamp activity categories from the rule check, for all
+  rules or for a single rule (per camp, since category IRIs are per camp). Stored in `RuleState.excludedCategories`
+  (settings key `ruleState`, no schema change, covered by backup). `filterExcludedFindings`
+  (`domain/rules/categoryExclusions.ts`) post-filters the engine output in `useFindings`, so counts, triage,
+  self-check and grid all see the filtered list; camp/day-scoped findings are never dropped.
 - **Triage:** Befunde → `FindingTriage` (finding + `ActivityPreview` + inline editor) → save feedback /
-  ignore / skip → next open finding. Position in `?befund=<id>`; Übersicht and Raster link there via
+  ignore / skip → next open finding. Position in `?befund=<id>`; Übersicht and GP link there via
   `triageLocation`.
+- **Camp tabs / routes** (`CAMP_TABS` in `router/index.ts`): Übersicht, GP (`raster`, Grobprogramm incl. the
+  category-mapping panel), DP (`aktivitaeten`, Detailprogramm), Befunde, Selbstcheck, Angaben, Feedback,
+  Dokumente, Runden. `zuordnung` is no tab any more: route `camp-mapping` redirects to `raster?zuordnung=1`,
+  which opens the mapping panel in the GP view. The GP grid hours are dynamic (07–23 h, widened by entries).
 - **Feedback out:** activity items → `api_post_comment`; everything → renderer → clipboard.
 - **Documents:** picker / drag-drop / watched folder → Rust scope check → `read_document` → extract →
   `documents` table → rules SAFE-DOC-01, SAFE-MTN-01/02.
@@ -144,6 +153,12 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 - **Leader self-check** (`domain/selfCheck/`, `useSelfCheck`, tab «Selbstcheck»): Dexie v4 table
   `selfChecks`, deliberately separate from review rounds. Backup with `omitRedDerived` strips red
   findings from the runs.
+- **Personen (red zone, memory only)** (`domain/persons/`: `match`, `diff`, `age`, `view`; `usePersons`;
+  tab «Personen», ADR 0009): MiData and NDS people are loaded on click via `persons_load_*`, held in
+  module-level refs (and in Rust), reconciled by `diffPersons`, and wiped on logout, camp switch or
+  «Aus dem Speicher entfernen» (`persons_clear`). All row types carry the `__red` brand; `aiGateway`
+  refuses any payload containing it; no Dexie table, no backup, no clipboard
+  (`__tests__/contracts/personsGuard.test.ts`). Birth dates are masked by default. P1 has no writes.
 - **Deadline radar** (`domain/rules/milestones.ts` + `packs/*/milestones.yaml`, `domain/rules/ics.ts`): PBS
   milestones (confidence `unverified`) merged into Fristen, done flags in `CoachInputs.milestonesDone`,
   ICS export through `save_text_file` (dialog filter now follows the extension: json, ics, md, txt;

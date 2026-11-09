@@ -12,9 +12,10 @@ import { countFindings, evaluate } from '@/domain/rules/engine'
 import { computeJsDays, lastJsDate, type JsDayReport } from '@/domain/rules/lib/jsDays'
 import { loadBundledPacks, selectPacks } from '@/domain/rules/packs'
 import { addOverride, listOverrides, removeOverride, saveCampSummary } from '@/domain/rules/store'
-import { disabledRuleIds, disablePromptCount, isGloballyDisabled, resolveRule } from '@/domain/rules/ruleState'
+import { categoryExclusionsForCamp, disabledRuleIds, disablePromptCount, isGloballyDisabled, resolveRule, type CategoryExclusion } from '@/domain/rules/ruleState'
+import { filterExcludedFindings } from '@/domain/rules/categoryExclusions'
 import { completeContext } from '@/domain/rules/lib/context'
-import { disableRuleStored, enableRuleStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
+import { disableRuleStored, enableRuleStored, excludeCategoryStored, includeCategoryStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
 import { useRuleState } from '@/composables/useRuleState'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import type { RuleContextInput } from '@/domain/types'
@@ -50,6 +51,12 @@ export interface FindingsHandle {
   enableRule(ruleId: string, global: boolean): Promise<void>
   removeOverride(finding: Finding): Promise<void>
   addAiFindings(findings: Finding[]): void
+  /** Findings hidden because their activity category is excluded from the rule check. */
+  excludedCount: ComputedRef<number>
+  /** Category exclusions of this camp (all rules or single rules). */
+  categoryExclusions: ComputedRef<CategoryExclusion[]>
+  excludeCategory(categoryIri: Iri, ruleId: string | null): Promise<void>
+  includeCategory(categoryIri: Iri, ruleId: string | null): Promise<void>
 }
 
 export interface DisabledRuleInfo {
@@ -95,6 +102,8 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
   const ruleTitle = (ruleId: string) => resolveRule(loadBundledPacks().flatMap((p) => p.rules), ruleId)?.meta.title ?? ruleId
+  const formerIdsOf = (ruleId: string): readonly string[] =>
+    resolveRule(loadBundledPacks().flatMap((p) => p.rules), ruleId)?.meta.formerIds ?? []
 
   // Live data: overrides + documents of this camp, app settings once.
   let unsub: Array<() => void> = []
@@ -216,10 +225,15 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     return jsModel.value ? { ...legacy, validDayCount: jsModel.value.jsDayCount } : legacy
   })
 
+  const ruleFindings = computed(() =>
+    filterExcludedFindings(result.value.findings, factsHandle.facts.value, ruleState.value, iri.value, formerIdsOf),
+  )
   const findings = computed(() => {
     const ai = aiFindingsByCamp.value[iri.value] ?? []
-    return ai.length ? [...result.value.findings, ...ai] : result.value.findings
+    if (!ai.length) return ruleFindings.value.kept
+    return [...ruleFindings.value.kept, ...filterExcludedFindings(ai, factsHandle.facts.value, ruleState.value, iri.value, formerIdsOf).kept]
   })
+  const categoryExclusions = computed(() => categoryExclusionsForCamp(ruleState.value, iri.value))
   const counts = computed(() => countFindings(findings.value))
   const disabledRules = computed<DisabledRuleInfo[]>(() => {
     const rules = loadBundledPacks().flatMap((p) => p.rules)
@@ -230,7 +244,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   // Cached summary for "Meine Lager" (rule findings only, no AI).
   let summaryTimer: ReturnType<typeof setTimeout> | undefined
   watch(
-    [() => result.value.findings, jsDays, jsModel],
+    [() => ruleFindings.value.kept, jsDays, jsModel],
     ([ruleFindings, report, model]) => {
       const facts = factsHandle.facts.value
       if (!facts) return
@@ -274,6 +288,14 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
       }
     },
     disabledRules,
+    excludedCount: computed(() => ruleFindings.value.excluded),
+    categoryExclusions,
+    async excludeCategory(categoryIri, ruleId) {
+      ruleState.value = await excludeCategoryStored(iri.value, categoryIri, ruleId)
+    },
+    async includeCategory(categoryIri, ruleId) {
+      ruleState.value = await includeCategoryStored(iri.value, categoryIri, ruleId)
+    },
     disablePrompt,
     async answerDisablePrompt(choice) {
       const p = disablePrompt.value

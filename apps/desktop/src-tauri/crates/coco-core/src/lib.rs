@@ -15,6 +15,7 @@ pub mod login;
 pub mod midata;
 pub mod nds;
 pub mod origin;
+pub mod persons;
 pub mod refresh;
 pub mod savefile;
 pub mod scope;

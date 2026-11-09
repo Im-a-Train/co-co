@@ -68,6 +68,7 @@ describe('rule state', () => {
     expect(normalizeRuleState({ disabled: [{ ruleId: 'R', campIri: null }, 5], muted: 'x' })).toEqual({
       disabled: [{ ruleId: 'R', campIri: null }],
       muted: [],
+      excludedCategories: [],
     })
   })
 })
@@ -120,13 +121,13 @@ describe('formerIds', () => {
     expect(resolveRule(rules, 'nope')).toBeUndefined()
   })
   it('treats a rule disabled under a former id as disabled and enable removes all ids', () => {
-    const st = { disabled: [{ ruleId: 'SAFE-MTN-03', campIri: null }, { ruleId: 'LST-SB-03', campIri: '/c/1' }], muted: [] }
+    const st = { disabled: [{ ruleId: 'SAFE-MTN-03', campIri: null }, { ruleId: 'LST-SB-03', campIri: '/c/1' }], muted: [], excludedCategories: [] }
     expect(isGloballyDisabled(st, 'LST-SB-03', ['SAFE-MTN-03'])).toBe(true)
     expect(campsWithDisabled(st, 'LST-SB-03', ['SAFE-MTN-03'])).toBe(1)
     expect(enableRule(st, 'LST-SB-03', undefined, ['SAFE-MTN-03']).disabled).toEqual([])
   })
   it('does not duplicate when disabling a rule already disabled under a former id', () => {
-    const st = { disabled: [{ ruleId: 'SAFE-MTN-03', campIri: null }], muted: [] }
+    const st = { disabled: [{ ruleId: 'SAFE-MTN-03', campIri: null }], muted: [], excludedCategories: [] }
     expect(disableRule(st, 'LST-SB-03', null, ['SAFE-MTN-03'])).toBe(st)
   })
 })

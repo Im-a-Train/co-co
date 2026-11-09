@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** /lager/:campId/raster: Lagertag-Rechner week grid + activity details drawer. */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { campIdFromIri } from '@/domain/iri'
@@ -8,6 +8,7 @@ import { buildGrid } from '@/domain/cockpit'
 import type { Finding, Iri } from '@/domain/types'
 import ActivityDrawer from '@/components/cockpit/ActivityDrawer.vue'
 import { backToFindingLocation, originFromQuery, previousEntryIsOrigin, triageLocation } from '@/domain/triage'
+import CategoryMappingPanel from '@/components/cockpit/CategoryMappingPanel.vue'
 import WeekGrid from '@/components/cockpit/WeekGrid.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 
@@ -26,6 +27,27 @@ if (typeof route.query.activity === 'string') {
   selected.value = route.query.activity
   drawer.value = true
 }
+
+// ---- Mapping section (opened via ?zuordnung=1 or the hint link) -------------------------------------
+const mappingPanel = ref<string | undefined>(route.query.zuordnung ? 'mapping' : undefined)
+function scrollToMapping() {
+  void nextTick(() => {
+    document.querySelector('[data-testid="grid-mapping-panel"]')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  })
+}
+function openMapping() {
+  mappingPanel.value = 'mapping'
+  scrollToMapping()
+}
+onMounted(() => {
+  if (route.query.zuordnung) setTimeout(scrollToMapping, 300)
+})
+watch(
+  () => route.query.zuordnung,
+  (v) => {
+    if (v) openMapping()
+  },
+)
 
 // ---- «Zurück zum Befund» (grid opened from a finding) ----------------------------------------------
 const origin = computed(() => originFromQuery(route.query))
@@ -120,8 +142,12 @@ function showFindings(iri: Iri) {
       variant="tonal"
       density="compact"
       class="mb-3"
-      :text="t('cockpit.grid.mappingHint')"
-    />
+    >
+      {{ t('cockpit.grid.mappingHint') }}
+      <a href="#" class="mapping-link" data-testid="grid-mapping-link" @click.prevent="openMapping">
+        {{ t('cockpit.grid.mappingCheck') }}
+      </a>
+    </v-alert>
     <v-alert
       v-if="facts && !findingsHandle.jsDays.value"
       type="info"
@@ -145,6 +171,18 @@ function showFindings(iri: Iri) {
     <v-alert v-else-if="!grid.days.length" type="info" variant="tonal" density="compact" :text="t('cockpit.grid.empty')" />
     <WeekGrid v-else :grid="grid" :selected="selected" @select="select" />
 
+    <v-expansion-panels v-model="mappingPanel" variant="accordion" class="mt-4">
+      <v-expansion-panel value="mapping" data-testid="grid-mapping-panel">
+        <v-expansion-panel-title>
+          <v-icon icon="mdi-shape-outline" class="mr-2" />
+          {{ t('cockpit.grid.mappingSection') }}
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <CategoryMappingPanel />
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
+
     <ActivityDrawer
       v-model="drawer"
       :activity-iri="selected"
@@ -163,6 +201,11 @@ function showFindings(iri: Iri) {
 </template>
 
 <style scoped>
+.mapping-link {
+  color: inherit;
+  font-weight: 600;
+  margin-left: 4px;
+}
 .back-to-finding {
   position: sticky;
   top: calc(var(--v-layout-top, 0px) + 4px);

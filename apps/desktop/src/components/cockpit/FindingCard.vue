@@ -6,12 +6,13 @@ import { paramValueText, reasonText } from '@/components/camps/ruleConfigUi'
 import type { Finding } from '@/domain/types'
 import FindingExplainPanel from './FindingExplainPanel.vue'
 
-const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean }>()
+const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean; canExcludeCategory?: boolean }>()
 const emit = defineEmits<{
   feedback: [finding: Finding]
   override: [finding: Finding]
   removeOverride: [finding: Finding]
   openActivity: [iri: string]
+  excludeCategory: [finding: Finding]
 }>()
 const { t, te } = useI18n()
 const moduleNote = computed(() => {
@@ -88,6 +89,15 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         </a>
         <v-spacer />
         <template v-if="!compact && !hideActions">
+          <v-btn
+            v-if="canExcludeCategory"
+            size="small"
+            variant="text"
+            prepend-icon="mdi-filter-remove-outline"
+            :text="t('findings.categoryExclusion.forRule')"
+            data-testid="exclude-category-rule"
+            @click="emit('excludeCategory', finding)"
+          />
           <v-btn
             v-if="!finding.override"
             size="small"

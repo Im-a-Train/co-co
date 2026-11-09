@@ -41,12 +41,14 @@
   },
   "campTabs": {
     "overview": "Übersicht",
-    "grid": "Raster",
-    "activities": "Aktivitäten",
+    "grid": "GP",
+    "gridLong": "Grobprogramm",
+    "activities": "DP",
+    "activitiesLong": "Detailprogramm (Aktivitäten)",
     "findings": "Befunde",
     "selfCheck": "Selbstcheck",
     "inputs": "Angaben",
-    "mapping": "Zuordnung",
+    "persons": "Personen",
     "feedback": "Feedback",
     "documents": "Dokumente",
     "rounds": "Runden"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCampRows, filterCampRows, sortCampRows } from '../campRows'
+import { buildCampRows, campPhase, filterCampRows, filterCampsByPhase, sortCampRows } from '../campRows'
 import type { CampListEntry } from '@/domain/types'
 
 const entry = (o: Partial<CampListEntry>): CampListEntry => ({
@@ -37,5 +37,32 @@ describe('campRows', () => {
     expect(filterCampRows(rows, 'meer').map((r) => r.title)).toEqual(['A'])
     expect(filterCampRows(rows, ' ')).toHaveLength(2)
     expect(sortCampRows(rows).map((r) => r.title)).toEqual(['A', 'B'])
+  })
+})
+
+describe('camp phase', () => {
+  const today = '2026-11-08'
+  it('classifies camps', () => {
+    expect(campPhase({ start: null, end: null }, today)).toBe('upcoming')
+    expect(campPhase({ start: '2026-12-01', end: '2026-12-08' }, today)).toBe('upcoming')
+    expect(campPhase({ start: '2026-11-05', end: '2026-11-12' }, today)).toBe('running')
+    expect(campPhase({ start: '2026-11-01', end: '2026-11-08' }, today)).toBe('running')
+    expect(campPhase({ start: '2026-10-01', end: '2026-10-07' }, today)).toBe('ended')
+    expect(campPhase({ start: '2026-08-01', end: '2026-08-08' }, today)).toBe('ended')
+    expect(campPhase({ start: '2026-07-01', end: '2026-08-07' }, today)).toBe('old')
+  })
+  it('filters by phase, default hides ended and old', () => {
+    const rows = buildCampRows(
+      [
+        entry({ iri: '/up', start: '2026-12-01', end: '2026-12-08' }),
+        entry({ iri: '/end', start: '2026-10-01', end: '2026-10-07' }),
+        entry({ iri: '/old', start: '2026-02-01', end: '2026-02-07' }),
+      ],
+      none,
+    )
+    const iris = (f: { showEnded: boolean; showOld: boolean }) => filterCampsByPhase(rows, f, today).map((r) => r.iri)
+    expect(iris({ showEnded: false, showOld: false })).toEqual(['/up'])
+    expect(iris({ showEnded: true, showOld: false })).toEqual(['/up', '/end'])
+    expect(iris({ showEnded: false, showOld: true })).toEqual(['/up', '/old'])
   })
 })

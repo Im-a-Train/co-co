@@ -9,13 +9,22 @@ export interface RuleToggle {
   campIri: Iri | null
 }
 
+/** Activity category excluded from rule checks in one camp (ruleId null = from all rules). */
+export interface CategoryExclusion {
+  campIri: Iri
+  categoryIri: Iri
+  ruleId: string | null
+}
+
 export interface RuleState {
   disabled: RuleToggle[]
   /** "Nein, danke": do not ask again to disable this rule in this camp. */
   muted: Array<{ ruleId: string; campIri: Iri }>
+  /** Activity categories (per camp) skipped by all or single rules. */
+  excludedCategories: CategoryExclusion[]
 }
 
-export const EMPTY_RULE_STATE: RuleState = { disabled: [], muted: [] }
+export const EMPTY_RULE_STATE: RuleState = { disabled: [], muted: [], excludedCategories: [] }
 
 /** Ignored findings of one rule in one camp (>=) or in several camps trigger the prompt. */
 export const IGNORE_THRESHOLD_CAMP = 3
@@ -28,7 +37,50 @@ export function normalizeRuleState(raw: unknown): RuleState {
     muted: Array.isArray(r.muted)
       ? r.muted.filter((d) => d && typeof d.ruleId === 'string' && typeof d.campIri === 'string')
       : [],
+    excludedCategories: Array.isArray(r.excludedCategories)
+      ? r.excludedCategories.filter(
+          (e) =>
+            e &&
+            typeof e.campIri === 'string' &&
+            typeof e.categoryIri === 'string' &&
+            (e.ruleId === null || typeof e.ruleId === 'string'),
+        )
+      : [],
   }
+}
+
+export function excludeCategory(state: RuleState, campIri: Iri, categoryIri: Iri, ruleId: string | null): RuleState {
+  if (state.excludedCategories.some((e) => e.campIri === campIri && e.categoryIri === categoryIri && e.ruleId === ruleId)) return state
+  return { ...state, excludedCategories: [...state.excludedCategories, { campIri, categoryIri, ruleId }] }
+}
+
+export function includeCategory(state: RuleState, campIri: Iri, categoryIri: Iri, ruleId: string | null): RuleState {
+  return {
+    ...state,
+    excludedCategories: state.excludedCategories.filter(
+      (e) => !(e.campIri === campIri && e.categoryIri === categoryIri && e.ruleId === ruleId),
+    ),
+  }
+}
+
+/** True when the category is excluded from all rules or from this rule (current or former id) in this camp. */
+export function isCategoryExcluded(
+  state: RuleState,
+  campIri: Iri,
+  categoryIri: Iri,
+  ruleId: string,
+  formerIds: readonly string[] = [],
+): boolean {
+  return state.excludedCategories.some(
+    (e) =>
+      e.campIri === campIri &&
+      e.categoryIri === categoryIri &&
+      (e.ruleId === null || e.ruleId === ruleId || formerIds.includes(e.ruleId)),
+  )
+}
+
+export function categoryExclusionsForCamp(state: RuleState, campIri: Iri): CategoryExclusion[] {
+  return state.excludedCategories.filter((e) => e.campIri === campIri)
 }
 
 export function isRuleDisabled(state: RuleState, ruleId: string, campIri: Iri): boolean {

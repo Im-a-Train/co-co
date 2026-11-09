@@ -5,12 +5,13 @@ import { useI18n } from 'vue-i18n'
 import KpiTile from '@/components/cockpit/KpiTile.vue'
 import SelfCheckHistory from '@/components/selfCheck/SelfCheckHistory.vue'
 import SelfCheckProgressList from '@/components/selfCheck/SelfCheckProgressList.vue'
+import SelfCheckReport from '@/components/selfCheck/SelfCheckReport.vue'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useFindings } from '@/composables/useFindings'
 import { useSelfCheck } from '@/composables/useSelfCheck'
 import { diffTotal } from '@/domain/cockpit'
-import { copyText } from '@/lib/clipboard'
+import { copyRich } from '@/lib/clipboard'
 
 const { t } = useI18n()
 const { campIri } = useCampRoute()
@@ -23,13 +24,14 @@ const note = ref('')
 const busy = ref(false)
 const failed = ref(false)
 const includeRed = ref(false)
+const showIntro = ref(false)
 const copied = ref<'ok' | 'fail' | null>(null)
 
 onMounted(() => void sc.load())
 watch(campIri, () => void sc.load())
 
 const changed = computed(() => (sc.diffSinceLatest.value ? diffTotal(sc.diffSinceLatest.value) : null))
-const reportText = computed(() => sc.report({ includeRedDerived: includeRed.value }))
+const report = computed(() => sc.report({ includeRedDerived: includeRed.value }))
 const jsValue = computed(() =>
   jsDays.value
     ? t('selfCheck.kpi.jsDaysValue', { valid: jsDays.value.validDayCount, total: jsDays.value.totalDayCount })
@@ -53,14 +55,24 @@ async function start() {
   }
 }
 async function copy() {
-  copied.value = (await copyText(reportText.value)) ? 'ok' : 'fail'
+  copied.value = report.value && (await copyRich(report.value.html, report.value.text)) ? 'ok' : 'fail'
 }
 </script>
 
 <template>
   <div>
     <div class="d-flex align-center flex-wrap ga-3 mb-2">
-      <h1 class="text-h5 flex-grow-1">{{ t('selfCheck.title') }}</h1>
+      <h1 class="text-h5">{{ t('selfCheck.title') }}</h1>
+      <v-btn
+        icon="mdi-information-outline"
+        size="small"
+        variant="text"
+        :aria-label="t('selfCheck.introToggle')"
+        :aria-expanded="showIntro"
+        data-testid="selfcheck-intro-toggle"
+        @click="showIntro = !showIntro"
+      />
+      <v-spacer />
       <v-btn
         color="primary"
         prepend-icon="mdi-clipboard-check-outline"
@@ -71,9 +83,11 @@ async function copy() {
         {{ t('selfCheck.run.button') }}
       </v-btn>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4" data-testid="selfcheck-intro">
-      {{ sc.isLeader.value ? t('selfCheck.introLeader') : t('selfCheck.introCoach') }}
-    </p>
+    <v-expand-transition>
+      <p v-show="showIntro" class="text-body-2 text-medium-emphasis mb-4" data-testid="selfcheck-intro">
+        {{ sc.isLeader.value ? t('selfCheck.introLeader') : t('selfCheck.introCoach') }}
+      </p>
+    </v-expand-transition>
 
     <v-alert v-if="failed || sc.error.value" type="error" variant="tonal" density="compact" class="mb-4">
       {{ t('selfCheck.run.failed') }}
@@ -113,7 +127,7 @@ async function copy() {
         <v-btn
           variant="tonal"
           prepend-icon="mdi-content-copy"
-          :disabled="!reportText"
+          :disabled="!report"
           data-testid="selfcheck-copy"
           @click="copy"
         >
@@ -124,7 +138,7 @@ async function copy() {
       <v-alert v-if="copied" :type="copied === 'ok' ? 'success' : 'error'" variant="tonal" density="compact" class="mb-2">
         {{ copied === 'ok' ? t('selfCheck.report.copied') : t('selfCheck.report.copyFailed') }}
       </v-alert>
-      <pre class="selfcheck-report" data-testid="selfcheck-report">{{ reportText }}</pre>
+      <SelfCheckReport v-if="report" :model="report.model" :camp-iri="campIri" />
     </v-sheet>
 
     <h2 class="text-h6 mb-2">{{ t('selfCheck.history.title') }}</h2>
@@ -152,12 +166,3 @@ async function copy() {
   </div>
 </template>
 
-<style scoped>
-.selfcheck-report {
-  white-space: pre-wrap;
-  font-family: inherit;
-  font-size: 0.875rem;
-  max-height: 420px;
-  overflow: auto;
-}
-</style>

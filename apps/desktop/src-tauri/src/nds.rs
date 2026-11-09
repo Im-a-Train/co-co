@@ -26,9 +26,10 @@ use coco_core::nds::{
     parse_chunk, parse_offers_overlapping, probe_fields, reduce_aggregate, NdsAggregate, NdsCampSummary, NdsProbe,
     NdsProbeEndpoint, NdsStatus, RawNdsCamp, NDS_BASE_URL, NDS_LANGUAGE, NDS_LOGIN_PATH, OP_ACTIVITY_LIST,
     OP_CAMP_LIST, OP_OFFER_LIST, OP_PARTICIPANTS_LIST, OP_RENTAL_ORDERS, OP_SUPERVISORS_LIST, Q_ACTIVITY_LIST,
-    Q_CAMP_LIST, Q_OFFER_LIST, Q_PARTICIPANTS_LIST, Q_RENTAL_ORDERS, Q_SUPERVISORS_LIST, SESSION_COOKIE,
+    Q_CAMP_LIST, Q_OFFER_LIST, Q_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, Q_PERSONS_SUPERVISORS, Q_RENTAL_ORDERS, Q_SUPERVISORS_LIST, SESSION_COOKIE,
     SESSION_EXPIRED_MSG,
 };
+use coco_core::persons::{reduce_nds_persons, NdsPersonsResult};
 use coco_core::types::AuthLog;
 use coco_core::CoreError;
 use reqwest::cookie::Jar;
@@ -426,6 +427,18 @@ pub async fn find_camps_impl(state: &NdsState, from: &str, to: &str) -> AppResul
     Ok(out)
 }
 
+/// «Personen» tab: individual NDS people of one camp (red zone, ADR 0009), read-only queries.
+/// A failing list fails the whole call (a partial list would look like missing people).
+pub async fn fetch_persons_impl(state: &NdsState, camp_id: &str) -> AppResult<NdsPersonsResult> {
+    validate_id(camp_id)?;
+    let ctx = state.ctx().await?;
+    let vars = json!({ "campBusinessId": camp_id });
+    let participants = graphql_list(&ctx, "youthtraining", OP_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, "participantsListForCamp", vars.clone()).await?;
+    let supervisors = graphql_list(&ctx, "youthtraining", OP_SUPERVISORS_LIST, Q_PERSONS_SUPERVISORS, "supervisorsListForCamp", vars).await?;
+    let persons = reduce_nds_persons(&[list_document(participants)], &[list_document(supervisors)]);
+    Ok(NdsPersonsResult { red: true, nds_camp_id: camp_id.to_string(), persons, fetched_at: now_rfc3339() })
+}
+
 pub async fn fetch_aggregate_impl(state: &NdsState, offer_id: &str, camp_id: &str) -> AppResult<NdsAggregate> {
     validate_id(offer_id)?;
     validate_id(camp_id)?;
@@ -787,6 +800,7 @@ pub async fn nds_logout<R: Runtime>(
     state: State<'_, NdsState>,
 ) -> AppResult<()> {
     ensure_main(&webview)?;
+    crate::persons::clear_nds_of(&app);
     let deleted = state.disconnect().await;
     if let Some(w) = app.get_webview_window(NDS_LOGIN_LABEL) {
         let _ = tauri::async_runtime::spawn_blocking(move || w.close()).await;
@@ -819,6 +833,21 @@ pub async fn nds_fetch_aggregate<R: Runtime>(
     let result = fetch_aggregate_impl(&state, &offer_business_id, &camp_business_id).await;
     drop_expired_session(webview.app_handle(), &state, &result).await;
     result
+}
+
+#[tauri::command]
+pub async fn persons_load_nds<R: Runtime>(
+    webview: Webview<R>,
+    state: State<'_, NdsState>,
+    persons: State<'_, crate::persons::PersonsState>,
+    nds_camp_id: String,
+) -> AppResult<NdsPersonsResult> {
+    ensure_main(&webview)?;
+    let result = fetch_persons_impl(&state, &nds_camp_id).await;
+    drop_expired_session(webview.app_handle(), &state, &result).await;
+    let res = result?;
+    persons.set_nds(res.clone());
+    Ok(res)
 }
 
 #[tauri::command]
