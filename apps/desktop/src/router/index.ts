@@ -3,12 +3,13 @@
  * Views are lazy-loaded so heavy deps (pdfjs, mammoth) stay split.
  */
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+import { useDataStore } from '@/composables/useDataStore'
 import { useSession } from '@/composables/useSession'
 import { isTauri } from '@/lib/tauri'
 
 declare module 'vue-router' {
   interface RouteMeta {
-    /** Requires an eCamp session; otherwise redirect to /verbindung. */
+    /** Requires an eCamp session and the unlocked encrypted data store; otherwise redirect to /verbindung. */
     requiresAuth?: boolean
     /** i18n key of the page title. */
     titleKey?: string
@@ -81,19 +82,19 @@ export const routes: RouteRecordRaw[] = [
     path: '/fristen',
     name: 'deadlines',
     component: () => import('@/views/rules/DeadlinesView.vue'),
-    meta: { titleKey: 'nav.deadlines' },
+    meta: { requiresAuth: true, titleKey: 'nav.deadlines' },
   },
   {
     path: '/regeln',
     name: 'rules',
     component: () => import('@/views/rules/RulesCatalogView.vue'),
-    meta: { titleKey: 'nav.rules' },
+    meta: { requiresAuth: true, titleKey: 'nav.rules' },
   },
   {
     path: '/einstellungen',
     name: 'settings',
     component: () => import('@/views/settings/SettingsView.vue'),
-    meta: { titleKey: 'nav.settings' },
+    meta: { requiresAuth: true, titleKey: 'nav.settings' },
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
@@ -109,6 +110,11 @@ router.beforeEach(async (to) => {
   if (isTauri()) await session.init()
   if (to.matched.some((r) => r.meta.requiresAuth) && !session.isLoggedIn.value) {
     return { name: 'connection', query: { redirect: to.fullPath } }
+  }
+  if (to.matched.some((r) => r.meta.requiresAuth)) {
+    // Co-co data is encrypted: wait for a running unlock; a locked/failed store keeps the coach on /verbindung.
+    const store = useDataStore()
+    if ((await store.settled()) !== 'ready') return { name: 'connection', query: { redirect: to.fullPath } }
   }
   return true
 })

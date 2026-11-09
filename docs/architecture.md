@@ -39,7 +39,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `cockpit/` | Pure helpers for KPIs and the week grid | `buildGrid`, `jsDayBars`, … |
 | `midata/` | Event link resolution, `midata` table store, rule facts from the aggregate | `resolveEventLink`, `getMidataRecord`, `saveMidataAggregate` |
 | `selfCheck/` | Leader self-check («Entwurfsrunde»): runs, progress vs. last run, plain-text report; store writes the run + a snapshot (`selfcheck:<id>`) | `planSelfCheckRun`, `compareWithRun`, `renderSelfCheckReport` |
-| `storage/` | Dexie database `coco` and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
+| `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
 
 ## Composables (`src/composables/`)
 
@@ -63,6 +63,24 @@ Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleStat
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
 `documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
+
+### Encryption at rest (ADR 0010)
+
+- **Middleware:** `getDb()` returns a Dexie `coco2` with `storage/encryptionMiddleware.ts`. Each row is stored as its plaintext
+  allowlist fields (primary key, indexed ids) plus one AES-256-GCM envelope `_enc` (WebCrypto, non-extractable key). Reads decrypt, so callers see plain rows. `encryptionConfig.ts` lists the plaintext fields per table; the guard test `encryptionGuard.test.ts` forbids bypasses (raw IndexedDB, other storage).
+- **Unlock flow:** after the eCamp login Rust verifies the session (`GET /api/users/<id>`), reads or creates
+  the 32-byte key in the OS keychain and returns it once (`unlock_data_store`); the UI imports it as a
+  non-extractable `CryptoKey`, opens `coco2` and checks a `_canary` row. Logout / `lock_data_store` drops the
+  key and closes the database. Rust uses the same key for `allowed-paths.json`.
+- **coco2 / legacy migration:** on first unlock the old plaintext `coco` is copied table by table into
+  `coco2` (encrypting), counts are verified, then `coco` is deleted (`storage/migrate.ts`, progress in an
+  internal `_`-prefixed settings row, resumable). `legacyDb.ts` is frozen.
+- **Caveat, non-atomic transactions:** `CocoDb.transaction()` is overridden: WebCrypto is async and would let
+  a real IndexedDB transaction auto-commit. `rw` scopes are serialised (read-modify-write is safe) but a
+  failure does not roll back. Multi-write operations therefore order their writes (`startRound`: snapshot,
+  round, close old; undo on failure) or keep an in-memory copy (`importWithRollback` for backup import).
+  Never nest transactions.
+- **Backups stay unencrypted** (plain JSON); the UI warns.
 
 ## Key flows
 

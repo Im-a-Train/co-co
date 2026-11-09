@@ -7,6 +7,7 @@ mod ai;
 mod api;
 mod auth;
 mod commands;
+mod data_key;
 mod error;
 mod files;
 mod instance;
@@ -102,6 +103,8 @@ pub fn run() {
             midata::persons_load_midata,
             nds::persons_load_nds,
             persons::persons_clear,
+            commands::unlock_data_store,
+            commands::lock_data_store,
         ])
         .run(tauri::generate_context!())
         .expect("error while running co-co");

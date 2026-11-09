@@ -383,6 +383,11 @@ export function installMockTauri(): void {
   mockWindows('main')
   const api = createDevCampApi()
   let aiKey = false
+  let dataKeyCreated = false
+  // URL options for the storage harness: ?loggedout=1 starts without a session, ?keylost=1 hands out a different data key.
+  const params = new URLSearchParams(window.location.search)
+  let loggedIn = params.get('loggedout') !== '1'
+  const keyLost = params.get('keylost') === '1'
   let openaiKeyOrigin: string | null = null
   const mcpMock = installMcpMock()
   let midataConnected = true
@@ -397,8 +402,11 @@ export function installMockTauri(): void {
       }
       switch (cmd) {
         case 'session_status':
-        case 'refresh_session':
+          return loggedIn ? session() : null
         case 'password_login':
+          loggedIn = true
+          return session()
+        case 'refresh_session':
           return session()
         case 'discover_instance':
           return {
@@ -410,6 +418,8 @@ export function installMockTauri(): void {
             oauthProviders: ['pbs', 'google'],
           }
         case 'logout':
+          loggedIn = false
+          return null
         case 'open_login_window':
         case 'watch_folder':
         case 'unwatch_folder':
@@ -556,6 +566,14 @@ export function installMockTauri(): void {
           return null
         case 'ai_clear_key':
           aiKey = false
+          return null
+        case 'unlock_data_store': {
+          // Fixed test key (32 bytes of 0x01..0x20), created:true only on the first call.
+          const created = !dataKeyCreated
+          dataKeyCreated = true
+          return { key: keyLost ? 'ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8=' : 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=', created }
+        }
+        case 'lock_data_store':
           return null
         case 'ai_openai_set_key':
           openaiKeyOrigin = originOf(String(a.baseUrl))

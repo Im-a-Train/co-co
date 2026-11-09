@@ -7,6 +7,7 @@
 pub mod ai;
 pub mod comments;
 pub mod cookies;
+pub mod datakey;
 pub mod docs;
 pub mod error;
 pub mod instance;

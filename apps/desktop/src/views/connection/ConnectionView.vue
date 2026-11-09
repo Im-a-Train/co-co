@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import InstanceCard from '@/components/InstanceCard.vue'
 import LoginCard from '@/components/LoginCard.vue'
 import SessionCard from '@/components/SessionCard.vue'
+import DataResetDialog from '@/components/storage/DataResetDialog.vue'
+import DataStoreCard from '@/components/storage/DataStoreCard.vue'
 import { isTauri } from '@/lib/tauri'
 
 const { t } = useI18n()
@@ -23,6 +25,10 @@ const inTauri = isTauri()
       <v-col cols="12" md="6" xl="4">
         <SessionCard />
       </v-col>
+      <v-col cols="12" md="6" xl="4">
+        <DataStoreCard />
+      </v-col>
     </v-row>
+    <DataResetDialog />
   </div>
 </template>

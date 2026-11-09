@@ -9,7 +9,7 @@ const zones = [
   { key: 'red', color: 'error', icon: 'mdi-shield-lock' },
 ] as const
 const rows = ['source', 'stored', 'ai', 'backup', 'leaves'] as const
-const details = ['keychain', 'ai', 'backup'] as const
+const details = ['keychain', 'encryption', 'ai', 'backup'] as const
 </script>
 
 <template>

@@ -11,6 +11,7 @@ import { isAllowedBaseUrl } from '@/components/settings/aiProvider'
 import type { AiPreview } from '@/domain/zones/features'
 import { aiAvailable } from '@/domain/zones/availability'
 import { commands, isTauri } from '@/lib/tauri'
+import { onDataStoreLocked } from './useDataStore'
 
 const enabled = ref(false)
 const model = ref<AiModel>('claude-sonnet-5-5')
@@ -20,6 +21,12 @@ const openai = ref<OpenAiSettings>({ ...DEFAULT_APP_SETTINGS.ai.openai })
 const hasOpenaiKey = ref(false)
 const loaded = ref(false)
 const log = ref<AiLogEntry[]>([])
+
+onDataStoreLocked(() => {
+  enabled.value = false
+  loaded.value = false
+  log.value = []
+})
 
 function msg(e: unknown): string {
   return e instanceof Error ? e.message : String(e)

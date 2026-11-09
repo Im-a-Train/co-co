@@ -1,6 +1,6 @@
 # Plan: encryption at rest, unlocked by the eCamp login
 
-Status: accepted 2026-11-08 ([ADR 0010](../adr/0010-encryption-at-rest.md)), not implemented yet. Maintainer decisions are marked **Resolved** below. Decision record: [ADR 0010](../adr/0010-encryption-at-rest.md). All paths relative to
+Status: accepted 2026-11-08 ([ADR 0010](../adr/0010-encryption-at-rest.md)); implemented (pending live check on WebView2). Implementation status: phases 1-4 and the allowed-paths encryption (from phase 6) are built; phase 5 (encrypted backup) is later, v1 shows a plaintext warning; the harness flows (mock + `test:ui`) are pending; the non-atomic transaction caveat is handled by write ordering and `importWithRollback`. Maintainer decisions are marked **Resolved** below. Decision record: [ADR 0010](../adr/0010-encryption-at-rest.md). All paths relative to
 `apps/desktop/` unless noted. Line numbers are from the worktree `feedback-ux-round`.
 
 ## 0. Short answers

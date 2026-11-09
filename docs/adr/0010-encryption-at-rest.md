@@ -1,6 +1,6 @@
 # ADR 0010: Encryption at rest, unlocked by the eCamp login
 
-- Status: Accepted (2026-11-08); not implemented yet
+- Status: Accepted, implemented (pending live check on WebView2) (2026-11-08)
 - Date: 2026-11-08
 - Plan: `docs/plans/encryption-at-rest.md` (facts, inventory, phases, tests)
 - Builds on: [0003](0003-login-via-webview-cookies.md), [0004](0004-no-backend-local-storage.md) (which left

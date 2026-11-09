@@ -10,6 +10,7 @@ import type { CampFacts, CoachInputs, Iri, NdsAggregate, NdsCampSummary, NdsFiel
 import { commands, errorMessage, isTauri, onNdsStatus } from '@/lib/tauri'
 import i18n from '@/plugins/i18n'
 import { bumpNds } from './ndsSignal'
+import { onDataStoreLocked } from './useDataStore'
 
 const t = (key: string): string => i18n.global.t(key)
 
@@ -20,6 +21,13 @@ const status = ref<NdsStatus>({ ...NO_STATUS })
 const busy = ref(false)
 const error = ref<string | null>(null)
 let started: Promise<void> | null = null
+onDataStoreLocked(() => {
+  started = null
+  enabled.value = false
+  records.value = {}
+  loadingMap.value = {}
+  errorMap.value = {}
+})
 
 async function refreshStatus(): Promise<void> {
   if (!isTauri()) return

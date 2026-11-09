@@ -40,6 +40,7 @@ tokio = { version = "1", features = ["sync", "time"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 notify = "8"
+zeroize = "1"
 dunce = "1"
 # ADR 0012: local MCP server (HTTP/1.1 on 127.0.0.1, no TLS, own thread; pure Rust, cross-compiles).
 tiny_http = { version = "0.12", default-features = false }
