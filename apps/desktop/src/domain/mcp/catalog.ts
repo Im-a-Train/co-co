@@ -6,7 +6,7 @@
  * Ids: every `campId` accepts the short camp id ('70ca971c992f') or the IRI ('/api/camps/70ca971c992f');
  * `activityId` likewise ('/api/activities/…'). Use normalizeIri() from ./ids.ts in handlers.
  */
-import type { McpSettings } from '../types'
+import { MODULE_IDS, type McpSettings } from '../types'
 import type { JsonSchema, McpToolDefinition, McpToolKind, McpToolName, McpToolRegistration } from './types'
 
 const campId: JsonSchema = {
@@ -101,8 +101,8 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     'get_rule_catalog',
     'read',
     'Rule catalogue',
-    'The rules co-co checks (enabled rule packs): id, group, title, description, severity, confidence, scope, validity and source URL.',
-    { group: { type: 'string', enum: ['js', 'completeness', 'safety', 'best-practice'], description: 'Only rules of this group.' } },
+    'The active rules co-co checks (enabled rule packs): id, module, title, description, severity, confidence, scope, validity and source URL. Retired rules are left out.',
+    { module: { type: 'string', enum: [...MODULE_IDS], description: 'Only rules of this module (js = J+S general, lst* = Lagersport/Trekking modules, pbs = PBS).' } },
   ),
   def(
     'list_deadlines',

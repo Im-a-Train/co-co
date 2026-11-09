@@ -10,8 +10,8 @@ import { findingsForActivity } from '../cockpit'
 import { findingStatus } from '../triage'
 import { allowedTransitions, canTransition } from '../rounds'
 import { countFindings } from '../rules/engine'
-import { deadlineStatus } from '../rules/deadlines'
-import { categoryClassOf, computeJsDays } from '../rules/jsDays'
+import { deadlineStatus } from '../rules/lib/deadlines'
+import { categoryClassOf, computeJsDays } from '../rules/lib/jsDays'
 import { findingsForAi } from '../zones/features'
 import { redactorForFacts } from '../zones/mcpZone'
 import type { Redactor } from '../zones/redact'
@@ -231,17 +231,18 @@ const list_findings: McpHandler = async (args, ctx) => {
 }
 
 const get_rule_catalog: McpHandler = async (args, ctx) => {
-  const group = str(args, 'group')
+  const module = str(args, 'module')
   const packs = ctx.rulePacks()
   return {
     packs: packs.map((p) => ({ id: p.id, name: p.name, version: p.version })),
     rules: packs.flatMap((p) =>
       p.rules
-        .filter((rule) => !group || rule.meta.group === group)
+        .filter((rule) => rule.meta.status !== 'retired')
+        .filter((rule) => !module || rule.meta.module === module)
         .map(({ meta }) => ({
           id: meta.id,
           packId: p.id,
-          group: meta.group,
+          module: meta.module,
           title: meta.title,
           description: meta.description,
           severity: meta.severity,

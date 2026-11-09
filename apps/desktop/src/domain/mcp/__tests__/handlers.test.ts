@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MCP_TOOLS } from '../catalog'
 import { MCP_CONFIRM, MCP_HANDLERS } from '../handlers'
 import { McpToolError } from '../types'
+import type { Rule, RuleMeta, RulePack } from '../../types'
 import { EMAIL, NAME, makeFakeContext, makeFeedback, makeFinding } from './fakeContext'
 
 const CAMP = { campId: 'c1' }
@@ -95,13 +96,18 @@ describe('read tools', () => {
 
   it('get_rule_catalog', async () => {
     const meta = {
-      id: 'JS-X-01', version: '1', group: 'js', title: 'T', description: 'D', message: 'M', severity: 'must',
-      confidence: 'verified', scope: 'camp', source: { title: 'S', url: 'https://x.test' },
-    } as const
-    const packs = [{ id: 'basis', name: 'Basis', version: '1', description: '', rules: [{ meta, check: () => [] }, { meta: { ...meta, id: 'SAF-1', group: 'safety' as const }, check: () => [] }] }]
+      id: 'JS-X-01', version: '1', module: 'js', group: 'js', status: 'active', title: 'T', description: 'D', message: 'M',
+      severity: 'must', confidence: 'verified', scope: 'camp', sources: [], source: { title: 'S', url: 'https://x.test' },
+    } satisfies RuleMeta
+    const rules: Rule[] = [
+      { meta, check: () => [] },
+      { meta: { ...meta, id: 'PBS-1', module: 'pbs', group: 'pbs' }, check: () => [] },
+      { meta: { ...meta, id: 'JS-OLD-1', status: 'retired' }, check: () => [] },
+    ]
+    const packs: RulePack[] = [{ id: 'basis', name: 'Basis', version: '1', description: '', rules }]
     const all = await run('get_rule_catalog', {}, { packs })
     expect((all.value as { rules: unknown[] }).rules).toHaveLength(2)
-    const js = await run('get_rule_catalog', { group: 'js' }, { packs })
+    const js = await run('get_rule_catalog', { module: 'js' }, { packs })
     expect((js.value as { rules: { id: string }[] }).rules.map((r) => r.id)).toEqual(['JS-X-01'])
   })
 

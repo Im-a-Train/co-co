@@ -15,11 +15,13 @@ import { McpToolError, type McpContext, type McpToolCallEvent, type McpToolOutco
 import { listFeedback, saveFeedback } from '@/domain/feedback/store'
 import { listRounds, getReview, setReviewStatus } from '@/domain/rounds/store'
 import { evaluate } from '@/domain/rules/engine'
-import { computeAllDeadlines, type DeadlineCamp } from '@/domain/rules/deadlines'
-import { computeJsDays, lastJsDate } from '@/domain/rules/jsDays'
+import { computeAllDeadlines, type DeadlineCamp } from '@/domain/rules/lib/deadlines'
+import { computeJsDays, lastJsDate } from '@/domain/rules/lib/jsDays'
 import { computeMilestoneDeadlines, loadBundledMilestones } from '@/domain/rules/milestones'
 import { loadBundledPacks } from '@/domain/rules/packs'
-import { disabledRuleIds } from '@/domain/rules/ruleState'
+import { getCampRuleConfig } from '@/domain/rules/campRuleConfigStore'
+import { filterExcludedFindings } from '@/domain/rules/categoryExclusions'
+import { disabledRuleIds, resolveRule } from '@/domain/rules/ruleState'
 import { getRuleState } from '@/domain/rules/ruleStateStore'
 import { addOverride, listCampSummaries, listOverrides } from '@/domain/rules/store'
 import { getDb, newId } from '@/domain/storage/db'
@@ -73,6 +75,8 @@ export function createMcpContext(): McpContext {
       const documents = (await getDb().documents.where('campIri').equals(campIri).toArray()).filter((d) => d.zone !== 'red')
       const overrides = await listOverrides(campIri)
       const ruleState = await getRuleState()
+      // Rules v2: module states, activity tags and camp context, like useFindings.
+      const campConfig = await getCampRuleConfig(campIri)
       const { user } = useSession()
       const userDisplayName = facts.collaborators.find((c) => c.isCurrentUser)?.displayName ?? user.value?.displayName ?? null
       const found = evaluate(
@@ -89,10 +93,15 @@ export function createMcpContext(): McpContext {
           now: new Date(),
           userDisplayName,
           overrides,
+          campConfig,
         },
         { disabledRuleIds: disabledRuleIds(ruleState, campIri) },
       )
-      return found.filter((f: Finding) => f.origin === 'rule')
+      // Same category exclusions as the Befunde view (incl. former rule ids).
+      const allRules = enabledPacks(settings).flatMap((p) => p.rules)
+      const formerIdsOf = (ruleId: string): readonly string[] => resolveRule(allRules, ruleId)?.meta.formerIds ?? []
+      const { kept } = filterExcludedFindings(found, facts, ruleState, campIri, formerIdsOf)
+      return kept.filter((f: Finding) => f.origin === 'rule')
     },
 
     rulePacks: () => enabledPacks(getSettingsSync()),
