@@ -13,6 +13,7 @@ pub mod error;
 pub mod instance;
 pub mod jwt;
 pub mod login;
+pub mod mcp;
 pub mod midata;
 pub mod nds;
 pub mod origin;

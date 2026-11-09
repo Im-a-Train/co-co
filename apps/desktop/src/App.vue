@@ -7,6 +7,9 @@ import { useSession } from '@/composables/useSession'
 import { useBackup } from '@/components/backup/useBackup'
 import { authRedirect } from '@/lib/authRedirect'
 import { isTauri } from '@/lib/tauri'
+import { installMcpBridge } from '@/composables/mcpBridge'
+import { useMcp } from '@/composables/useMcp'
+import McpConfirmDialog from '@/components/mcp/McpConfirmDialog.vue'
 
 const { t } = useI18n()
 const inTauri = isTauri()
@@ -24,7 +27,11 @@ const navItems = [
 ]
 
 onMounted(() => {
-  if (inTauri) void init()
+  if (inTauri) {
+    void init()
+    // ADR 0012: MCP tool calls run in this window; the server starts only if AI + MCP are enabled.
+    void installMcpBridge().then(() => useMcp().init())
+  }
   void backup.refresh()
 })
 
@@ -98,6 +105,8 @@ watch(backup.reminderDue, (due, was) => {
         <router-view />
       </v-container>
     </v-main>
+
+    <McpConfirmDialog />
 
     <v-snackbar v-model="reminderSnack" color="warning" :timeout="10000" multi-line>
       {{ t('backup.reminder.text') }}

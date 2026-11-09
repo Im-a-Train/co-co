@@ -218,11 +218,19 @@ function sanitizeRows(name: string, rows: unknown[] | undefined): unknown[] | un
     return rows
       .filter((r) => !String((r as { key?: string }).key ?? '').startsWith(INTERNAL_KEY_PREFIX))
       .map((r) => {
-      const row = r as { key?: string; value?: { ai?: Record<string, unknown> } }
-      if (row.key === 'app' && row.value && typeof row.value === 'object')
-        return { ...row, value: { ...row.value, ai: { ...(row.value.ai ?? {}), enabled: false } } }
-      return r
-    })
+        const row = r as { key?: string; value?: { ai?: Record<string, unknown>; mcp?: Record<string, unknown> } }
+        // AI and the local MCP server (ADR 0012) are switched off by every import.
+        if (row.key === 'app' && row.value && typeof row.value === 'object')
+          return {
+            ...row,
+            value: {
+              ...row.value,
+              ai: { ...(row.value.ai ?? {}), enabled: false },
+              ...(row.value.mcp ? { mcp: { ...row.value.mcp, enabled: false } } : {}),
+            },
+          }
+        return r
+      })
   }
   return rows
 }

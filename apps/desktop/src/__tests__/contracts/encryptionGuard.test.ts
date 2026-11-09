@@ -21,7 +21,7 @@ function walk(dir: string): string[] {
 const files = walk(SRC).map((p) => ({ rel: relative(SRC, p).split(sep).join('/'), code: readFileSync(p, 'utf-8') }))
 
 /** Files besides domain/storage that may import `dexie` (only for liveQuery, never for opening a database). */
-const DEXIE_ALLOWED = new Set(['composables/useFindings.ts', 'composables/useRuleState.ts'])
+const DEXIE_ALLOWED = new Set(['composables/useFindings.ts', 'composables/useRuleState.ts', 'composables/useCampRuleConfig.ts'])
 
 /** localStorage keys (boot data + UI toggles); everything else must live in the encrypted store. */
 const LOCAL_STORAGE_KEYS = [/^coco\.instances\.v1$/, /^coco\.selectedInstance\.v1$/, /^co-co\.camps\.phaseFilter$/, /^co-co\.deadlines\./]

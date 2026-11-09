@@ -249,4 +249,14 @@ describe('backup', () => {
     expect(((await dst.settings!.toArray())[0] as any).value.ai.enabled).toBe(false)
     expect(await dst.documents!.toArray()).toEqual([{ id: 'd', zone: 'yellow', aiAllowed: false }])
   })
+
+  it('import switches the MCP server off', async () => {
+    const src = makeStore()
+    await src.settings!.bulkPut([{ key: 'app', value: { ai: { enabled: true }, mcp: { enabled: true, port: 41731 } } }])
+    const dst = makeStore()
+    await importIntoStore(dst, parseExport(JSON.stringify(await exportFromStore(src))), 'replace')
+    const value = ((await dst.settings!.toArray())[0] as any).value
+    expect(value.mcp.enabled).toBe(false)
+    expect(value.mcp.port).toBe(41731)
+  })
 })

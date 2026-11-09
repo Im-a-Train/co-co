@@ -2,13 +2,14 @@
  * Review status + rounds of one camp, and the diff of the live facts against the last round.
  * Used by the cockpit KPI "Änderungen seit letzter Runde" and Meine Lager.
  */
-import { computed, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
+import { computed, effectScope, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import { refreshBackupState } from '@/components/backup/useBackup'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { RoundsError, diffEntities, snapshotEntities } from '@/domain/rounds'
 import * as store from '@/domain/rounds/store'
 import type { CampFacts, Diff, Iri, ReviewState, ReviewStatus, Round, Snapshot } from '@/domain/types'
 import { onDataStoreLocked } from './useDataStore'
+import { lastMcpChange } from './mcpChanges'
 
 export interface RoundsHandle {
   review: ComputedRef<ReviewState | null>
@@ -59,7 +60,26 @@ async function snapshotById(id: string): Promise<Snapshot | null> {
   return s
 }
 
+// MCP tools (set_review_status) write to Dexie directly: refresh the cached review of that camp.
+let watchingMcp = false
+function watchMcpChanges(): void {
+  if (watchingMcp) return
+  watchingMcp = true
+  // Detached scope: the module-level cache outlives the component that happened to call useRounds first.
+  effectScope(true).run(() =>
+    watch(lastMcpChange, async (c) => {
+      if (c?.kind !== 'review' || !(c.campIri in reviews.value)) return
+      try {
+        reviews.value = { ...reviews.value, [c.campIri]: await store.getReview(c.campIri) }
+      } catch {
+        // keep the cached value; the next load() refreshes it
+      }
+    }),
+  )
+}
+
 export function useRounds(campIri: MaybeRefOrGetter<Iri>): RoundsHandle {
+  watchMcpChanges()
   const campFacts = useCampFacts(campIri)
   const iri = () => toValue(campIri)
   const setError = (e: unknown) => {

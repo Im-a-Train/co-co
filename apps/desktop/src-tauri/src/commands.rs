@@ -270,6 +270,32 @@ pub async fn ai_complete<R: Runtime>(
     crate::ai::complete(request).await
 }
 
+// ---- ADR 0012: OpenAI-compatible provider (MCP commands live in crate::mcp)
+
+#[tauri::command]
+pub async fn ai_openai_set_key<R: Runtime>(webview: Webview<R>, base_url: String, key: String) -> AppResult<()> {
+    ensure_main(&webview)?;
+    crate::ai::openai_set_key(base_url, key).await
+}
+
+#[tauri::command]
+pub async fn ai_openai_has_key<R: Runtime>(webview: Webview<R>, base_url: String) -> AppResult<bool> {
+    ensure_main(&webview)?;
+    crate::ai::openai_has_key(base_url).await
+}
+
+#[tauri::command]
+pub async fn ai_openai_clear_key<R: Runtime>(webview: Webview<R>) -> AppResult<()> {
+    ensure_main(&webview)?;
+    crate::ai::openai_clear_key().await
+}
+
+#[tauri::command]
+pub async fn ai_openai_models<R: Runtime>(webview: Webview<R>, base_url: String) -> AppResult<Vec<String>> {
+    ensure_main(&webview)?;
+    crate::ai::openai_models(base_url).await
+}
+
 /// Path without query string (queries could contain user-entered data).
 fn path_for_log(path: &str) -> String {
     let p = path.split(['?', '#']).next().unwrap_or("");

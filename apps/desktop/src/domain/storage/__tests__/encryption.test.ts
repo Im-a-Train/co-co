@@ -51,6 +51,7 @@ const samples: Record<string, Record<string, unknown>> = {
   midata: { campIri: '/api/camps/1', note: MARKER },
   nds: { campIri: '/api/camps/1', note: MARKER },
   selfChecks: { id: 'sc1', campIri: '/api/camps/1', createdAt: 'x', title: MARKER },
+  campRuleConfig: { campIri: '/api/camps/1', modules: { js: 'on' }, note: MARKER },
 }
 
 beforeEach(async () => {

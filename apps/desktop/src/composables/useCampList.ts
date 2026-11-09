@@ -9,7 +9,10 @@ export interface CampListHandle {
   camps: Ref<CampListEntry[]>
   loading: Ref<boolean>
   error: Ref<string | null>
-  /** Never throws. Skips the request when already loaded unless `force`. */
+  /**
+   * Never throws. Skips the request when already loaded unless `force`. While a load is running, every
+   * caller awaits that same load (so callers like the MCP bridge never read the empty list mid-load).
+   */
   load(force?: boolean): Promise<void>
 }
 
@@ -18,9 +21,18 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 let loaded = false
 let watching = false
+let inflight: Promise<void> | null = null
 
-async function load(force = false): Promise<void> {
-  if (loading.value || (loaded && !force)) return
+function load(force = false): Promise<void> {
+  if (inflight) return inflight
+  if (loaded && !force) return Promise.resolve()
+  inflight = doLoad().finally(() => {
+    inflight = null
+  })
+  return inflight
+}
+
+async function doLoad(): Promise<void> {
   const { session } = useSession()
   const userIri = session.value?.userIri
   if (!userIri) {

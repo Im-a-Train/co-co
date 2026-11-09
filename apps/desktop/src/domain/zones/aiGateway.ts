@@ -8,7 +8,7 @@ import { aiComplete } from '@/lib/tauriAi'
 import { containsPii } from './redact'
 import { getDb } from '../storage/db'
 import { getAppSettings } from '../storage/settings'
-import type { AiFeature, AiModel, Iri, Zoned } from '../types'
+import type { AiFeature, AiModel, AiProvider, Iri, Zoned } from '../types'
 
 export const MAX_PROMPT_CHARS = 24000
 export const MAX_TOKENS_LIMIT = 4096
@@ -32,7 +32,8 @@ export interface AiGatewayRequest {
 
 export interface AiGatewayResponse {
   text: string
-  model: AiModel
+  /** AiModel (Anthropic) or the free model name (OpenAI-compatible). */
+  model: string
   inputTokens: number
   outputTokens: number
 }
@@ -45,7 +46,7 @@ export class AiRefusedError extends Error {
 }
 
 /** Marker of a serialized MiData/NDS aggregate (JSON, any whitespace). */
-const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*(MiData|NDS)|"offerBusinessId"|"campBusinessId"|"redKeys"|"evaluatedFor"/
+export const RED_DERIVED_MARKER = /"zone"\s*:\s*"red-derived"|Quelle:\s*(MiData|NDS)|"offerBusinessId"|"campBusinessId"|"redKeys"|"evaluatedFor"/
 
 /** True when `v` (deep) carries the red-zone `__red` brand of the Personen types (ADR 0009). */
 export function containsRedBrand(v: unknown, seen = new Set<object>()): boolean {
@@ -80,12 +81,13 @@ export function assertSendable(request: AiGatewayRequest): void {
     throw new AiRefusedError('Es gibt nichts zu senden.')
 }
 
-async function writeLog(request: AiGatewayRequest, model: AiModel, inT: number, outT: number, error: string | null) {
+async function writeLog(request: AiGatewayRequest, provider: AiProvider, model: string, inT: number, outT: number, error: string | null) {
   try {
     await getDb().aiLog.add({
       at: new Date().toISOString(),
       feature: request.feature,
       model,
+      provider,
       campIri: request.campIri,
       inputTokens: inT,
       outputTokens: outT,
@@ -101,21 +103,31 @@ async function writeLog(request: AiGatewayRequest, model: AiModel, inT: number, 
 export async function send(request: AiGatewayRequest): Promise<AiGatewayResponse> {
   const settings = await getAppSettings()
   if (!settings.ai.enabled) throw new AiRefusedError('KI ist in den Einstellungen deaktiviert.')
-  const model = request.model ?? settings.ai.model
-  if (!AI_MODELS.includes(model)) throw new AiRefusedError('Unbekanntes KI-Modell.')
+  const provider: AiProvider = settings.ai.provider ?? 'anthropic'
+  let model: string
+  let baseUrl: string | undefined
+  if (provider === 'openai') {
+    model = settings.ai.openai?.model?.trim() ?? ''
+    if (!model) throw new AiRefusedError('Für den OpenAI-kompatiblen Anbieter ist kein Modell eingestellt.')
+    baseUrl = settings.ai.openai?.baseUrl?.trim() ?? ''
+    if (!baseUrl) throw new AiRefusedError('Für den OpenAI-kompatiblen Anbieter ist keine Basis-URL eingestellt.')
+  } else {
+    const anthropicModel = request.model ?? settings.ai.model
+    if (!AI_MODELS.includes(anthropicModel)) throw new AiRefusedError('Unbekanntes KI-Modell.')
+    model = anthropicModel
+  }
   assertSendable(request)
   const maxTokens = Math.min(Math.max(1, Math.floor(request.maxTokens)), MAX_TOKENS_LIMIT)
   try {
-    const res = await aiComplete({
-      model,
-      system: request.system.value,
-      prompt: request.parts.map((p) => p.value).join('\n\n'),
-      maxTokens,
-    })
-    await writeLog(request, model, res.inputTokens, res.outputTokens, null)
+    const prompt = request.parts.map((p) => p.value).join('\n\n')
+    const system = request.system.value
+    const res = await aiComplete(
+      provider === 'openai' ? { provider, baseUrl, model, system, prompt, maxTokens } : { model, system, prompt, maxTokens },
+    )
+    await writeLog(request, provider, model, res.inputTokens, res.outputTokens, null)
     return { text: res.text, model, inputTokens: res.inputTokens, outputTokens: res.outputTokens }
   } catch (e) {
-    await writeLog(request, model, 0, 0, e instanceof Error ? e.message : String(e))
+    await writeLog(request, provider, model, 0, 0, e instanceof Error ? e.message : String(e))
     throw e
   }
 }

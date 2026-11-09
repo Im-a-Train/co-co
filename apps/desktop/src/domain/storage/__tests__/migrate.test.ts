@@ -34,6 +34,7 @@ async function seedLegacy(): Promise<Record<string, number>> {
   await legacy.midata.put({ campIri: CAMP } as never)
   await legacy.nds.put({ campIri: CAMP } as never)
   await legacy.selfChecks.put({ id: 'sc', campIri: CAMP, createdAt: 'c' } as never)
+  await legacy.campRuleConfig.put({ campIri: CAMP, modules: { js: 'on' } } as never)
   const counts: Record<string, number> = {}
   for (const n of TABLE_NAMES) counts[n] = await legacy.table(n).count()
   legacy.close()
@@ -57,7 +58,7 @@ describe('legacy migration', () => {
     expect(await unlockTestDb(OPTS)).toEqual({ migrated: false })
   })
 
-  it('copies all 15 tables, verifies counts and deletes the legacy database; second run is a no-op', async () => {
+  it('copies all 16 tables, verifies counts and deletes the legacy database; second run is a no-op', async () => {
     const counts = await seedLegacy()
     expect(Object.values(counts).every((n) => n > 0)).toBe(true)
     expect(await unlockTestDb(OPTS)).toEqual({ migrated: true })
@@ -69,6 +70,28 @@ describe('legacy migration', () => {
     await lockDb()
     expect(await unlockTestDb(OPTS)).toEqual({ migrated: false })
     for (const n of TABLE_NAMES) expect(await userCount(n), n).toBe(counts[n])
+  })
+
+  it('migrates a legacy database that never reached v5 (no campRuleConfig table)', async () => {
+    // A plaintext 'coco' at schema v4, as written by builds before rules v2.
+    const v4 = new Dexie(OPTS.legacyDbName)
+    v4.version(1).stores({
+      settings: 'key', coachInputs: 'campIri', mappings: 'campIri', overrides: 'id, campIri, findingId, ruleId',
+      campSummaries: 'campIri', feedback: 'id, campIri, activityIri, roundId, status, updatedAt', reviews: 'campIri, status',
+      rounds: 'id, campIri, [campIri+number]', snapshots: 'id, campIri, roundId',
+      documents: 'id, campIri, path, contentHash, folder, [campIri+path]', watchedFolders: 'id, campIri, &path',
+      aiLog: '++id, at, feature, campIri',
+    })
+    v4.version(2).stores({ midata: 'campIri' })
+    v4.version(3).stores({ nds: 'campIri' })
+    v4.version(4).stores({ selfChecks: 'id, campIri, createdAt' })
+    await v4.open()
+    await v4.table('feedback').put({ id: 'fb', campIri: CAMP })
+    v4.close()
+    expect(await unlockTestDb(OPTS)).toEqual({ migrated: true })
+    expect(await getDb().feedback.get('fb')).toMatchObject({ campIri: CAMP })
+    expect(await getDb().campRuleConfig.count()).toBe(0)
+    expect(await Dexie.exists(OPTS.legacyDbName)).toBe(false)
   })
 
   it('resumes after an interruption and keeps the legacy database until the end', async () => {

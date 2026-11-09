@@ -17,3 +17,4 @@ export { send, type AiGatewayRequest, type AiGatewayResponse } from './aiGateway
 export { rephraseFeedback, summariseDocument, reviewActivitySafety } from './features'
 export { parseSafetyFindings, extractJsonArray, runRephrase, runSummary, runSafetyReview, type AiPreview } from './features'
 export { AiRefusedError, assertSendable, MAX_PROMPT_CHARS } from './aiGateway'
+export { assertMcpSendable, redactorForFacts, McpRefusedError, MAX_MCP_RESULT_CHARS } from './mcpZone'
