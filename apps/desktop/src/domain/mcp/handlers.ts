@@ -36,6 +36,23 @@ import {
   update_resource,
   update_rule,
 } from './resourceHandlers'
+import {
+  add_manual_finding,
+  confirmAddManualFinding,
+  confirmDeleteManualFinding,
+  confirmUpdateManualFinding,
+  delete_manual_finding,
+  feedbackLinkDetails,
+  feedbackLinksFromArgs,
+  get_camp_progress,
+  get_document_text,
+  get_feedback_structure,
+  get_review_guidance,
+  list_documents,
+  list_general_feedback_points,
+  list_manual_findings,
+  update_manual_finding,
+} from './campHandlers'
 
 const TRUNC_LIST = 1500
 const TRUNC_DETAIL = 4000
@@ -110,6 +127,9 @@ function feedbackView(item: FeedbackItem, facts: CampFacts, r: Redactor) {
     status: item.status,
     text: redactText(r, item.text),
     findingId: item.findingId ?? null,
+    documentId: item.documentId ?? null,
+    generalPointId: item.generalPointId ?? null,
+    manualFindingId: item.manualFindingId ?? null,
     updatedAt: item.updatedAt,
   }
 }
@@ -241,6 +261,7 @@ const list_findings: McpHandler = async (args, ctx) => {
 
 const get_rule_catalog: McpHandler = async (args, ctx) => {
   const module = str(args, 'module')
+  const kind = str(args, 'kind')
   const packs = ctx.rulePacks()
   const edits = new Map((await ctx.listRuleEdits()).map((e) => [e.ruleId, e]))
   return {
@@ -249,9 +270,11 @@ const get_rule_catalog: McpHandler = async (args, ctx) => {
       p.rules
         .filter((rule) => rule.meta.status !== 'retired')
         .filter((rule) => !module || rule.meta.module === module)
+        .filter((rule) => !kind || rule.meta.kind === kind)
         .map(({ meta }) => ({
           id: meta.id,
           packId: p.id,
+          kind: meta.kind,
           module: meta.module,
           title: meta.title,
           description: meta.description,
@@ -333,6 +356,7 @@ const add_feedback: McpHandler = async (args, ctx) => {
   const activityIri = str(args, 'activityId') !== undefined ? normalizeActivityIri(args.activityId) : undefined
   if (activityIri && !facts.activities.some((a) => a.iri === activityIri)) throw new McpToolError('Aktivität gehört nicht zu diesem Lager.')
   const findingId = str(args, 'findingId')
+  const links = await feedbackLinksFromArgs(args, campIri, ctx)
   const now = ctx.now().toISOString()
   const item: FeedbackItem = {
     id: ctx.newId(),
@@ -345,6 +369,9 @@ const add_feedback: McpHandler = async (args, ctx) => {
     updatedAt: now,
   }
   if (activityIri) item.activityIri = activityIri
+  Object.assign(item, links)
+  // Like the refine dialog: feedback refined from a manual finding answers that finding.
+  if (links.manualFindingId && !findingId) item.findingId = links.manualFindingId
   if (findingId) {
     item.findingId = findingId
     const ruleId = findingRuleId(findingId)
@@ -359,9 +386,12 @@ const update_feedback: McpHandler = async (args, ctx) => {
   if (item.status !== 'draft') throw new McpToolError('Nur Entwürfe können geändert werden.')
   const newText = str(args, 'text')
   const newKind = str(args, 'kind')
-  if (newText === undefined && newKind === undefined) throw new McpToolError('Nichts zu ändern: «text» oder «kind» angeben.')
+  const links = await feedbackLinksFromArgs(args, item.campIri, ctx)
+  if (newText === undefined && newKind === undefined && Object.keys(links).length === 0)
+    throw new McpToolError('Nichts zu ändern: «text», «kind», «documentId», «generalPointId» oder «manualFindingId» angeben.')
   const { r } = await factsAndRedactor(ctx, item.campIri)
-  const next: FeedbackItem = { ...item, updatedAt: ctx.now().toISOString() }
+  const next: FeedbackItem = { ...item, ...links, updatedAt: ctx.now().toISOString() }
+  if (links.manualFindingId && !next.findingId) next.findingId = links.manualFindingId
   if (newText !== undefined) {
     const text = r.deredact(newText).trim()
     if (!text) throw new McpToolError('Der Text ist leer.')
@@ -430,6 +460,16 @@ export const MCP_HANDLERS: Record<McpToolName, McpHandler> = {
   list_resources,
   search_resources,
   get_resource,
+  list_manual_findings,
+  get_feedback_structure,
+  list_general_feedback_points,
+  get_camp_progress,
+  list_documents,
+  get_document_text,
+  get_review_guidance,
+  add_manual_finding,
+  update_manual_finding,
+  delete_manual_finding,
   add_feedback,
   update_feedback,
   ignore_finding,
@@ -457,9 +497,11 @@ const confirmAddFeedback: McpConfirmBuilder = async (args, ctx) => {
   const { facts, r } = await factsAndRedactor(ctx, campIri)
   const activityIri = str(args, 'activityId') !== undefined ? normalizeActivityIri(args.activityId) : null
   const activity = activityIri ? facts.activities.find((a) => a.iri === activityIri) : undefined
+  const links = await feedbackLinksFromArgs(args, campIri, ctx)
   return confirm('add_feedback', `Feedback-Entwurf hinzufügen (Lager «${facts.camp.title}»)`, [
     `Art: ${KIND_LABEL[reqStr(args, 'kind') as FeedbackKind] ?? reqStr(args, 'kind')}`,
     activity ? `Aktivität: ${activity.title}` : 'Ganzes Lager',
+    ...(await feedbackLinkDetails(links, campIri, ctx)),
     `Text: ${r.deredact(reqStr(args, 'text'))}`,
   ])
 }
@@ -472,6 +514,7 @@ const confirmUpdateFeedback: McpConfirmBuilder = async (args, ctx) => {
   const text = str(args, 'text')
   if (kind) details.push(`Neue Art: ${KIND_LABEL[kind as FeedbackKind] ?? kind}`)
   if (text !== undefined) details.push(`Neuer Text: ${r.deredact(text)}`)
+  details.push(...(await feedbackLinkDetails(await feedbackLinksFromArgs(args, item.campIri, ctx), item.campIri, ctx)))
   return confirm('update_feedback', `Feedback-Entwurf ändern (Lager «${facts.camp.title}»)`, details)
 }
 
@@ -507,6 +550,9 @@ const confirmPostFeedbackComment: McpConfirmBuilder = async (args, ctx) => {
 }
 
 export const MCP_CONFIRM: Partial<Record<McpToolName, McpConfirmBuilder>> = {
+  add_manual_finding: confirmAddManualFinding,
+  update_manual_finding: confirmUpdateManualFinding,
+  delete_manual_finding: confirmDeleteManualFinding,
   add_feedback: confirmAddFeedback,
   update_feedback: confirmUpdateFeedback,
   ignore_finding: confirmIgnoreFinding,

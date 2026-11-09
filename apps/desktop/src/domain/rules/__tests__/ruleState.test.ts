@@ -81,6 +81,7 @@ describe('evaluate skips disabled rules', () => {
       module: 'js',
       group: 'js',
       status: 'active',
+      kind: 'hard',
       sources: [{ key: 'WEB-L', page: '' }],
       title: id,
       description: 'd',

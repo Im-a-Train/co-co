@@ -2,6 +2,7 @@ id: LST-WINTER-08
 version: 1.0.0
 module: lst-winter
 status: active
+kind: ai
 title: "Grosse Schneeschuhgruppe"
 description: "Schneeschuhgruppen über der Maximalgrösse werden in Untergruppen mit je einer Leitungsperson aufgeteilt."
 message: "Bei «{activity}» mit {participants} Teilnehmenden sind {responsible} Leitende verantwortlich. Gruppen über {max} in Untergruppen mit je einer Leitungsperson aufteilen."

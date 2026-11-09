@@ -86,6 +86,7 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
   (enforced by `src/__tests__/contracts/aiGuard.test.ts`). Data zones: green (co-co data) may go to AI;
   yellow (camp content, documents) only redacted, after the preview dialog, and documents only with
   `aiAllowed`; **red (MiData/NDS personal data) never**. AI findings are never severity `must`.
+- **MCP tools** (`src/domain/mcp/catalog.ts`): the tool table and its maintenance rule live in the "MCP tools" section of `AGENTS.md`; update it with every catalog change.
 - **Rules:** confidence `unverified`/`conflict` can never be `must` (engine enforces it). Every rule
   has a source URL, German texts in its YAML and tests in `domain/rules/__tests__`. J+S day rules
   stay inactive until the coach confirmed the category mapping.

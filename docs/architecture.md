@@ -42,6 +42,11 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
 | `resources/` | Hilfsmittel (ADR 0013): bundled defaults from `sources.yaml`, patch/history, registry merge, full-text search; store seeds lazily and notifies on writes | `bundledResources`, `mergeRegistry`, `searchResources`, `listResources`, `updateResource` |
 | `rules/edits*` | Coach rule edits (ADR 0013): policy (AI/MCP never `must`/`verified`), minimal patches, effective packs | `validateRuleEditPatch`, `applyRuleEdits`, `saveRuleEdit`, `loadEffectivePacks` |
+| `manualFindings/` | Coach findings (ADR 0014): validation, categories, anchor labels, mapping to `Finding` (`origin: 'manual'`); store on Dexie table `manualFindings` | `newManualFinding`, `manualToFinding`, `feedbackKindOf`, `anchorLabel` |
+| `feedback/structure`, `feedback/defaults` | Feedback grouped general, days, activities; default general points (SiKo, PSA, …) | `groupFeedback`, `GENERAL_POINTS` |
+| `cockpit/progress` | Review progress for the Übersicht (weighted steps) | `reviewProgress` |
+| `rules/aiGuidance` | Guidance rules (`kind: ai` plus hard rules) and compact prompt text for the AI camp review | `aiGuidanceRules`, `guidanceText` |
+| `documents/` viewer helpers | Pure helpers for the in-app viewer: GPX track/profile, xlsx grid, docx sanitiser (components `components/documents/*Viewer.vue`) | `gpxView`, `xlsxView`, `docxSanitize` |
 
 ## Composables (`src/composables/`)
 
@@ -65,7 +70,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 
 Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleState`), `coachInputs`,
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
-`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context), `resources` and `ruleEdits` (coco2 v3, ADR 0013, zone green; not in the frozen legacy schema, so the migration skips them). Schema changes: add a new Dexie version with an upgrade,
+`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context), `resources` and `ruleEdits` (coco2 v3, ADR 0013, zone green; not in the frozen legacy schema, so the migration skips them), `manualFindings` (coco2 v4, ADR 0014, zone yellow, encrypted, in the backup). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
 
 ### Encryption at rest (ADR 0010)
@@ -267,3 +272,20 @@ Decision: [adr/0012-openai-compatible-and-mcp.md](adr/0012-openai-compatible-and
 - **Guard:** `__tests__/contracts/mcpGuard.test.ts` keeps the MCP code free of MiData/NDS imports.
 - **Dev harness:** `dev/mockTauri.ts` mocks the new commands and exposes `window.__cocoMockMcp`;
   `e2e-ui/mcp-flows.mjs` drives the KI tab and tool calls through the bridge.
+
+## ADR 0014: coach findings, AI guidance, structured feedback, viewer
+
+Decision: [adr/0014-coach-findings-ai-guidance-and-viewer.md](adr/0014-coach-findings-ai-guidance-and-viewer.md).
+
+- **Rule kind:** `RuleMeta.kind` `hard` (default) or `ai`. The engine skips `ai` rules; `rules/aiGuidance.ts`
+  feeds all of them (plus hard rules) as guidance to `zones/features.ts` `reviewCamp` (feature `campReview`,
+  prompt limit 60000 via `maxPromptChars`). Results are AI findings, never `must`.
+- **Manual findings:** `useManualFindings(campIri)` (shared cache, `manualFindingsVersion`, one watcher for MCP
+  changes of kind `manualFinding`) feeds `useFindings`, `ActivityDrawer` («Meine Befunde»), documents and
+  feedback refinement. They are not counted in camp summaries.
+- **Feedback:** `FeedbackView` renders `groupFeedback`; `GeneralPointsPanel` and `RefineFindingsDialog`.
+  `FeedbackItem` has `documentId`, `documentAnchor`, `generalPointId`, `manualFindingId`.
+- **Overview:** `ReviewProgressCard` and `DataSourcesCard` (counts only; Rega via `NdsAggregate.rega`).
+- **Viewer:** `DocumentViewer` picks `PdfViewer`, `DocxViewer`, `XlsxViewer` or `GpxViewer`; bytes are re-read
+  through the file commands and never stored; anchors flow into `ManualFindingDialog`.
+- **MCP:** `McpChangeKind` includes `manualFinding`; tool definitions are in `domain/mcp/catalog.ts`.

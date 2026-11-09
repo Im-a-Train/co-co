@@ -55,17 +55,16 @@ describe('renderFeedback', () => {
   it('whatsapp uses bold and emoji bullets', () => {
     const r = renderFeedback(items, 'whatsapp', ctx)
     expect(r.subject).toBeNull()
-    expect(r.body).toContain('*Das gefällt uns*')
-    expect(r.body).toContain('🌟 Tolles Programm!')
-    expect(r.body).toContain('⚠️ *1.2 Postenlauf*: Bitte Sicherheit ergänzen.')
-    expect(r.body.indexOf('🌟')).toBeLessThan(r.body.indexOf('⚠️'))
-    expect(r.body.indexOf('⚠️')).toBeLessThan(r.body.indexOf('❓'))
+    expect(r.body.startsWith('*Allgemein*\n🌟 Tolles Programm!\n❓ Wer leitet den Posten?')).toBe(true)
+    expect(r.body).toContain('_1.2 Postenlauf_\n⚠️ Bitte Sicherheit ergänzen.')
+    expect(r.body.indexOf('🌟')).toBeLessThan(r.body.indexOf('❓'))
+    expect(r.body.indexOf('❓')).toBeLessThan(r.body.indexOf('⚠️'))
   })
   it('email has subject and body from template', () => {
     const r = renderFeedback(items, 'email', { ...ctx, templateId: 'grobprogramm' })
     expect(r.subject).toBe('Feedback Grobprogramm Auf in die Berge')
     expect(r.body).toContain('Auf in die Berge')
-    expect(r.body).toContain('- Tolles Programm!')
+    expect(r.body).toContain('- Kudos: Tolles Programm!')
     expect(r.body).toContain('Coach C')
     expect(r.body).not.toContain('{{')
     expect(r.body).not.toContain('Betreff:')
@@ -73,7 +72,7 @@ describe('renderFeedback', () => {
   it('plain without template lists sections only', () => {
     const r = renderFeedback(items, 'plain', ctx)
     expect(r.subject).toBeNull()
-    expect(r.body.startsWith('Das gefällt uns:')).toBe(true)
+    expect(r.body.startsWith('Allgemein:\n- Kudos: Tolles Programm!')).toBe(true)
   })
   it('skips empty items', () => {
     expect(renderFeedback([item({ id: 'x', text: '  ' })], 'plain', ctx).body).toBe('')
@@ -196,17 +195,17 @@ describe('eCamp links', () => {
   it('plain and email keep a one-line fallback with the short URL', () => {
     for (const ch of ['plain', 'email'] as const) {
       const r = renderFeedback(items, ch, sctx)
-      expect(r.body).toContain(`- 1.2 Postenlauf: Bitte Sicherheit ergänzen. (eCamp: ${short})`)
+      expect(r.body).toContain(`1.2 Postenlauf (eCamp: ${short})\n- Auflage: Bitte Sicherheit ergänzen.`)
       expect(r.body).not.toContain(url)
       expect(r.body.match(/eCamp:/g)).toHaveLength(1)
     }
   })
   it('plain fallback uses the long URL when no short URL exists', () => {
-    expect(renderFeedback(items, 'plain', lctx).body).toContain(`(eCamp: ${url})`)
+    expect(renderFeedback(items, 'plain', lctx).body).toContain(`1.2 Postenlauf (eCamp: ${url})`)
   })
   it('whatsapp has no URL at all and no html', () => {
     const r = renderFeedback(items, 'whatsapp', sctx)
-    expect(r.body).toContain('⚠️ *1.2 Postenlauf*: Bitte Sicherheit ergänzen.')
+    expect(r.body).toContain('_1.2 Postenlauf_\n⚠️ Bitte Sicherheit ergänzen.')
     expect(r.body).not.toContain('http')
     expect(r.body).not.toContain('eCamp:')
     expect(r.html).toBeNull()
@@ -217,17 +216,17 @@ describe('eCamp links', () => {
       activityTitles: { '/api/activities/a1': 'Postenlauf' },
       activityNumbers: { '/api/activities/a1': '1.2/3.4' },
     }
-    expect(renderFeedback(items, 'whatsapp', { ...nctx, includeLinks: false }).body).toContain('⚠️ *1.2/3.4 Postenlauf*: Bitte')
-    expect(renderFeedback(items, 'plain', nctx).body).toContain('- 1.2/3.4 Postenlauf: Bitte')
+    expect(renderFeedback(items, 'whatsapp', { ...nctx, includeLinks: false }).body).toContain('_1.2/3.4 Postenlauf_\n⚠️ Bitte')
+    expect(renderFeedback(items, 'plain', nctx).body).toContain('1.2/3.4 Postenlauf (eCamp: ')
     expect(renderFeedback(items, 'email', nctx).html).toContain(`<a href="${url}">1.2/3.4 Postenlauf</a>`)
     // no number -> title only
-    expect(renderFeedback(items, 'whatsapp', { ...nctx, activityNumbers: {} }).body).toContain('*Postenlauf*:')
+    expect(renderFeedback(items, 'whatsapp', { ...nctx, activityNumbers: {} }).body).toContain('_Postenlauf_')
   })
   it('email/plain html links the title and keeps the long URL only in href', () => {
     for (const ch of ['plain', 'email'] as const) {
       const r = renderFeedback(items, ch, sctx)
-      expect(r.html).toContain(`- <a href="${url}">1.2 Postenlauf</a>: Bitte Sicherheit ergänzen.`)
-      expect(r.html).toMatch(/<b>[^<]+:<\/b><br>- <a /)
+      expect(r.html).toContain(`<a href="${url}">1.2 Postenlauf</a><br>- Auflage: Bitte Sicherheit ergänzen.`)
+      expect(r.html).toMatch(/<b>Allgemein:<\/b><br>- Kudos: Tolles Programm!<br><br><a /)
       expect(r.html).toContain('<br>')
     }
   })
@@ -258,7 +257,7 @@ describe('eCamp links', () => {
       'plain',
       { ...ctx, activityUrls: { '/api/activities/zz': url } },
     )
-    expect(r.html).toContain(`- Hm <a href="${url}">In eCamp öffnen</a>`)
+    expect(r.html).toContain(`<a href="${url}">In eCamp öffnen</a><br>- Vorschlag: Hm`)
   })
   it('html is null without links, with includeLinks=false and for camp items', () => {
     expect(renderFeedback(items, 'email', ctx).html).toBeNull()

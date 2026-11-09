@@ -12,6 +12,7 @@ function meta(over: Partial<RuleMeta> = {}): RuleMeta {
     module: 'lst-wasser',
     group: 'lst-wasser',
     status: 'active',
+    kind: 'hard',
     title: 'Test',
     description: 'Beschreibung',
     message: 'Standard {n}',

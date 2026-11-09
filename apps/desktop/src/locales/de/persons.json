@@ -62,7 +62,13 @@
       "jsAge": "J+S-Alter",
       "quals": "Qualifikation",
       "state": "NDS-Status",
-      "ndsNumber": "NDS-Nr."
+      "ndsNumber": "NDS-Nr.",
+      "rega": "Rega"
+    },
+    "rega": {
+      "transmitted": "übermittelt",
+      "missing": "nicht übermittelt",
+      "unknown": "unbekannt"
     },
     "role": {
       "leader": "Leitung",
@@ -113,7 +119,8 @@
       "state": "NDS-Status",
       "jsAge": "J+S-Alter",
       "jsAgeYes": "Im J+S-Alter",
-      "jsAgeNo": "Nicht im J+S-Alter"
+      "jsAgeNo": "Nicht im J+S-Alter",
+      "regaMissing": "Rega fehlt"
     },
     "loaded": {
       "midata": "MiData: Stand {time}",

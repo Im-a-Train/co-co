@@ -24,7 +24,7 @@ function resource(over: Partial<ResourceRecord> = {}): ResourceRecord {
 
 function meta(over: Partial<RuleMeta> = {}): RuleMeta {
   return {
-    id: 'JS-X-01', version: '1', module: 'js', group: 'js', status: 'active', title: 'T', description: 'D', message: 'M',
+    id: 'JS-X-01', version: '1', module: 'js', group: 'js', status: 'active', kind: 'hard', title: 'T', description: 'D', message: 'M',
     severity: 'should', confidence: 'unverified', scope: 'camp', sources: [{ key: 'LEITFADEN', page: 'S. 5' }],
     source: { title: 'S', url: 'https://x.test' }, ...over,
   }

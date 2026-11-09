@@ -7,7 +7,7 @@ import { STATE_COLOR } from '@/components/persons/stateColor'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { usePersons } from '@/composables/usePersons'
 import type { PersonKind } from '@/domain/persons/types'
-import { countBy, filterRows, NO_FILTERS, toViewRows, type PersonFilters, type ViewState } from '@/domain/persons/view'
+import { countBy, filterRows, NO_FILTERS, summarizePersons, toViewRows, type PersonFilters, type ViewState } from '@/domain/persons/view'
 
 const { t } = useI18n()
 const { campId, campIri } = useCampRoute()
@@ -17,9 +17,15 @@ const filters = ref<PersonFilters>({ ...NO_FILTERS })
 const KINDS: PersonKind[] = ['participant', 'leader', 'kitchen', 'coach', 'guest', 'other']
 const STATES: ViewState[] = ['match', 'field_diff', 'missing_in_nds', 'only_in_nds', 'ambiguous']
 
+const regaMissingOnly = computed({
+  get: () => filters.value.rega === 'missing',
+  set: (v: boolean | null) => (filters.value.rega = v ? 'missing' : 'all'),
+})
+
 const allRows = computed(() => toViewRows(p.rows.value, p.campStart.value, p.compared.value))
 const shown = computed(() => filterRows(allRows.value, filters.value))
 const kindCounts = computed(() => countBy(allRows.value.map((r) => r.kind)))
+const summary = computed(() => summarizePersons(allRows.value))
 const stateCounts = computed(() => countBy(allRows.value.map((r) => r.state)))
 const hasData = computed(() => p.midata.value !== null || p.nds.value !== null)
 
@@ -142,6 +148,15 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
           :disabled="!p.compared.value"
           style="max-width: 300px"
           data-testid="persons-filter-state"
+        />
+        <v-switch
+          v-if="summary.regaKnown"
+          v-model="regaMissingOnly"
+          :label="t('persons.filter.regaMissing')"
+          density="compact"
+          hide-details
+          color="warning"
+          data-testid="persons-filter-rega"
         />
         <v-select
           v-model="filters.jsAge"

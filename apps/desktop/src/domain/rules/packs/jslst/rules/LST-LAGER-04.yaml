@@ -2,6 +2,7 @@ id: LST-LAGER-04
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Kein täglicher Leiterhöck"
 description: "Jeden Lagertag ausser dem letzten gibt es einen Leiterhöck bzw. Tagesrückblick im Programm."
 message: "Am {date} ist kein Leiterhöck / Tagesrückblick im Programm."

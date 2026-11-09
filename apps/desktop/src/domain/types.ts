@@ -501,8 +501,20 @@ export interface NdsAggregate {
   activities: NdsActivities
   campAgendaUploaded: boolean | null
   rentalOrders: NdsRentalOrder[]
+  /**
+   * ADR 0014: Rega registration counts (regaParticipants/SupervisorsListForCamp, `transmittedToRega`).
+   * Counts only. null/absent when the lists could not be read (forbidden, not offered for this camp).
+   */
+  rega?: NdsRegaCounts | null
   /** «Stand NDS» */
   fetchedAt: IsoDateTime
+}
+
+export interface NdsRegaCounts {
+  participantsTotal: number
+  participantsTransmitted: number
+  supervisorsTotal: number
+  supervisorsTransmitted: number
 }
 
 export interface NdsCampSummary {
@@ -574,7 +586,14 @@ export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' 
 export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'pbs']
 /** @deprecated Rules v2: the group is the rule's module (`RuleMeta.group === RuleMeta.module`). */
 export type RuleGroup = ModuleId
-export type FindingOrigin = 'rule' | 'ai'
+export type FindingOrigin = 'rule' | 'ai' | 'manual'
+/**
+ * ADR 0014: 'hard' rules run in the engine and produce findings; 'ai' rules (formerly keyword heuristics)
+ * are never evaluated by the engine. They are guidance for the AI camp review ("what a good camp looks like").
+ * Default 'hard'. An 'ai' rule is never severity 'must'.
+ */
+export type RuleKind = 'hard' | 'ai'
+export const RULE_KINDS: readonly RuleKind[] = ['hard', 'ai']
 export type RuleStatus = 'active' | 'retired'
 /** Which extra inputs a rule needs; used by the UI to explain "needs coach input" etc. */
 export type RuleInput =
@@ -645,6 +664,8 @@ export interface Evidence {
   iri?: Iri
   /** Document id for kind 'document'. */
   documentId?: string
+  /** Location inside the document (manual findings on documents, ADR 0014). */
+  anchor?: DocumentAnchor
   label: string
   snippet?: string
 }
@@ -705,6 +726,8 @@ export interface RuleMeta {
   group: RuleGroup
   /** 'retired' rules stay in the catalog (overrides keep resolving) but are never evaluated. Default 'active'. */
   status: RuleStatus
+  /** ADR 0014: 'hard' (engine finding) or 'ai' (guidance for the AI review only). Parsed default 'hard'. */
+  kind: RuleKind
   title: string
   description: string
   /** Message template with `{param}` placeholders filled from RuleHit.params. */
@@ -1206,6 +1229,13 @@ export interface FeedbackItem {
   campIri: Iri
   scope: FeedbackScope
   activityIri?: Iri
+  /** ADR 0014: feedback that refers to a camp document (optional page/sheet/point anchor). */
+  documentId?: string
+  documentAnchor?: DocumentAnchor
+  /** ADR 0014: default general point this item was created from (see domain/feedback/defaults.ts). */
+  generalPointId?: string
+  /** ADR 0014: manual finding this item was refined from. */
+  manualFindingId?: string
   kind: FeedbackKind
   text: string
   /** Text quotes MiData (red-derived): refused by the AI gateway. */
@@ -1254,7 +1284,7 @@ export interface CommentSyncState {
 // Documents (M3)
 // ---------------------------------------------------------------------------------------------
 
-export type DocumentKind = 'pdf' | 'docx' | 'gpx' | 'txt' | 'md' | 'other'
+export type DocumentKind = 'pdf' | 'docx' | 'xlsx' | 'gpx' | 'txt' | 'md' | 'other'
 export type DocumentSource = 'drop' | 'picker' | 'folder'
 export type SafetyCheckKey =
   | 'emergencyNumbers'
@@ -1330,6 +1360,63 @@ export interface DocumentRecord {
   aiAllowed: boolean
   /** Optional AI summary (M5), only if aiAllowed. */
   aiSummary: string | null
+}
+
+// ---------------------------------------------------------------------------------------------
+// Manual findings (ADR 0014)
+// ---------------------------------------------------------------------------------------------
+
+/** Where inside a document a manual finding / feedback points to. All fields optional. */
+export interface DocumentAnchor {
+  /** PDF page (1-based). */
+  page?: number
+  /** Excel sheet name and optional cell/range ("B4", "A1:C9"). */
+  sheet?: string
+  cell?: string
+  /** GPX: distance along the track in km and the nearest point. */
+  km?: number
+  lat?: number
+  lon?: number
+  /** Free text, e.g. a heading in a docx. */
+  label?: string
+}
+
+/** Coach categories for manual findings ("Befund erfassen"). */
+export type ManualFindingCategory =
+  | 'positive'
+  | 'safety'
+  | 'program'
+  | 'js'
+  | 'pedagogy'
+  | 'organisation'
+  | 'documents'
+  | 'question'
+  | 'other'
+export const MANUAL_FINDING_CATEGORIES: readonly ManualFindingCategory[] = [
+  'positive',
+  'safety',
+  'program',
+  'js',
+  'pedagogy',
+  'organisation',
+  'documents',
+  'question',
+  'other',
+]
+
+/** A finding the coach wrote by hand on the camp, an activity or a document. Dexie table `manualFindings` (v4). */
+export interface ManualFinding {
+  /** 'manual:<uuid>'; also the id of the derived Finding. */
+  id: string
+  campIri: Iri
+  scope: 'camp' | 'activity' | 'document'
+  activityIri?: Iri
+  documentId?: string
+  anchor?: DocumentAnchor
+  category: ManualFindingCategory
+  comment: string
+  createdAt: IsoDateTime
+  updatedAt: IsoDateTime
 }
 
 export interface WatchedFolder {
@@ -1462,7 +1549,7 @@ export interface Zoned<T> {
 
 /** Whitelisted Claude models of the Anthropic provider (the OpenAI-compatible provider takes any model name). */
 export type AiModel = 'claude-sonnet-5-5' | 'claude-opus-5-5' | 'claude-haiku-5-5'
-export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview' | 'ruleUpdate'
+export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview' | 'ruleUpdate' | 'campReview'
 
 /** ADR 0012: 'anthropic' = Anthropic Messages API; 'openai' = any OpenAI-compatible Chat Completions server (incl. local LLMs). */
 export type AiProvider = 'anthropic' | 'openai'

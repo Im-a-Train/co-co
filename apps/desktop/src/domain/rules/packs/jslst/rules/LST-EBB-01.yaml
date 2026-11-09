@@ -2,6 +2,7 @@ id: LST-EBB-01
 version: 1.0.0
 module: lst-ebb
 status: active
+kind: ai
 title: "Ergänzender Bewegungsblock nicht gekennzeichnet"
 description: "Ergänzende Bewegungsblöcke (EBB) sind im Grobprogramm klar gekennzeichnet, mit J+S-Sportart (EBB A) bzw. Anbieter (EBB B). Erkennung über Stichwörter und Coach-Tags (Heuristik)."
 message: "«{activity}» ist vermutlich ein EBB {kind} («{term}»). EBB sind im Grobprogramm klar zu kennzeichnen – inkl. J+S-Sportart (EBB A) bzw. Anbieter (EBB B)."

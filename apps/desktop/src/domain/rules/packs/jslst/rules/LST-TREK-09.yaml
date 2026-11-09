@@ -2,6 +2,7 @@ id: LST-TREK-09
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Rekognoszierung der Wanderung"
 description: "Wanderungen in alpinen und voralpinen Gebieten, im Jura und im Ausland müssen rekognosziert werden, alle anderen sollen es."
 message: "Für «{activity}» ist keine Rekognoszierung festgehalten. Wanderungen in alpinen und voralpinen Gebieten, im Jura und im Ausland müssen rekognosziert werden."

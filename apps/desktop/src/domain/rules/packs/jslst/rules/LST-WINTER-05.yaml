@@ -2,6 +2,7 @@ id: LST-WINTER-05
 version: 1.0.0
 module: lst-winter
 status: active
+kind: ai
 title: "Draussen nach Einbruch der Dunkelheit"
 description: "Draussen-Aktivitäten im Winter enden vor dem Sonnenuntergang (plus 15 Minuten). Erkennung über Stichwörter (Heuristik)."
 message: "«{activity}» endet um {end}, Sonnenuntergang ca. {sunset}. Im Winter sind die Tage kurz."

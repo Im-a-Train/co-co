@@ -88,6 +88,9 @@ pub struct NdsPersonRow {
     /// `participant` (ParticipantsListForCamp) or `leader` (SupervisorsListForCamp).
     pub kind: NdsKind,
     pub role_label: Option<String>,
+    /// Rega registration (`transmittedToRega`); `None` if unknown / Rega list not readable.
+    #[serde(default)]
+    pub rega_transmitted: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -222,6 +225,7 @@ fn nds_rows(pages: &[Value], kind: NdsKind, role_field: &str, out: &mut Vec<NdsP
             birth_date: text(person, "birthDate").and_then(|d| day_string(&d)),
             kind,
             role_label: text(item, role_field),
+            rega_transmitted: None,
         });
     }
 }
@@ -235,6 +239,16 @@ pub fn reduce_nds_persons(participant_pages: &[Value], supervisor_pages: &[Value
     let mut seen = BTreeSet::new();
     out.retain(|r| seen.insert((r.id.clone(), r.kind == NdsKind::Leader)));
     out
+}
+
+/// Attaches the Rega state to NDS rows of `kind` (match by person businessId, then personNumber).
+/// `map` comes from [`crate::nds::rega_transmitted_map`]. Rows without an entry keep `None`.
+pub fn attach_rega(rows: &mut [NdsPersonRow], kind: NdsKind, map: &BTreeMap<String, bool>) {
+    for r in rows.iter_mut().filter(|r| r.kind == kind) {
+        let by_id = map.get(&format!("{}{}", crate::nds::REGA_KEY_ID, r.id));
+        let by_nr = || r.person_number.as_ref().and_then(|n| map.get(&format!("{}{n}", crate::nds::REGA_KEY_NR)));
+        r.rega_transmitted = by_id.or_else(by_nr).copied();
+    }
 }
 
 #[cfg(test)]
@@ -392,5 +406,41 @@ mod tests {
             }
             assert!(q.contains("firstName") && q.contains("birthDate") && q.contains("personNumber"));
         }
+    }
+
+    #[test]
+    fn rega_attaches_per_kind() {
+        let pp = vec![json!({"content":[
+          {"businessId":"1","targetAudienceGroup":"CHILD","person":{"businessId":"500","personNumber":"123","firstName":"A","lastName":"B"}},
+          {"businessId":"2","targetAudienceGroup":"CHILD","person":{"businessId":"501","firstName":"C","lastName":"D"}}
+        ]})];
+        let mut rows = reduce_nds_persons(&pp, &[]);
+        let rega = vec![json!({"content":[
+          {"person":{"businessId":"500","personNumber":"123"},"transmittedToRega":true}
+        ]})];
+        let map = crate::nds::rega_transmitted_map(&rega);
+        attach_rega(&mut rows, NdsKind::Participant, &map);
+        assert_eq!(rows[0].rega_transmitted, Some(true));
+        assert_eq!(rows[1].rega_transmitted, None);
+    }
+
+    #[test]
+    fn rega_ids_and_numbers_do_not_collide() {
+        // Person 501 has no personNumber; another person's personNumber happens to be "501".
+        let pp = vec![json!({"content":[
+          {"businessId":"2","targetAudienceGroup":"CHILD","person":{"businessId":"501","firstName":"C","lastName":"D"}}
+        ]})];
+        let rega = vec![json!({"content":[
+          {"person":{"businessId":"900","personNumber":"501"},"transmittedToRega":false}
+        ]})];
+        let map = crate::nds::rega_transmitted_map(&rega);
+        let mut rows = reduce_nds_persons(&pp, &[]);
+        attach_rega(&mut rows, NdsKind::Participant, &map);
+        assert_eq!(rows[0].rega_transmitted, None);
+        // A participant map never touches leader rows.
+        let sp = vec![json!({"content":[{"businessId":"3","person":{"businessId":"900","firstName":"E","lastName":"F"}}]})];
+        let mut rows = reduce_nds_persons(&[], &sp);
+        attach_rega(&mut rows, NdsKind::Participant, &map);
+        assert_eq!(rows[0].rega_transmitted, None);
     }
 }

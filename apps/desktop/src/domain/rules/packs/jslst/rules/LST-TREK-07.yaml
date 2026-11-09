@@ -2,6 +2,7 @@ id: LST-TREK-07
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Biwak mit jüngeren Kindern"
 description: "Biwaks und Zelttrekking eignen sich primär für Jugendliche."
 message: "«{activity}» ist ein Biwak/Zelttrekking. Biwaks eignen sich primär für Jugendliche."

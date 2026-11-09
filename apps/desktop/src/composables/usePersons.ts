@@ -4,6 +4,7 @@
  * and by `clear()` (which also wipes the copy held in Rust).
  */
 import { computed, ref, shallowRef, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
+import { summarizePersons, toViewRows, type PersonsSummary } from '@/domain/persons/view'
 import { diffPersons } from '@/domain/persons/diff'
 import type { MidataPersonsResult, NdsPersonsResult, PersonDiffRow } from '@/domain/persons/types'
 import type { Iri } from '@/domain/types'
@@ -47,6 +48,8 @@ export interface PersonsHandle {
   /** Both sides loaded, so NDS states are meaningful. */
   compared: ComputedRef<boolean>
   campStart: ComputedRef<string | null>
+  /** Counts, differences and Rega state over all rows (no personal data). */
+  summary: ComputedRef<PersonsSummary>
   midataLinked: ComputedRef<boolean>
   ndsLinked: ComputedRef<boolean>
   loadingMidata: typeof loadingMidata
@@ -88,6 +91,9 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
   const rows = computed(() => diffPersons(midata.value?.persons ?? [], nds.value?.persons ?? []))
   const campStart = computed(() => facts.value?.camp.start ?? null)
 
+  const compared = computed(() => midata.value !== null && nds.value !== null)
+  const summary = computed(() => summarizePersons(toViewRows(rows.value, campStart.value, compared.value)))
+
   async function loadMidata(): Promise<void> {
     const l = mdCamp.link.value
     const f = facts.value
@@ -121,8 +127,9 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
     midata,
     nds,
     rows,
-    compared: computed(() => midata.value !== null && nds.value !== null),
+    compared,
     campStart,
+    summary,
     midataLinked: computed(() => mdCamp.link.value !== null),
     ndsLinked: computed(() => ndsCamp.link.value !== null),
     loadingMidata,

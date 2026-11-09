@@ -24,7 +24,11 @@ workflow. This file has recipes for the most common changes.
 3. Add tests in `src/domain/rules/__tests__/` (positive, negative, edge cases).
 4. If the rule needs coach input, add the field to `CoachInputs` (`domain/types.ts`), the Angaben form
    (`views/camps/CoachInputsView.vue`, `components/camps/inputsForm.ts`) and the input→rule hint map.
-5. Note the change in the spec status page if it is user-visible.
+5. Keyword heuristics that cannot judge a camp reliably get `kind: ai` in the YAML: the engine then skips the
+   rule and the AI camp review receives it as guidance (ADR 0014). Rules that feed J+S days, Sicherheitsbereich
+   detection, a binding requirement or a coach input stay `hard` (allowlist `HARD_KEYWORD_RULES` in
+   `__tests__/aiKind.test.ts`). `ai` rules can never be `must`.
+6. Note the change in the spec status page if it is user-visible.
 
 ## Add a Tauri command
 

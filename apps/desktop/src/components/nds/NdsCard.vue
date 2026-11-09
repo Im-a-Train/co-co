@@ -162,6 +162,15 @@ function apply(fields: NdsField[]): void {
                 <div v-for="e in countEntries(agg.supervisorCounts)" :key="e.code" class="text-body-2">{{ e.label }}: {{ e.n }}</div>
                 <div v-if="Object.keys(agg.supervisorCounts).length === 0" class="text-h6">–</div>
               </div>
+              <div v-if="agg.rega" data-testid="nds-rega">
+                <div class="text-caption text-medium-emphasis">{{ t('nds.summary.rega.title') }}</div>
+                <div class="text-body-2">
+                  {{ t('nds.summary.rega.participants', { sent: agg.rega.participantsTransmitted, total: agg.rega.participantsTotal }) }}
+                </div>
+                <div class="text-body-2">
+                  {{ t('nds.summary.rega.supervisors', { sent: agg.rega.supervisorsTransmitted, total: agg.rega.supervisorsTotal }) }}
+                </div>
+              </div>
               <div data-testid="nds-activities">
                 <div class="text-caption text-medium-emphasis">{{ t('nds.summary.activities') }}</div>
                 <div class="text-h6">{{ agg.activities.total }}</div>

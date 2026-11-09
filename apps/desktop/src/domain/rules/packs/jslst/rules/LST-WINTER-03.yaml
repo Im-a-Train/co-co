@@ -2,6 +2,7 @@ id: LST-WINTER-03
 version: 1.0.0
 module: lst-winter
 status: active
+kind: ai
 title: "Winterwanderung über 1800 m"
 description: "Winteraktivitäten finden unterhalb der maximalen Höhe statt, ausser in gesicherten Bereichen. Höhe aus dem GPX, Erkennung der Aktivität und des gesicherten Bereichs über Stichwörter (Heuristik)."
 message: "Höchster Punkt von «{activity}» {m} m ü. M. – Winteraktivitäten unterhalb von {max} m halten (ausser in gesicherten Bereichen)."

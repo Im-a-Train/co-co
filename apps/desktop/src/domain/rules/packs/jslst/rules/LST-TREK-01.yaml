@@ -2,6 +2,7 @@ id: LST-TREK-01
 version: 2.0.0
 module: lst-trekking
 status: active
+kind: ai
 title: "Planungsunterlagen zur Wanderung"
 description: "Jede Wanderung ist mit Routenplanung (inkl. Alternativroute) und Zeitberechnung vorbereitet. Kartenausschnitt und Sicherheitskonzept werden mit dem Lagerprogramm beim J+S-Coach eingereicht."
 message: "Für «{activity}» fehlen Unterlagen, die mit dem Lagerprogramm beim Coach einzureichen sind: {missing}."

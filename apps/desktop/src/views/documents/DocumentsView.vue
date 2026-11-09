@@ -28,6 +28,15 @@ watch(
   },
   { immediate: true },
 )
+/** ?page=<n> (deep link from a feedback item) is handed to the viewer together with ?doc. */
+const initialAnchor = computed(() => {
+  // Only for the linked document: picking another one in the list must not jump it to that page.
+  if (typeof route.query.doc !== 'string' || route.query.doc !== selectedId.value) return null
+  const n = Number(route.query.page)
+  return Number.isInteger(n) && n > 0 ? { page: n } : null
+})
+/** The list column can be folded away to give the viewer the full width. */
+const listCollapsed = ref(false)
 const selected = computed(() => d.documents.value.find((x) => x.id === selectedId.value) ?? null)
 const gpx = ref({ ...DEFAULT_APP_SETTINGS.gpx })
 const activities = computed(() => facts.value?.activities ?? [])
@@ -93,7 +102,7 @@ function onRemove(id: string) {
     <DocumentSearch :search="d.search" @select-document="selectedId = $event" @select-activity="onActivityHit" />
 
     <v-row>
-      <v-col cols="12" md="6">
+      <v-col v-show="!listCollapsed" cols="12" md="4">
         <div class="d-flex flex-column ga-4">
           <v-alert
             v-if="d.pendingLinks.value.length"
@@ -115,9 +124,20 @@ function onRemove(id: string) {
           <WatchedFolders :folders="d.folders.value" @remove="d.removeFolder" @rescan="d.rescan" />
         </div>
       </v-col>
-      <v-col cols="12" md="6">
+      <v-col cols="12" :md="listCollapsed ? 12 : 8">
+        <v-btn
+          size="small"
+          variant="text"
+          class="mb-2 d-none d-md-inline-flex"
+          :prepend-icon="listCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left'"
+          data-testid="document-list-toggle"
+          @click="listCollapsed = !listCollapsed"
+        >
+          {{ listCollapsed ? t('documents.list.expand') : t('documents.list.collapse') }}
+        </v-btn>
         <DocumentDetail
           :doc="selected"
+          :initial-anchor="initialAnchor"
           :facts="facts"
           :pace-default="gpx.paceLkmPerHour"
           :pace-woelfe="gpx.paceWoelfeLkmPerHour"

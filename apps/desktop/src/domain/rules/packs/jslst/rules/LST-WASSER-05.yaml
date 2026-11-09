@@ -2,6 +2,7 @@ id: LST-WASSER-05
 version: 2.0.0
 module: lst-wasser
 status: active
+kind: ai
 title: "Bachtrekking: Pflichtpunkte"
 description: "Bachtrekking braucht Wetterbericht, Ausstiegsmöglichkeiten, Rekognoszierung und Angaben zu Kraftwerk/Schwall in den Sicherheitsüberlegungen."
 message: "Für das Bachtrekking «{activity}» fehlen in den Sicherheitsüberlegungen: {missing}."

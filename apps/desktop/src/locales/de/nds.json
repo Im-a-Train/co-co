@@ -63,6 +63,11 @@
       "noDates": "ohne Datum"
     },
     "summary": {
+      "rega": {
+        "title": "Rega-Anmeldung",
+        "participants": "TN: {sent} von {total} übermittelt",
+        "supervisors": "Leitende: {sent} von {total} übermittelt"
+      },
       "offerState": "Angebot",
       "campState": "Lager",
       "approvedOn": "bewilligt am {date}",

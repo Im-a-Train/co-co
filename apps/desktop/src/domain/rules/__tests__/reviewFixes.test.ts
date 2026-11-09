@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { evaluate } from '../engine'
 import { resolveModuleStates } from '../lib/moduleState'
 import { loadBundledPacks, parsePackYaml } from '../packs'
+import { allPredicates } from './predicates'
 import { CAT_LS, FactsBuilder, makeCoachInputs, makeCtx } from './factory'
 
 const states = (ctx: ReturnType<typeof makeCtx>) =>
@@ -72,7 +73,7 @@ describe('module triggers', () => {
 })
 
 describe('non-J+S camps keep safety modules', () => {
-  it('LST-WASSER-01 fires, JS-* rules stay silent', () => {
+  it('LST-WASSER-01 predicate fires (engine skips the ai rule), JS-* rules stay silent', () => {
     const b = new FactsBuilder({ start: '2031-07-12' })
     b.activity('Baden im See', CAT_LS)
     const ctx = makeCtx(b.facts, {
@@ -80,7 +81,8 @@ describe('non-J+S camps keep safety modules', () => {
       campConfig: { modules: { 'lst-wasser': 'on' } },
     })
     const ids = evaluate(loadBundledPacks(), ctx).map((f) => f.ruleId)
-    expect(ids).toContain('LST-WASSER-01')
+    expect(ids).not.toContain('LST-WASSER-01') // kind: ai -> guidance only
+    expect(allPredicates['LST-WASSER-01'](ctx).length).toBeGreaterThan(0)
     expect(ids.filter((i) => i.startsWith('JS-'))).toEqual([])
   })
 })

@@ -14,9 +14,12 @@ import type {
   CampListEntry,
   CategoryMapping,
   Deadline,
+  DocumentRecord,
   FeedbackItem,
   Finding,
   Iri,
+  ManualFinding,
+  ModuleId,
   Override,
   ReviewState,
   ReviewStatus,
@@ -45,7 +48,17 @@ export type McpToolName =
   | 'list_resources'
   | 'search_resources'
   | 'get_resource'
+  | 'list_manual_findings'
+  | 'get_feedback_structure'
+  | 'list_general_feedback_points'
+  | 'get_camp_progress'
+  | 'list_documents'
+  | 'get_document_text'
+  | 'get_review_guidance'
   // write
+  | 'add_manual_finding'
+  | 'update_manual_finding'
+  | 'delete_manual_finding'
   | 'add_feedback'
   | 'update_feedback'
   | 'ignore_finding'
@@ -204,6 +217,19 @@ export interface McpContext {
   getResource(key: string): Promise<ResourceRecord | undefined>
   /** Throws Error(German) on validation failure / unknown key. Origin is always 'mcp'. */
   updateResource(key: string, patch: ResourcePatch): Promise<ResourceRecord>
+  /** Manual findings (ADR 0014, written by the coach, zone green/yellow text). */
+  listManualFindings(campIri: Iri): Promise<ManualFinding[]>
+  getManualFinding(id: string): Promise<ManualFinding | null>
+  /** Saves (insert or replace) and notifies the views. */
+  saveManualFinding(item: ManualFinding): Promise<void>
+  deleteManualFinding(id: string): Promise<void>
+  /** Documents of the camp WITHOUT red-zone ones (zone 'red' never reaches MCP). Includes the extracted text and the local path: handlers must not return the path. */
+  listDocuments(campIri: Iri): Promise<DocumentRecord[]>
+  /**
+   * Per-camp inputs of the review progress and of the AI guidance that are not plain stores: whether the
+   * coach recorded camp inputs, the visible checklist progress, resolved module states and rules the coach disabled.
+   */
+  reviewContext(campIri: Iri): Promise<McpReviewContext>
   /** Stored rule edits (zone green). */
   listRuleEdits(): Promise<RuleEditRecord[]>
   /** Saves a rule edit with origin 'mcp' (policy enforced by the store). Throws Error(German) on validation failure. */
@@ -214,6 +240,14 @@ export interface McpContext {
    */
   confirm(request: McpConfirmRequest, signal?: AbortSignal): Promise<boolean>
   newId(): string
+}
+
+/** See McpContext.reviewContext. */
+export interface McpReviewContext {
+  coachInputsPresent: boolean
+  checklist: { done: number; total: number }
+  moduleStates: Partial<Record<ModuleId, 'on' | 'suggested' | 'off'>>
+  disabledRuleIds: string[]
 }
 
 /** A tool implementation. Returns a JSON-serializable value (already redacted). Throw McpToolError for user errors. */

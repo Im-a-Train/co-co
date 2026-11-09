@@ -52,6 +52,8 @@ export interface NdsPersonRow extends RedBrand {
   kind: 'participant' | 'leader'
   /** NDS role / target audience label as delivered (e.g. targetAudienceGroup, involvement type). */
   roleLabel: string | null
+  /** Rega registration (`transmittedToRega`); null/absent = unknown (Rega list not readable). */
+  regaTransmitted?: boolean | null
 }
 
 export interface MidataPersonsResult extends RedBrand {

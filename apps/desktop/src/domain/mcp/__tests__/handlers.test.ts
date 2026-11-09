@@ -96,7 +96,7 @@ describe('read tools', () => {
 
   it('get_rule_catalog', async () => {
     const meta = {
-      id: 'JS-X-01', version: '1', module: 'js', group: 'js', status: 'active', title: 'T', description: 'D', message: 'M',
+      id: 'JS-X-01', version: '1', module: 'js', group: 'js', status: 'active', kind: 'hard', title: 'T', description: 'D', message: 'M',
       severity: 'must', confidence: 'verified', scope: 'camp', sources: [], source: { title: 'S', url: 'https://x.test' },
     } satisfies RuleMeta
     const rules: Rule[] = [

@@ -29,10 +29,36 @@
         "invalid": "nicht gültig",
         "empty": "Keine J+S-Zeit berechnet. Bitte Kategorien zuordnen."
       },
-      "top": {
-        "title": "Wichtigste Befunde",
-        "all": "Alle Befunde",
-        "none": "Keine offenen Befunde."
+      "progress": {
+        "title": "Fortschritt der Prüfung",
+        "step": {
+          "mapping": "Zuordnung bestätigt",
+          "inputs": "Angaben erfasst",
+          "triage": "Befunde gesichtet",
+          "documents": "Dokumente geprüft",
+          "checklist": "Checkliste",
+          "feedback": "Feedback erstellt",
+          "status": "Review-Status"
+        },
+        "hint": {
+          "mapping": "Als Nächstes: Kategorien-Zuordnung prüfen und bestätigen.",
+          "inputs": "Als Nächstes: Lager-Angaben erfassen.",
+          "triage": "Als Nächstes: offene Befunde sichten.",
+          "documents": "Als Nächstes: Dokumente prüfen oder Programmpunkten zuordnen.",
+          "checklist": "Als Nächstes: Checkliste abarbeiten.",
+          "feedback": "Als Nächstes: Feedback zum Lager erstellen.",
+          "status": "Als Nächstes: Review-Status der Runde setzen."
+        }
+      },
+      "sources": {
+        "title": "Datenquellen",
+        "open": "Personen",
+        "notCompared": "NDS und MiData noch nicht verglichen. In Personen laden und vergleichen.",
+        "differences": "{count} Abweichung zwischen NDS und MiData | {count} Abweichungen zwischen NDS und MiData",
+        "noDifferences": "Keine Abweichungen zwischen NDS und MiData.",
+        "rega": "Rega: {done} von {total} TN übermittelt",
+        "regaSupervisors": "Leitende {done} von {total}",
+        "regaNone": "Keine Rega-Daten"
       },
       "mappingBanner": "Die Kategorien-Zuordnung ist noch nicht bestätigt. Die J+S-Auswertung ist bis dahin nur ein Vorschlag.",
       "inputsBanner": "Lager-Angaben fehlen (Teilnehmende, Stufe, NDS-Status). Einige Regeln brauchen sie."

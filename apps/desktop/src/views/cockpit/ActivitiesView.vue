@@ -9,6 +9,7 @@ import { listDocuments } from '@/domain/documents/store'
 import { triageLocation } from '@/domain/triage'
 import type { CategoryClass, DocumentRecord, Finding, Iri } from '@/domain/types'
 import ActivityDrawer from '@/components/cockpit/ActivityDrawer.vue'
+import ManualFindingDialog from '@/components/cockpit/ManualFindingDialog.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 import {
   DEFAULT_ROW_FILTER,
@@ -33,6 +34,12 @@ const state = reactive<ListState>(stateFromQuery(route.query))
 const documents = ref<DocumentRecord[]>([])
 const selected = ref<Iri | null>(null)
 const drawer = ref(false)
+const addFor = ref<ActivityRow | null>(null)
+const addOpen = ref(false)
+function addFinding(row: ActivityRow) {
+  addFor.value = row
+  addOpen.value = true
+}
 
 onMounted(async () => {
   try {
@@ -101,8 +108,9 @@ const headers = computed(() => {
     h('responsibles', 'responsibles'),
     h('progress', 'progress'),
     h('findings', 'findings'),
+    { key: 'manual', title: t('activities.manual.column'), sortable: false, align: 'end' as const, width: 70 },
     h('documents', 'documents', { align: 'end', title: t('activities.columns.documentsShort') }),
-    { key: 'actions', title: t('activities.columns.actions'), sortable: false, align: 'end' as const, width: 56 },
+    { key: 'actions', title: t('activities.columns.actions'), sortable: false, align: 'end' as const, width: 96 },
   ]
 })
 const sortBy = computed(() => [{ key: state.sort, order: state.dir }])
@@ -277,10 +285,32 @@ function showInGrid(iri: Iri) {
             </template>
           </div>
         </template>
+        <template #[`item.manual`]="{ item }">
+          <v-chip
+            v-if="item.manualCount"
+            size="x-small"
+            label
+            variant="tonal"
+            color="primary"
+            prepend-icon="mdi-comment-text-outline"
+            :text="String(item.manualCount)"
+            :title="t('activities.manual.count', { count: item.manualCount })"
+            data-testid="activity-manual-count"
+          />
+        </template>
         <template #[`item.documents`]="{ item }">
           <span>{{ item.documentCount || '' }}</span>
         </template>
         <template #[`item.actions`]="{ item }">
+          <v-btn
+            icon="mdi-comment-plus-outline"
+            size="x-small"
+            variant="text"
+            :title="t('activities.manual.add')"
+            :aria-label="t('activities.manual.add')"
+            data-testid="activity-add-finding"
+            @click.stop="addFinding(item)"
+          />
           <v-btn
             icon="mdi-calendar-week"
             size="x-small"
@@ -293,6 +323,14 @@ function showInGrid(iri: Iri) {
       </v-data-table>
     </template>
 
+    <ManualFindingDialog
+      v-if="addFor"
+      v-model="addOpen"
+      :camp-iri="campIri"
+      scope="activity"
+      :activity-iri="addFor.iri"
+      :title="addFor.title"
+    />
     <ActivityDrawer
       v-model="drawer"
       :activity-iri="selected"

@@ -49,6 +49,9 @@ const PK: Record<string, string> = {
   nds: 'campIri',
   selfChecks: 'id',
   campRuleConfig: 'campIri',
+  resources: 'key',
+  ruleEdits: 'ruleId',
+  manualFindings: 'id',
 }
 function makeStore(): BackupStore {
   return Object.fromEntries(TABLE_NAMES.map((n) => [n, memTable(PK[n]!)]))

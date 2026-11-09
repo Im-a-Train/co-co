@@ -6,7 +6,7 @@
  * Ids: every `campId` accepts the short camp id ('70ca971c992f') or the IRI ('/api/camps/70ca971c992f');
  * `activityId` likewise ('/api/activities/…'). Use normalizeIri() from ./ids.ts in handlers.
  */
-import { MODULE_IDS, type McpSettings } from '../types'
+import { MANUAL_FINDING_CATEGORIES, MODULE_IDS, RULE_KINDS, type McpSettings } from '../types'
 import type { JsonSchema, McpToolDefinition, McpToolKind, McpToolName, McpToolRegistration } from './types'
 
 const campId: JsonSchema = {
@@ -27,6 +27,13 @@ const feedbackKind: JsonSchema = {
   type: 'string',
   enum: ['kudos', 'must', 'suggestion', 'question'],
   description: "kudos = praise, must = required change, suggestion = optional improvement, question = open question.",
+}
+const documentId: JsonSchema = { type: 'string', description: 'Document id as returned by list_documents.', minLength: 1, maxLength: 100 }
+const manualFindingId: JsonSchema = { type: 'string', description: "Manual finding id ('manual:...') as returned by list_manual_findings.", minLength: 1, maxLength: 100 }
+const manualCategory: JsonSchema = {
+  type: 'string',
+  enum: [...MANUAL_FINDING_CATEGORIES],
+  description: 'Category of the finding (positive = praise, safety, program, js, pedagogy, organisation, documents, question, other).',
 }
 
 function def(
@@ -102,8 +109,11 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     'get_rule_catalog',
     'read',
     'Rule catalogue',
-    'The active rules co-co checks (enabled rule packs): id, module, title, description, severity, confidence, scope, validity and source URL. Retired rules are left out.',
-    { module: { type: 'string', enum: [...MODULE_IDS], description: 'Only rules of this module (js = J+S general, lst* = Lagersport/Trekking modules, pbs = PBS).' } },
+    "The active rules co-co checks (enabled rule packs): id, kind, module, title, description, severity, confidence, scope, validity and source URL. kind 'hard' = checked by the rule engine, 'ai' = guidance on what a good camp looks like (no automatic finding, used for AI reviews). Retired rules are left out.",
+    {
+      module: { type: 'string', enum: [...MODULE_IDS], description: 'Only rules of this module (js = J+S general, lst* = Lagersport/Trekking modules, pbs = PBS).' },
+      kind: { type: 'string', enum: [...RULE_KINDS], description: "Only rules of this kind ('hard' or 'ai')." },
+    },
   ),
   def(
     'list_deadlines',
@@ -157,7 +167,110 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     },
     ['key'],
   ),
+  def(
+    'list_manual_findings',
+    'read',
+    'List manual findings',
+    "The coach's own findings (written in co-co, not by rules) of one camp: id, scope (camp / activity / document), activity, document, anchor (page / sheet+cell / km), category and comment. Optionally only those of one activity." +
+      REDACTED,
+    { campId, activityId: { ...activityId, description: 'Optional: only manual findings of this activity.' } },
+    ['campId'],
+  ),
+  def(
+    'get_feedback_structure',
+    'read',
+    'Feedback structure',
+    "The camp's feedback grouped like the feedback page: `general` (camp-wide points) first, then one group per day with its activities and their items (id, kind, status, text, documentId, generalPointId, manualFindingId)." +
+      REDACTED,
+    { campId },
+    ['campId'],
+  ),
+  def(
+    'list_general_feedback_points',
+    'read',
+    'List general feedback points',
+    "The default general points a coach covers for every camp (siko, psa, notfall, rega, ...): id, German title, prompt, check bullets, related rule and checklist ids and whether the camp's feedback already uses the point (used, feedbackIds). Use the id as generalPointId in add_feedback. Static reference text, no camp data.",
+    { campId },
+    ['campId'],
+  ),
+  def(
+    'get_camp_progress',
+    'read',
+    'Camp review progress',
+    'How far the coach is with the review of a camp: percent (0-100) and the steps (mapping, inputs, triage, documents, checklist, feedback, status) with German label, done, value/total and a hint for the first open step. Counts only.',
+    { campId },
+    ['campId'],
+  ),
+  def(
+    'list_documents',
+    'read',
+    'List documents',
+    'Metadata of the camp documents the coach added (never the file path, never red-zone documents): id, name, kind (pdf/docx/xlsx/gpx/txt/md/...), size, ids of the linked activities, document check summary (complete, missing safety-concept items), GPX stats (distance, ascent, descent, Leistungskilometer), aiAllowed, text length and number of manual findings pointing at it. Use get_document_text for the text (only when aiAllowed).' +
+      REDACTED,
+    { campId },
+    ['campId'],
+  ),
+  def(
+    'get_document_text',
+    'read',
+    'Get document text',
+    'The extracted text of one document, only if the coach allowed AI use for it (aiAllowed, see list_documents); otherwise an error. Text is pseudonymised and paged: pass offset/length (at most 20000 characters per call); the result has totalLength and nextOffset (null at the end).' +
+      REDACTED,
+    {
+      campId,
+      documentId,
+      offset: { type: 'integer', minimum: 0, maximum: 5000000, description: 'Start character of the slice (default 0).' },
+      length: { type: 'integer', minimum: 1, maximum: 20000, description: 'Slice length (default and maximum 20000).' },
+    },
+    ['campId', 'documentId'],
+  ),
+  def(
+    'get_review_guidance',
+    'read',
+    'Get review guidance',
+    "What a good scout camp looks like, as the coach's rule packs describe it: the active guidance ('ai') and hard rules valid for the camp (modules switched off and rules the coach disabled are left out) as compact German text plus the list of rule ids with kind. Use it as checklist when you review a camp yourself; guidance never produces a 'must'. Public rule texts, no camp data.",
+    { campId },
+    ['campId'],
+  ),
   // ---- write --------------------------------------------------------------------------------
+  def(
+    'add_manual_finding',
+    'write',
+    'Add manual finding',
+    "Records a finding of the coach in co-co (not sent anywhere): on the camp, on an activity (activityId) or on a document (documentId, optionally with page / sheet+cell / km as anchor). Pseudonyms like 'Leiter A' are replaced with the real names locally. The coach confirms in co-co.",
+    {
+      campId,
+      category: manualCategory,
+      comment: { type: 'string', minLength: 1, maxLength: 1000, description: 'The finding (plain text, German, at most 1000 characters).' },
+      activityId: { ...activityId, description: 'Optional: attach the finding to this activity.' },
+      documentId: { ...documentId, description: 'Optional: attach the finding to this document (list_documents).' },
+      page: { type: 'integer', minimum: 1, maximum: 100000, description: 'Anchor: PDF page (needs documentId).' },
+      sheet: { type: 'string', minLength: 1, maxLength: 100, description: 'Anchor: Excel sheet name (needs documentId).' },
+      cell: { type: 'string', minLength: 1, maxLength: 30, description: "Anchor: Excel cell or range, e.g. 'B4' (needs documentId)." },
+      km: { type: 'number', minimum: 0, maximum: 100000, description: 'Anchor: GPX distance in km (needs documentId).' },
+    },
+    ['campId', 'category', 'comment'],
+  ),
+  def(
+    'update_manual_finding',
+    'write',
+    'Update manual finding',
+    'Changes category and/or comment of a manual finding (id from list_manual_findings). Only the given fields change. The coach confirms in co-co.',
+    {
+      findingId: manualFindingId,
+      category: manualCategory,
+      comment: { type: 'string', minLength: 1, maxLength: 1000, description: 'New comment (plain text).' },
+    },
+    ['findingId'],
+  ),
+  def(
+    'delete_manual_finding',
+    'write',
+    'Delete manual finding',
+    'Deletes a manual finding (id from list_manual_findings). Cannot be undone in co-co. The coach confirms in co-co.',
+    { findingId: manualFindingId },
+    ['findingId'],
+  ),
   def(
     'add_feedback',
     'write',
@@ -169,6 +282,9 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
       text: { type: 'string', minLength: 1, maxLength: 4000, description: 'Feedback text (plain text, German).' },
       activityId: { ...activityId, description: 'Optional: attach the feedback to this activity (scope activity); omit for camp scope.' },
       findingId: { type: 'string', maxLength: 300, description: 'Optional: the finding id this feedback answers (from list_findings).' },
+      documentId: { ...documentId, description: 'Optional: the document this feedback refers to (list_documents, must belong to the camp).' },
+      generalPointId: { type: 'string', maxLength: 50, description: 'Optional: the default general point this feedback covers (list_general_feedback_points).' },
+      manualFindingId: { ...manualFindingId, description: 'Optional: the manual finding this feedback was refined from (must belong to the camp).' },
     },
     ['campId', 'kind', 'text'],
   ),
@@ -181,6 +297,9 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
       feedbackId,
       text: { type: 'string', minLength: 1, maxLength: 4000, description: 'New text (plain text).' },
       kind: feedbackKind,
+      documentId: { ...documentId, description: 'Optional: the document this feedback refers to (must belong to the camp).' },
+      generalPointId: { type: 'string', maxLength: 50, description: 'Optional: the default general point (list_general_feedback_points).' },
+      manualFindingId: { ...manualFindingId, description: 'Optional: the manual finding (must belong to the camp).' },
     },
     ['feedbackId'],
   ),

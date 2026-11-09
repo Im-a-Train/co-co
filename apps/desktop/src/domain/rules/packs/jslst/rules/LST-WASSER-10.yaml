@@ -2,6 +2,7 @@ id: LST-WASSER-10
 version: 2.0.0
 module: lst-wasser
 status: active
+kind: ai
 title: "Westen bei Boots- und Flossaktivitäten"
 description: "Bei Boots- und Flossaktivitäten sind Schwimm- bzw. Rettungswesten vorgesehen."
 message: "Bei «{activity}» sind keine Schwimm- bzw. Rettungswesten erwähnt. Auf dem See tragen alle eine Schwimmweste; auf Fliessgewässern auf Kanu/SUP Schwimmweste, auf anderen Booten und Flossen Rettungsweste mit Kragen."

@@ -2,6 +2,7 @@ id: LST-ACT-04
 version: 1.0.0
 module: lst
 status: active
+kind: ai
 title: "Detailplanung unvollständig"
 description: "Die Detailplanung einer J+S-Aktivität enthält Ort, Material, Schlechtwettervariante (bei Aktivitäten im Freien) und Sicherheitsüberlegungen. Die verantwortliche Person prüft CMP-ACT-01."
 message: "Bei «{activity}» fehlen Rubriken der Detailplanung: {missing}."

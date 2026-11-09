@@ -11,6 +11,7 @@ function meta(over: Partial<RuleMeta> = {}): RuleMeta {
     module: 'js',
     group: 'js',
     status: 'active',
+    kind: 'hard',
     sources: [{ key: 'WEB-L', page: '' }],
     title: 'Test',
     description: 'Beschreibung',

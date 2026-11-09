@@ -6,6 +6,7 @@ import { mockIPC, mockWindows } from '@tauri-apps/api/mocks'
 import { emit } from '@tauri-apps/api/event'
 import { mcpToolByName } from '@/domain/mcp/catalog'
 import type { McpLogEntry, McpStatus, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
+import { bytesToBase64, makePdf, XLSX_BASE64 } from '@/dev/docFixtures'
 import { createDevCampApi, DEV_CAMP_IRI } from '@/__tests__/fixtures/devCampApi'
 
 const USER_IRI = '/api/users/9145944210a7'
@@ -15,14 +16,20 @@ function b64(text: string): string {
 }
 
 const GPX = `<?xml version="1.0"?><gpx version="1.1" creator="mock"><trk><name>Wanderung Bergtour</name><trkseg>
-<trkpt lat="46.80" lon="8.20"><ele>1200</ele></trkpt><trkpt lat="46.82" lon="8.22"><ele>1800</ele></trkpt></trkseg></trk></gpx>`
+<trkpt lat="46.80" lon="8.20"><ele>1200</ele></trkpt><trkpt lat="46.805" lon="8.205"><ele>1350</ele></trkpt><trkpt lat="46.81" lon="8.203"><ele>1500</ele></trkpt><trkpt lat="46.815" lon="8.212"><ele>1700</ele></trkpt><trkpt lat="46.82" lon="8.22"><ele>1800</ele></trkpt><trkpt lat="46.823" lon="8.226"><ele>1650</ele></trkpt></trkseg></trk></gpx>`
 const TXT = `Sicherheitskonzept Lager Auf in die Berge
 Notfallnummern: Rega 1414, Sanitaet 144. Notfallkonzept: Treffpunkt beim Lagerhaus, Leiter Hans Muster 079 000 00 00.
 Alternativprogramm bei schlechtem Wetter: Spielturnier im Haus. Wanderrouten werden vor Ort geprueft.`
 
-const files: Record<string, { name: string; text: string }> = {
+const files: Record<string, { name: string; text: string; bytesBase64?: string }> = {
   'C:/mock/route-bergtour.gpx': { name: 'route-bergtour.gpx', text: GPX },
   'C:/mock/sicherheitskonzept.txt': { name: 'sicherheitskonzept.txt', text: TXT },
+  'C:/mock/materialliste.xlsx': { name: 'materialliste.xlsx', text: '', bytesBase64: XLSX_BASE64 },
+  'C:/mock/programm.pdf': {
+    name: 'programm.pdf',
+    text: '',
+    bytesBase64: bytesToBase64(makePdf(['Programm Seite 1: Notfallnummer 144', 'Programm Seite 2: Schlechtwetter'])),
+  },
 }
 
 // ---- Comment sync mock: comments posted through the mock come back from GET /api/comments with an
@@ -230,6 +237,7 @@ function ndsAggregate(offerBusinessId: string, campBusinessId: string) {
     },
     campAgendaUploaded: true,
     rentalOrders: [{ orderState: 'FINISHED', dispatchmentDate: '2026-07-08', returnDate: '2026-07-20' }],
+    rega: { participantsTotal: 6, participantsTransmitted: 4, supervisorsTotal: 2, supervisorsTransmitted: 2 },
     fetchedAt: new Date().toISOString(),
   }
 }
@@ -469,7 +477,8 @@ export function installMockTauri(): void {
         case 'read_document': {
           const f = files[String(a.path)]
           if (!f) throw 'Datei nicht erlaubt'
-          return { path: String(a.path), name: f.name, size: f.text.length, modifiedMs: Date.now(), bytesBase64: b64(f.text) }
+          const bytesBase64 = f.bytesBase64 ?? b64(f.text)
+          return { path: String(a.path), name: f.name, size: f.bytesBase64 ? atob(bytesBase64).length : f.text.length, modifiedMs: Date.now(), bytesBase64 }
         }
         case 'save_text_file':
           return `C:/mock/${String(a.defaultName)}`
@@ -652,17 +661,18 @@ function mockNdsPersons(ndsCampId: string) {
     birthDate: string | null,
     kind: 'participant' | 'leader',
     roleLabel: string | null,
-  ) => ({ __red: true as const, id, personNumber, firstName, lastName, birthDate, kind, roleLabel })
+    regaTransmitted: boolean | null = null,
+  ) => ({ __red: true as const, id, personNumber, firstName, lastName, birthDate, kind, roleLabel, regaTransmitted })
   return {
     __red: true as const,
     ndsCampId,
     fetchedAt: new Date().toISOString(),
     persons: [
-      row('5001', '100001', 'Anna', 'Muster', '2012-05-04', 'participant', 'CHILD'),
-      row('5002', '100002', 'Ben', 'Beispiel', '2011-09-19', 'participant', 'CHILD'),
-      row('5003', '100003', 'Joerg', 'Mueller', '2010-11-30', 'participant', 'ADOLESCENT'),
-      row('5004', '100004', 'Lena', 'Zwilling', '2012-01-01', 'participant', 'CHILD'),
-      row('5005', '100005', 'Lena', 'Zwilling', '2012-02-02', 'participant', 'CHILD'),
+      row('5001', '100001', 'Anna', 'Muster', '2012-05-04', 'participant', 'CHILD', true),
+      row('5002', '100002', 'Ben', 'Beispiel', '2011-09-19', 'participant', 'CHILD', false),
+      row('5003', '100003', 'Joerg', 'Mueller', '2010-11-30', 'participant', 'ADOLESCENT', true),
+      row('5004', '100004', 'Lena', 'Zwilling', '2012-01-01', 'participant', 'CHILD', true),
+      row('5005', '100005', 'Lena', 'Zwilling', '2012-02-02', 'participant', 'CHILD', false),
       row('5006', '100006', 'Olga', 'Nurnds', '2012-12-12', 'participant', 'CHILD'),
       row('5101', '100101', 'Dora', 'Leiter', '1996-04-01', 'leader', 'MAIN_SUPERVISOR'),
       row('5102', '100102', 'Emil', 'Experte', '1999-08-12', 'leader', 'SUPERVISOR'),

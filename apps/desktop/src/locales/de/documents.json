@@ -4,7 +4,7 @@
     "intro": "Dokumente bleiben auf deinem Computer. co-co speichert nur den extrahierten Text und die Metadaten im Browser-Speicher der App.",
     "drop": {
       "title": "Dateien hierher ziehen",
-      "hint": "PDF, DOCX, GPX, TXT oder MD. Du kannst auch einen Ordner hierher ziehen, er wird dann überwacht.",
+      "hint": "PDF, DOCX, XLSX, GPX, TXT oder MD. Du kannst auch einen Ordner hierher ziehen, er wird dann überwacht.",
       "pickFiles": "Dateien wählen",
       "pickFolder": "Ordner überwachen",
       "busy": "Dokumente werden gelesen …"
@@ -19,6 +19,8 @@
       "title": "Dokumente dieses Lagers",
       "empty": "Noch keine Dokumente. Ziehe Dateien in das Fenster oder wähle sie aus.",
       "remove": "Aus co-co entfernen",
+      "collapse": "Liste einklappen",
+      "expand": "Liste ausklappen",
       "noLink": "Keine Aktivität verknüpft",
       "linkedTo": "Verknüpft mit",
       "confirmQuestion": "bestätigen?",
@@ -30,6 +32,7 @@
       "kind": {
         "pdf": "PDF",
         "docx": "Word",
+        "xlsx": "Excel",
         "gpx": "GPX",
         "txt": "Text",
         "md": "Markdown",
@@ -39,6 +42,8 @@
     },
     "detail": {
       "title": "Details",
+      "tabView": "Ansicht",
+      "tabText": "Text & Prüfung",
       "select": "Wähle ein Dokument aus der Liste.",
       "path": "Pfad",
       "size": "Grösse",
@@ -90,6 +95,31 @@
       "tooLong": "Gehzeit übersteigt den Zeitslot um {min} min",
       "noSlot": "Keine Aktivität mit Zeitslot verknüpft",
       "points": "{n} Punkte"
+    },
+    "viewer": {
+      "addFinding": "Befund erfassen",
+      "anchorAt": "Stelle: {where}",
+      "dialogTitle": "Befund zu {name}",
+      "findings": "Befunde zu diesem Dokument ({n})",
+      "jump": "Zur Stelle im Dokument springen",
+      "page": "Seite",
+      "prevPage": "Vorherige Seite",
+      "nextPage": "Nächste Seite",
+      "zoomIn": "Vergrössern",
+      "zoomOut": "Verkleinern",
+      "error": "Das Dokument konnte nicht angezeigt werden: {msg}",
+      "readError": "Die Datei konnte nicht von der Festplatte gelesen werden (verschoben oder gelöscht?): {msg}",
+      "unsupported": "Für diesen Dateityp gibt es keine Ansicht.",
+      "empty": "Das Dokument enthält keinen darstellbaren Inhalt.",
+      "cellHint": "Klicke auf eine Zelle (oder nutze die Pfeiltasten), um sie für einen Befund auszuwählen.",
+      "gridLabel": "Tabelle, mit Pfeiltasten eine Zelle auswählen",
+      "selectedCell": "Ausgewählt: {cell}",
+      "truncated": "Es werden nur die ersten {n} Zeilen angezeigt.",
+      "gpxEmpty": "Die Datei enthält keine Trackpunkte.",
+      "gpxTrack": "Karte des Tracks (schematisch, ohne Hintergrundkarte)",
+      "gpxProfile": "Höhenprofil",
+      "gpxLegend": "Grün: Start, Rot: Ziel. Klicke auf den Track oder das Höhenprofil (oder nutze dort die Pfeiltasten), um eine Stelle für einen Befund auszuwählen.",
+      "gpxPoint": "Kilometer {km}"
     },
     "search": {
       "label": "In Dokumenten und eCamp-Inhalten suchen",

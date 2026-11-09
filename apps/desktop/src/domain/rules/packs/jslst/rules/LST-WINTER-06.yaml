@@ -2,6 +2,7 @@ id: LST-WINTER-06
 version: 1.0.0
 module: lst-winter
 status: active
+kind: ai
 title: "Zeit- und Ortsplan hinterlegen"
 description: "Bei Winterwanderungen und Biwaks ist eine Rückmeldezeit bzw. Vertrauensperson mit Zeit- und Ortsplan festgehalten. Erkennung über Stichwörter (Heuristik)."
 message: "Für «{activity}» ist keine Rückmeldezeit bzw. Vertrauensperson mit Zeit- und Ortsplan festgehalten."

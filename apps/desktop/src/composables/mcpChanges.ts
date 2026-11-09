@@ -6,7 +6,7 @@
 import { shallowRef } from 'vue'
 import type { Iri } from '@/domain/types'
 
-export type McpChangeKind = 'feedback' | 'review' | 'override'
+export type McpChangeKind = 'feedback' | 'review' | 'override' | 'manualFinding'
 
 export interface McpChange {
   /** Increases with every change (a repeated change of the same camp still triggers watchers). */

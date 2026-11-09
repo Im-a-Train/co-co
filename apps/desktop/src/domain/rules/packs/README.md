@@ -41,7 +41,7 @@ Per camp the coach sets `auto`/`on`/`off` (Dexie `campRuleConfig`); resolution i
 ## Rule YAML (schema v2)
 
 Required: `id`, `version`, `module`, `status` (`active` | `retired`), `title`, `description`, `message`,
-`severity`, `confidence`, `scope`, `validFrom`. Optional: `validTo`, `messageVariants`, `inputs`, `params`,
+`severity`, `confidence`, `scope`, `validFrom`. Optional: `kind` (`hard` default | `ai`, see below), `validTo`, `messageVariants`, `inputs`, `params`,
 `keywords`, `sources`, `formerIds`, `tags`. Every key in `params`/`keywords`/`sources` must exist.
 Placeholders in texts use `{name}`; hits fill them (`params`, `variant`, `fragments`). Never hard-code a
 threshold in a text: pass it as a param.
@@ -50,6 +50,11 @@ Policy (loader/engine enforced): `must` requires `confidence: verified`; `unveri
 `should`; predicates may lower severity/confidence per hit, never raise; a `suggested` module caps at `hint`.
 Severity guide: binding current official source + deterministic data = `must`; proxy or keywords = `should`;
 2014 sources = `should`/`unverified`; recommendations = `hint`/`best-practice`.
+
+`kind: ai` rules are guidance for the AI camp review only (ADR 0014): the engine skips them (no finding), they
+may not be `must`, and their keyword predicates stay for the catalog/explain. Rules whose output feeds J+S day counting,
+Sicherheitsbereich detection or a binding requirement stay `hard` (allowlist HARD_KEYWORD_RULES in
+`__tests__/aiKind.test.ts`).
 
 Ids and `formerIds` are globally unique across packs. Replacing a rule: delete its YAML + predicate and list
 the old id in the new rule's `formerIds` so overrides and disabled states carry over.

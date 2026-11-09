@@ -11,6 +11,9 @@ import { getAppSettings } from '../storage/settings'
 import type { AiFeature, AiModel, AiProvider, Iri, Zoned } from '../types'
 
 export const MAX_PROMPT_CHARS = 24000
+/** Larger prompts for features that send a whole camp program (still bounded). */
+export const MAX_PROMPT_CHARS_BY_FEATURE: Partial<Record<AiFeature, number>> = { campReview: 60000 }
+export const maxPromptChars = (feature: AiFeature): number => MAX_PROMPT_CHARS_BY_FEATURE[feature] ?? MAX_PROMPT_CHARS
 export const MAX_TOKENS_LIMIT = 4096
 export const AI_MODELS: AiModel[] = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5']
 
@@ -76,7 +79,7 @@ export function assertSendable(request: AiGatewayRequest): void {
       throw new AiRefusedError('Der Text enthält noch personenbezogene Muster (E-Mail, Telefon, AHV).')
   }
   const size = request.system.value.length + request.parts.reduce((n, p) => n + p.value.length, 0)
-  if (size > MAX_PROMPT_CHARS) throw new AiRefusedError('Der Text ist zu lang für die KI-Anfrage.')
+  if (size > maxPromptChars(request.feature)) throw new AiRefusedError('Der Text ist zu lang für die KI-Anfrage.')
   if (request.parts.length === 0 || request.parts.every((p) => !p.value.trim()))
     throw new AiRefusedError('Es gibt nichts zu senden.')
 }

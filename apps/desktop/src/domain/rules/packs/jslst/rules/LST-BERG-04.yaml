@@ -2,6 +2,7 @@ id: LST-BERG-04
 version: 2.0.0
 module: lst-berg
 status: active
+kind: ai
 title: "Altschnee / Schneefall möglich"
 description: "Der höchste Punkt der GPX-Route liegt in einer Höhe und Jahreszeit, in der mit Altschnee oder Schneefall zu rechnen ist."
 message: "Höchster Punkt von «{activity}» {m} m ü. M. im {month}. Mit Altschnee bzw. Schneefall rechnen; Variante bei Nebel/Schnee planen."

@@ -25,6 +25,7 @@ const headers = [
   { title: t('persons.table.quals'), key: 'quals', sortable: false },
   { title: t('persons.table.state'), key: 'state' },
   { title: t('persons.table.ndsNumber'), key: 'ndsNumber' },
+  { title: t('persons.table.rega'), key: 'rega' },
 ]
 </script>
 
@@ -89,6 +90,19 @@ const headers = [
         </td>
         <td><NdsStateChip :row="item" :reveal="reveal" /></td>
         <td>{{ item.ndsNumber ?? '–' }}</td>
+        <td>
+          <v-chip
+            v-if="item.rega !== null || (item.kind === 'participant' && item.ndsNumber !== null)"
+            size="x-small"
+            label
+            variant="tonal"
+            :color="item.rega === null ? 'grey' : item.rega ? 'success' : 'warning'"
+            data-testid="persons-rega"
+          >
+            {{ item.rega === null ? t('persons.rega.unknown') : item.rega ? t('persons.rega.transmitted') : t('persons.rega.missing') }}
+          </v-chip>
+          <span v-else>–</span>
+        </td>
       </tr>
     </template>
   </v-data-table>

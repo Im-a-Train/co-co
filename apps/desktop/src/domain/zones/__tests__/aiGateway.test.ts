@@ -107,6 +107,13 @@ describe('aiGateway.send', () => {
     expect(complete).not.toHaveBeenCalled()
   })
 
+  it('allows up to 60000 chars for campReview only', async () => {
+    const big = [{ zone: 'green' as const, value: 'a'.repeat(50000) }]
+    await expect(send(req({ feature: 'campReview', parts: big }))).resolves.toBeTruthy()
+    await expect(send(req({ feature: 'rephrase', parts: big }))).rejects.toThrow(/zu lang/)
+    await expect(send(req({ feature: 'campReview', parts: [{ zone: 'green', value: 'a'.repeat(61000) }] }))).rejects.toThrow(/zu lang/)
+  })
+
   it('logs failures and rethrows', async () => {
     complete.mockRejectedValue(new Error('Kein API-Schlüssel hinterlegt'))
     await expect(send(req())).rejects.toThrow(/Schlüssel/)

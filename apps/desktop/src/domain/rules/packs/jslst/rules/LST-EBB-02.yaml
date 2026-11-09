@@ -2,6 +2,7 @@ id: LST-EBB-02
 version: 1.0.0
 module: lst-ebb
 status: active
+kind: ai
 title: "EBB ohne Sicherheitsüberlegungen"
 description: "Für ergänzende Bewegungsblöcke sind Sicherheitsüberlegungen dokumentiert; bei EBB B (Angebote Dritter) zusätzlich Instruktion, Begleitung, Anbieter, Fähigkeiten und Wohlergehen. Erkennung über Stichwörter (Heuristik)."
 message: "Für den EBB «{activity}» fehlen dokumentierte Sicherheitsüberlegungen. Die Gesamtverantwortung bleibt bei den J+S-Leitenden."

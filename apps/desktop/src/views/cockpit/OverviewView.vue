@@ -1,10 +1,15 @@
 <script setup lang="ts">
 /** /lager/:campId/uebersicht: KPIs (findings, valid J+S days, J+S time per day, changes since last round, mapping status). */
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
-import { triageLocation } from '@/domain/triage'
-import type { Finding } from '@/domain/types'
+import { progressOf, statusesOf } from '@/domain/triage'
+import { isDocumentReviewed, reviewProgress } from '@/domain/cockpit/progress'
+import { listDocuments } from '@/domain/documents/store'
+import { splitHidden } from '@/domain/rules/lib/checklistSync'
+import type { DocumentRecord } from '@/domain/types'
+import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
+import { useFeedback } from '@/composables/useFeedback'
+import { useManualFindings } from '@/composables/useManualFindings'
 import { useRounds } from '@/composables/useRounds'
 import { campIdFromIri } from '@/domain/iri'
 import {
@@ -15,34 +20,28 @@ import {
   mappingStatus,
   roundDeltaParams,
   meterThresholdPercent,
-  topFindings,
 } from '@/domain/cockpit'
-import FindingCard from '@/components/cockpit/FindingCard.vue'
+import DataSourcesCard from '@/components/cockpit/DataSourcesCard.vue'
+import ReviewProgressCard from '@/components/cockpit/ReviewProgressCard.vue'
 import KpiTile from '@/components/cockpit/KpiTile.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 
 const { t } = useI18n()
-const router = useRouter()
 const { campIri, factsHandle, settings, findingsHandle } = useCockpit()
 const { facts } = factsHandle
-const { counts, jsDays, findings, evaluating } = findingsHandle
-const { diffSinceLastRound, rounds, load: loadRounds } = useRounds(campIri)
+const { counts, jsDays, findings } = findingsHandle
+const { diffSinceLastRound, rounds, review, load: loadRounds } = useRounds(campIri)
 // useRounds keeps module-level caches that only fill on load(): load them for this camp.
 onMounted(() => void loadRounds())
 watch(campIri, () => void loadRounds())
 const delta = computed(() => roundDeltaParams(rounds.value, diffSinceLastRound.value))
 
 const params = computed(() => ({ campId: campIdFromIri(campIri.value) }))
-/** "Feedback erstellen" on a top finding: open the triage at that finding with the editor focused. */
-function startFeedback(f: Finding) {
-  void router.push(triageLocation(campIri.value, f.id, { editor: true }))
-}
 const bars = computed(() => jsDayBars(jsDays.value))
 const threshold = computed(() => {
   const max = Math.max(360, ...bars.value.map((b) => b.minutes))
   return meterThresholdPercent(max)
 })
-const top = computed(() => topFindings(findings.value, 5))
 const changes = computed(() => diffTotal(diffSinceLastRound.value))
 const map = computed(() =>
   facts.value
@@ -50,6 +49,62 @@ const map = computed(() =>
     : null,
 )
 const inputsMissing = computed(() => !settings.coachInputs.value)
+
+// Review progress inputs
+const feedback = useFeedback(campIri)
+const manual = useManualFindings(campIri)
+const rc = useCampRuleConfig(campIri)
+const documents = ref<DocumentRecord[]>([])
+async function loadDocuments() {
+  try {
+    documents.value = await listDocuments(campIri.value)
+  } catch {
+    documents.value = []
+  }
+}
+onMounted(() => void loadDocuments())
+watch(campIri, () => void loadDocuments())
+
+const progress = computed(() => {
+  const fb = feedback.items.value
+  const tri = progressOf(statusesOf(findings.value, fb))
+  // Same items as the Checkliste tab (M17): coach points only, minus hidden ones, plus the coach's own points.
+  const hidden = rc.config.value.hiddenChecklist ?? []
+  const checklistItems = splitHidden(
+    rc.checklist.value.filter((i) => i.audience === 'coach'),
+    (i) => i.id,
+    hidden,
+  ).shown
+  const states = rc.config.value.checklist ?? {}
+  const custom = (rc.config.value.customChecklist ?? []).filter((c) => !hidden.includes(c.id))
+  const customDone = custom.filter((c) => states[c.id]?.done === true).length
+  // Same done state as ChecklistView (checklistSync): a milestone-linked item is also done when its milestone is.
+  const milestonesDone = settings.coachInputs.value?.milestonesDone ?? {}
+  const itemDone = (i: { id: string; milestone?: string | null }) =>
+    states[i.id]?.done === true || (!!i.milestone && Object.prototype.hasOwnProperty.call(milestonesDone, i.milestone))
+  return reviewProgress({
+    reviewStatus: review.value?.status ?? null,
+    mappingConfirmed: settings.mappingConfirmed.value,
+    coachInputsPresent: !!settings.coachInputs.value,
+    triage: { done: tri.done, total: tri.total },
+    manualFindingCount: manual.items.value.length,
+    documents: {
+      total: documents.value.length,
+      reviewed: documents.value.filter((d) => isDocumentReviewed(d, manual.byDocument.value.get(d.id)?.length ?? 0)).length,
+    },
+    checklist: {
+      done: checklistItems.filter(itemDone).length + customDone,
+      total: checklistItems.length + custom.length,
+    },
+    feedback: {
+      total: fb.length,
+      draft: fb.filter((i) => i.status === 'draft').length,
+      posted: fb.filter((i) => i.status === 'posted').length,
+      sent: fb.filter((i) => i.status === 'sent').length,
+    },
+    rounds: rounds.value.length,
+  })
+})
 </script>
 
 <template>
@@ -83,6 +138,8 @@ const inputsMissing = computed(() => !settings.coachInputs.value)
           <v-btn size="small" variant="text" :to="{ name: 'camp-inputs', params }" :text="t('campTabs.inputs')" />
         </template>
       </v-alert>
+
+      <ReviewProgressCard :progress="progress" :params="params" />
 
       <v-row dense class="mb-2">
         <v-col cols="6" md="3">
@@ -154,6 +211,8 @@ const inputsMissing = computed(() => !settings.coachInputs.value)
         </v-col>
       </v-row>
 
+      <DataSourcesCard :camp-iri="campIri" :params="params" />
+
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1">{{ t('cockpit.overview.jsTime.title') }}</v-card-title>
         <v-card-text>
@@ -178,16 +237,6 @@ const inputsMissing = computed(() => !settings.coachInputs.value)
           </div>
         </v-card-text>
       </v-card>
-
-      <div class="d-flex align-center mb-2">
-        <h2 class="text-h6 flex-grow-1">{{ t('cockpit.overview.top.title') }}</h2>
-        <v-btn variant="text" :to="{ name: 'camp-findings', params }" :text="t('cockpit.overview.top.all')" append-icon="mdi-arrow-right" />
-      </div>
-      <v-progress-linear v-if="evaluating" indeterminate class="mb-2" />
-      <div v-if="!top.length" class="text-body-2 text-medium-emphasis">{{ t('cockpit.overview.top.none') }}</div>
-      <div class="d-flex flex-column ga-2">
-        <FindingCard v-for="f in top" :key="f.id" :finding="f" compact @feedback="startFeedback" />
-      </div>
     </template>
   </div>
 </template>

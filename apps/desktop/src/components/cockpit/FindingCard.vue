@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { safeExternalUrl, severityColor } from '@/domain/cockpit'
 import { paramValueText, reasonText } from '@/components/camps/ruleConfigUi'
 import type { Finding } from '@/domain/types'
+import { useCampRoute } from '@/composables/useCampRoute'
+import { useManualFindings } from '@/composables/useManualFindings'
 import FindingExplainPanel from './FindingExplainPanel.vue'
+import ManualFindingDialog from './ManualFindingDialog.vue'
 
 const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean; canExcludeCategory?: boolean }>()
 const emit = defineEmits<{
@@ -27,6 +30,20 @@ const sourceKey = computed(() => {
   const list = props.finding.sources ?? []
   return (list.find((s) => s.url && s.url === props.finding.source?.url) ?? list[0])?.key ?? null
 })
+const isManual = computed(() => props.finding.origin === 'manual')
+const { campIri } = useCampRoute()
+const manualHandle = useManualFindings(campIri)
+const manualRecord = computed(() => (isManual.value ? (manualHandle.items.value.find((m) => m.id === props.finding.id) ?? null) : null))
+const editOpen = ref(false)
+const confirmDelete = ref(false)
+async function deleteManual() {
+  if (!confirmDelete.value) {
+    confirmDelete.value = true
+    return
+  }
+  confirmDelete.value = false
+  await manualHandle.remove(props.finding.id).catch(() => {})
+}
 const activityEvidence = computed(() =>
   props.finding.evidence.filter((e) => e.kind === 'activity' || e.kind === 'scheduleEntry'),
 )
@@ -42,8 +59,13 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
   >
     <v-card-text class="py-3">
       <div class="d-flex align-center flex-wrap ga-2 mb-1">
-        <v-chip size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
-        <v-chip size="x-small" label variant="text">{{ t(`confidence.${finding.confidence}`) }}</v-chip>
+        <v-chip v-if="isManual" size="x-small" color="primary" label data-testid="finding-manual-tag">
+          {{ t('findings.manual.tag') }}
+        </v-chip>
+        <template v-else>
+          <v-chip size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
+          <v-chip size="x-small" label variant="text">{{ t(`confidence.${finding.confidence}`) }}</v-chip>
+        </template>
         <v-chip v-if="finding.origin === 'ai'" size="x-small" color="secondary" label>
           {{ t('findings.aiTag') }}
         </v-chip>
@@ -102,7 +124,27 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.source') }}: {{ finding.source?.title }}
         </a>
         <v-spacer />
-        <template v-if="!compact && !hideActions">
+        <template v-if="isManual && !compact && !hideActions && manualRecord">
+          <v-btn
+            size="small"
+            variant="text"
+            prepend-icon="mdi-pencil-outline"
+            :text="t('findings.manual.edit')"
+            data-testid="finding-manual-edit"
+            @click="editOpen = true"
+          />
+          <v-btn
+            size="small"
+            variant="text"
+            :color="confirmDelete ? 'error' : undefined"
+            prepend-icon="mdi-delete-outline"
+            :text="confirmDelete ? t('findings.manual.deleteConfirm') : t('findings.manual.delete')"
+            data-testid="finding-manual-delete"
+            @click="deleteManual"
+            @blur="confirmDelete = false"
+          />
+        </template>
+        <template v-else-if="!compact && !hideActions && !isManual">
           <v-btn
             v-if="canExcludeCategory"
             size="small"
@@ -149,5 +191,15 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         />
       </div>
     </v-card-text>
+    <ManualFindingDialog
+      v-if="manualRecord"
+      v-model="editOpen"
+      :camp-iri="manualRecord.campIri"
+      :scope="manualRecord.scope"
+      :activity-iri="manualRecord.activityIri"
+      :document-id="manualRecord.documentId"
+      :anchor="manualRecord.anchor"
+      :edit-id="manualRecord.id"
+    />
   </v-card>
 </template>

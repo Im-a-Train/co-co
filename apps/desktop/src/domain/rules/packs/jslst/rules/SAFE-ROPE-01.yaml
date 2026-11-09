@@ -2,6 +2,7 @@ id: SAFE-ROPE-01
 version: 2.0.0
 module: lst-lager
 status: active
+kind: ai
 title: "Seilaktivität: Sicherungskonzept"
 description: "Aktivitäten mit Seilen (Pionierbau, Seilbrücke, Flying Fox, Abseilen) haben einen ausreichend langen Sicherheitstext, der Sicherung, Verankerung oder Bremse erwähnt. Seilpärke zählen als ergänzender Bewegungsblock B."
 message: "«{title}» (Seil/Pionier): {reasons}"

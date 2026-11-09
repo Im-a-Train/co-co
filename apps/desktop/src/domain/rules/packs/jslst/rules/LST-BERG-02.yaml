@@ -2,6 +2,7 @@ id: LST-BERG-02
 version: 2.0.0
 module: lst-berg
 status: active
+kind: ai
 title: "T3-Wanderung"
 description: "T3-Wanderungen verlangen Erfahrung im Bergwandern mit Gruppen oder den Sicherheitsbereich Berg."
 message: "«{activity}» ist als T3 angegeben. Für T3 empfiehlt J+S den Zusatz Sicherheitsbereich Berg oder Erfahrung im Bergwandern mit Gruppen; anspruchsvolle T3-Touren gehören zum Sicherheitsbereich Berg (nur Jugendliche)."

@@ -19,6 +19,9 @@ import { filterExcludedFindings } from '@/domain/rules/categoryExclusions'
 import { completeContext } from '@/domain/rules/lib/context'
 import { disableRuleStored, enableRuleStored, excludeCategoryStored, includeCategoryStored, listAllOverrides, muteRuleStored } from '@/domain/rules/ruleStateStore'
 import { useRuleState } from '@/composables/useRuleState'
+import { loadManualFindings, manualFindingsVersion, useManualFindings } from '@/composables/useManualFindings'
+import { manualToFinding } from '@/domain/manualFindings'
+import i18n from '@/plugins/i18n'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import type { RuleContextInput } from '@/domain/types'
 import type { JsDayModel } from '@/domain/types'
@@ -244,10 +247,29 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const ruleFindings = computed(() =>
     filterExcludedFindings(result.value.findings, factsHandle.facts.value, ruleState.value, iri.value, formerIdsOf),
   )
+  // Manual (coach) findings: shared cache, appended after rule + AI findings, never filtered by category
+  // exclusions and never counted in the camp summary.
+  const manualHandle = useManualFindings(iri)
+  watch([iri, storeReady], ([value, isReady]) => {
+    if (value && isReady) void loadManualFindings(value).catch(() => {})
+  })
+  const manualFindingList = computed<Finding[]>(() => {
+    void manualFindingsVersion.value
+    const names: Record<string, string> = {}
+    for (const d of documents.value) names[d.id] = d.name
+    const categoryLabel = (c: string) => i18n.global.t(`findings.manual.category.${c}`)
+    return manualHandle.items.value.map((m) => manualToFinding(m, { facts: factsHandle.facts.value, documentNames: names, categoryLabel }))
+  })
   const findings = computed(() => {
     const ai = aiFindingsByCamp.value[iri.value] ?? []
-    if (!ai.length) return ruleFindings.value.kept
-    return [...ruleFindings.value.kept, ...filterExcludedFindings(ai, factsHandle.facts.value, ruleState.value, iri.value, formerIdsOf).kept]
+    const manual = manualFindingList.value
+    const base = ai.length
+      ? [...ruleFindings.value.kept, ...filterExcludedFindings(ai, factsHandle.facts.value, ruleState.value, iri.value, formerIdsOf).kept]
+      : ruleFindings.value.kept
+    if (!manual.length) return base
+    // Triage "ignored" works by finding id through overrides, same as for other findings.
+    const ov = new Map(overrides.value.map((o) => [o.findingId, o]))
+    return [...base, ...manual.map((f) => (ov.has(f.id) ? { ...f, override: ov.get(f.id)! } : f))]
   })
   const categoryExclusions = computed(() => categoryExclusionsForCamp(ruleState.value, iri.value))
   const counts = computed(() => countFindings(findings.value))
@@ -297,6 +319,8 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     async override(finding, reason = '') {
       const created = await addOverride(iri.value, finding.id, finding.ruleId, reason)
       overrides.value = [...overrides.value.filter((o) => o.findingId !== finding.id), created]
+      // Coach findings share the pseudo rule id MANUAL: ignoring them must never offer to disable a "rule".
+      if (finding.origin === 'manual') return
       try {
         const count = disablePromptCount(await listAllOverrides(), ruleState.value, finding.ruleId, iri.value)
         disablePrompt.value = count === null ? null : { ruleId: finding.ruleId, title: ruleTitle(finding.ruleId), count }
@@ -333,7 +357,12 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     addAiFindings(list) {
       const key = iri.value
       const ids = new Set(list.map((f) => f.id))
-      const kept = (aiFindingsByCamp.value[key] ?? []).filter((f) => !ids.has(f.id))
+      // A new run replaces the previous run's result: the whole camp review (AI-REVIEW-01), or the safety
+      // review of the same activity (id 'AI-SAFETY-01:<iri>:<n>'). Ids are positional, so stale higher
+      // indices would otherwise survive.
+      const groupOf = (f: Finding) => (f.ruleId === 'AI-REVIEW-01' ? f.ruleId : f.id.replace(/:\d+$/, ''))
+      const replaced = new Set(list.map(groupOf))
+      const kept = (aiFindingsByCamp.value[key] ?? []).filter((f) => !ids.has(f.id) && !replaced.has(groupOf(f)))
       aiFindingsByCamp.value = { ...aiFindingsByCamp.value, [key]: [...kept, ...list] }
     },
   }

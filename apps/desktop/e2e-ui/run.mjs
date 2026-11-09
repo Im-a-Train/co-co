@@ -25,6 +25,10 @@ import { dataZonesFlows } from './datazones-flows.mjs'
 import { storageFlows } from './storage-flows.mjs'
 import { rulesFlows } from './rules-flows.mjs'
 import { resourcesFlows } from './resources-flows.mjs'
+import { documentsFlows } from './documents-flows.mjs'
+import { coachFindingsFlows } from './coachfindings-flows.mjs'
+import { feedbackFlows } from './feedback-flows.mjs'
+import { overviewFlows } from './overview-flows.mjs'
 import { campSearchFlows } from './campsearch-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -264,6 +268,10 @@ async function main() {
   })
 
   await resourcesFlows({ page, step, shot, BASE })
+  await documentsFlows({ page, step, go, shot })
+  await overviewFlows({ page, step, go, shot })
+  await coachFindingsFlows({ page, step, go, shot })
+  await feedbackFlows({ page, step, go, shot })
   await rulesFlows({ page, step, shot, BASE })
   await campSearchFlows({ page, step, shot, BASE, CAMP })
 

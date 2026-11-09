@@ -28,6 +28,18 @@ Kaderbildung only, partner contract required).
 - Not yet captured: J+S courses inside an offer (only camps), person search/detail, activity/attendance
   details, login flow.
 
+## Queries used by co-co
+
+All read-only (`ensure_query_only`), field selections reduced to what is needed, in `coco-core/src/nds.rs`:
+
+- Offers/camps/activities/supervisors/participants/rental orders for the aggregate (counts only).
+- `RegaParticipantsListForCamp` / `RegaSupervisorsListForCamp` (`regaParticipantsListForCamp`,
+  `regaSupervisorsListForCamp`, service `youthtraining`): `content { businessId person { businessId personNumber firstName
+  lastName birthDate } transmittedToRega }`. `privateAddress` of the captured operation is deliberately NOT requested.
+  Aggregate path: only the counts `NdsAggregate.rega` leave Rust; a failing/forbidden list gives `rega: null` and never
+  fails the aggregate. Persons path: `transmittedToRega` is attached to each NDS person row as `regaTransmitted` (match by
+  person `businessId`, then `personNumber`); an unreadable list leaves it `null`. The probe checks both operations.
+
 ## Privacy
 
 Raw `.har` files never enter the repo or the assistant's context. `tools/nds/har-redact.mjs` reduces them to

@@ -306,7 +306,7 @@ export const cmpMd01: RulePredicate = (ctx) => {
   ]
 }
 
-// CMP-NDS-01..03 -----------------------------------------------------------------------------
+// CMP-NDS-01..04 -----------------------------------------------------------------------------
 
 /** eCamp camp dates vs. NDS camp dates (date part only). */
 export const cmpNds01: RulePredicate = (ctx) => {
@@ -369,6 +369,24 @@ export const cmpNds03: RulePredicate = (ctx) => {
   ]
 }
 
+/** Rega registration: NDS participants not yet transmitted to the Rega (counts from the NDS aggregate only). */
+export const cmpNds04: RulePredicate = (ctx) => {
+  const rega = ctx.nds?.rega
+  if (!ctx.nds || !rega) return []
+  const missing = rega.participantsTotal - rega.participantsTransmitted
+  if (!(missing > 0)) return []
+  const stand = formatStand(ctx.nds.fetchedAt)
+  return [
+    {
+      targets: [ctx.facts.camp.iri],
+      params: { missing, total: rega.participantsTotal, stand },
+      evidence: [ndsEvidence(stand)],
+      inputs: { regaMissing: missing, regaTotal: rega.participantsTotal },
+      redKeys: ['regaMissing', 'regaTotal'],
+    },
+  ]
+}
+
 export const predicates: Record<string, RulePredicate> = {
   'CMP-CON-01': cmpCon01,
   'CMP-CON-02': cmpCon02,
@@ -384,4 +402,5 @@ export const predicates: Record<string, RulePredicate> = {
   'CMP-NDS-01': cmpNds01,
   'CMP-NDS-02': cmpNds02,
   'CMP-NDS-03': cmpNds03,
+  'CMP-NDS-04': cmpNds04,
 }

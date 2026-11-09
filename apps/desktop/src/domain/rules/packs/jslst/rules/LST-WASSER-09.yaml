@@ -2,6 +2,7 @@ id: LST-WASSER-09
 version: 2.0.0
 module: lst-wasser
 status: active
+kind: ai
 title: "Wärmeschutz für Wasseraktivitäten"
 description: "Für Wasseraktivitäten sind Rettungsfolie bzw. Wärmekissen im Material oder in den Sicherheitsüberlegungen vorgesehen."
 message: "Für «{activity}» fehlen in Material/Sicherheit Rettungsfolie bzw. Wärmekissen."

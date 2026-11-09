@@ -2,6 +2,7 @@ id: LST-EBB-03
 version: 1.0.0
 module: lst-ebb
 status: active
+kind: ai
 title: "EBB A: Leitung mit Anerkennung der Sportart"
 description: "Ein EBB A wird nur von einer Person mit J+S-Anerkennung der Sportart oder entsprechender Ausbildung geleitet. co-co kennt die Anerkennungen nicht, der Hinweis erscheint immer und kann übersteuert werden."
 message: "«{activity}» ist ein EBB A ({sport}). Leitung nur durch eine Person mit J+S-Anerkennung dieser Sportart oder einer für die Aktivität entsprechenden Ausbildung, unter Einhaltung der sportartspezifischen Sicherheitsbestimmungen. Ein LS/T-Coach kann die Aktivität nicht prüfen."

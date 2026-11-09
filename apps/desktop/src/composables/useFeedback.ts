@@ -7,7 +7,7 @@ import { toCommentHtmlParts, orderItems, lintItems, type FeedbackLint } from '@/
 import { deleteFeedback, listFeedback, saveFeedback } from '@/domain/feedback/store'
 import { newId, nowIso } from '@/domain/storage/db'
 import { syncFeedbackWithComments, type CommentSyncSummary } from '@/domain/feedback/commentSync'
-import type { CampFacts, FeedbackItem, FeedbackKind, FeedbackScope, Iri } from '@/domain/types'
+import type { CampFacts, DocumentAnchor, FeedbackItem, FeedbackKind, FeedbackScope, Iri } from '@/domain/types'
 import { lastMcpChange } from './mcpChanges'
 
 export interface NewFeedback {
@@ -18,6 +18,12 @@ export interface NewFeedback {
   ruleId?: string
   findingId?: string
   roundId?: string
+  documentId?: string
+  documentAnchor?: DocumentAnchor
+  generalPointId?: string
+  manualFindingId?: string
+  /** Text derives from red (MiData/NDS) data: the AI gateway and MCP refuse the item. */
+  redDerived?: boolean
 }
 
 export interface FeedbackHandle {
@@ -97,6 +103,11 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     if (input.ruleId) item.ruleId = input.ruleId
     if (input.findingId) item.findingId = input.findingId
     if (input.roundId) item.roundId = input.roundId
+    if (input.documentId) item.documentId = input.documentId
+    if (input.documentAnchor) item.documentAnchor = JSON.parse(JSON.stringify(input.documentAnchor)) as DocumentAnchor
+    if (input.generalPointId) item.generalPointId = input.generalPointId
+    if (input.manualFindingId) item.manualFindingId = input.manualFindingId
+    if (input.redDerived) item.redDerived = true
     await persist(item)
     return item
   }

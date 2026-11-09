@@ -25,7 +25,12 @@ import {
 import type { DocumentRecord, DocumentSource, Iri, WatchedFolder } from '@/domain/types'
 import { useCampFacts } from './useCampFacts'
 
-export const DOCUMENT_FILTERS = [{ name: 'Dokumente', extensions: ['pdf', 'docx', 'gpx', 'txt', 'md'] }]
+export const DOCUMENT_FILTERS = [{ name: 'Dokumente', extensions: ['pdf', 'docx', 'xlsx', 'gpx', 'txt', 'md'] }]
+
+/** Re-reads the original from disk (bytes are never stored in IndexedDB), for the in-app viewer. */
+export async function loadDocumentBytes(path: string): Promise<Uint8Array> {
+  return base64ToBytes((await commands.readDocument(path)).bytesBase64)
+}
 
 function errText(e: unknown): string {
   return e instanceof Error ? e.message : String(e)

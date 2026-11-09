@@ -2,9 +2,10 @@
  * AI features (M5). Each feature builds a request (preview first), then calls send().
  * Two-step API so the UI can show the exact payload before anything leaves the device.
  */
-import type { ActivityFact, CampFacts, DocumentRecord, FeedbackItem, Finding, Severity } from '../types'
-import { send, type AiGatewayRequest } from './aiGateway'
-import { REPHRASE_SYSTEM, SAFETY_SYSTEM, SUMMARY_SYSTEM } from './prompts'
+import type { ActivityFact, CampFacts, DocumentRecord, FeedbackItem, Finding, RuleMeta, Severity } from '../types'
+import { guidanceText } from '../rules/aiGuidance'
+import { maxPromptChars, send, type AiGatewayRequest } from './aiGateway'
+import { CAMP_REVIEW_SYSTEM, REPHRASE_SYSTEM, SAFETY_SYSTEM, SUMMARY_SYSTEM } from './prompts'
 import { buildRedactor, type Redactor } from './redact'
 
 export interface AiPreview {
@@ -179,6 +180,145 @@ export function parseSafetyFindings(text: string, activity: ActivityFact): Findi
       override: null,
     })
     if (findings.length >= 5) break
+  }
+  return findings
+}
+
+// ---- Camp review (ADR 0014) -----------------------------------------------------------------------
+
+const REVIEW_GUIDANCE_CHARS = 22000
+const REVIEW_FINDINGS_CHARS = 6000
+const REVIEW_PROGRAM_CHARS = 28000
+const REVIEW_STORY_CHARS = 500
+const REVIEW_SAFETY_CHARS = 300
+
+export interface CampReviewOptions {
+  /** Char budget of the camp program part (default 28000; shrunk further if the prompt would exceed the limit). */
+  programChars?: number
+}
+
+const oneLine = (s: string) => s.replace(/\s+/g, ' ').trim()
+/** Cut at max chars with a visible marker (also keeps a cut phone number from swallowing the next line). */
+const excerpt = (s: string, max: number) => {
+  const l = oneLine(s)
+  // Drop the cut word (a half e-mail address no longer matches the redactor) and a trailing digit run
+  // (same for a half phone number).
+  return l.length > max ? `${l.slice(0, max).replace(/\S*$/, '').replace(/[\d\s+().\/-]+$/, '')} …` : l
+}
+
+/** Display number of an activity ("2.1"): its first schedule entry. */
+export function activityNumberOf(facts: CampFacts, activityIri: string): string | null {
+  return facts.scheduleEntries.find((e) => e.activityIri === activityIri && e.number)?.number ?? null
+}
+
+/** Program as compact text, per day and activity, cut at the char budget. */
+function campProgramText(facts: CampFacts, budget: number): string {
+  const lines: string[] = []
+  let size = 0
+  let cut = false
+  const push = (l: string): boolean => {
+    if (size + l.length + 1 > budget) {
+      cut = true
+      return false
+    }
+    lines.push(l)
+    size += l.length + 1
+    return true
+  }
+  const days = [...facts.days].sort((a, b) => a.number - b.number)
+  outer: for (const day of days) {
+    const entries = facts.scheduleEntries.filter((e) => e.dayIri === day.iri).sort((a, b) => a.start.localeCompare(b.start))
+    if (!push(`Tag ${day.number} (${day.date})`)) break
+    for (const e of entries) {
+      const a = facts.activities.find((x) => x.iri === e.activityIri)
+      if (!a) continue
+      const cat = facts.categories.find((c) => c.iri === a.categoryIri)
+      const time = `${e.start.slice(11, 16)}-${e.end.slice(11, 16)}`
+      const head = `${e.number ?? '?'} ${time} ${oneLine(a.title)}${cat ? ` [${cat.short || cat.name}]` : ''}${a.location ? ` @ ${oneLine(a.location)}` : ''}`
+      const story = excerpt(a.content.storyboardText, REVIEW_STORY_CHARS)
+      const safety = excerpt(a.content.safetyText, REVIEW_SAFETY_CHARS)
+      const block = [head, story ? `  Programm: ${story}` : '', safety ? `  Sicherheit: ${safety}` : ''].filter(Boolean).join('\n')
+      if (!push(block)) break outer
+    }
+  }
+  if (cut) lines.push('[Programm gekürzt]')
+  return lines.join('\n')
+}
+
+function hardFindingsText(findings: Finding[], facts: CampFacts): string {
+  const lines: string[] = []
+  let size = 0
+  for (const f of findingsForAi(findings)) {
+    if (f.origin !== 'rule' || f.override) continue
+    // Activity numbers (not titles) so the AI can tell which activity a known finding is about without yellow text.
+    const numbers = [...new Set(f.targets.map((iri) => activityNumberOf(facts, iri)).filter((n): n is string => !!n))]
+    const where = numbers.length ? ` (Aktivität ${numbers.join(', ')})` : ''
+    const line = `- [${f.severity}] ${f.ruleId}: ${oneLine(f.title)}${where}`
+    if (size + line.length + 1 > REVIEW_FINDINGS_CHARS) break
+    lines.push(line)
+    size += line.length + 1
+  }
+  return lines.join('\n') || '(keine)'
+}
+
+/** Whole-camp review preview: guidance + known findings (green), program (yellow, redacted). Never red data. */
+export function reviewCamp(facts: CampFacts, guidance: RuleMeta[], hardFindings: Finding[], opts: CampReviewOptions = {}): AiPreview {
+  const r = redactor(facts)
+  const guidancePart = { label: 'Leitfaden und Regeln (Orientierung):', text: guidanceText(guidance, REVIEW_GUIDANCE_CHARS) || '(keine)', zone: 'green' as const }
+  const findingsPart = { label: 'Bekannte harte Befunde (nicht wiederholen):', text: hardFindingsText(hardFindings, facts), zone: 'green' as const }
+  const limit = maxPromptChars('campReview')
+  let budget = opts.programChars ?? REVIEW_PROGRAM_CHARS
+  for (;;) {
+    const programPart = { label: 'Lagerprogramm:', text: campProgramText(facts, budget) || '(leer)', zone: 'yellow' as const }
+    const preview = build({ feature: 'campReview', campIri: facts.camp.iri, maxTokens: 3000 }, CAMP_REVIEW_SYSTEM, [guidancePart, findingsPart, programPart], r)
+    const size = preview.request.system.value.length + preview.request.parts.reduce((n, p) => n + p.value.length, 0)
+    // Redaction placeholders can make the program longer than its budget: shrink until the whole prompt fits.
+    if (size <= limit || budget <= 0) return preview
+    budget = Math.max(0, budget - (size - limit) - 200)
+  }
+}
+
+export async function runCampReview(preview: AiPreview, facts: CampFacts): Promise<Finding[]> {
+  const text = await run(preview)
+  return parseCampReviewFindings(preview.deredact(text), facts)
+}
+
+/** Findings with origin 'ai', never 'must', confidence 'heuristic'; target = activity (by number) else the camp. */
+export function parseCampReviewFindings(text: string, facts: CampFacts): Finding[] {
+  const seen = new Set<string>()
+  const findings: Finding[] = []
+  for (const raw of extractJsonArray(text)) {
+    if (typeof raw !== 'object' || raw === null) continue
+    const o = raw as Record<string, unknown>
+    const title = typeof o.title === 'string' ? o.title.trim().slice(0, 120) : ''
+    const message = typeof o.message === 'string' ? o.message.trim().slice(0, 600) : ''
+    if (!title && !message) continue
+    const key = `${title}|${message}`.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    const severity: Severity = o.severity === 'should' ? 'should' : 'hint'
+    const num = typeof o.activityNumber === 'string' || typeof o.activityNumber === 'number' ? String(o.activityNumber).trim() : ''
+    const entry = num ? facts.scheduleEntries.find((e) => e.number === num) : undefined
+    const activity = entry ? facts.activities.find((a) => a.iri === entry.activityIri) : undefined
+    const target = activity?.iri ?? facts.camp.iri
+    findings.push({
+      id: `AI-REVIEW-01:${target}:${findings.length}`,
+      ruleId: 'AI-REVIEW-01',
+      ruleVersion: '1',
+      packId: null,
+      severity,
+      confidence: 'heuristic',
+      title: title || message.slice(0, 80),
+      message: message || title,
+      scope: activity ? 'activity' : 'camp',
+      targets: [target],
+      evidence: activity ? [{ kind: 'activity', iri: activity.iri, label: activity.title }] : [],
+      source: null,
+      origin: 'ai',
+      tags: ['KI-Einschätzung', 'KI-Lagerreview'],
+      override: null,
+    })
+    if (findings.length >= 12) break
   }
   return findings
 }
