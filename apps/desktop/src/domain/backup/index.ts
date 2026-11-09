@@ -84,6 +84,9 @@ const PRIMARY_KEY: Record<string, string> = {
   nds: 'campIri',
   selfChecks: 'id',
   campRuleConfig: 'campIri',
+  resources: 'key',
+  ruleEdits: 'ruleId',
+  manualFindings: 'id',
 }
 
 export interface ExportOptions {

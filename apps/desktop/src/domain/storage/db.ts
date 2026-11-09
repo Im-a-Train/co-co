@@ -33,6 +33,7 @@ import type {
   ReviewState,
   Round,
   RuleEditRecord,
+  ManualFinding,
   SelfCheckRun,
   Snapshot,
   WatchedFolder,
@@ -84,6 +85,8 @@ export class CocoDb extends Dexie {
   resources!: EntityTable<ResourceRecord, 'key'>
   /** v3: overrides of bundled rules (green, ADR 0013). */
   ruleEdits!: EntityTable<RuleEditRecord, 'ruleId'>
+  /** v4: coach-written findings on camp/activity/document (yellow, ADR 0014). */
+  manualFindings!: EntityTable<ManualFinding, 'id'>
 
   private rwQueue: Promise<void> = Promise.resolve()
 
@@ -118,6 +121,10 @@ export class CocoDb extends Dexie {
     this.version(3).stores({
       resources: 'key',
       ruleEdits: 'ruleId',
+    })
+    // v4 (ADR 0014): manual findings. New table only, no data migration.
+    this.version(4).stores({
+      manualFindings: 'id, campIri',
     })
   }
 
@@ -161,6 +168,7 @@ export const TABLE_NAMES = [
   'campRuleConfig',
   'resources',
   'ruleEdits',
+  'manualFindings',
 ] as const
 
 export type TableName = (typeof TABLE_NAMES)[number]

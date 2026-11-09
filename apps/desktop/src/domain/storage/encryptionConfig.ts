@@ -28,4 +28,5 @@ export const TABLE_ENCRYPTION: Readonly<Record<string, TableEncryptionConfig>> =
   campRuleConfig: { plain: ['campIri'] },
   resources: { plain: ['key'] },
   ruleEdits: { plain: ['ruleId'] },
+  manualFindings: { plain: ['id', 'campIri'] },
 }
