@@ -29,6 +29,7 @@ import { documentsFlows } from './documents-flows.mjs'
 import { coachFindingsFlows } from './coachfindings-flows.mjs'
 import { feedbackFlows } from './feedback-flows.mjs'
 import { overviewFlows } from './overview-flows.mjs'
+import { campSearchFlows } from './campsearch-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const PORT = Number(process.env.UI_PORT || 1420)
@@ -272,6 +273,7 @@ async function main() {
   await coachFindingsFlows({ page, step, go, shot })
   await feedbackFlows({ page, step, go, shot })
   await rulesFlows({ page, step, shot, BASE })
+  await campSearchFlows({ page, step, shot, BASE, CAMP })
 
   // Must stay last: the key-lost flow leaves the harness database encrypted with the second mock key.
   await storageFlows({ page, step, go, shot, BASE })

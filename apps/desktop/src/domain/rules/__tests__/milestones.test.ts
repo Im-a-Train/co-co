@@ -8,8 +8,8 @@ const LIST: MilestoneList = {
   name: 'T',
   version: '1',
   milestones: [
-    { id: 'a', title: 'A', description: '', anchor: 'start', offsetDays: -10, source: SRC, confidence: 'unverified' },
-    { id: 'b', title: 'B', description: '', anchor: 'end', offsetDays: 14, source: SRC, confidence: 'unverified' },
+    { id: 'a', title: 'A', description: '', anchor: 'start', audience: 'coach', offsetDays: -10, source: SRC, confidence: 'unverified' },
+    { id: 'b', title: 'B', description: '', anchor: 'end', audience: 'leaders', offsetDays: 14, source: SRC, confidence: 'unverified' },
   ],
 }
 const camp = { iri: '/api/camps/c1', title: 'Sola', start: '2026-07-10', end: '2026-07-20' }
@@ -21,6 +21,7 @@ version: "1"
 milestones:
   - id: m1
     title: M1
+    audience: coach
     anchor: start
     offsetDays: -5
     confidence: unverified
@@ -71,6 +72,8 @@ describe('parseMilestonesYaml', () => {
     expect(() => parseMilestonesYaml('')).toThrow(/leer oder ungültig/)
     expect(() => parseMilestonesYaml('id: x\nname: X\nversion: 1\nmilestones: []')).toThrow(/«milestones» fehlt/)
     expect(() => parseMilestonesYaml(VALID.replace('anchor: start', 'anchor: mid'))).toThrow(/«anchor»/)
+    expect(() => parseMilestonesYaml(VALID.replace('    audience: coach\n', ''))).toThrow(/«audience»/)
+    expect(() => parseMilestonesYaml(VALID.replace('audience: coach', 'audience: everyone'))).toThrow(/«audience»/)
     expect(() => parseMilestonesYaml(VALID.replace('-5', 'x'))).toThrow(/«offsetDays»/)
     expect(() => parseMilestonesYaml(VALID.replace('unverified', 'sure'))).toThrow(/«confidence»/)
     expect(() => parseMilestonesYaml(VALID.replace('https://hering.scout.ch/de', 'ftp://x'))).toThrow(/«source.url»/)
@@ -158,5 +161,22 @@ describe('milestoneContextFromConfig', () => {
     expect(ctx.isModuleActive!('js')).toBe(true)
     expect(ctx.lastActivityDate).toBe('2026-07-18')
     expect(milestoneContextFromConfig(null).isModuleActive!('lst')).toBe(true)
+  })
+})
+
+describe('milestone audience', () => {
+  it('propagates to Deadline.audience', () => {
+    const ds = computeMilestoneDeadlines(camp, null, LIST)
+    expect(ds.map((d) => [d.milestoneId, d.audience])).toEqual([
+      ['a', 'coach'],
+      ['b', 'leaders'],
+    ])
+  })
+
+  it('every bundled milestone has an audience and both audiences occur', () => {
+    const all = loadBundledMilestones().milestones
+    expect(all.every((m) => m.audience === 'coach' || m.audience === 'leaders')).toBe(true)
+    expect(all.some((m) => m.audience === 'coach')).toBe(true)
+    expect(all.some((m) => m.audience === 'leaders')).toBe(true)
   })
 })

@@ -4,73 +4,87 @@
 # milestone: M-ID of the deadline milestone (packs/*/milestones.yaml) that is the same task: shared done state + due date.
 - id: CL-JS-01
   module: js
+  audience: coach
   text: "Organisation ist beim BASPO für J+S-Lager registriert."
   sources: [{ key: WEB-LT, page: "" }]
   kind: "B"
 - id: CL-JS-02
   module: js
+  audience: coach
   text: "Angebot fasst höchstens ein Jahr zusammen; Lager im richtigen Angebot erfasst."
   sources: [{ key: LEITFADEN, page: "Definition J+S-Angebot" }]
   kind: "B"
 - id: CL-JS-03
   module: js
+  audience: coach
   text: "Teilnehmende bzw. Eltern und Kader über Datenerfassung in der NDS informiert und einverstanden."
   sources: [{ key: WEB-C, page: "Datenschutz" }]
   kind: "B"
 - id: CL-JS-04
   module: js
+  audience: leaders
   text: "Teilnehmende, Eltern und Kader über Risiken und den Zweck einer Unfall-/Haftpflichtversicherung informiert."
   sources: [{ key: WEB-C, page: "Organisatoren» (Art. 11 SpoFöV" }]
   kind: "B"
 - id: CL-JS-05
   module: js
+  audience: leaders
   text: "Rega-Gönnerschaft: Interessierte vor dem Lager in der NDS angemeldet."
   sources: [{ key: WEB-C, page: "Rega" }]
   kind: "E"
 - id: CL-JS-06
   module: js
+  audience: leaders
   text: "AWK wird während des Lagers zeitnah und wahrheitsgetreu erfasst (Mobile NDS)."
   sources: [{ key: WEB-C, page: "3. Schritt" }]
   kind: "B"
 - id: CL-JS-07
   module: js
+  audience: leaders
   text: "J+S-Dokumentation (AWK, Programm) wird mindestens 5 Jahre aufbewahrt."
   sources: [{ key: WEB-C, page: "Art. 34 VSpoFöP" }, { key: MAN, page: "S. 17" }]
   kind: "B"
 - id: CL-JS-08
   module: js
+  audience: leaders
   text: "Leihmaterial: bei Erhalt prüfen, Mängel innert 1 Arbeitstag melden; Lieferort für Lastwagen (2,90 m breit, 4,00 m hoch, 26 t) zugänglich, fester Untergrund; Kontaktperson am Liefertag erreichbar; sauber zurückgeben."
   sources: [{ key: WEB-C, page: "Leihmaterial" }, { key: PBS27, page: "Folie 16" }, { key: MAN, page: "S. 17" }]
   kind: "B"
   showWhen: [{ coachInput: { leihmaterialOrdered: true } }, { coachInputSet: "leihmaterialDeliveryDate" }]
 - id: CL-JS-09
   module: js
+  audience: coach
   text: "Lager im Ausland: Organisator führt J+S-Kurse/-Lager zur Hauptsache in der Schweiz durch."
   sources: [{ key: WEB-C, page: "3. Schritt" }, { key: LEITFADEN, page: "Durchführungsort" }]
   kind: "B"
   showWhen: [{ campConfig: { abroad: [true] } }]
 - id: CL-JS-10
   module: js
+  audience: leaders
   text: "Ethik-Charta eingehalten; kein Tabak und Alkohol während des Sports."
   sources: [{ key: MAN, page: "S. 9, 16" }]
   kind: "B"
 - id: CL-LST-01
   module: lst
+  audience: coach
   text: "Programm mit dem J+S-Coach besprochen."
   sources: [{ key: MB-UP, page: "S. 1" }]
   kind: "B"
 - id: CL-LST-02
   module: lst
+  audience: coach
   text: "Alle Aktivitäten «sinnvoll aufgebaut» und «auf die Bedürfnisse der Teilnehmenden abgestimmt»."
   sources: [{ key: MAN, page: "S. 21" }, { key: TOOL-V, page: "" }, { key: PBS27, page: "Folie 7" }]
   kind: "B"
 - id: CL-LST-03
   module: lst
+  audience: leaders
   text: "Entscheidungshilfe für Aktivitäten mit erhöhten Sicherheitsanforderungen angewendet (ausgeschlossen? Ausbildung erfüllt? Risiken minimierbar?); Alternativen erneut geprüft."
   sources: [{ key: WEB-SICH, page: "Entscheidungshilfe" }]
   kind: "B"
 - id: CL-LST-04
   module: lst
+  audience: coach
   text: "Sicherheitsbereich: J+S-Expert*in LS/T mit Zusatz beurteilt und bewilligt (Bewilligungen in co-co erfasst)."
   sources: [{ key: WEB-C, page: "1. Schritt" }, { key: MB-UP, page: "S. 2" }]
   kind: "B"
@@ -78,220 +92,263 @@
   milestone: M-LST-SB-BEWILLIGUNG
 - id: CL-LST-05
   module: lst
+  audience: leaders
   text: "Gruppengrösse und nötige fachkompetente Hilfspersonen pro Aktivität bewusst festgelegt."
   sources: [{ key: MB-UP, page: "S. 1" }]
   kind: "B"
 - id: CL-LST-06
   module: lst
+  audience: coach
   text: "Lagerleitung und Coach kennen alle Detailprogramme."
   sources: [{ key: LAGER, page: "S. 21" }]
   kind: "2014"
 - id: CL-LAGER-01
   module: lst-lager
+  audience: leaders
   text: "Ganzes Leitungsteam kennt das Krisenkonzept des Vereins vor dem Lager."
   sources: [{ key: LAGER, page: "S. 39" }]
   kind: "2014"
 - id: CL-LAGER-02
   module: lst-lager
+  audience: leaders
   text: "TN-Infoblatt von allen Teilnehmenden und Leitenden ausgefüllt; vertraulich behandelt und nach dem Lager vernichtet."
   sources: [{ key: LAGER, page: "S. 27" }]
   kind: "2014"
 - id: CL-LAGER-03
   module: lst-lager
+  audience: leaders
   text: "J+S-Notfallblatt vor dem Lager ausgefüllt und dem Team abgegeben."
   sources: [{ key: LAGER, page: "S. 7, 31, 39" }]
   kind: "2014"
 - id: CL-LAGER-04
   module: lst-lager
+  audience: leaders
   text: "Sanitätsverantwortliche Person bestimmt; nur sie gibt Medikamente ab; verordnete Medikamente nicht abgesetzt."
   sources: [{ key: LAGER, page: "S. 7, 38" }]
   kind: "2014"
 - id: CL-LAGER-05
   module: lst-lager
+  audience: leaders
   text: "Stellvertretung der Lagerleitung bestimmt."
   sources: [{ key: LAGER, page: "S. 6" }]
   kind: "2014"
 - id: CL-LAGER-06
   module: lst-lager
+  audience: leaders
   text: "Lagerregeln decken die 5 Pflichtbereiche ab; Konsequenzen ohne bleibenden Schaden."
   sources: [{ key: LAGER, page: "S. 32–33" }, { key: MB-UP, page: "S. 1" }]
   kind: "2014 / B"
   milestone: M-LST-LAGERREGELN
 - id: CL-LAGER-07
   module: lst-lager
+  audience: leaders
   text: "Gemischte Lager: getrennte Dusch- und Umkleidebereiche; mehrere Leitende anwesend; Untersuchungen im Intimbereich nur durch Fachpersonen."
   sources: [{ key: LAGER, page: "S. 33, 36" }]
   kind: "2014"
 - id: CL-LAGER-08
   module: lst-lager
+  audience: leaders
   text: "Getränke jederzeit verfügbar; Trinkwasserqualität geprüft."
   sources: [{ key: LAGER, page: "S. 34–35" }]
   kind: "2014"
 - id: CL-LAGER-09
   module: lst-lager
+  audience: leaders
   text: "Unfälle/Krankheiten mit Arztbesuch den Eltern gemeldet; Krisenteam informiert, wenn Rettungsdienste beteiligt sind."
   sources: [{ key: LAGER, page: "S. 38–39" }]
   kind: "2014"
 - id: CL-LAGER-10
   module: lst-lager
+  audience: coach
   text: "Zeltlager: Hochwasser-, Steinschlag-, Murgang- und Sturmgefahr mit Grundeigentümer besprochen; mit Vereinsleitung und Coach entschieden."
   sources: [{ key: LAGER, page: "S. 13" }]
   kind: "2014"
   showWhen: [{ campConfig: { campForm: ["zelt", "gemischt"] } }]
 - id: CL-LAGER-11
   module: lst-lager
+  audience: leaders
   text: "Schriftlicher Mietvertrag, von Erwachsenen unterzeichnet."
   sources: [{ key: LAGER, page: "S. 13" }]
   kind: "2014"
 - id: CL-LAGER-12
   module: lst-lager
+  audience: leaders
   text: "Gemeinde des Aktivitätsorts kontaktiert; Feuer- und Waldbrandvorschriften geklärt."
   sources: [{ key: MAN, page: "S. 61" }]
   kind: "E"
 - id: CL-LAGER-13
   module: lst-lager
+  audience: leaders
   text: "Notfallapotheke bei jeder Aktivität und in jeder Gruppe."
   sources: [{ key: MB-UP, page: "S. 1" }, { key: LAGER, page: "S. 37" }]
   kind: "B"
 - id: CL-TREK-01
   module: lst-trekking
+  audience: leaders
   text: "Strassenverkehr: klare Organisationsform; verantwortliche Personen am Anfang und Ende der Gruppe bestimmt."
   sources: [{ key: MB-UP, page: "S. 2" }]
   kind: "B"
 - id: CL-TREK-02
   module: lst-trekking
+  audience: leaders
   text: "PW/Kleinbus: Fahrberechtigung (Anzahl Sitzplätze) und Fähigkeiten der Fahrenden geprüft; alle angegurtet, Gepäck gesichert."
   sources: [{ key: MB-UP, page: "S. 2" }]
   kind: "B"
 - id: CL-TREK-03
   module: lst-trekking
+  audience: leaders
   text: "Kinder bis 12 Jahre oder 150 cm (was zuerst eintrifft) im Auto mit Kindersitz – vorne und hinten."
   sources: [{ key: MB-UP, page: "S. 2" }]
   kind: "B"
 - id: CL-TREK-04
   module: lst-trekking
+  audience: leaders
   text: "Anreise nach Möglichkeit mit öffentlichem Verkehr."
   sources: [{ key: MB-UP, page: "S. 2" }]
   kind: "E"
 - id: CL-TREK-05
   module: lst-trekking
+  audience: coach
   text: "Wanderungen mit Kartenausschnitt, Routenplanung inkl. Alternativen, Zeitberechnung und Sicherheitskonzept zusammen mit dem Lagerprogramm beim Coach eingereicht."
   sources: [{ key: MB-UP, page: "S. 3" }]
   kind: "B"
   milestone: M-LST-PROGRAMM-COACH
 - id: CL-TREK-06
   module: lst-trekking
+  audience: leaders
   text: "Treffpunkte und Zeiten vereinbart, falls sich die Gruppe auseinanderzieht."
   sources: [{ key: BERG, page: "S. 17" }]
   kind: "2014"
 - id: CL-TREK-07
   module: lst-trekking
+  audience: leaders
   text: "Kocher vor der Unternehmung geübt; nie im Zelt kochen; oberhalb der Waldgrenze Kocher statt Feuer."
   sources: [{ key: BERG, page: "S. 40" }]
   kind: "2014"
 - id: CL-TREK-08
   module: lst-trekking
+  audience: leaders
   text: "Biwak ausserhalb eidg. Jagdbanngebiete, Schutzgebiete und Wildruhezonen."
   sources: [{ key: BERG, page: "S. 44" }, { key: WINTER, page: "S. 18" }, { key: MAN, page: "S. 61" }]
   kind: "2014 / E"
 - id: CL-BERG-01
   module: lst-berg
+  audience: leaders
   text: "Verantwortliche Leitungsperson hat Bergerfahrung für anspruchsvolle Wanderungen; für T3 Zusatz Berg oder Gruppenerfahrung."
   sources: [{ key: MB-UP, page: "S. 3" }, { key: BERG, page: "S. 7" }]
   kind: "E"
 - id: CL-BERG-02
   module: lst-berg
+  audience: leaders
   text: "Biwak oberhalb der Waldgrenze nur mit Biwaksack und bei sicherem Schönwetter."
   sources: [{ key: BERG, page: "S. 42" }]
   kind: "2014"
 - id: CL-BERG-03
   module: lst-berg
+  audience: leaders
   text: "Hüttenübernachtung: Selbstverpflegung mit Hüttenwart abgesprochen."
   sources: [{ key: BERG, page: "S. 44" }]
   kind: "2014"
 - id: CL-BERG-04
   module: lst-berg
+  audience: leaders
   text: "Steinschlag- und Schneefeldregeln eingehalten; nicht reduzierbares Risiko → Aktivität nicht durchführen."
   sources: [{ key: BERG, page: "S. 31–32" }]
   kind: "2014"
 - id: CL-BERG-05
   module: lst-berg
+  audience: leaders
   text: "Sicherheitskonzept anspruchsvoller Wanderungen im Team besprochen und allen Leitenden schriftlich abgegeben."
   sources: [{ key: BERG, page: "S. 16" }]
   kind: "2014"
 - id: CL-WASSER-01
   module: lst-wasser
+  audience: leaders
   text: "Am oder entlang dem Wasser: Gruppe geht nur an geeigneten Stellen ins Wasser."
   sources: [{ key: MB-UP, page: "S. 5" }]
   kind: "B"
 - id: CL-WASSER-02
   module: lst-wasser
+  audience: leaders
   text: "Aktivität, Betreuung und Ausrüstung an die Schwimmkompetenz der TN, das Gewässer und die Verhältnisse angepasst; Wissen der Leitenden zu Ertrinkungsprävention aktuell."
   sources: [{ key: MB-UP, page: "S. 5" }]
   kind: "B"
 - id: CL-WASSER-03
   module: lst-wasser
+  audience: leaders
   text: "Rechtliche Vorschriften (Ausrüstung, Immatrikulation, Uferschutzzonen) und SLRG-Bade- und Flussregeln beachtet; kantonale Regeln und Schutzgebietstafeln beachtet."
   sources: [{ key: MB-UP, page: "S. 5" }, { key: WASSER, page: "S. 9" }]
   kind: "E"
 - id: CL-WASSER-04
   module: lst-wasser
+  audience: leaders
   text: "Floss ab 2,50 m: Bewilligung des kantonalen Schifffahrtsamts."
   sources: [{ key: WASSER, page: "S. 23" }]
   kind: "E"
 - id: CL-WASSER-05
   module: lst-wasser
+  audience: leaders
   text: "Gewässer unterhalb eines Kraftwerks: Betreiber informiert."
   sources: [{ key: WASSER, page: "S. 15" }]
   kind: "E"
 - id: CL-WASSER-06
   module: lst-wasser
+  audience: leaders
   text: "Boots- und Flossbesatzung kann schwimmen; Wehre werden nie befahren, sondern umtragen."
   sources: [{ key: WASSER, page: "S. 20–21" }]
   kind: "E"
 - id: CL-WASSER-07
   module: lst-wasser
+  audience: leaders
   text: "Meer: den Umständen entsprechende wasserspezifische Zusatzausbildung vorhanden; möglichst überwachte Strände; Flaggenzeichen beachtet."
   sources: [{ key: MB-UP, page: "S. 6" }]
   kind: "B"
   showWhen: [{ campConfig: { abroad: [true] } }]
 - id: CL-WINTER-01
   module: lst-winter
+  audience: leaders
   text: "Gruppen nur in Gelände, in dem keine Lawinen niedergehen können."
   sources: [{ key: MB-UP, page: "S. 4" }]
   kind: "B"
 - id: CL-WINTER-02
   module: lst-winter
+  audience: leaders
   text: "Erhöhte Wintergefahren berücksichtigt (Kälte/Erfrieren, Nässe, Müdigkeit, Verkehr auf Schlittelwegen, Eisflächen, Schlittschuhkufen)."
   sources: [{ key: MB-UP, page: "S. 4" }, { key: WEB-SICH, page: "" }]
   kind: "B"
 - id: CL-WINTER-03
   module: lst-winter
+  audience: leaders
   text: "Winterbiwak (Zelt, Iglu) nur, wenn das Lagerhaus jederzeit, auch nachts und bei schlechtem Wetter, schnell und sicher erreichbar ist."
   sources: [{ key: MB-UP, page: "S. 4" }]
   kind: "B"
 - id: CL-WINTER-04
   module: lst-winter
+  audience: leaders
   text: "Vor jeder Winterwanderung die Ja-Fragen beantwortet (Verantwortung, Erfahrung, Verhältnisse, Alternative)."
   sources: [{ key: WINTER, page: "S. 14" }]
   kind: "E"
 - id: CL-EBB-01
   module: lst-ebb
+  audience: coach
   text: "Mit Lagerleitung geklärt, ob EBB geplant sind; Coach informiert."
   sources: [{ key: EBB-C, page: "S. 1" }, { key: EBB-L, page: "S. 1" }]
   kind: "B"
 - id: CL-EBB-02
   module: lst-ebb
+  audience: coach
   text: "EBB A: Vorgaben der Sportart (Leitfaden, Manual, Merkblatt Unfallprävention, Kontrollvorgaben) erfüllt; zusätzlicher Coach bzw. Expert*in der Sportart organisiert."
   sources: [{ key: EBB-C, page: "S. 2" }, { key: EBB-L, page: "S. 2" }, { key: MB-UP, page: "S. 6" }]
   kind: "B"
 - id: CL-EBB-03
   module: lst-ebb
+  audience: leaders
   text: "EBB B: Anbieter seriös und qualifiziert (J+S-Anerkennung oder Ausbildung + professionelle Organisation), geprüft und dokumentiert; Sicherheitsinstruktion vor Beginn; Begehung bei Unsicherheit."
   sources: [{ key: EBB-C, page: "S. 2" }, { key: MB-UP, page: "S. 6" }]
   kind: "B"
 - id: CL-EBB-04
   module: lst-ebb
+  audience: leaders
   text: "Bei Zweifeln wird der EBB nicht durchgeführt."
   sources: [{ key: EBB-L, page: "S. 2" }, { key: MB-UP, page: "S. 6" }]
   kind: "B"

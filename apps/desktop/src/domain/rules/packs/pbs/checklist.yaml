@@ -4,6 +4,7 @@
 # milestone: M-ID of the deadline milestone (packs/*/milestones.yaml) that is the same task: shared done state + due date.
 - id: CL-PBS-01
   module: pbs
+  audience: leaders
   text: "Nothilfekurs vor den Modulen «Lager hauptleiten» und «Sicherheitsbereich» geplant (Ausbildungsplanung)."
   sources: [{ key: GST, page: "S. 2" }]
   kind: "E"

@@ -14,8 +14,8 @@ import { primarySource } from './lib/sources'
 import { getSourceRegistry } from './packs/registry'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const PATCH_KEYS = ['title', 'description', 'message', 'messageVariants', 'severity', 'confidence', 'status', 'validFrom', 'validTo', 'sources', 'tags'] as const
-const MAX = { title: 200, description: 2000, message: 1000, variant: 1000, quote: 1000, page: 60, tag: 60, tags: 20, sources: 12 }
+const PATCH_KEYS = ['title', 'description', 'message', 'feedbackText', 'messageVariants', 'severity', 'confidence', 'status', 'validFrom', 'validTo', 'sources', 'tags'] as const
+const MAX = { title: 200, description: 2000, message: 1000, feedbackText: 1500, variant: 1000, quote: 1000, page: 60, tag: 60, tags: 20, sources: 12 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const placeholders = (text: string): string[] => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1])
@@ -44,12 +44,18 @@ export function validateRuleEditPatch(
   text('description', 'Die Beschreibung')
   text('message', 'Die Meldung')
 
+  if (raw.feedbackText !== undefined && raw.feedbackText !== null) {
+    if (typeof raw.feedbackText !== 'string') errors.push('Der Feedback-Text muss ein Text sein.')
+    else if (raw.feedbackText.length > MAX.feedbackText) errors.push(`Der Feedback-Text ist zu lang (höchstens ${MAX.feedbackText} Zeichen).`)
+  }
+
   const known = new Set<string>(placeholders(meta.message))
   for (const v of Object.values(meta.messageVariants ?? {})) placeholders(v).forEach((p) => known.add(p))
   const checkPlaceholders = (label: string, v: string) => {
     for (const p of placeholders(v)) if (!known.has(p)) errors.push(`${label}: Der Platzhalter {${p}} gibt es in dieser Regel nicht.`)
   }
   if (typeof raw.message === 'string') checkPlaceholders('Meldung', raw.message)
+  if (typeof raw.feedbackText === 'string') checkPlaceholders('Feedback-Text', raw.feedbackText)
 
   if (raw.messageVariants !== undefined) {
     if (!isRecord(raw.messageVariants)) errors.push('Meldungsvarianten müssen ein Objekt sein.')
@@ -107,6 +113,8 @@ export function applyRulePatch(meta: RuleMeta, patch: RuleEditPatch): RuleMeta {
   if (patch.title !== undefined) next.title = patch.title
   if (patch.description !== undefined) next.description = patch.description
   if (patch.message !== undefined) next.message = patch.message
+  if (patch.feedbackText === null) delete next.feedbackText
+  else if (patch.feedbackText !== undefined) next.feedbackText = patch.feedbackText
   if (patch.messageVariants !== undefined) next.messageVariants = { ...(meta.messageVariants ?? {}), ...patch.messageVariants }
   if (patch.severity !== undefined) next.severity = patch.severity
   if (patch.confidence !== undefined) next.confidence = patch.confidence
@@ -161,6 +169,9 @@ export function diffPatch(bundled: RuleMeta, patch: RuleEditPatch): RuleEditPatc
   if (patch.title !== undefined && patch.title !== bundled.title) out.title = patch.title
   if (patch.description !== undefined && patch.description !== bundled.description) out.description = patch.description
   if (patch.message !== undefined && patch.message !== bundled.message) out.message = patch.message
+  if (patch.feedbackText !== undefined) {
+    if (patch.feedbackText === null ? bundled.feedbackText !== undefined : patch.feedbackText !== bundled.feedbackText) out.feedbackText = patch.feedbackText
+  }
   if (patch.severity !== undefined && patch.severity !== bundled.severity) out.severity = patch.severity
   if (patch.confidence !== undefined && patch.confidence !== bundled.confidence) out.confidence = patch.confidence
   if (patch.status !== undefined && patch.status !== bundled.status) out.status = patch.status

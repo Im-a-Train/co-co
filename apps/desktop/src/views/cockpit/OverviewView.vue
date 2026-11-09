@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { progressOf, statusesOf } from '@/domain/triage'
 import { isDocumentReviewed, reviewProgress } from '@/domain/cockpit/progress'
 import { listDocuments } from '@/domain/documents/store'
+import { splitHidden } from '@/domain/rules/lib/checklistSync'
 import type { DocumentRecord } from '@/domain/types'
 import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
 import { useFeedback } from '@/composables/useFeedback'
@@ -67,8 +68,16 @@ watch(campIri, () => void loadDocuments())
 const progress = computed(() => {
   const fb = feedback.items.value
   const tri = progressOf(statusesOf(findings.value, fb))
-  const checklistItems = rc.checklist.value
+  // Same items as the Checkliste tab (M17): coach points only, minus hidden ones, plus the coach's own points.
+  const hidden = rc.config.value.hiddenChecklist ?? []
+  const checklistItems = splitHidden(
+    rc.checklist.value.filter((i) => i.audience === 'coach'),
+    (i) => i.id,
+    hidden,
+  ).shown
   const states = rc.config.value.checklist ?? {}
+  const custom = (rc.config.value.customChecklist ?? []).filter((c) => !hidden.includes(c.id))
+  const customDone = custom.filter((c) => states[c.id]?.done === true).length
   // Same done state as ChecklistView (checklistSync): a milestone-linked item is also done when its milestone is.
   const milestonesDone = settings.coachInputs.value?.milestonesDone ?? {}
   const itemDone = (i: { id: string; milestone?: string | null }) =>
@@ -83,7 +92,10 @@ const progress = computed(() => {
       total: documents.value.length,
       reviewed: documents.value.filter((d) => isDocumentReviewed(d, manual.byDocument.value.get(d.id)?.length ?? 0)).length,
     },
-    checklist: { done: checklistItems.filter(itemDone).length, total: checklistItems.length },
+    checklist: {
+      done: checklistItems.filter(itemDone).length + customDone,
+      total: checklistItems.length + custom.length,
+    },
     feedback: {
       total: fb.length,
       draft: fb.filter((i) => i.status === 'draft').length,

@@ -15,7 +15,18 @@ import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
 import { useCampSettings } from '@/composables/useCampSettings'
 import { emptyCoachInputs } from '@/domain/campFacts/store'
 import { loadBundledChecklist } from '@/domain/rules/lib/checklist'
-import { buildChecklistRows, planItemToggle, planMilestoneToggle, withDeadlineDone, type ChecklistRow, type SyncPlan } from '@/domain/rules/lib/checklistSync'
+import {
+  buildChecklistRows,
+  buildCustomRows,
+  coachDeadlines,
+  deadlineKey,
+  planItemToggle,
+  planMilestoneToggle,
+  splitHidden,
+  withDeadlineDone,
+  type ChecklistRow,
+  type SyncPlan,
+} from '@/domain/rules/lib/checklistSync'
 import { computeDeadlines, daysBetween, deadlineStatus, type DeadlineCamp } from '@/domain/rules/lib/deadlines'
 import { computeMilestoneDeadlines, loadBundledMilestones, milestoneContextFromConfig } from '@/domain/rules/milestones'
 import { listCampSummaries } from '@/domain/rules/store'
@@ -63,24 +74,47 @@ const deadlines = computed<Deadline[]>(() => {
   ].sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.kind.localeCompare(b.kind) || (a.milestoneId ?? '').localeCompare(b.milestoneId ?? '')))
 })
 
-const deadlineRows = computed(() =>
-  deadlines.value.map((d) => ({
+/** Hidden points/deadlines of this camp are only listed (greyed, restorable) while this is on. */
+const showHidden = ref(false)
+const hiddenKeys = computed(() => rc.config.value.hiddenChecklist ?? [])
+
+const allDeadlineRows = computed(() =>
+  coachDeadlines(deadlines.value).map((d) => ({
     d,
-    key: `${d.kind}${d.milestoneId ? `:${d.milestoneId}` : ''}`,
+    key: deadlineKey(d),
     title: d.kind === 'pbs-milestone' ? (d.title ?? d.milestoneId ?? '') : t(`rules.deadlines.kind.${d.kind}`),
     status: deadlineStatus(d, today.value),
     left: daysBetween(today.value, d.due),
   })),
 )
 
-const rows = computed(() =>
+const deadlineSplit = computed(() => splitHidden(allDeadlineRows.value, (r) => r.key, hiddenKeys.value))
+const deadlineRows = computed(() => (showHidden.value ? [...deadlineSplit.value.shown, ...deadlineSplit.value.hiddenEntries] : deadlineSplit.value.shown))
+const isHidden = (key: string): boolean => hiddenKeys.value.includes(key)
+
+const allRows = computed(() =>
   buildChecklistRows(
-    rc.checklist.value,
+    rc.checklist.value.filter((i) => i.audience === 'coach'),
     rc.config.value.checklist,
     deadlines.value.filter((d) => d.kind === 'pbs-milestone'),
     today.value,
   ),
 )
+
+const rowSplit = computed(() => splitHidden(allRows.value, (r) => r.item.id, hiddenKeys.value))
+const rows = computed(() => rowSplit.value.shown)
+const hiddenRows = computed(() => rowSplit.value.hiddenEntries)
+const customRows = computed(() => buildCustomRows(rc.config.value.customChecklist, rc.config.value.checklist, today.value))
+const hiddenCount = computed(() => deadlineSplit.value.hiddenEntries.length + hiddenRows.value.length)
+
+async function setHidden(key: string, hidden: boolean): Promise<void> {
+  saveError.value = null
+  try {
+    await rc.setChecklistHidden(key, hidden)
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : String(e)
+  }
+}
 
 function fmt(iso: string): string {
   const [y, m, d] = iso.split('-')
@@ -124,7 +158,17 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
 <template>
   <div data-testid="checklist-view">
     <h1 class="text-h5 mb-1">{{ t('campConfig.checklist.tabTitle') }}</h1>
-    <p class="text-body-2 text-medium-emphasis mb-4">{{ t('campConfig.checklist.tabIntro') }}</p>
+    <p class="text-body-2 text-medium-emphasis mb-1">{{ t('campConfig.checklist.tabIntro') }}</p>
+    <p class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">{{ t('campConfig.checklist.leadersCaption') }}</p>
+    <v-switch
+      v-model="showHidden"
+      :label="t('campConfig.checklist.showHidden', { n: hiddenCount })"
+      density="compact"
+      hide-details
+      color="primary"
+      class="mb-2"
+      data-testid="show-hidden-switch"
+    />
 
     <v-card variant="outlined" class="mb-4" data-testid="camp-deadlines-card">
       <v-card-title class="d-flex align-center flex-wrap ga-2 text-subtitle-1">
@@ -138,6 +182,7 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
           v-for="r in deadlineRows"
           :key="r.key"
           class="d-flex align-center ga-2 py-1 camp-deadline"
+          :class="{ 'text-disabled': isHidden(r.key) }"
           :data-testid="r.d.kind === 'pbs-milestone' ? 'camp-milestone' : 'camp-deadline'"
         >
           <v-checkbox-btn
@@ -153,6 +198,17 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
             <div class="text-caption text-medium-emphasis">{{ fmt(r.d.due) }} · {{ relative(r.left) }}</div>
           </div>
           <DeadlineStatusChip :status="r.status" />
+          <v-btn
+            v-if="!isHidden(r.key)"
+            icon="mdi-eye-off-outline"
+            size="x-small"
+            variant="text"
+            :title="t('campConfig.checklist.hide')"
+            :aria-label="t('campConfig.checklist.hide')"
+            data-testid="deadline-hide"
+            @click="setHidden(r.key, true)"
+          />
+          <v-btn v-else size="x-small" variant="text" data-testid="deadline-restore" @click="setHidden(r.key, false)">{{ t('campConfig.checklist.restore') }}</v-btn>
         </div>
         <p class="text-caption text-medium-emphasis mt-2 mb-0">
           {{ t('campConfig.checklist.deadlinesHint') }}
@@ -161,6 +217,13 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
       </v-card-text>
     </v-card>
 
-    <CoachChecklistCard :camp-iri="campIri" :rows="rows" :save-error="saveError" @toggle="toggleItem" />
+    <CoachChecklistCard
+      :camp-iri="campIri"
+      :rows="rows"
+      :hidden-rows="showHidden ? hiddenRows : []"
+      :custom-rows="customRows"
+      :save-error="saveError"
+      @toggle="toggleItem"
+    />
   </div>
 </template>

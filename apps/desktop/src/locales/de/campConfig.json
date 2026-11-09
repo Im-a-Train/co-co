@@ -108,7 +108,19 @@
         "2014": "Quelle ist veraltet (2014): Punkt nur als Anhaltspunkt"
       },
       "doneAt": "erledigt am {date}",
-      "saveFailed": "Stand konnte nicht gespeichert werden"
+      "saveFailed": "Stand konnte nicht gespeichert werden",
+      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen und Punkte der Leitung findest du im Selbstcheck und im Fristen-Radar (Filter «Leitung»).",
+      "showHidden": "Ausgeblendete anzeigen ({n})",
+      "hide": "Ausblenden",
+      "restore": "Wieder einblenden",
+      "cancel": "Abbrechen",
+      "customTitle": "Eigene Punkte",
+      "customEmpty": "Noch keine eigenen Punkte. Ergänze, was du in diesem Lager zusätzlich im Blick behalten willst.",
+      "customNew": "Eigenen Punkt hinzufügen",
+      "customText": "Punkt",
+      "customDue": "Frist (optional)",
+      "customAdd": "Hinzufügen",
+      "customDelete": "Eigenen Punkt löschen"
     }
   }
 }

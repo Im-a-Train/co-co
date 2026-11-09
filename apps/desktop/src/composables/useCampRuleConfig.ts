@@ -15,7 +15,10 @@ import { getAppSettings } from '@/domain/storage/settings'
 import { defaultCampRuleConfig, normalizeCampRuleConfig, updateCampRuleConfig } from '@/domain/rules/campRuleConfigStore'
 import {
   withActivityTags,
+  withChecklistHidden,
   withChecklistItem,
+  withCustomChecklistItem,
+  withoutCustomChecklistItem,
   withModuleState,
   withSbApproval,
 } from '@/domain/rules/lib/campConfigEdit'
@@ -65,6 +68,11 @@ export interface CampRuleConfigHandle {
   setTags(activityIri: Iri, tags: ActivityTag[]): Promise<void>
   setSbApproval(key: Iri | 'camp', value: { approvedOn?: string | null; kind: SbApprovalKind } | null): Promise<void>
   setChecklistItem(id: string, patch: { done?: boolean; note?: string }): Promise<void>
+  /** Adds a coach-written checklist point; returns its id. */
+  addCustomChecklistItem(text: string, due?: string | null): Promise<string>
+  removeCustomChecklistItem(id: string): Promise<void>
+  /** Hides/restores a bundled checklist item id or deadline key for this camp. */
+  setChecklistHidden(id: string, hidden: boolean): Promise<void>
 }
 
 function subscribe<T>(query: () => Promise<T>, onValue: (v: T) => void): () => void {
@@ -209,5 +217,12 @@ export function useCampRuleConfig(campIri: MaybeRefOrGetter<Iri>): CampRuleConfi
     setTags: (activityIri, tags) => update((c) => withActivityTags(c, activityIri, tags)),
     setSbApproval: (key, value) => update((c) => withSbApproval(c, key, value)),
     setChecklistItem: (id, patch) => update((c) => withChecklistItem(c, id, patch)),
+    addCustomChecklistItem: async (text, due) => {
+      const id = `CL-CUSTOM-${crypto.randomUUID()}`
+      await update((c) => withCustomChecklistItem(c, { id, text, due: due || null }))
+      return id
+    },
+    removeCustomChecklistItem: (id) => update((c) => withoutCustomChecklistItem(c, id)),
+    setChecklistHidden: (id, hidden) => update((c) => withChecklistHidden(c, id, hidden)),
   }
 }

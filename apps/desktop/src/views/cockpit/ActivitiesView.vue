@@ -49,6 +49,18 @@ onMounted(async () => {
   }
 })
 
+// Deep link from the central search: ?activity=<iri> opens that activity's drawer, then the param is dropped.
+function openFromQuery() {
+  const a = route.query.activity
+  const iri = Array.isArray(a) ? a[0] : a
+  if (!iri) return
+  select(iri as Iri)
+  const { activity: _drop, ...rest } = route.query
+  void router.replace({ query: rest })
+}
+onMounted(openFromQuery)
+watch(() => route.query.activity, openFromQuery)
+
 // Filters live in the URL (replace, so back navigation leaves the tab instead of undoing keystrokes).
 watch(
   () => ({ ...state }),

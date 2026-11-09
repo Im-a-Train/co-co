@@ -75,7 +75,7 @@ function apply(fields: MidataField[]): void {
     <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-subtitle-1 d-flex align-center flex-wrap ga-2">
         {{ t('midata.card.title') }}
-        <v-chip size="x-small" color="red-darken-2" variant="tonal" label>{{ t('midata.redZone') }}</v-chip>
+        <v-chip size="x-small" color="blue-grey" variant="tonal" label prepend-icon="mdi-shield-lock-outline">{{ t('midata.redZone') }}</v-chip>
       </v-card-title>
       <v-card-text>
         <template v-if="!facts">

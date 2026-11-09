@@ -42,6 +42,7 @@
       "card": {
         "description": "Beschreibung",
         "message": "Meldung",
+        "feedbackText": "Feedback-Text",
         "source": "Quelle",
         "sources": "Quellen",
         "sourceBinding": "verbindlich",
@@ -91,6 +92,9 @@
         "allKinds": "Alle Arten",
         "statuses": "Stand",
         "allStatuses": "Alle Stände",
+        "audience": "Zuständig",
+        "audienceCoach": "Coach",
+        "audienceLeaders": "Leitung",
         "reset": "Filter zurücksetzen",
         "noMatch": "Keine Frist passt zu den Filtern."
       },
@@ -231,6 +235,7 @@
         "title": "Titel",
         "description": "Beschreibung",
         "message": "Meldung",
+        "feedbackText": "Feedback-Text",
         "variants": "Meldungsvarianten",
         "severity": "Gewichtung",
         "confidence": "Verlässlichkeit",
@@ -244,6 +249,7 @@
       },
       "hints": {
         "placeholders": "Platzhalter in geschweiften Klammern nicht verändern: sie werden beim Prüfen gefüllt.",
+        "feedbackText": "Text, der beim Feedback-Entwurf zu diesem Befund vorgeschlagen wird. Dieselben Platzhalter wie in der Meldung sind möglich. Leer = automatischer Satz aus der Meldung.",
         "date": "JJJJ-MM-TT, leer = unbegrenzt",
         "reason": "z. B. «Handbuch 2027 S. 21 geändert»",
         "mustNeedsVerified": "«Muss» ist nur mit Verlässlichkeit «geprüft» möglich."
