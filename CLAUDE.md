@@ -122,7 +122,8 @@ clippy are green; UI changes also pass `test:ui` and you have looked at the scre
 - The UI harness loads the app with `?mock=1` (`src/dev/mockTauri.ts`, dev builds only). Never let
   mock code reach production builds (`grep -r mockIPC apps/desktop/dist` must be empty).
 - CI (`.github/workflows/ci.yml`) runs on the self-hosted Linux runner: checks + a cross-compiled
-  Windows NSIS installer. macOS/Linux bundles are manual (workflow_dispatch).
+  Windows NSIS installer, plus a universal macOS DMG on GitHub-hosted `macos-latest` (every run, in
+  each release). Linux bundles are manual (workflow_dispatch).
 
 ## Git workflow
 

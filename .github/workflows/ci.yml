@@ -8,7 +8,9 @@ name: CI
 #   native           – build natively on a self-hosted WINDOWS runner (labels: self-hosted, Windows, X64)
 #                      that has VS Build Tools (C++ workload) + Windows SDK + WebView2. Produces NSIS + MSI.
 #
-# macOS / Linux bundles are opt-in: Actions → CI → "Run workflow" and tick the platform.
+# macOS: every run also builds a universal (Apple Silicon + Intel) DMG on the GitHub-hosted macos-latest
+# runner (ad-hoc signed, not notarised); releases ship it next to the Windows files.
+# Linux bundles are opt-in: Actions → CI → "Run workflow" and tick "linux".
 #
 # Releases (ADR 0008): every push to main (= every merged PR) gets the next SemVer pre-release version
 # `<base>-<channel>.<n>` (scripts/version.mjs next), the Windows build is stamped with it, and the
@@ -26,10 +28,6 @@ on:
     inputs:
       linux:
         description: Also build Linux bundles (deb/AppImage, self-hosted Linux runner)
-        type: boolean
-        default: false
-      macos:
-        description: Also build macOS bundles (GitHub-hosted macos-latest, billed at 10x minutes)
         type: boolean
         default: false
 
@@ -248,8 +246,9 @@ jobs:
 
   release:
     name: Publish GitHub release
-    needs: [version, windows-cross, windows-native]
+    needs: [version, windows-cross, windows-native, macos]
     # One of the two Windows jobs is always skipped, hence always() + explicit result checks.
+    # macOS is added when it succeeded; a failed Mac build does not block the Windows release.
     if: >-
       always() && github.event_name != 'pull_request' && needs.version.outputs.release == 'true' &&
       (needs.windows-cross.result == 'success' || needs.windows-native.result == 'success')
@@ -271,6 +270,12 @@ jobs:
           name: co-co-windows-x64
           path: ${{ env.RELEASE_DIR }}
 
+      - uses: actions/download-artifact@v8
+        if: needs.macos.result == 'success'
+        with:
+          name: co-co-macos-universal
+          path: ${{ env.RELEASE_DIR }}
+
       - name: Create tag + pre-release v${{ needs.version.outputs.version }}
         uses: softprops/action-gh-release@v3
         with:
@@ -289,7 +294,12 @@ jobs:
             - `co-co_${{ needs.version.outputs.version }}_x64-setup.exe` – Installer (empfohlen, Startmenü + Deinstallation)
             - `co-co_${{ needs.version.outputs.version }}_x64-portable.exe` – direkt startbar ohne Installation (benötigt WebView2, bei Windows 10/11 vorinstalliert)
 
-            Die Dateien sind nicht signiert; Windows SmartScreen zeigt beim ersten Start eine Warnung („Weitere Informationen“ → „Trotzdem ausführen“).
+            **Download (macOS 11+, Apple Silicon und Intel):**
+            - `co-co_${{ needs.version.outputs.version }}_universal.dmg` – öffnen und co-co in «Programme» ziehen
+
+            Die Dateien sind nicht signiert bzw. nur ad-hoc signiert (macOS) und nicht notarisiert.
+            - Windows: SmartScreen zeigt beim ersten Start eine Warnung („Weitere Informationen“ → „Trotzdem ausführen“).
+            - macOS: beim ersten Start Rechtsklick auf co-co → „Öffnen“ (oder Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“).
 
   linux:
     name: Linux bundles (opt-in)
@@ -319,10 +329,16 @@ jobs:
           retention-days: 14
 
   macos:
-    name: macOS bundles (opt-in, GitHub-hosted)
-    if: github.event_name == 'workflow_dispatch' && inputs.macos
-    needs: check
+    name: macOS universal DMG (GitHub-hosted)
+    # GitHub-hosted runner, so fork PRs could not reach the self-hosted machine; still skipped like the
+    # other jobs to keep secrets-free, owner-only builds consistent.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: [check, version]
     runs-on: macos-latest
+    env:
+      # Ad-hoc signature ("-"): Apple Silicon refuses to run unsigned binaries. Not notarised, so
+      # Gatekeeper still asks on first start (right-click → Öffnen).
+      APPLE_SIGNING_IDENTITY: '-'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -330,15 +346,42 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
-          key: macos
+          key: macos-universal
       - run: npm ci
-      - run: npm run tauri -w apps/desktop -- build
+
+      # Releases get the real version; other runs a synthetic pre-release, so the pre-release path of the
+      # macOS bundler (Info.plist, DMG name) is exercised before a merge.
+      - name: Stamp version
+        shell: bash
+        run: |
+          if [ "${{ needs.version.outputs.release }}" = "true" ]; then
+            v="${{ needs.version.outputs.version }}"
+          else
+            v="${{ needs.version.outputs.version }}-ci.${{ github.run_number }}"
+          fi
+          node scripts/version.mjs set "$v"
+          echo "MAC_VERSION=$v" >> "$GITHUB_ENV"
+
+      - name: Build universal DMG
+        run: npm run tauri -w apps/desktop -- build --target universal-apple-darwin --bundles app,dmg
+
+      - name: Collect DMG
+        shell: bash
+        run: |
+          out=release-files; rm -rf "$out"; mkdir -p "$out"
+          cp apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg "$out"/
+          codesign -dv "apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/co-co.app" 2>&1 | head -5
+          lipo -info "apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/co-co.app/Contents/MacOS/co-co"
+          ls -l "$out"
+
       - uses: actions/upload-artifact@v7
         with:
-          name: co-co-macos
-          path: apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+          name: co-co-macos-universal
+          path: release-files/*.dmg
           if-no-files-found: error
           retention-days: 14
