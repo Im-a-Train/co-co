@@ -7,6 +7,7 @@ import { emit } from '@tauri-apps/api/event'
 import { mcpToolByName } from '@/domain/mcp/catalog'
 import type { McpLogEntry, McpStatus, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
 import { createDevCampApi, DEV_CAMP_IRI } from '@/__tests__/fixtures/devCampApi'
+import { createPromoCampApi } from './promoCamp'
 
 const USER_IRI = '/api/users/9145944210a7'
 
@@ -381,11 +382,12 @@ function withPastCamps(res: unknown): unknown {
 export function installMockTauri(): void {
   ;(globalThis as unknown as { isTauri: boolean }).isTauri = true
   mockWindows('main')
-  const api = createDevCampApi()
+  // `?scenario=promo` swaps the eCamp data for the invented summer camp used for the promo video.
+  const params = new URLSearchParams(window.location.search)
+  const api = params.get('scenario') === 'promo' ? createPromoCampApi() : createDevCampApi()
   let aiKey = false
   let dataKeyCreated = false
   // URL options for the storage harness: ?loggedout=1 starts without a session, ?keylost=1 hands out a different data key.
-  const params = new URLSearchParams(window.location.search)
   let loggedIn = params.get('loggedout') !== '1'
   const keyLost = params.get('keylost') === '1'
   let openaiKeyOrigin: string | null = null
