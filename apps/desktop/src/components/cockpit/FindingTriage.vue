@@ -204,7 +204,7 @@ watch(
           :data-active="i === index"
           :data-status="statuses[i]"
           :data-finding-id="f.id"
-          :style="{ borderLeftColor: `rgb(var(--v-theme-${severityColor(f.severity)}))` }"
+          :style="{ borderLeftColor: `rgb(var(--v-theme-${f.origin === 'manual' ? 'coach' : severityColor(f.severity)}))` }"
           role="option"
           :aria-selected="i === index"
           @click="go(i)"

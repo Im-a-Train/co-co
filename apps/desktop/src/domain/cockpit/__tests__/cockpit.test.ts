@@ -193,6 +193,16 @@ describe('findings helpers', () => {
     expect(filterFindings(list, { ...DEFAULT_FINDING_FILTER, search: 'bp-rest' })).toHaveLength(1)
     expect(groupBySeverity(list).map((g) => g.severity)).toEqual(['must', 'should', 'hint'])
   })
+  it('puts coach (manual) findings in their own first group and first in top findings', () => {
+    const coach = finding('MAN-1', 'hint', { origin: 'manual' })
+    const withCoach = [...list, coach]
+    const groups = groupBySeverity(withCoach)
+    expect(groups.map((g) => g.key)).toEqual(['coach', 'must', 'should', 'hint'])
+    expect(groups[0].severity).toBeUndefined()
+    expect(groups[0].findings.map((f) => f.id)).toEqual(['MAN-1'])
+    expect(groups[3].findings.map((f) => f.id)).toEqual(['BP-REST-01'])
+    expect(topFindings(withCoach, 2).map((f) => f.id)).toEqual(['MAN-1', 'JS-DAY-01'])
+  })
   it('top findings skip overridden', () => {
     expect(topFindings(list, 2).map((f) => f.id)).toEqual(['JS-DAY-01', 'SAFE-WX-01'])
   })

@@ -51,6 +51,8 @@ export async function documentsFlows({ page, step, go, shot }) {
     await settle(400)
     const txt = await page.getByTestId('document-viewer').innerText()
     if (!/Kilometer/.test(txt)) throw new Error('selected point readout missing')
+    await page.getByTestId('gpx-layers').waitFor({ timeout: 3000 })
+    await page.waitForFunction(() => document.querySelectorAll('[data-testid="gpx-track"] image').length > 0, null, { timeout: 5000 })
     await shot(page, 'flow-doc-gpx')
   })
 }

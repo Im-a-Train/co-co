@@ -169,6 +169,8 @@
       "progress": "{done} von {total} übernommen",
       "showChecks": "Prüfpunkte anzeigen",
       "hideChecks": "Prüfpunkte ausblenden",
+      "hide": "Thema für dieses Lager ausblenden",
+      "restore": "Ausgeblendete Themen wiederherstellen ({n})",
       "related": "Verknüpft: {ids}"
     },
     "refine": {

@@ -1,5 +1,5 @@
 /**
- * Pure helpers for the GPX viewer: projection to SVG (no map tiles, no network), cumulative distance,
+ * Pure helpers for the GPX viewer: equirectangular fallback projection to SVG (the viewer itself uses Web-Mercator, see mapTiles.ts), cumulative distance,
  * elevation profile and nearest-point lookup. Framework-free and unit-tested.
  */
 import { haversineM, type GpxPoint } from './index'

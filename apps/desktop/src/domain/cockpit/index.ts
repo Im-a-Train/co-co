@@ -297,7 +297,8 @@ export function filterFindings(findings: Finding[], f: FindingFilter): Finding[]
   return findings.filter((x) => {
     if (!f.severities.includes(x.severity)) return false
     if (!f.showOverridden && x.override) return false
-    if (f.groups.length && !f.groups.includes(ruleGroupOf(x) as RuleGroup)) return false
+    // Coach findings have no module; the module filter only narrows rule/AI findings.
+    if (f.groups.length && x.origin !== 'manual' && !f.groups.includes(ruleGroupOf(x) as RuleGroup)) return false
     if (f.activityIri && !x.targets.includes(f.activityIri) && !x.evidence.some((e) => e.iri === f.activityIri)) {
       return false
     }
@@ -310,24 +311,38 @@ export function filterFindings(findings: Finding[], f: FindingFilter): Finding[]
 }
 
 export interface FindingGroup {
-  severity: Severity
+  /** 'coach' = manual coach findings (always first), otherwise the severity. */
+  key: 'coach' | Severity
+  /** Set for severity groups only. */
+  severity?: Severity
   findings: Finding[]
 }
 
-/** Groups by severity (must, should, hint); empty groups are dropped; stable by rule id inside a group. */
+const isCoach = (f: Pick<Finding, 'origin'>) => f.origin === 'manual'
+
+/** Groups: coach findings first, then by severity (must, should, hint); empty groups are dropped; stable by rule id inside a group. */
 export function groupBySeverity(findings: Finding[]): FindingGroup[] {
-  return SEVERITIES.map((severity) => ({
-    severity,
-    findings: findings.filter((f) => f.severity === severity).sort((a, b) => a.ruleId.localeCompare(b.ruleId)),
-  })).filter((g) => g.findings.length > 0)
+  const byRule = (a: Finding, b: Finding) => a.ruleId.localeCompare(b.ruleId)
+  const coach: FindingGroup = { key: 'coach', findings: findings.filter(isCoach).sort(byRule) }
+  const rest = SEVERITIES.map(
+    (severity): FindingGroup => ({
+      key: severity,
+      severity,
+      findings: findings.filter((f) => !isCoach(f) && f.severity === severity).sort(byRule),
+    }),
+  )
+  return [coach, ...rest].filter((g) => g.findings.length > 0)
 }
 
-/** Top N open findings: severity first, overridden ones excluded. */
+/** Top N open findings: coach findings first, then severity; overridden ones excluded. */
 export function topFindings(findings: Finding[], n = 5): Finding[] {
   const rank = (s: Severity) => SEVERITIES.indexOf(s)
   return findings
     .filter((f) => !f.override)
-    .sort((a, b) => rank(a.severity) - rank(b.severity) || a.ruleId.localeCompare(b.ruleId))
+    .sort(
+      (a, b) =>
+        Number(isCoach(b)) - Number(isCoach(a)) || rank(a.severity) - rank(b.severity) || a.ruleId.localeCompare(b.ruleId),
+    )
     .slice(0, n)
 }
 

@@ -9,6 +9,10 @@ import type { McpLogEntry, McpStatus, McpToolOutcome, McpToolRegistration } from
 import { bytesToBase64, makePdf, XLSX_BASE64 } from '@/dev/docFixtures'
 import { createDevCampApi, DEV_CAMP_IRI } from '@/__tests__/fixtures/devCampApi'
 
+/** 1x1 PNGs used as map tiles in the UI harness (base: light beige, overlays: transparent). */
+const MOCK_TILE_BASE = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP48OLafwAJKAOu8qmVvQAAAABJRU5ErkJggg=='
+const MOCK_TILE_OVERLAY = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII='
+
 const USER_IRI = '/api/users/9145944210a7'
 
 function b64(text: string): string {
@@ -474,6 +478,8 @@ export function installMockTauri(): void {
           return null
         case 'list_folder':
           return []
+        case 'map_tile':
+          return { contentType: 'image/png', bytesBase64: a.layer === 'base' ? MOCK_TILE_BASE : MOCK_TILE_OVERLAY }
         case 'read_document': {
           const f = files[String(a.path)]
           if (!f) throw 'Datei nicht erlaubt'
@@ -529,6 +535,12 @@ export function installMockTauri(): void {
         case 'nds_logout':
           ndsConnected = false
           return null
+        case 'nds_fetch_tasks':
+          return [
+            { businessId: 'T-1001', title: 'Lagerbericht einreichen', correlationTitle: 'Sommerlager (Beispiel)', dueDate: '2026-12-15', escalationDate: '2026-12-31', processingStatus: 'OPEN' },
+            { businessId: 'T-1002', title: 'Teilnehmerliste abgleichen', correlationTitle: 'Herbstlager (Beispiel)', dueDate: '2026-11-20', escalationDate: null, processingStatus: 'IN_PROGRESS' },
+            { businessId: 'T-1003', title: 'Abrechnung prüfen', correlationTitle: null, dueDate: '2026-10-01', escalationDate: null, processingStatus: 'DONE' },
+          ]
         case 'nds_find_camps':
           return [
             {

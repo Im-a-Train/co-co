@@ -13,6 +13,7 @@ import { useFeedback, type NewFeedback } from '@/composables/useFeedback'
 import { KIND_ORDER } from '@/domain/feedback'
 import { newReplies } from '@/domain/feedback/commentSync'
 import { generalPointById } from '@/domain/feedback/defaults'
+import { getHiddenGeneralPoints, hideGeneralPoint, restoreAllGeneralPoints } from '@/domain/feedback/generalPointsStore'
 import { groupFeedback } from '@/domain/feedback/structure'
 import { listDocuments } from '@/domain/documents/store'
 import { lastMcpChange } from '@/composables/mcpChanges'
@@ -24,6 +25,18 @@ const route = useRoute()
 const { campIri } = useCampRoute()
 const { facts, load: loadFacts } = useCampFacts(campIri)
 const fb = useFeedback(campIri)
+
+const hiddenPoints = ref<string[]>([])
+async function loadHiddenPoints() {
+  hiddenPoints.value = await getHiddenGeneralPoints(campIri.value).catch(() => [])
+}
+watch(campIri, () => void loadHiddenPoints(), { immediate: true })
+async function hidePoint(id: string) {
+  hiddenPoints.value = await hideGeneralPoint(campIri.value, id)
+}
+async function restorePoints() {
+  hiddenPoints.value = await restoreAllGeneralPoints(campIri.value)
+}
 
 const activityTitles = computed<Record<string, string>>(() =>
   Object.fromEntries((facts.value?.activities ?? []).map((a) => [a.iri, a.title])),
@@ -239,7 +252,7 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
         <v-progress-linear v-if="fb.loading.value" indeterminate class="mb-3" />
         <section data-testid="feedback-general-section" class="mb-4">
           <h2 class="text-h6 mb-2">{{ t('feedback.structure.general') }}</h2>
-          <GeneralPointsPanel :items="fb.items.value" class="mb-3" @take="takeGeneralPoint" />
+          <GeneralPointsPanel :items="fb.items.value" :hidden-ids="hiddenPoints" class="mb-3" @take="takeGeneralPoint" @hide="hidePoint" @restore-all="restorePoints" />
           <div class="d-flex flex-column ga-3">
             <FeedbackItemCard
               v-for="item in structure.general"

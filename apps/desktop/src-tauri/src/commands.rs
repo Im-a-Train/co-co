@@ -7,6 +7,7 @@ use tauri::{AppHandle, Runtime, State, Webview};
 
 use crate::files::{self, DocumentBytes, FileFilter, FileState, FolderEntry, TextFile};
 use crate::error::AppResult;
+use crate::maptiles::{self, MapTile, MapTileState};
 use crate::session::{ensure_main, log, AppState};
 
 #[tauri::command]
@@ -189,6 +190,19 @@ pub async fn read_document<R: Runtime>(
 ) -> AppResult<DocumentBytes> {
     ensure_main(&webview)?;
     files::read_document(&files, &path).await
+}
+
+#[tauri::command]
+pub async fn map_tile<R: Runtime>(
+    webview: Webview<R>,
+    tiles: State<'_, MapTileState>,
+    layer: String,
+    z: u32,
+    x: u32,
+    y: u32,
+) -> AppResult<MapTile> {
+    ensure_main(&webview)?;
+    maptiles::fetch_tile(&tiles, &layer, z, x, y).await
 }
 
 #[tauri::command]
