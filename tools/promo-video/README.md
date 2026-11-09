@@ -26,7 +26,7 @@ npx playwright-core install ffmpeg                      # einmalig, Encoder für
 python -m pip install piper-tts
 python -m piper.download_voices --download-dir promo-out/voices de_DE-thorsten-high
 node tools/promo-video/narration.mjs                    # -> promo-out/narration.json
-python tools/promo-video/tts.py promo-out/narration.json promo-out/voice --model promo-out/voices/de_DE-thorsten-high.onnx --speed 1.05
+python tools/promo-video/tts.py promo-out/narration.json promo-out/voice --model promo-out/voices/de_DE-thorsten-high.onnx --speed 1.05 --pause 0.45
 
 # 2. Aufnahme (startet Vite selbst auf PROMO_PORT, Standard 1437)
 node tools/promo-video/record.mjs                       # -> promo-out/co-co-promo.silent.webm + timeline.json

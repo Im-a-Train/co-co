@@ -7,7 +7,7 @@ Engines:
   piper (default, recommended): neural voice, e.g. de_DE-thorsten-high
       pip install piper-tts
       python -m piper.download_voices --download-dir voices de_DE-thorsten-high
-      python tts.py narration.json outDir --model voices/de_DE-thorsten-high.onnx [--speed 1.0]
+      python tts.py narration.json outDir --model voices/de_DE-thorsten-high.onnx [--speed 1.0] [--pause 0.45]
   sapi (Windows only): built-in Windows voice, e.g. "Microsoft Karsten" (de-CH), sounds robotic
       pip install comtypes
       python tts.py narration.json outDir --engine sapi --voice Karsten [--rate 0]
@@ -48,6 +48,7 @@ def main():
     ap.add_argument("--engine", choices=["piper", "sapi"], default="piper")
     ap.add_argument("--model", help="piper: path to the .onnx voice")
     ap.add_argument("--speed", type=float, default=1.0, help="piper: 1.1 = 10%% faster")
+    ap.add_argument("--pause", type=float, default=0.45, help="piper: extra silence between sentences (s)")
     ap.add_argument("--voice", default="Karsten", help="sapi: part of the voice name")
     ap.add_argument("--rate", type=int, default=0, help="-10..10")
     a = ap.parse_args()
@@ -76,8 +77,18 @@ def piper_speaker(a):
     cfg = SynthesisConfig(length_scale=1.0 / a.speed)
 
     def speak(text, path):
+        # Piper yields one chunk per sentence; put a short silence between sentences.
+        chunks = list(voice.synthesize(text, syn_config=cfg))
+        first = chunks[0]
+        gap = bytes(int(first.sample_rate * a.pause) * first.sample_width * first.sample_channels)
         with wave.open(path, "wb") as wf:
-            voice.synthesize_wav(text, wf, syn_config=cfg)
+            wf.setframerate(first.sample_rate)
+            wf.setsampwidth(first.sample_width)
+            wf.setnchannels(first.sample_channels)
+            for i, c in enumerate(chunks):
+                if i:
+                    wf.writeframes(gap)
+                wf.writeframes(c.audio_int16_bytes)
 
     return speak
 
