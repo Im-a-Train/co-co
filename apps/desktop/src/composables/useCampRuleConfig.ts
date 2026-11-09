@@ -24,7 +24,9 @@ import { compiledSetsOf, contextDate, paramDefsOf } from '@/domain/rules/lib/con
 import { createKeywordMatcher } from '@/domain/rules/lib/keywords'
 import { resolveModuleStates } from '@/domain/rules/lib/moduleState'
 import { createParamReader } from '@/domain/rules/lib/params'
-import { loadBundledPacks, modulesOf, selectPacks } from '@/domain/rules/packs'
+import { modulesOf, selectPacks } from '@/domain/rules/packs'
+import { loadEffectivePacks } from '@/domain/rules/editsStore'
+import { useRuleEdits } from '@/composables/useRuleEdits'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import type {
   ActivityTag,
@@ -118,7 +120,11 @@ export function useCampRuleConfig(campIri: MaybeRefOrGetter<Iri>): CampRuleConfi
 
   const config = computed(() => stored.value ?? defaultCampRuleConfig(iri.value))
   const sport = computed(() => config.value.sport ?? 'lst')
-  const packs = computed(() => selectPacks(loadBundledPacks(), appSettings.value.rulePacks))
+  const ruleEdits = useRuleEdits()
+  const packs = computed(() => {
+    void ruleEdits.version.value
+    return selectPacks(loadEffectivePacks(), appSettings.value.rulePacks)
+  })
   const modules = computed(() => modulesOf(packs.value))
 
   const moduleStates = computed(() => {

@@ -115,6 +115,8 @@
       "sourceLink": "Quelle: {title}",
       "markDone": "Erledigt",
       "markUndone": "Zurücksetzen",
+      "checklistLink": "Checkliste",
+      "checklistLinkHint": "Gleicher Punkt in der Coach-Checkliste dieses Lagers",
       "saveFailed": "Stand konnte nicht gespeichert werden",
       "exportIcs": "Als Kalender exportieren (.ics)",
       "exportSaved": "Kalender gespeichert: {path}",
@@ -201,6 +203,116 @@
       "wasser-see": "See",
       "wasser-fluss": "Fluss",
       "externe-wasseraufsicht": "externe Wasseraufsicht"
+    },
+    "edit": {
+      "button": "Bearbeiten",
+      "chip": "geändert",
+      "chipTitle": "Diese Regel wurde angepasst (manuell, mit KI oder per MCP).",
+      "viewChanges": "Änderung ansehen",
+      "reset": "Zurücksetzen",
+      "resetConfirmTitle": "Regel zurücksetzen?",
+      "resetConfirmText": "Die Änderungen an «{title}» gehen verloren, die eingebaute Regel gilt wieder. Der Verlauf wird gelöscht.",
+      "dialogTitle": "Regel bearbeiten: {id}",
+      "intro": "Angepasst werden Texte, Gewichtung, Gültigkeit und Quellen. Die Prüflogik der Regel bleibt eingebaut.",
+      "tabs": {
+        "edit": "Bearbeiten",
+        "changes": "Änderungen",
+        "params": "Schwellenwerte",
+        "ai": "Mit KI aktualisieren"
+      },
+      "fields": {
+        "title": "Titel",
+        "description": "Beschreibung",
+        "message": "Meldung",
+        "variants": "Meldungsvarianten",
+        "severity": "Gewichtung",
+        "confidence": "Verlässlichkeit",
+        "status": "Status",
+        "validFrom": "Gültig ab",
+        "validTo": "Gültig bis",
+        "sources": "Quellen",
+        "tags": "Stichwörter",
+        "reason": "Grund der Änderung",
+        "resourceKeys": "Gestützt auf Hilfsmittel"
+      },
+      "hints": {
+        "placeholders": "Platzhalter in geschweiften Klammern nicht verändern: sie werden beim Prüfen gefüllt.",
+        "date": "JJJJ-MM-TT, leer = unbegrenzt",
+        "reason": "z. B. «Handbuch 2027 S. 21 geändert»",
+        "mustNeedsVerified": "«Muss» ist nur mit Verlässlichkeit «geprüft» möglich."
+      },
+      "status": {
+        "active": "aktiv",
+        "retired": "ausser Kraft"
+      },
+      "sources": {
+        "key": "Hilfsmittel",
+        "page": "Seite / Abschnitt",
+        "quote": "Zitat",
+        "add": "Quelle hinzufügen",
+        "remove": "Quelle entfernen",
+        "none": "Mindestens eine Quelle ist nötig."
+      },
+      "errorsTitle": "Das ist so nicht möglich",
+      "bundledChanged": "Die eingebaute Regel wurde seit deiner Änderung aktualisiert (Version {from} → {to}). Bitte prüfe deine Änderung.",
+      "skipped": "Die gespeicherte Änderung dieser Regel ist nicht mehr gültig und wird ignoriert: {errors}",
+      "save": "Änderung speichern",
+      "saved": "Regel gespeichert.",
+      "noChange": "Keine Änderung gegenüber der eingebauten Regel.",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "diff": {
+        "title": "Unterschied zur eingebauten Regel",
+        "none": "Diese Regel ist unverändert.",
+        "before": "Eingebaut",
+        "after": "Jetzt",
+        "removed": "(entfernt)",
+        "empty": "(leer)",
+        "variant": "Variante «{name}»"
+      },
+      "history": {
+        "title": "Verlauf",
+        "current": "Aktuell",
+        "empty": "Noch keine früheren Stände.",
+        "by": {
+          "manual": "manuell",
+          "ai": "KI",
+          "mcp": "MCP"
+        }
+      },
+      "params": {
+        "intro": "Schwellenwerte, die diese Regel liest. Änderungen gelten für alle Lager.",
+        "none": "Diese Regel liest keine Schwellenwerte.",
+        "current": "Aktuell",
+        "default": "Standard",
+        "readonly": "Dieser Wert ist fest vorgegeben und kann nicht angepasst werden.",
+        "save": "Wert speichern",
+        "reset": "Auf Standard",
+        "saved": "Wert gespeichert.",
+        "invalid": "Der Wert hat das falsche Format.",
+        "overridable": {
+          "none": "fest",
+          "admin": "anpassbar",
+          "coach": "anpassbar (auch pro Lager)"
+        },
+        "changed": "angepasst"
+      },
+      "ai": {
+        "intro": "Die KI vergleicht die Regel mit den gewählten Hilfsmitteln und schlägt eine Änderung vor. Nichts wird automatisch übernommen: du siehst den Unterschied und entscheidest.",
+        "pick": "Hilfsmittel (nur solche mit Text)",
+        "pickNone": "Keine Hilfsmittel mit Text vorhanden. Lade im Bereich «Hilfsmittel» eine Datei hoch.",
+        "prepare": "Anfrage vorbereiten",
+        "previewTitle": "Das wird an die KI gesendet",
+        "previewHint": "Regeln und Hilfsmittel sind öffentliches Referenzmaterial (grüne Zone). Es werden keine Lager- oder Personendaten gesendet.",
+        "send": "An die KI senden",
+        "running": "Die KI prüft die Regel …",
+        "proposal": "Vorschlag der KI",
+        "reason": "Begründung",
+        "noChange": "Die KI sieht keinen Änderungsbedarf.",
+        "apply": "Vorschlag übernehmen",
+        "discard": "Verwerfen",
+        "applied": "Vorschlag übernommen.",
+        "invalid": "Der Vorschlag kann nicht übernommen werden"
+      }
     },
     "paramNote": "Parameter angepasst: {label} = {value} (Standard {default})",
     "sourceUpdated": "Quelle aktualisiert – erneut prüfen",

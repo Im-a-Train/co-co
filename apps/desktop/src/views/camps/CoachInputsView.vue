@@ -3,7 +3,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fromTri, INPUT_RULES, normalizeInputs, parseCount, STUFEN, toTri, validateInputs, type TriState } from '@/components/camps/inputsForm'
-import CoachChecklistCard from '@/components/camps/CoachChecklistCard.vue'
 import RuleModulesCard from '@/components/camps/RuleModulesCard.vue'
 import MidataBadge from '@/components/midata/MidataBadge.vue'
 import MidataCard from '@/components/midata/MidataCard.vue'
@@ -14,11 +13,11 @@ import { useCampSettings } from '@/composables/useCampSettings'
 import { adoptNdsFields } from '@/composables/useNds'
 import { emptyCoachInputs } from '@/domain/campFacts/store'
 import { adoptFields } from '@/domain/midata'
-import { loadBundledPacks } from '@/domain/rules/packs'
+import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import type { CoachInputs, MidataAggregate, MidataField, NdsAggregate, NdsField } from '@/domain/types'
 
 const { t } = useI18n()
-const { campIri } = useCampRoute()
+const { campId, campIri } = useCampRoute()
 const settings = useCampSettings(campIri)
 
 const ready = ref(false)
@@ -50,7 +49,7 @@ const triItems = (['yes', 'no', 'unknown'] as TriState[]).map((v) => ({ value: v
 const ruleTitles = computed(() => {
   const map = new Map<string, string>()
   try {
-    for (const p of loadBundledPacks()) for (const r of p.rules) map.set(r.meta.id, r.meta.title)
+    for (const p of loadEffectivePacks()) for (const r of p.rules) map.set(r.meta.id, r.meta.title)
   } catch {
     // Titles are a nicety; fall back to the rule id.
   }
@@ -269,7 +268,10 @@ const flagFields = [
         </v-card-text>
       </v-card>
 
-      <CoachChecklistCard :camp-iri="campIri" />
+      <v-alert type="info" variant="tonal" density="compact" class="mb-4" data-testid="checklist-moved-hint">
+        {{ t('campConfig.checklist.movedHint') }}
+        <router-link :to="`/lager/${campId}/checkliste`">{{ t('campConfig.checklist.movedLink') }}</router-link>
+      </v-alert>
 
       <v-alert v-for="e in errors":key="e" type="error" variant="tonal" class="mb-2">{{ t(`camps.inputs.errors.${e}`) }}</v-alert>
       <v-alert v-if="saveError" type="error" variant="tonal" class="mb-2">{{ t('camps.inputs.saveFailed') }}: {{ saveError }}</v-alert>

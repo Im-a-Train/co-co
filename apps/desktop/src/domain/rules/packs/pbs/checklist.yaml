@@ -1,6 +1,7 @@
 # Coach checklist (catalog v2 §8). kind: B = binding, E = recommendation, 2014 = outdated source (unverified); "2014 / B" = both.
 # showWhen: list of conditions (any); keys inside one condition must all hold.
 #   campConfig: { field: [values] } | coachInput: { field: value } | coachInputSet: field | activityTag: [tags] | campInWinter: true
+# milestone: M-ID of the deadline milestone (packs/*/milestones.yaml) that is the same task: shared done state + due date.
 - id: CL-PBS-01
   module: pbs
   text: "Nothilfekurs vor den Modulen «Lager hauptleiten» und «Sicherheitsbereich» geplant (Ausbildungsplanung)."

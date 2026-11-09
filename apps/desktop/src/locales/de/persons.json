@@ -64,14 +64,26 @@
       "state": "NDS-Status",
       "ndsNumber": "NDS-Nr."
     },
-    "ndsRole": {
-      "CHILD": "Kind",
-      "ADOLESCENT": "Jugendliche:r",
-      "MAIN_SUPERVISOR": "Hauptleitung",
-      "SUPERVISOR": "Leitung",
-      "INSTRUCTOR": "Leiter:in",
-      "ASSISTANT_INSTRUCTOR": "Hilfsleiter:in",
-      "JS_COACH": "J+S-Coach"
+    "role": {
+      "leader": "Leitung",
+      "mainLeader": "Hauptleitung",
+      "campLeader": "Lagerleitung",
+      "supportingLeader": "Hilfsleitung",
+      "instructor": "Leiter:in",
+      "assistantInstructor": "Hilfsleiter:in",
+      "coach": "J+S-Coach",
+      "cook": "Küche",
+      "helper": "Helfer:in",
+      "participant": "Teilnehmer:in",
+      "child": "Kind",
+      "adolescent": "Jugendliche:r",
+      "treasurer": "Kasse",
+      "securityMountain": "Sicherheitsverantwortliche:r Berg",
+      "securitySnow": "Sicherheitsverantwortliche:r Schnee",
+      "securityWater": "Sicherheitsverantwortliche:r Wasser",
+      "unitLeader": "Abteilungsleitung",
+      "communication": "Kommunikation",
+      "advisor": "Beratung"
     },
     "birth": {
       "reveal": "Geburtsdaten anzeigen",

@@ -8,8 +8,11 @@ import type {
   Finding,
   Override,
   ReviewState,
+  ResourceRecord,
   ReviewStatus,
   Round,
+  RuleEditPatch,
+  RuleEditRecord,
   RulePack,
 } from '@/domain/types'
 import type { McpContext } from '../types'
@@ -77,6 +80,8 @@ export interface FakeState {
   findings: Finding[]
   deadlines: Deadline[]
   packs: RulePack[]
+  resources: ResourceRecord[]
+  ruleEdits: RuleEditRecord[]
   confirmAnswer: boolean
 }
 
@@ -102,6 +107,8 @@ export function makeFakeContext(over: Partial<FakeState> = {}) {
     findings: [makeFinding()],
     deadlines: [],
     packs: [],
+    resources: [],
+    ruleEdits: [],
     confirmAnswer: true,
     ...over,
   }
@@ -117,6 +124,29 @@ export function makeFakeContext(over: Partial<FakeState> = {}) {
     getMapping: vi.fn(async () => null),
     findings: vi.fn(async () => state.findings),
     rulePacks: () => state.packs,
+    listResources: vi.fn(async () => state.resources),
+    getResource: vi.fn(async (key: string) => state.resources.find((r) => r.key === key)),
+    updateResource: vi.fn(async (key: string, patch: Partial<ResourceRecord>) => {
+      const rec = state.resources.find((r) => r.key === key)
+      if (!rec) throw new Error('Unbekanntes Hilfsmittel.')
+      Object.assign(rec, patch, { modified: true, updatedBy: 'mcp' })
+      return rec
+    }),
+    listRuleEdits: vi.fn(async () => state.ruleEdits),
+    saveRuleEdit: vi.fn(async (ruleId: string, patch: RuleEditPatch, opts: { reason?: string; resourceKeys?: string[] }) => {
+      const rec: RuleEditRecord = {
+        ruleId,
+        baseVersion: '1',
+        patch,
+        reason: opts.reason,
+        resourceKeys: opts.resourceKeys,
+        updatedAt: '2031-01-01T12:00:00.000Z',
+        updatedBy: 'mcp',
+      }
+      state.ruleEdits = [...state.ruleEdits.filter((e) => e.ruleId !== ruleId), rec]
+      for (const p of state.packs) for (const r of p.rules) if (r.meta.id === ruleId) Object.assign(r.meta, patch)
+      return rec
+    }),
     deadlines: vi.fn(async () => state.deadlines),
     listFeedback: vi.fn(async () => state.feedback),
     getFeedback: vi.fn(async (id: string) => state.feedback.find((f) => f.id === id) ?? null),

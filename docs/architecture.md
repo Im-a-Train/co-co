@@ -40,6 +40,8 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `midata/` | Event link resolution, `midata` table store, rule facts from the aggregate | `resolveEventLink`, `getMidataRecord`, `saveMidataAggregate` |
 | `selfCheck/` | Leader self-check («Entwurfsrunde»): runs, progress vs. last run, plain-text report; store writes the run + a snapshot (`selfcheck:<id>`) | `planSelfCheckRun`, `compareWithRun`, `renderSelfCheckReport` |
 | `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
+| `resources/` | Hilfsmittel (ADR 0013): bundled defaults from `sources.yaml`, patch/history, registry merge, full-text search; store seeds lazily and notifies on writes | `bundledResources`, `mergeRegistry`, `searchResources`, `listResources`, `updateResource` |
+| `rules/edits*` | Coach rule edits (ADR 0013): policy (AI/MCP never `must`/`verified`), minimal patches, effective packs | `validateRuleEditPatch`, `applyRuleEdits`, `saveRuleEdit`, `loadEffectivePacks` |
 
 ## Composables (`src/composables/`)
 
@@ -56,12 +58,14 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `useRounds(campIri)` | review status, rounds, diff since last round | runden, Übersicht, Meine Lager |
 | `useMidata(campIri)` | connection status, per-camp link + aggregate, explicit refresh, event search, probe | MiData card, adopt dialog, settings, rules |
 | `useAi` | AI enabled + key present (`ready`), settings | AI buttons, settings |
+| `useResources` | Hilfsmittel list, reactive `version`, CRUD, search; applies the registry overlay (`initResources()` in App.vue) | Hilfsmittel view, rule cards, MCP |
+| `useRuleEdits` | effective packs + reactive `version` (`initRuleEdits()` in App.vue), reloads on Hilfsmittel changes | findings, Regelbuch, camp rule config |
 
 ## Storage (IndexedDB via Dexie)
 
 Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleState`), `coachInputs`,
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
-`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context). Schema changes: add a new Dexie version with an upgrade,
+`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context), `resources` and `ruleEdits` (coco2 v3, ADR 0013, zone green; not in the frozen legacy schema, so the migration skips them). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
 
 ### Encryption at rest (ADR 0010)
@@ -97,8 +101,15 @@ never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012
   ignore / skip → next open finding. Position in `?befund=<id>`; Übersicht and GP link there via
   `triageLocation`.
 - **Camp tabs / routes** (`CAMP_TABS` in `router/index.ts`): Übersicht, GP (`raster`, Grobprogramm incl. the
-  category-mapping panel), DP (`aktivitaeten`, Detailprogramm), Befunde, Selbstcheck, Angaben, Feedback,
-  Dokumente, Runden. `zuordnung` is no tab any more: route `camp-mapping` redirects to `raster?zuordnung=1`,
+  category-mapping panel), DP (`aktivitaeten`, Detailprogramm), Befunde, Selbstcheck, Angaben, Checkliste,
+  Personen, Feedback, Dokumente, Runden. The camp header shows connection chips (eCamp / MiData / NDS →
+  Einstellungen › Verbindungen); `/verbindung` shows only the eCamp login (data store card only on errors).
+- **Checklist ↔ deadlines:** checklist items may name a `milestone:`; `domain/rules/lib/checklistSync.ts`
+  plans the writes so a linked pair shares one done state (CoachInputs milestone first, then the checklist
+  item). The Checkliste tab lists the camp's deadlines with the same storage as `/fristen`.
+- **Hilfsmittel + rule edits (ADR 0013):** `/hilfsmittel` lists the effective sources; rule/finding source
+  links go to `/hilfsmittel?key=<KEY>`. Regelbuch edits (manual, AI proposal via `zones/ruleUpdate.ts`, or MCP
+  `update_rule`) are stored as minimal patches; `loadEffectivePacks()` feeds findings and the catalogue. `zuordnung` is no tab any more: route `camp-mapping` redirects to `raster?zuordnung=1`,
   which opens the mapping panel in the GP view. The GP grid hours are dynamic (07–23 h, widened by entries).
 - **Feedback out:** activity items → `api_post_comment`; everything → renderer → clipboard.
 - **Documents:** picker / drag-drop / watched folder → Rust scope check → `read_document` → extract →

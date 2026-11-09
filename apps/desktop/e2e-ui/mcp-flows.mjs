@@ -60,8 +60,8 @@ export async function mcpFlows({ page, step, shot, BASE }) {
   await step('flow: MCP tool switches', async () => {
     const reads = tid('mcp-tools-read').locator('[data-testid^="mcp-tool-"]')
     const writes = tid('mcp-tools-write').locator('[data-testid^="mcp-tool-"]')
-    if ((await reads.count()) !== 9) throw new Error(`read tools: ${await reads.count()}`)
-    if ((await writes.count()) !== 5) throw new Error(`write tools: ${await writes.count()}`)
+    if ((await reads.count()) !== 12) throw new Error(`read tools: ${await reads.count()}`)
+    if ((await writes.count()) !== 7) throw new Error(`write tools: ${await writes.count()}`)
     const states = (loc) => loc.evaluateAll((els) => els.map((e) => (e.querySelector('input') ?? e).checked))
     if (!(await states(reads)).every(Boolean)) throw new Error('not all read tools on')
     if ((await states(writes)).some(Boolean)) throw new Error('a write tool is on by default')

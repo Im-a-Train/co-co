@@ -38,8 +38,11 @@ export async function migrateLegacy(db: CocoDb, options: MigrateOptions = {}): P
   try {
     const stored = (await db.settings.get(MIGRATION_KEY))?.value as Progress | undefined
     const progress: Progress = { done: { ...(stored?.done ?? {}) } }
+    // Tables added after the legacy schema froze (e.g. v3 resources, ruleEdits) have nothing to copy.
+    const legacyTables = new Set(legacy.tables.map((t) => t.name))
     for (const name of TABLE_NAMES) {
       if (name in progress.done) continue
+      if (!legacyTables.has(name)) continue
       const src = legacy.table(name)
       const dst = db.table(name)
       const keys = await src.toCollection().primaryKeys()

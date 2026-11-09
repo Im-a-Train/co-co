@@ -23,6 +23,7 @@ export const CAMP_TABS = [
   { path: 'befunde', name: 'camp-findings', titleKey: 'campTabs.findings', icon: 'mdi-alert-circle-check-outline' },
   { path: 'selbstcheck', name: 'camp-selfcheck', titleKey: 'campTabs.selfCheck', icon: 'mdi-clipboard-check-outline' },
   { path: 'angaben', name: 'camp-inputs', titleKey: 'campTabs.inputs', icon: 'mdi-form-select' },
+  { path: 'checkliste', name: 'camp-checklist', titleKey: 'campTabs.checklist', icon: 'mdi-format-list-checks' },
   { path: 'personen', name: 'camp-persons', titleKey: 'campTabs.persons', icon: 'mdi-account-group-outline' },
   { path: 'feedback', name: 'camp-feedback', titleKey: 'campTabs.feedback', icon: 'mdi-message-draw' },
   { path: 'dokumente', name: 'camp-documents', titleKey: 'campTabs.documents', icon: 'mdi-file-document-multiple-outline' },
@@ -38,6 +39,7 @@ const campViews: Record<CampTabName, () => Promise<unknown>> = {
   'camp-findings': () => import('@/views/cockpit/FindingsView.vue'),
   'camp-selfcheck': () => import('@/views/selfCheck/SelfCheckView.vue'),
   'camp-inputs': () => import('@/views/camps/CoachInputsView.vue'),
+  'camp-checklist': () => import('@/views/checklist/ChecklistView.vue'),
   'camp-persons': () => import('@/views/persons/PersonsView.vue'),
   'camp-feedback': () => import('@/views/feedback/FeedbackView.vue'),
   'camp-documents': () => import('@/views/documents/DocumentsView.vue'),
@@ -89,6 +91,13 @@ export const routes: RouteRecordRaw[] = [
     name: 'rules',
     component: () => import('@/views/rules/RulesCatalogView.vue'),
     meta: { requiresAuth: true, titleKey: 'nav.rules' },
+  },
+  {
+    // ADR 0013: Hilfsmittel (reference documents and links the rules cite). `?key=<SOURCE-KEY>` opens one.
+    path: '/hilfsmittel',
+    name: 'resources',
+    component: () => import('@/views/resources/ResourcesView.vue'),
+    meta: { requiresAuth: true, titleKey: 'nav.resources' },
   },
   {
     path: '/einstellungen',

@@ -2,6 +2,7 @@
 /** Leaders: roles in the camp × qualifications at camp time + qualification kind mapping. */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { germanRoleLabel } from '@/domain/persons/roleLabels'
 import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type QualMatrixRow } from '@/domain/midata'
 import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2, type MidataQualKey, type MidataQualKind } from '@/domain/types'
 
@@ -85,7 +86,7 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
             <tr v-for="(r, i) in matrix.rows" :key="i">
               <td>{{ r.nickname }}</td>
               <td>
-                <v-chip v-for="l in r.roleLabels" :key="l" size="x-small" variant="tonal" class="mr-1" data-testid="qual-role-chip">{{ l }}</v-chip>
+                <v-chip v-for="l in r.roleLabels" :key="l" size="x-small" variant="tonal" class="mr-1" data-testid="qual-role-chip">{{ germanRoleLabel(l, t) }}</v-chip>
               </td>
               <td v-for="c in matrix.columns" :key="c" class="text-center">
                 <v-icon

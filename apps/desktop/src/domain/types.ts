@@ -1436,7 +1436,7 @@ export interface Zoned<T> {
 
 /** Whitelisted Claude models of the Anthropic provider (the OpenAI-compatible provider takes any model name). */
 export type AiModel = 'claude-sonnet-5-5' | 'claude-opus-5-5' | 'claude-haiku-5-5'
-export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview'
+export type AiFeature = 'rephrase' | 'summarise' | 'safetyReview' | 'ruleUpdate'
 
 /** ADR 0012: 'anthropic' = Anthropic Messages API; 'openai' = any OpenAI-compatible Chat Completions server (incl. local LLMs). */
 export type AiProvider = 'anthropic' | 'openai'
@@ -1567,4 +1567,70 @@ export interface CocoExport {
   appVersion: string
   /** Keyed by Dexie table name (see storage/db.ts TABLE_NAMES); aiLog is included. */
   tables: Record<string, unknown[]>
+}
+
+// ---------------------------------------------------------------------------------------------
+// Hilfsmittel (resources) and rule edits (ADR 0013)
+// ---------------------------------------------------------------------------------------------
+
+/** Who made a change to a resource or rule. AI/MCP changes are proposals the coach applied. */
+export type EditOrigin = 'manual' | 'ai' | 'mcp'
+
+/**
+ * One «Hilfsmittel» (Dexie table `resources`, key `key`, zone green: public J+S / PBS reference
+ * material). Seeded from packs/sources.yaml (origin 'bundled'); the coach can edit, replace or add
+ * entries. The effective source registry = bundled sources.yaml overlaid with these records.
+ */
+export interface ResourceRecord extends SourceRecord {
+  /** 'bundled' = seeded from sources.yaml (can be reset), 'custom' = added by the coach. */
+  origin: 'bundled' | 'custom'
+  /** True once a bundled record differs from sources.yaml (edited or file replaced). */
+  modified: boolean
+  /** Short German description for list + search (optional). */
+  summary?: string
+  /** Extracted plain text of an attached file (PDF/DOCX/TXT/MD) for search by MCP / AI. */
+  content?: string
+  /** Original file name of the attached file (no path). */
+  fileName?: string
+  /** SHA-256 hex of the attached file content (detects replacement). */
+  contentHash?: string
+  /** ISO timestamp of the last content/metadata change. */
+  updatedAt: IsoDateTime
+  updatedBy: EditOrigin
+  /** Previous versions (newest first, max 10): metadata only, without `content`. */
+  history?: ResourceHistoryEntry[]
+}
+
+export type ResourceHistoryEntry = Omit<ResourceRecord, 'history' | 'content'> & { replacedAt: IsoDateTime }
+
+/** Editable fields of a rule (everything else, incl. the predicate, stays bundled). */
+export interface RuleEditPatch {
+  title?: string
+  description?: string
+  message?: string
+  messageVariants?: Record<string, string>
+  severity?: Severity
+  confidence?: Confidence
+  status?: RuleStatus
+  /** null = remove the bundled bound. */
+  validFrom?: IsoDate | null
+  validTo?: IsoDate | null
+  sources?: SourceRef[]
+  tags?: string[]
+}
+
+/** Override of one bundled rule (Dexie table `ruleEdits`, key `ruleId`, zone green). */
+export interface RuleEditRecord {
+  ruleId: string
+  /** Bundled rule version the edit was made against (UI warns when the bundle moved on). */
+  baseVersion: string
+  patch: RuleEditPatch
+  /** Free-text reason, e.g. «Manual 2027 S. 21 geändert». */
+  reason?: string
+  /** Resource keys the edit relies on. */
+  resourceKeys?: string[]
+  updatedAt: IsoDateTime
+  updatedBy: EditOrigin
+  /** Previous patches (newest first, max 10). */
+  history?: Array<{ patch: RuleEditPatch; updatedAt: IsoDateTime; updatedBy: EditOrigin; reason?: string }>
 }

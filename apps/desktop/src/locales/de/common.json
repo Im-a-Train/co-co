@@ -36,6 +36,7 @@
     "camps": "Meine Lager",
     "deadlines": "Fristen",
     "rules": "Regeln",
+    "resources": "Hilfsmittel",
     "settings": "Einstellungen",
     "toggle": "Navigation ein-/ausblenden"
   },
@@ -48,6 +49,7 @@
     "findings": "Befunde",
     "selfCheck": "Selbstcheck",
     "inputs": "Angaben",
+    "checklist": "Checkliste",
     "persons": "Personen",
     "feedback": "Feedback",
     "documents": "Dokumente",

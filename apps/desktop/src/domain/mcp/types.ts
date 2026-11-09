@@ -20,9 +20,13 @@ import type {
   Override,
   ReviewState,
   ReviewStatus,
+  ResourceRecord,
   Round,
+  RuleEditPatch,
+  RuleEditRecord,
   RulePack,
 } from '../types'
+import type { ResourcePatch } from '../resources'
 
 export type McpToolKind = 'read' | 'write'
 
@@ -38,12 +42,17 @@ export type McpToolName =
   | 'list_deadlines'
   | 'list_feedback'
   | 'list_rounds'
+  | 'list_resources'
+  | 'search_resources'
+  | 'get_resource'
   // write
   | 'add_feedback'
   | 'update_feedback'
   | 'ignore_finding'
   | 'set_review_status'
   | 'post_feedback_comment'
+  | 'update_resource'
+  | 'update_rule'
 
 /** Minimal JSON Schema subset used for tool inputs (what MCP clients understand). */
 export interface JsonSchema {
@@ -176,7 +185,7 @@ export interface McpContext {
    * reaches MCP), overrides attached, AI findings excluded.
    */
   findings(campIri: Iri): Promise<Finding[]>
-  /** Enabled bundled rule packs (AppSettings.rulePacks). */
+  /** Enabled rule packs with the coach's rule edits applied (loadEffectivePacks, AppSettings.rulePacks). */
   rulePacks(): RulePack[]
   /** Deadlines (incl. PBS milestones) of one camp, or of all camps with a summary when campIri is null. */
   deadlines(campIri: Iri | null): Promise<Deadline[]>
@@ -190,6 +199,15 @@ export interface McpContext {
   setReviewStatus(campIri: Iri, status: ReviewStatus, note: string | null): Promise<ReviewState>
   /** Posts an activity feedback item as eCamp comment(s) (existing api_post_comment path). Returns the updated item. */
   postFeedbackComment(feedbackId: string): Promise<FeedbackItem>
+  /** Hilfsmittel (ADR 0013, zone green): all resources incl. attached content. */
+  listResources(): Promise<ResourceRecord[]>
+  getResource(key: string): Promise<ResourceRecord | undefined>
+  /** Throws Error(German) on validation failure / unknown key. Origin is always 'mcp'. */
+  updateResource(key: string, patch: ResourcePatch): Promise<ResourceRecord>
+  /** Stored rule edits (zone green). */
+  listRuleEdits(): Promise<RuleEditRecord[]>
+  /** Saves a rule edit with origin 'mcp' (policy enforced by the store). Throws Error(German) on validation failure. */
+  saveRuleEdit(ruleId: string, patch: RuleEditPatch, opts: { reason?: string; resourceKeys?: string[] }): Promise<RuleEditRecord | null>
   /**
    * Asks the coach in co-co. Resolves false when denied, dismissed, timed out or when `signal` aborts
    * (the call was cancelled or reached its deadline; the dialog is closed then).

@@ -1,6 +1,6 @@
 /**
  * Findings of one camp: builds RuleContext from useCampFacts + useCampSettings + documents (db) +
- * overrides + AppSettings, runs evaluate(loadBundledPacks(), ctx), writes a CampSummaryRecord.
+ * overrides + AppSettings, runs evaluate(loadEffectivePacks(), ctx), writes a CampSummaryRecord.
  * Re-evaluates when facts / settings version / overrides / documents change.
  * AI findings (origin 'ai') can be appended via addAiFindings (kept in memory only, shared per camp).
  */
@@ -10,7 +10,9 @@ import { getDb } from '@/domain/storage/db'
 import { getAppSettings } from '@/domain/storage/settings'
 import { countFindings, evaluate } from '@/domain/rules/engine'
 import { computeJsDays, lastJsDate, type JsDayReport } from '@/domain/rules/lib/jsDays'
-import { loadBundledPacks, selectPacks } from '@/domain/rules/packs'
+import { selectPacks } from '@/domain/rules/packs'
+import { loadEffectivePacks } from '@/domain/rules/editsStore'
+import { useRuleEdits } from '@/composables/useRuleEdits'
 import { addOverride, listOverrides, removeOverride, saveCampSummary } from '@/domain/rules/store'
 import { categoryExclusionsForCamp, disabledRuleIds, disablePromptCount, isGloballyDisabled, resolveRule, type CategoryExclusion } from '@/domain/rules/ruleState'
 import { filterExcludedFindings } from '@/domain/rules/categoryExclusions'
@@ -78,7 +80,7 @@ onDataStoreLocked(() => {
 })
 
 function enabledPacks(settings: AppSettings): RulePack[] {
-  return selectPacks(loadBundledPacks(), settings.rulePacks)
+  return selectPacks(loadEffectivePacks(), settings.rulePacks)
 }
 
 /** Subscribes to a Dexie live query; failures (no IndexedDB, e.g. in tests) are swallowed. */
@@ -105,9 +107,10 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const evalError = ref<string | null>(null)
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
-  const ruleTitle = (ruleId: string) => resolveRule(loadBundledPacks().flatMap((p) => p.rules), ruleId)?.meta.title ?? ruleId
+  const { version: ruleEditsVersion } = useRuleEdits()
+  const ruleTitle = (ruleId: string) => resolveRule(loadEffectivePacks().flatMap((p) => p.rules), ruleId)?.meta.title ?? ruleId
   const formerIdsOf = (ruleId: string): readonly string[] =>
-    resolveRule(loadBundledPacks().flatMap((p) => p.rules), ruleId)?.meta.formerIds ?? []
+    resolveRule(loadEffectivePacks().flatMap((p) => p.rules), ruleId)?.meta.formerIds ?? []
 
   // Live data: overrides + documents of this camp, app settings once.
   let unsub: Array<() => void> = []
@@ -204,6 +207,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
 
   const result = computed<{ findings: Finding[]; error: string | null }>(() => {
     const input = contextInput.value
+    void ruleEditsVersion.value
     if (!input) return { findings: [], error: null }
     try {
       const findings = evaluate(enabledPacks(appSettings.value), input, {
@@ -218,6 +222,7 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   /** J+S day model of the evaluated context (respects activity tags, params and 2027 rules). */
   const jsModel = computed<JsDayModel | null>(() => {
     const input = contextInput.value
+    void ruleEditsVersion.value
     if (!input) return null
     try {
       const model = completeContext(enabledPacks(appSettings.value), input).js
@@ -247,7 +252,8 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const categoryExclusions = computed(() => categoryExclusionsForCamp(ruleState.value, iri.value))
   const counts = computed(() => countFindings(findings.value))
   const disabledRules = computed<DisabledRuleInfo[]>(() => {
-    const rules = loadBundledPacks().flatMap((p) => p.rules)
+    void ruleEditsVersion.value
+    const rules = loadEffectivePacks().flatMap((p) => p.rules)
     const ids = [...new Set([...disabledRuleIds(ruleState.value, iri.value)].map((id) => resolveRule(rules, id)?.meta.id ?? id))].sort()
     return ids.map((ruleId) => ({ ruleId, title: ruleTitle(ruleId), global: isGloballyDisabled(ruleState.value, ruleId, resolveRule(rules, ruleId)?.meta.formerIds ?? []) }))
   })

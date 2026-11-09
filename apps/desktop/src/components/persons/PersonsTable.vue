@@ -3,15 +3,15 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatBirthDate, maskBirthDate } from '@/domain/persons/age'
-import { ndsRoleKey, type PersonViewRow } from '@/domain/persons/view'
+import { germanRoleLabel } from '@/domain/persons/roleLabels'
+import type { PersonViewRow } from '@/domain/persons/view'
 import NdsStateChip from './NdsStateChip.vue'
 import QualDots from './QualDots.vue'
 
 defineProps<{ rows: PersonViewRow[]; qualificationsReadable: boolean }>()
 const { t } = useI18n()
-function roleText(item: PersonViewRow, r: string): string {
-  const key = item.rolesFromNds ? ndsRoleKey(r) : null
-  return key ? t(`persons.ndsRole.${key}`) : r
+function roleText(_item: PersonViewRow, r: string): string {
+  return germanRoleLabel(r, t)
 }
 const reveal = ref(false)
 

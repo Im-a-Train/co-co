@@ -29,8 +29,10 @@ import type {
   MidataRecord,
   NdsRecord,
   Override,
+  ResourceRecord,
   ReviewState,
   Round,
+  RuleEditRecord,
   SelfCheckRun,
   Snapshot,
   WatchedFolder,
@@ -78,6 +80,10 @@ export class CocoDb extends Dexie {
   selfChecks!: EntityTable<SelfCheckRun, 'id'>
   /** Owner: rules (v2). Per-camp rule modules, activity tags, camp/offer context, checklist (zone green). */
   campRuleConfig!: EntityTable<CampRuleConfig, 'campIri'>
+  /** v3: Hilfsmittel (green, ADR 0013). */
+  resources!: EntityTable<ResourceRecord, 'key'>
+  /** v3: overrides of bundled rules (green, ADR 0013). */
+  ruleEdits!: EntityTable<RuleEditRecord, 'ruleId'>
 
   private rwQueue: Promise<void> = Promise.resolve()
 
@@ -106,6 +112,12 @@ export class CocoDb extends Dexie {
     // v2 (rules v2): per-camp rule config. New table only, no data migration.
     this.version(2).stores({
       campRuleConfig: 'campIri',
+    })
+    // v3 (ADR 0013): Hilfsmittel (resources) and rule edits. New tables only; resources are seeded lazily
+    // from packs/sources.yaml by domain/resources/store.ts, not here.
+    this.version(3).stores({
+      resources: 'key',
+      ruleEdits: 'ruleId',
     })
   }
 
@@ -147,6 +159,8 @@ export const TABLE_NAMES = [
   'nds',
   'selfChecks',
   'campRuleConfig',
+  'resources',
+  'ruleEdits',
 ] as const
 
 export type TableName = (typeof TABLE_NAMES)[number]

@@ -60,14 +60,6 @@ async function doImport() {
       hide-details
       color="primary"
     />
-    <v-switch
-      :model-value="b.remindAfterRound.value"
-      :label="t('backup.remind')"
-      density="compact"
-      hide-details
-      color="primary"
-      @update:model-value="(v: boolean | null) => b.setRemindAfterRound(!!v)"
-    />
 
     <v-alert v-if="savedPath" type="success" variant="tonal" density="compact" class="mt-3" :text="t('backup.exported', { path: savedPath })" />
     <v-alert v-if="errorText" type="error" variant="tonal" density="compact" class="mt-3" :text="errorText" />

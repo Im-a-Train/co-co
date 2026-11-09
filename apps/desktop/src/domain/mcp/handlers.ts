@@ -27,6 +27,15 @@ import {
   type McpToolName,
 } from './types'
 import { RED_DERIVED_MARKER } from '../zones/aiGateway'
+import {
+  confirmUpdateResource,
+  confirmUpdateRule,
+  get_resource,
+  list_resources,
+  search_resources,
+  update_resource,
+  update_rule,
+} from './resourceHandlers'
 
 const TRUNC_LIST = 1500
 const TRUNC_DETAIL = 4000
@@ -233,6 +242,7 @@ const list_findings: McpHandler = async (args, ctx) => {
 const get_rule_catalog: McpHandler = async (args, ctx) => {
   const module = str(args, 'module')
   const packs = ctx.rulePacks()
+  const edits = new Map((await ctx.listRuleEdits()).map((e) => [e.ruleId, e]))
   return {
     packs: packs.map((p) => ({ id: p.id, name: p.name, version: p.version })),
     rules: packs.flatMap((p) =>
@@ -251,6 +261,9 @@ const get_rule_catalog: McpHandler = async (args, ctx) => {
           validFrom: meta.validFrom ?? null,
           validTo: meta.validTo ?? null,
           source: { title: meta.source.title, url: meta.source.url },
+          sourceKeys: meta.sources.map((s) => s.key),
+          edited: edits.has(meta.id),
+          updatedBy: edits.get(meta.id)?.updatedBy ?? null,
         })),
     ),
   }
@@ -414,11 +427,16 @@ export const MCP_HANDLERS: Record<McpToolName, McpHandler> = {
   list_deadlines,
   list_feedback,
   list_rounds,
+  list_resources,
+  search_resources,
+  get_resource,
   add_feedback,
   update_feedback,
   ignore_finding,
   set_review_status,
   post_feedback_comment,
+  update_resource,
+  update_rule,
 }
 
 // ---- confirmation texts -----------------------------------------------------------------------
@@ -494,4 +512,6 @@ export const MCP_CONFIRM: Partial<Record<McpToolName, McpConfirmBuilder>> = {
   ignore_finding: confirmIgnoreFinding,
   set_review_status: confirmSetReviewStatus,
   post_feedback_comment: confirmPostFeedbackComment,
+  update_resource: confirmUpdateResource,
+  update_rule: confirmUpdateRule,
 }

@@ -79,6 +79,16 @@
       "saveFailed": "Markierungen konnten nicht gespeichert werden"
     },
     "checklist": {
+      "tabTitle": "Checkliste",
+      "tabIntro": "Fristen dieses Lagers und deine Coach-Checkliste an einem Ort. Verknüpfte Punkte teilen sich den Stand mit der Frist.",
+      "deadlinesTitle": "Fristen dieses Lagers",
+      "deadlinesEmpty": "Keine Fristen: Das Lager hat noch kein Startdatum.",
+      "deadlinesHint": "Gleicher Stand wie unter «Fristen». Termine und Lieferdaten pflegst du unter",
+      "toFristen": "Alle Fristen",
+      "toInputs": "Angaben",
+      "dueOn": "Frist {date}",
+      "movedHint": "Die Coach-Checkliste und die Fristen dieses Lagers findest du jetzt im Tab «Checkliste».",
+      "movedLink": "Zur Checkliste",
       "title": "Coach-Checkliste",
       "intro": "Punkte, die du als Coach vor und im Lager abhakst. Es erscheinen nur Punkte der aktiven Regelmodule.",
       "empty": "Keine Punkte: Es sind keine Regelmodule aktiv oder die Lagerdaten fehlen noch.",
