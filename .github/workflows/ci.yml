@@ -188,7 +188,7 @@ jobs:
           ls -l "$out"
 
       - name: Upload Windows build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: co-co-windows-x64
           path: release-files/*
@@ -239,7 +239,7 @@ jobs:
           ls -l "$out"
 
       - name: Upload Windows build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: co-co-windows-x64
           path: release-files/*
@@ -266,13 +266,13 @@ jobs:
           rm -rf "$dir" && mkdir -p "$dir"
           echo "RELEASE_DIR=$dir" >> "$GITHUB_ENV"
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: co-co-windows-x64
           path: ${{ env.RELEASE_DIR }}
 
       - name: Create tag + pre-release v${{ needs.version.outputs.version }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: co-co ${{ needs.version.outputs.version }}
@@ -309,7 +309,7 @@ jobs:
           key: linux
       - run: npm ci
       - run: npm run tauri -w apps/desktop -- build --bundles deb,appimage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: co-co-linux-x64
           path: |
@@ -336,7 +336,7 @@ jobs:
           key: macos
       - run: npm ci
       - run: npm run tauri -w apps/desktop -- build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: co-co-macos
           path: apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
