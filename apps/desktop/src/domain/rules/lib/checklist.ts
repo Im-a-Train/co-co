@@ -14,6 +14,7 @@
 import { parse } from 'yaml'
 import type {
   ActivityTag,
+  Audience,
   CampRuleConfig,
   CoachInputs,
   IsoDate,
@@ -42,6 +43,8 @@ export interface ChecklistItem {
   id: string
   module: ModuleId
   text: string
+  /** Who does or verifies it: the coach (checklist tab) or the camp leaders. */
+  audience: Audience
   sources: SourceRef[]
   /** One kind, or two for a combined cell such as «2014 / B». */
   kinds: ChecklistKind[]
@@ -77,6 +80,7 @@ export function parseChecklist(raw: unknown, where: string): ChecklistItem[] {
     const module = r.module as ModuleId
     if (!MODULE_IDS.includes(module)) err(`Modul ungültig (${String(r.module)})`)
     if (typeof r.text !== 'string' || !r.text.trim()) err('text fehlt')
+    if (r.audience !== 'coach' && r.audience !== 'leaders') err(`audience muss coach oder leaders sein (${String(r.audience)})`)
     const kinds = parseKinds(r.kind)
     if (kinds.length === 0 || kinds.some((k) => !KINDS.includes(k))) err(`kind ungültig (${String(r.kind)})`)
     let sources: SourceRef[] = []
@@ -106,6 +110,7 @@ export function parseChecklist(raw: unknown, where: string): ChecklistItem[] {
       id,
       module,
       text: String(r.text ?? ''),
+      audience: r.audience as Audience,
       sources,
       kinds,
       ...(showWhen ? { showWhen } : {}),

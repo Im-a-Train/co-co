@@ -711,6 +711,11 @@ export interface RuleMeta {
   message: string
   /** Alternative templates selected by `RuleHit.variant` (and used for `RuleHit.fragments`). */
   messageVariants?: Record<string, string>
+  /**
+   * Coach-written feedback text used by «Feedback erstellen» instead of the generic sentence built from
+   * `message`. Same `{param}` placeholders as `message`; absent = generic sentence.
+   */
+  feedbackText?: string
   severity: Severity
   confidence: Confidence
   scope: FindingScope
@@ -891,6 +896,19 @@ export interface ModuleResolution {
 export type SbApprovalKind = 'experte' | 'bergfuehrer'
 
 /** Per-camp rule configuration (Dexie table `campRuleConfig`, zone green). */
+/** Who has to act on a checklist point or deadline: the coach, or the camp leaders (Lagerleitung). */
+export type Audience = 'coach' | 'leaders'
+
+/** A checklist point the coach added for one camp (zone green). Done state lives in `CampRuleConfig.checklist[id]`. */
+export interface CustomChecklistItem {
+  /** `CL-CUSTOM-<uuid>` */
+  id: string
+  text: string
+  /** Optional due date shown like a deadline. */
+  due?: IsoDate | null
+  createdAt: IsoDateTime
+}
+
 export interface CampRuleConfig {
   campIri: Iri
   zone: 'green'
@@ -913,6 +931,10 @@ export interface CampRuleConfig {
   }
   params: Record<string, number | string | boolean>
   checklist: Record<string, { done: boolean; at: IsoDateTime; note?: string }>
+  /** Coach-added checklist points for this camp (optional for records stored before; default []). */
+  customChecklist?: CustomChecklistItem[]
+  /** Bundled checklist item ids and deadline keys the coach removed from this camp's checklist (default []). */
+  hiddenChecklist?: string[]
   updatedAt: IsoDateTime
 }
 
@@ -1043,6 +1065,8 @@ export interface Finding {
   confidence: Confidence
   title: string
   message: string
+  /** `RuleMeta.feedbackText` with params filled (only when the rule has one). Used by itemFromFinding. */
+  feedbackText?: string
   scope: FindingScope
   targets: string[]
   evidence: Evidence[]
@@ -1156,6 +1180,8 @@ export interface Deadline {
   title?: string
   /** For kind 'pbs-milestone': the milestone list is not verified against Hering yet. */
   confidence?: Confidence
+  /** Who acts on it. Built-in kinds (NDS, Leihmaterial, Landeskarten, Lagerbewilligung) are 'coach'; milestones carry it from the pack. */
+  audience?: Audience
   /** Computed, never stored: the camp ended more than a month ago, so the deadline counts as done. */
   archived?: boolean
 }
@@ -1609,6 +1635,8 @@ export interface RuleEditPatch {
   description?: string
   message?: string
   messageVariants?: Record<string, string>
+  /** null = remove a bundled feedback text. */
+  feedbackText?: string | null
   severity?: Severity
   confidence?: Confidence
   status?: RuleStatus

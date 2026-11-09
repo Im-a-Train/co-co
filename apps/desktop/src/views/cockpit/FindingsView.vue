@@ -23,6 +23,7 @@ import FindingCard from '@/components/cockpit/FindingCard.vue'
 import FindingTriage, { type FeedbackDraft } from '@/components/cockpit/FindingTriage.vue'
 import CategoryExclusionDialog from '@/components/cockpit/CategoryExclusionDialog.vue'
 import OverrideDialog from '@/components/cockpit/OverrideDialog.vue'
+import RuleEditDialog from '@/components/rules/RuleEditDialog.vue'
 import SeverityChip from '@/components/cockpit/SeverityChip.vue'
 import { tryAction, useCockpit } from '@/components/cockpit/useCockpit'
 
@@ -62,6 +63,12 @@ const disabledDialog = ref(false)
 const exclusionDialog = ref(false)
 const notice = ref<string | null>(null)
 const ruleEdits = useRuleEdits()
+const editRuleId = ref<string | null>(null)
+const editRuleOpen = ref(false)
+function editRule(f: Finding) {
+  editRuleId.value = f.ruleId
+  editRuleOpen.value = true
+}
 const allRules = computed(() => {
   void ruleEdits.version.value
   return loadEffectivePacks()
@@ -358,12 +365,15 @@ function addAi(list: Finding[]) {
             @override="askOverride"
             :can-exclude-category="canExclude(f)"
             @exclude-category="excludeForRule"
+            @edit-rule="editRule"
             @remove-override="undoOverride"
             @open-activity="(iri: string) => openActivity(iri, f.id)"
           />
         </div>
       </section>
     </template>
+
+    <RuleEditDialog v-if="editRuleId" v-model="editRuleOpen" :rule-id="editRuleId" />
 
     <CategoryExclusionDialog
       v-model="exclusionDialog"

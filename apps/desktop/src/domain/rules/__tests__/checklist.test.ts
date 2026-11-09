@@ -49,10 +49,13 @@ describe('bundled checklist', () => {
 })
 
 describe('parseChecklist / validateChecklist', () => {
-  const base = { id: 'CL-JS-99', module: 'js', text: 'x', sources: [{ key: 'MAN', page: 'S. 1' }], kind: 'B' }
+  const base = { id: 'CL-JS-99', module: 'js', audience: 'coach', text: 'x', sources: [{ key: 'MAN', page: 'S. 1' }], kind: 'B' }
 
   it('rejects bad structure', () => {
     expect(() => parseChecklist([{ ...base, kind: 'X' }], 't')).toThrow(/kind ungültig/)
+    expect(() => parseChecklist([{ ...base, audience: undefined }], 't')).toThrow(/audience/)
+    expect(() => parseChecklist([{ ...base, audience: 'all' }], 't')).toThrow(/audience/)
+    expect(parseChecklist([{ ...base, audience: 'leaders' }], 't')[0].audience).toBe('leaders')
     expect(() => parseChecklist([{ ...base, module: 'nope' }], 't')).toThrow(/Modul ungültig/)
     expect(() => parseChecklist([{ ...base, sources: [] }], 't')).toThrow(/Quelle/)
     expect(() => parseChecklist([{ ...base, showWhen: [{ bogus: 1 }] }], 't')).toThrow(/showWhen/)
@@ -151,5 +154,14 @@ describe('campConfigEdit', () => {
     expect(c.checklist['CL-JS-01']).toMatchObject({ done: true, note: 'Anruf BASPO' })
     c = withChecklistItem(c, 'CL-JS-01', { done: false, note: '' })
     expect(c.checklist).toEqual({})
+  })
+})
+
+describe('bundled checklist audience', () => {
+  it('every item is classified and both audiences occur', () => {
+    const items = loadBundledChecklist()
+    expect(items.every((i) => i.audience === 'coach' || i.audience === 'leaders')).toBe(true)
+    expect(items.filter((i) => i.audience === 'coach').length).toBeGreaterThan(5)
+    expect(items.filter((i) => i.audience === 'leaders').length).toBeGreaterThan(5)
   })
 })

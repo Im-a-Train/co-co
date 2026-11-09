@@ -23,7 +23,7 @@ import { listCampRuleConfigs, updateCampRuleConfig } from '@/domain/rules/campRu
 import { withChecklistItem } from '@/domain/rules/lib/campConfigEdit'
 import { loadBundledChecklist } from '@/domain/rules/lib/checklist'
 import { planMilestoneToggle } from '@/domain/rules/lib/checklistSync'
-import type { CampRuleConfig, CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
+import type { Audience, CampRuleConfig, CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
 import { commands } from '@/lib/tauri'
 
@@ -61,9 +61,10 @@ interface StoredFilters {
   kinds: DeadlineKind[]
   statuses: DeadlineStatus[]
   showArchived: boolean
+  audiences: Audience[]
 }
 function readFilters(): StoredFilters {
-  const empty: StoredFilters = { campIris: [], kinds: [], statuses: [], showArchived: false }
+  const empty: StoredFilters = { campIris: [], kinds: [], statuses: [], showArchived: false, audiences: ['coach'] }
   try {
     const raw = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? 'null') as Partial<StoredFilters> | null
     if (!raw || typeof raw !== 'object') return empty
@@ -73,6 +74,7 @@ function readFilters(): StoredFilters {
       kinds: strs(raw.kinds).filter((k): k is DeadlineKind => (KIND_OPTIONS as string[]).includes(k)),
       statuses: strs(raw.statuses).filter((k): k is DeadlineStatus => (STATUS_OPTIONS as string[]).includes(k)),
       showArchived: raw.showArchived === true,
+      audiences: Array.isArray(raw.audiences) ? strs(raw.audiences).filter((a): a is Audience => a === 'coach' || a === 'leaders') : ['coach'],
     }
   } catch {
     return empty
@@ -83,24 +85,30 @@ const filterCamps = ref<Iri[]>(initialFilters.campIris)
 const filterKinds = ref<DeadlineKind[]>(initialFilters.kinds)
 const filterStatuses = ref<DeadlineStatus[]>(initialFilters.statuses)
 const showArchived = ref(initialFilters.showArchived)
-watch([filterCamps, filterKinds, filterStatuses, showArchived], () => {
+/** Audience chips: default only coach deadlines; none selected = all. */
+const filterAudiences = ref<Audience[]>(initialFilters.audiences)
+watch([filterCamps, filterKinds, filterStatuses, showArchived, filterAudiences], () => {
   try {
     const v: StoredFilters = {
       campIris: [...filterCamps.value],
       kinds: [...filterKinds.value],
       statuses: [...filterStatuses.value],
       showArchived: showArchived.value,
+      audiences: [...filterAudiences.value],
     }
     localStorage.setItem(FILTERS_KEY, JSON.stringify(v))
   } catch {
     /* storage unavailable: the filters just are not remembered */
   }
 })
-const hasFilters = computed(() => filterCamps.value.length > 0 || filterKinds.value.length > 0 || filterStatuses.value.length > 0)
+const hasFilters = computed(
+  () => filterCamps.value.length > 0 || filterKinds.value.length > 0 || filterStatuses.value.length > 0 || filterAudiences.value.join() !== 'coach',
+)
 function resetFilters() {
   filterCamps.value = []
   filterKinds.value = []
   filterStatuses.value = []
+  filterAudiences.value = ['coach']
 }
 const kindItems = computed(() => KIND_OPTIONS.map((k) => ({ value: k, title: t(`rules.deadlines.kindShort.${k}`) })))
 const statusItems = computed(() => STATUS_OPTIONS.map((k) => ({ value: k, title: t(`rules.deadlines.status.${k}`) })))
@@ -158,7 +166,9 @@ const archivedCount = computed(() => new Set(allDeadlines.value.filter((d) => d.
 /** Deadlines after archive switch and camp/kind/status filters: feeds radar, table and ICS export. */
 const deadlines = computed<Deadline[]>(() =>
   filterDeadlines(
-    allDeadlines.value.filter((d) => showArchived.value || !d.archived),
+    allDeadlines.value.filter(
+      (d) => (showArchived.value || !d.archived) && (!filterAudiences.value.length || filterAudiences.value.includes(d.audience ?? 'coach')),
+    ),
     { campIris: filterCamps.value, kinds: filterKinds.value, statuses: filterStatuses.value },
     today.value,
   ),
@@ -316,6 +326,13 @@ function relative(left: number): string {
       </v-row>
     </section>
 
+    <div class="d-flex align-center flex-wrap ga-2 mb-2" data-testid="filter-audience">
+      <span class="text-body-2 text-medium-emphasis">{{ t('rules.deadlines.filters.audience') }}</span>
+      <v-chip-group v-model="filterAudiences" multiple filter color="primary">
+        <v-chip value="coach" size="small" data-testid="audience-coach">{{ t('rules.deadlines.filters.audienceCoach') }}</v-chip>
+        <v-chip value="leaders" size="small" data-testid="audience-leaders">{{ t('rules.deadlines.filters.audienceLeaders') }}</v-chip>
+      </v-chip-group>
+    </div>
     <div class="d-flex align-start flex-wrap ga-3 mb-2" data-testid="deadline-filters">
       <v-autocomplete
         v-model="filterCamps"

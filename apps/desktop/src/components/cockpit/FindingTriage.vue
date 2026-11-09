@@ -20,6 +20,8 @@ import {
 } from '@/domain/triage'
 import type { CampFacts, CategoryClass, FeedbackItem, FeedbackKind, FeedbackScope, Finding, Iri } from '@/domain/types'
 import ActivityPreview from './ActivityPreview.vue'
+import RuleEditDialog from '@/components/rules/RuleEditDialog.vue'
+import { loadBundledPacks } from '@/domain/rules/packs'
 import FindingCard from './FindingCard.vue'
 
 export interface FeedbackDraft {
@@ -68,6 +70,17 @@ const STATUS_ICON: Record<FindingStatus, string> = {
   feedback: 'mdi-message-check-outline',
   ignored: 'mdi-eye-off-outline',
 }
+
+// ---- edit the rule behind the finding in place (findings re-evaluate when the edit is saved) ----
+const ruleEditOpen = ref(false)
+const bundledRuleIds = (() => {
+  try {
+    return new Set(loadBundledPacks().flatMap((p) => p.rules.map((r) => r.meta.id)))
+  } catch {
+    return new Set<string>()
+  }
+})()
+const canEditRule = computed(() => current.value?.origin === 'rule' && bundledRuleIds.has(current.value.ruleId))
 
 // ---- editor draft (re-prefilled whenever the current finding changes) --------------------------
 const draft = ref<FeedbackDraft>({ kind: 'suggestion', scope: 'camp', text: '' })
@@ -221,25 +234,36 @@ watch(
               <div class="text-subtitle-2 mb-1">{{ t('findings.triage.activity') }}</div>
               <ActivityPreview v-if="activityIri" :facts="facts" :activity-iri="activityIri" :class-of="classOf" excerpt />
               <div v-else class="text-body-2 text-medium-emphasis">{{ t('findings.triage.noActivity') }}</div>
-              <v-btn
-                v-if="activityIri"
-                size="small"
-                variant="text"
-                prepend-icon="mdi-calendar-week"
-                :text="t('findings.triage.openInGrid')"
-                @click="emit('openActivity', activityIri)"
-              />
-              <v-btn
-                v-if="activityIri && current.origin === 'rule' && hasCategory"
-                size="small"
-                variant="text"
-                prepend-icon="mdi-filter-remove-outline"
-                class="d-block mt-1"
-                style="height: auto; white-space: normal"
-                :text="t('findings.categoryExclusion.forRule')"
-                data-testid="exclude-category-rule"
-                @click="emit('excludeCategory', current)"
-              />
+              <div class="d-flex flex-column align-start ga-1 mt-1">
+                <v-btn
+                  v-if="activityIri"
+                  size="small"
+                  variant="text"
+                  prepend-icon="mdi-calendar-week"
+                  :text="t('findings.triage.openInGrid')"
+                  @click="emit('openActivity', activityIri)"
+                />
+                <v-btn
+                  v-if="canEditRule"
+                  size="small"
+                  variant="text"
+                  prepend-icon="mdi-pencil-ruler"
+                  :text="t('findings.triage.editRule')"
+                  data-testid="edit-rule"
+                  @click="ruleEditOpen = true"
+                />
+                <v-btn
+                  v-if="activityIri && current.origin === 'rule' && hasCategory"
+                  size="small"
+                  variant="text"
+                  prepend-icon="mdi-filter-remove-outline"
+                  class="text-left"
+                  style="height: auto; min-height: 28px; white-space: normal"
+                  :text="t('findings.categoryExclusion.forRule')"
+                  data-testid="exclude-category-rule"
+                  @click="emit('excludeCategory', current)"
+                />
+              </div>
             </v-card-text>
           </v-card>
 
@@ -322,6 +346,8 @@ watch(
             </v-card-text>
           </v-card>
         </div>
+
+        <RuleEditDialog v-if="canEditRule" v-model="ruleEditOpen" :rule-id="current.ruleId" />
 
         <v-alert v-if="!progress.open" type="success" variant="tonal" density="compact" class="mt-3" :text="t('findings.triage.allDone')" />
       </div>

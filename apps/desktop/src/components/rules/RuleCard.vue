@@ -50,6 +50,10 @@ function fmt(iso: string): string {
           <th scope="row">{{ t('rules.catalog.card.message') }}</th>
           <td class="text-medium-emphasis">{{ meta.message }}</td>
         </tr>
+        <tr v-if="meta.feedbackText">
+          <th scope="row">{{ t('rules.catalog.card.feedbackText') }}</th>
+          <td class="text-medium-emphasis">{{ meta.feedbackText }}</td>
+        </tr>
         <tr>
           <th scope="row">{{ t('rules.catalog.card.validity') }}</th>
           <td>

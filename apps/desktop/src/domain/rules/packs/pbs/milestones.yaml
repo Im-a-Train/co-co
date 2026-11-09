@@ -11,6 +11,7 @@ version: "2026.2"
 milestones:
   - id: lagerplatz-reserviert
     title: Lagerplatz reserviert
+    audience: leaders
     description: Lagerplatz und Lagerhaus sind verbindlich reserviert (Vertrag unterschrieben).
     anchor: start
     offsetDays: -180
@@ -19,6 +20,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: grobprogramm-coach
     title: Grobprogramm an den Coach
+    audience: coach
     description: Das Grobprogramm ist erstellt und dem Coach zur Besprechung zugestellt.
     anchor: start
     offsetDays: -75
@@ -27,6 +29,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: lagermeldung-kantonalverband
     title: Lagermeldung an Abteilungsleitung und Kantonalverband
+    audience: leaders
     description: Die PBS-Lagermeldung ist an die Abteilungsleitung und den Kantonalverband gesendet.
     anchor: start
     offsetDays: -60
@@ -35,6 +38,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: elterninformation
     title: Elterninformation (Lagerbrief) verschickt
+    audience: leaders
     description: Eltern und Teilnehmende haben Lagerbrief und Anmeldeunterlagen erhalten.
     anchor: start
     offsetDays: -42
@@ -43,6 +47,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: sicherheitskonzept
     title: Sicherheitskonzept erstellt
+    audience: leaders
     description: Sicherheitskonzept inklusive Notfallorganisation liegt vor.
     anchor: start
     offsetDays: -28
@@ -51,6 +56,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: lagerdossier-coach
     title: Detailprogramm und Lagerdossier an den Coach
+    audience: coach
     description: Detailprogramm und Lagerdossier sind dem Coach zugestellt.
     anchor: start
     offsetDays: -14
@@ -59,6 +65,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: lagerbericht
     title: Lagerbericht abgeschlossen
+    audience: leaders
     description: Der Lagerbericht ist geschrieben und verteilt.
     anchor: end
     offsetDays: 14
@@ -67,6 +74,7 @@ milestones:
     source: { title: Hering, url: "https://hering.scout.ch/de" }
   - id: lagerabrechnung
     title: Lagerabrechnung abgeschlossen
+    audience: leaders
     description: Die Lagerabrechnung ist erstellt und von der Revision geprüft.
     anchor: end
     offsetDays: 60

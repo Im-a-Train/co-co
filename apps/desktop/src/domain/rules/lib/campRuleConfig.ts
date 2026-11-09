@@ -1,5 +1,5 @@
 /** Per-camp rule configuration defaults (catalog v2 §3.8). Pure; persistence in ../campRuleConfigStore.ts. */
-import type { CampRuleConfig, Iri } from '../../types'
+import type { CampRuleConfig, CustomChecklistItem, Iri } from '../../types'
 
 export function defaultCampRuleConfig(campIri: Iri, updatedAt: string = new Date(0).toISOString()): CampRuleConfig {
   return {
@@ -19,6 +19,10 @@ export function defaultCampRuleConfig(campIri: Iri, updatedAt: string = new Date
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
+function isCustomItem(v: unknown): v is CustomChecklistItem {
+  return isRecord(v) && typeof v.id === 'string' && typeof v.text === 'string' && typeof v.createdAt === 'string'
+}
+
 /** Fills missing fields of a stored (or imported) record with defaults; unknown fields are dropped. */
 export function normalizeCampRuleConfig(raw: unknown, campIri: Iri): CampRuleConfig {
   const base = defaultCampRuleConfig(campIri)
@@ -35,6 +39,8 @@ export function normalizeCampRuleConfig(raw: unknown, campIri: Iri): CampRuleCon
     angebot: obj(raw.angebot, base.angebot),
     params: obj(raw.params, base.params),
     checklist: obj(raw.checklist, base.checklist),
+    ...(Array.isArray(raw.customChecklist) ? { customChecklist: raw.customChecklist.filter(isCustomItem) } : {}),
+    ...(Array.isArray(raw.hiddenChecklist) ? { hiddenChecklist: raw.hiddenChecklist.filter((x): x is string => typeof x === 'string') } : {}),
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : base.updatedAt,
   }
 }

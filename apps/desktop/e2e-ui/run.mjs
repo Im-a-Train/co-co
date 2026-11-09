@@ -25,6 +25,7 @@ import { dataZonesFlows } from './datazones-flows.mjs'
 import { storageFlows } from './storage-flows.mjs'
 import { rulesFlows } from './rules-flows.mjs'
 import { resourcesFlows } from './resources-flows.mjs'
+import { campSearchFlows } from './campsearch-flows.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const PORT = Number(process.env.UI_PORT || 1420)
@@ -264,6 +265,7 @@ async function main() {
 
   await resourcesFlows({ page, step, shot, BASE })
   await rulesFlows({ page, step, shot, BASE })
+  await campSearchFlows({ page, step, shot, BASE, CAMP })
 
   // Must stay last: the key-lost flow leaves the harness database encrypted with the second mock key.
   await storageFlows({ page, step, go, shot, BASE })
