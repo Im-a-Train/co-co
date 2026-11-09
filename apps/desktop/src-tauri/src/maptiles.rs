@@ -17,7 +17,9 @@ use crate::session::read_body_capped;
 const USER_AGENT: &str = concat!("co-co/", env!("CARGO_PKG_VERSION"), " (swisstopo map tiles)");
 const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_TILE_BYTES: usize = 2 * 1024 * 1024;
-const CACHE_MAX: usize = 512;
+const CACHE_MAX: usize = 2048;
+/// Upper bound for the summed base64 size of all cached tiles.
+const CACHE_MAX_BYTES: usize = 64 * 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +34,7 @@ type Key = (MapLayer, u32, u32, u32);
 struct Cache {
     map: HashMap<Key, MapTile>,
     order: VecDeque<Key>,
+    bytes: usize,
 }
 
 pub struct MapTileState {
@@ -56,12 +59,16 @@ impl MapTileState {
 
     fn store(&self, key: Key, tile: MapTile) {
         let Ok(mut c) = self.cache.lock() else { return };
-        if c.map.insert(key, tile).is_none() {
-            c.order.push_back(key);
-            while c.order.len() > CACHE_MAX {
-                if let Some(old) = c.order.pop_front() {
-                    c.map.remove(&old);
-                }
+        let size = tile.bytes_base64.len();
+        match c.map.insert(key, tile) {
+            None => c.order.push_back(key),
+            Some(prev) => c.bytes -= prev.bytes_base64.len(),
+        }
+        c.bytes += size;
+        while c.order.len() > CACHE_MAX || c.bytes > CACHE_MAX_BYTES {
+            let Some(old) = c.order.pop_front() else { break };
+            if let Some(t) = c.map.remove(&old) {
+                c.bytes -= t.bytes_base64.len();
             }
         }
     }
@@ -110,5 +117,22 @@ mod tests {
         assert_eq!(s.cache.lock().unwrap().map.len(), CACHE_MAX);
         assert!(s.cached(&(MapLayer::Base, 18, 0, 0)).is_none());
         assert!(s.cached(&(MapLayer::Base, 18, CACHE_MAX as u32 + 9, 0)).is_some());
+    }
+
+    #[test]
+    fn cache_respects_byte_cap() {
+        let s = MapTileState::new().unwrap();
+        let big = CACHE_MAX_BYTES / 4 + 1;
+        for i in 0..6u32 {
+            s.store(
+                (MapLayer::Aerial, 10, i, 0),
+                MapTile { content_type: "image/jpeg".into(), bytes_base64: "a".repeat(big) },
+            );
+        }
+        let c = s.cache.lock().unwrap();
+        assert!(c.bytes <= CACHE_MAX_BYTES);
+        assert_eq!(c.map.len(), 3);
+        assert!(!c.map.contains_key(&(MapLayer::Aerial, 10, 0, 0)));
+        assert!(c.map.contains_key(&(MapLayer::Aerial, 10, 5, 0)));
     }
 }

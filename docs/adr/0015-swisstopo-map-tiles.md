@@ -31,3 +31,17 @@ rule «network only through Rust» stays.
 - The GPX viewer needs internet for the map; without it the SVG track still works.
 - New network host `wmts.geo.admin.ch`, reachable only through this command.
 - Adding a layer needs a code change and review (allowlist), not just a string from the UI.
+
+## Addendum 2026-11-09: interactive map and extended allowlist
+
+- The viewer map is now interactive (pan/zoom), so far more tiles are requested. Still only tile
+  coordinates leave the machine, only through `map_tile`, only to `wmts.geo.admin.ch`.
+- The allowlist grows to 13 layers (single table in `coco_core::maptiles`). Base maps (JPEG): `base`,
+  `grey` (pixelkarte-grau), `winter` (pixelkarte-farbe-winter), `aerial` (swisstopo.swissimage).
+  Overlays (PNG): `hiking`, `slope`, `skitour` (swisstopo-karto.skitouren), `snowshoe`
+  (swisstopo-karto.schneeschuhrouten), `mtb` (astra.mountainbikeland), `bike` (astra.veloland),
+  `transit` (bav.haltestellen-oev), `wildlife` (bafu.wrz-wildruhezonen_portal), `gamereserve`
+  (bafu.bundesinventare-jagdbanngebiete). Sources: swisstopo, ASTRA, BAV, BAFU; all free OGD served via
+  geo.admin.ch.
+- Cache bounds: at most 2048 tiles and 64 MB of base64 data, FIFO eviction on whichever limit is hit
+  first. Still memory only.
