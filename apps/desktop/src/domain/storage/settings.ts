@@ -1,7 +1,7 @@
 /**
  * App settings persistence (db.settings key 'app'). Shared by all modules.
- * Sections: `ai` (AI settings incl. provider, ADR 0011), `gpx` (documents), `backup` (rounds/backup), `rulePacks` (rules),
- * `midata` (M7 connection), `nds` (M8 connection), `mcp` (local MCP server, ADR 0011).
+ * Sections: `ai` (AI settings incl. provider, ADR 0012), `gpx` (documents), `backup` (rounds/backup), `rulePacks` (rules),
+ * `midata` (M7 connection), `nds` (M8 connection), `mcp` (local MCP server, ADR 0012).
  * Each feature only writes its own section via updateAppSettings({ <section>: ... }).
  * Nested objects (`ai.openai`, `mcp.tools`) are merged with their defaults on read; a patch replaces them as a whole
  * (pass `{ ...current.ai.openai, baseUrl }` / `{ ...current.mcp.tools, [name]: on }`).

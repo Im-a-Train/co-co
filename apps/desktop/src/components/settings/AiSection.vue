@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Settings > KI (ADR 0005, ADR 0011): data-zone note + master switch, then three sub-areas as tabs:
+ * Settings > KI (ADR 0005, ADR 0012): data-zone note + master switch, then three sub-areas as tabs:
  * «Anbieter» (AiProviderSection: Anthropic / OpenAI-kompatibel incl. lokal), «MCP-Server» (McpServerSection,
  * McpGuide, McpToolList) and «Protokoll» (AI request log, counts only).
  */

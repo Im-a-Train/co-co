@@ -29,7 +29,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | --- | --- | --- |
 | `types.ts` | Shared types: CampFacts, Finding, FeedbackItem, DocumentRecord, Round, Zone, AppSettings … | types only |
 | `campFacts/` | Load the eCamp camp graph via an injected `apiGet` and normalise it; guess category classes; mapping + coach-input persistence | `loadCampFacts`, `loadCampList`, `guessCategories`, `classOf`, `htmlToText` |
-| `rules/` | Rule engine, J+S day calculator, deadlines, ignores (`Override`), rule enable/disable state, camp summaries; bundled pack `packs/basis` | `evaluate`, `computeJsDays`, `computeDeadlines`, `loadBundledPacks` |
+| `rules/` | Rule engine, J+S day calculator, deadlines, ignores (`Override`), rule enable/disable state, camp summaries; bundled packs `packs/jslst` + `packs/pbs` (see «Rule set v2») | `evaluate`, `computeJsDays`, `computeDeadlines`, `loadBundledPacks` |
 | `triage/` | Finding status (Offen / Feedback erstellt / Ignoriert), next-open navigation, triage URLs | `findingStatus`, `nextOpen`, `triageLocation` |
 | `feedback/` | Feedback items: ordering, lint, renderers (WhatsApp / E-Mail / text), templates, comment splitting, finding → draft | `itemFromFinding`, `render*`, `splitForComment` |
 | `documents/` | Text extraction (PDF, DOCX, GPX, TXT/MD), safety-concept checklist, GPX stats, document ↔ activity linking, search index | `extract`, `checkSafetyConcept`, `gpxStats`, `buildSearchIndex` |
@@ -61,8 +61,8 @@ The webview has no network access of its own (CSP). Everything external goes thr
 
 Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleState`), `coachInputs`,
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
-`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs). Schema changes: add a new Dexie version with an upgrade,
-never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0011 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
+`documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context). Schema changes: add a new Dexie version with an upgrade,
+never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
 
 ## Key flows
 
@@ -161,15 +161,59 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
   «Aus dem Speicher entfernen» (`persons_clear`). All row types carry the `__red` brand; `aiGateway`
   refuses any payload containing it; no Dexie table, no backup, no clipboard
   (`__tests__/contracts/personsGuard.test.ts`). Birth dates are masked by default. P1 has no writes.
-- **Deadline radar** (`domain/rules/milestones.ts` + `milestones/pbs.yaml`, `domain/rules/ics.ts`): PBS
+- **Deadline radar** (`domain/rules/milestones.ts` + `packs/*/milestones.yaml`, `domain/rules/ics.ts`): PBS
   milestones (confidence `unverified`) merged into Fristen, done flags in `CoachInputs.milestonesDone`,
   ICS export through `save_text_file` (dialog filter now follows the extension: json, ics, md, txt;
   `coco-core::savefile`).
 - **Documents v2**: plan only, see `docs/plans/documents-v2.md`.
 
-## ADR 0011: OpenAI-compatible AI + local MCP server
+## Rule set v2 (modular packs)
 
-Decision: [adr/0011-openai-compatible-and-mcp.md](adr/0011-openai-compatible-and-mcp.md).
+Decision: [ADR 0011](adr/0011-rule-set-v2.md). Author API: `docs/plans/rules-v2/infra-api.md`; pack format:
+`src/domain/rules/packs/README.md`; catalog: `docs/plans/rules-v2/catalog-final.md`.
+
+Layout under `src/domain/rules/`:
+
+```
+lib/         util, keywords (matcher), params, sources, jsDays (legacy computeJsDays + buildJsDayModel),
+             timeWindows, birthYear, deadlines, moduleState, context (completeContext), campRuleConfig,
+             campConfigEdit, checklist, docCheck, holidays, mergePredicates
+packs/
+  sources.yaml            shared source registry (key, title, url, authority/date); old keys via formerKeys
+  registry.ts index.ts    getSourceRegistry(); loader, validateBundle, selectPacks (alias coco-basis)
+  jslst/                  pack coco-js-lst: pack.yaml (modules), params.yaml, keywords/*.yaml,
+                          checklist.yaml, milestones.yaml, rules/<ID>.yaml, predicates/<module>.ts
+  pbs/                    pack coco-pbs: same shape, module pbs
+```
+
+- **Rules per module** (108 active + JS-STAFF-01 retired): js 29, lst 28, lst-lager 11, lst-wasser 10,
+  lst-trekking 9, lst-winter 8, pbs 6, lst-berg 4, lst-ebb 4.
+- **Module state resolution** (`lib/moduleState.ts`): `appliesWhen` (jsCamp, sport, organizer, parent
+  module) -> coach state (`campConfig.modules[id]`, default `auto`) -> module default -> tag triggers (`on`)
+  -> suggest triggers (`suggested`, reasons as i18n keys). `suggested` caps hits at `hint` and adds
+  `finding.moduleNote`. An unknown organizer counts as PBS; a coach `on` overrides an organizer mismatch.
+- **RuleContext additions** (`completeContext`, lazy where costly): `ctx.params` (`get`, `isOverridden`,
+  `def`; versioned by camp start date), `ctx.keywords` (`match`, `matchActivity`), `ctx.js` (J+S day model:
+  days, J+S minutes/units, BWZ, short gaps, `jsDayCount`, `endDaysMode`, `trainingFreeDays`,
+  `isJsActivity`), `ctx.campConfig` (resolved `campRuleConfig` incl. `tagsOf(activityIri)` and
+  `moduleStates`). Coach activity tags override keyword detection.
+- **Storage:** Dexie v5 table `campRuleConfig` (key `campIri`), accessed through `campRuleConfigStore.ts`;
+  covered by backup export/import like every table.
+- **Findings** carry `module`, `sources` (key, page, quote, binding) and, for suggested modules,
+  `moduleNote`. Superseded rule ids sit in `formerIds`, so overrides/ruleState/disabled ids carry over.
+- **Invariants (loader + tests):** `must` implies confidence `verified`; rule ids and `formerIds` are
+  globally unique and a formerId never equals a live id; every referenced source, param and keyword set
+  exists; a rule YAML without predicate (or vice versa) throws; predicates may only lower
+  severity/confidence; no German text in TypeScript (texts live in YAML `message`/`messageVariants`, UI
+  strings in `locales/de`).
+- **Known small gaps:** document kinds `sicherheitskonzept`, `lagerregeln`, `lagerinfo` are matched by
+  filename keyword sets (`DocumentKind` has no such kinds); the child age < 10 is the J+S definition
+  constant in the trekking predicates; the 90 % threshold of LST-LAGER-02 is a TS constant; the PBS method
+  keyword lists are provisional (Pfadiprofil missing).
+
+## ADR 0012: OpenAI-compatible AI + local MCP server
+
+Decision: [adr/0012-openai-compatible-and-mcp.md](adr/0012-openai-compatible-and-mcp.md).
 
 - **Provider:** `AppSettings.ai.provider` (`anthropic` | `openai`) and `ai.openai` (`baseUrl`, `model`, `preset`).
   `aiGateway` stays the only entry point; zone rules apply to every provider, the Claude model whitelist

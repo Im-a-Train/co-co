@@ -16,6 +16,7 @@ import type {
   Iri,
   SafetyCheckKey,
 } from '../types'
+import { DOC_CHECK } from '../rules/lib/docCheck'
 
 export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024
 
@@ -192,19 +193,10 @@ export const SAFETY_CHECK_KEYS: SafetyCheckKey[] = [
   'campAddress',
 ]
 
-const EMERGENCY_NUMBERS = ['144', '1414', '117', '118', '145']
-
-const PATTERNS: Partial<Record<SafetyCheckKey, RegExp>> = {
-  hospital: /(spital|klinik|notfallstation|notfallpraxis|hospital)/gi,
-  crisisContact: /(krisen|helpline|krisenkontakt|krisenteam|pfadi[- ]?notruf|ansprechperson)/gi,
-  evacuation: /(evakuier|evakuation|notunterkunft|sammelplatz|sammelstelle|notquartier|schlechtwetterunterkunft)/gi,
-  badWeather: /(schlechtwetter|gewitter|unwetter|regenprogramm|wetterumschlag|wettervariante)/gi,
-  threeByThree: /(3\s*[x×*]\s*3|drei\s*mal\s*drei|3\s*mal\s*3|3-mal-3|dreimal\s*3)/gi,
-  firstAid: /(apotheke|erste[- ]hilfe|sanität|first[- ]aid)/gi,
-}
-
-const COORD_RE =
-  /(\b4[5-8]\.\d{3,}\s*[,;/ ]\s*[5-9]\.\d{3,}|\b2[5-8]\d{2}['’ ]?\d{3}\s*[,/ ]\s*1[0-3]\d{2}['’ ]?\d{3}|koordinaten|lagerplatz|lagerort|lageradresse|adresse)/gi
+// Numbers, labels and patterns live in rules/packs/jslst/keywords/docCheck.yaml (rules v2 §3.12).
+const EMERGENCY_NUMBERS = DOC_CHECK.emergencyNumbers.numbers
+const PATTERNS = DOC_CHECK.patterns
+const COORD_RE = DOC_CHECK.coordinates
 
 function snippetAround(text: string, index: number, length: number, radius = 70): string {
   const start = Math.max(0, index - radius)
@@ -245,8 +237,9 @@ export function checkSafetyConcept(text: string, facts?: CampFacts | null, now: 
         present.push(n)
         if (snippets.length < 3) snippets.push(snippetAround(text, m.index, n.length))
       }
-      // 144 is mandatory plus at least two further numbers.
-      items.push({ key, found: present.includes('144') && present.length >= 3, snippets })
+      // Required numbers (144) plus enough further numbers (minCount in total).
+      const { required, minCount } = DOC_CHECK.emergencyNumbers
+      items.push({ key, found: required.every((n) => present.includes(n)) && present.length >= minCount, snippets })
     } else if (key === 'campAddress') {
       const snippets: string[] = []
       const a = facts?.camp.address

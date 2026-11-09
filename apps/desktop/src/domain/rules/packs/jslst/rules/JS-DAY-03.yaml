@@ -1,0 +1,23 @@
+id: JS-DAY-03
+version: 1.0.0
+module: lst
+status: active
+title: "Sozialzeit zwischen J+S-Einheiten"
+description: "Zwischen zwei aufeinanderfolgenden J+S-Einheiten eines Tages liegen mindestens 30 Minuten Sozialzeit."
+message: "Tag {day}: {count} Pause(n) zwischen J+S-Einheiten kürzer als {min} Min. (kürzeste: {minutes} Min.)"
+severity: must
+confidence: verified
+scope: day
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, params]
+params: [js.minGapMinutes, js.minUnitMinutes]
+tags: [lagertag, sozialzeit]
+sources:
+  - key: LEITFADEN
+    page: "«Aktivitätendauer» (Art. 14 Abs. 3 VSpoFöP)"
+    quote: "Zwischen den Trainingseinheiten ist eine Sozialzeit von mindestens 30 Minuten vorgesehen"
+    binding: true
+  - key: WEB-L
+    page: "«Voraussetzungen»"
+    quote: "getrennt durch mindestens 30 Minuten Sozialzeit"
+    binding: true

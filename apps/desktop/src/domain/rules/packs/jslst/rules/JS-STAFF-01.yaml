@@ -1,0 +1,16 @@
+id: JS-STAFF-01
+version: 2.0.0
+module: js
+status: retired
+title: "Betreuungsverhältnis Leitende"
+description: "Ausser Betrieb: Für Lagersport/Trekking gibt es kein vorgegebenes Betreuungsverhältnis. Die sicherheitsrelevante Gruppengrösse legen die Leitenden selbst fest. Ersetzt durch JS-STAFF-02 (Mindestanzahl) und JS-STAFF-03 (beitragsrelevante Gruppengrösse)."
+message: "{leaders} Leitende für {participants} Teilnehmende (empfohlen: mindestens {needed})"
+severity: should
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs]
+tags: [leitung]
+sources:
+  - { key: WEB-SICH, page: "«Grundhaltung»" }
+  - { key: MB-UP, page: "S. 1" }

@@ -1,4 +1,4 @@
-//! ADR 0011: local MCP server (Model Context Protocol, "Streamable HTTP" transport, JSON responses only).
+//! ADR 0012: local MCP server (Model Context Protocol, "Streamable HTTP" transport, JSON responses only).
 //!
 //! - `tiny_http` server on `127.0.0.1:<port>` in its own thread; every request is handled on a short-lived
 //!   worker thread (tool calls block while the frontend works). Off by default; started/stopped by the
@@ -13,7 +13,7 @@
 //! - JSON-RPC batches (older protocol versions) are handled element by element, in order.
 //! - Bearer token in the OS keychain (service `coco_core::ai::KEY_SERVICE`, user `coco_core::mcp::TOKEN_KEY_USER`),
 //!   cached in memory. Never logged, never in errors or events; only `mcp_get_token` / `mcp_regenerate_token`
-//!   return it (ADR 0011 exception: the coach pastes it into the client config).
+//!   return it (ADR 0012 exception: the coach pastes it into the client config).
 //! - Activity log: last LOG_CAPACITY calls in memory (tool, kind, ok, duration, short error), never payloads.
 
 use std::collections::{HashMap, VecDeque};

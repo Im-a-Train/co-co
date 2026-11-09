@@ -8,7 +8,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { isTauri, NotInTauriError } from './tauri'
 
 export interface AiCompleteRequest {
-  /** ADR 0011. Omitted = 'anthropic'. */
+  /** ADR 0012. Omitted = 'anthropic'. */
   provider?: 'anthropic' | 'openai'
   /** Required for 'openai': e.g. 'http://localhost:11434/v1' (https, http only for loopback). */
   baseUrl?: string

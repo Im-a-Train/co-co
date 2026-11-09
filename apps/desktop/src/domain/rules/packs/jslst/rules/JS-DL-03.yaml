@@ -1,0 +1,22 @@
+id: JS-DL-03
+version: 2.0.0
+module: js
+status: active
+title: "Leihmaterial und Landeskarten rechtzeitig bestellen"
+description: "Leihmaterial wird mindestens 5 Wochen, Landeskarten mindestens 3 Wochen (bei Lieferung im Juni bis August: 5 Wochen) vor der Lieferung bestellt. Ohne Lieferdatum wird ab Lagerbeginn gerechnet."
+message: "{detail}"
+messageVariants:
+  leihmaterial: "Leihmaterial hätte bis {due} bestellt werden sollen (keine Bestellung bestätigt). Bestellung erst ab Status «Bewilligt», max. 1 Bestellung pro Lager."
+  landeskarten: "Landeskarten hätten bis {due} bestellt werden sollen (keine Bestellung bestätigt)."
+  noDeliveryDate: "Lieferdatum unbekannt – Frist ab Lagerbeginn gerechnet; liegt das Lieferdatum früher, ist auch die Frist früher."
+  detailJoin: " "
+severity: should
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [coachInputs, params]
+params: [js.leihmaterialLeadDays, js.landeskartenLeadDays, js.landeskartenLeadDaysSummer, js.landeskartenSummerMonths]
+tags: [frist]
+sources:
+  - { key: WEB-C, page: "«Leihmaterial», «Topografische Landeskarten»", binding: true }
+  - { key: PBS27, page: "Folie 16" }

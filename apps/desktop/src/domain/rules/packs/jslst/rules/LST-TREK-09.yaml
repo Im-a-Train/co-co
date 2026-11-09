@@ -1,0 +1,20 @@
+id: LST-TREK-09
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Rekognoszierung der Wanderung"
+description: "Wanderungen in alpinen und voralpinen Gebieten, im Jura und im Ausland müssen rekognosziert werden, alle anderen sollen es."
+message: "Für «{activity}» ist keine Rekognoszierung festgehalten. Wanderungen in alpinen und voralpinen Gebieten, im Jura und im Ausland müssen rekognosziert werden."
+messageVariants:
+  soll: "Für «{activity}» ist keine Rekognoszierung festgehalten. Alle Wanderungen sollen vor dem Lager rekognosziert werden."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, campConfig, activityTags]
+keywords: [HIKE, RECO]
+tags: [sicherheit, wanderung]
+sources:
+  - { key: MB-UP, page: "S. 3", binding: true }
+  - { key: WEB-SICH, page: "" }
+  - { key: BERG, page: "S. 13" }

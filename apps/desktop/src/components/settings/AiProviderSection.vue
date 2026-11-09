@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > KI > Anbieter: Anthropic key/model or an OpenAI-compatible (incl. local) server (ADR 0011). */
+/** Settings > KI > Anbieter: Anthropic key/model or an OpenAI-compatible (incl. local) server (ADR 0012). */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAi } from '@/composables/useAi'

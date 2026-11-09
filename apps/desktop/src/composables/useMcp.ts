@@ -1,5 +1,5 @@
 /**
- * MCP server state for Settings > KI (ADR 0011): settings (AppSettings.mcp), server status, token, tool switches.
+ * MCP server state for Settings > KI (ADR 0012): settings (AppSettings.mcp), server status, token, tool switches.
  *
  * CONTRACT (architect). Implementation: UI-MCP package. Module-level singleton state like useAi.ts.
  * - init(): called once from App.vue onMounted (Tauri only). Loads settings + mcp_status, subscribes to

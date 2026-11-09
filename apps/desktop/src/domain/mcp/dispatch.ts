@@ -1,5 +1,5 @@
 /**
- * Runs one MCP tool call (ADR 0011): enabled check, argument validation, optional in-app confirmation,
+ * Runs one MCP tool call (ADR 0012): enabled check, argument validation, optional in-app confirmation,
  * handler, zone check. Never throws; every problem becomes an `isError` outcome.
  * Argument values are never logged.
  */

@@ -1,4 +1,4 @@
-//! Pure parts of the AI calls (no HTTP, no keychain): the Anthropic Messages API and, since ADR 0011,
+//! Pure parts of the AI calls (no HTTP, no keychain): the Anthropic Messages API and, since ADR 0012,
 //! any OpenAI-compatible Chat Completions server (OpenAI, Ollama, LM Studio, llama.cpp, vLLM, …).
 
 use serde::Deserialize;
@@ -14,7 +14,7 @@ pub const API_VERSION: &str = "2023-06-01";
 pub const KEY_SERVICE: &str = "ch.imatrain.coco";
 pub const KEY_USER: &str = "anthropic-api-key";
 
-// ---- ADR 0011: OpenAI-compatible provider ---------------------------------------------------
+// ---- ADR 0012: OpenAI-compatible provider ---------------------------------------------------
 
 /// Keychain user (service KEY_SERVICE) of the optional OpenAI-compatible key, stored as
 /// `encode_bound_key(origin, key)` so it is only ever sent to the origin it was entered for.
@@ -39,7 +39,7 @@ pub enum AiProvider {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiRequest {
-    /// Missing = Anthropic (requests from before ADR 0011).
+    /// Missing = Anthropic (requests from before ADR 0012).
     #[serde(default)]
     pub provider: AiProvider,
     /// Required for `Openai`, ignored for `Anthropic`.

@@ -1,11 +1,11 @@
 /**
- * Shared contract of the local MCP server (ADR 0011). Framework-free.
+ * Shared contract of the local MCP server (ADR 0012). Framework-free.
  *
  * Flow: MCP client -> Rust (src-tauri/src/mcp.rs, JSON-RPC over POST /mcp) -> event `mcp://tool-call`
  * (McpToolCallEvent) -> composables/mcpBridge.ts -> domain/mcp/dispatch.ts (enabled check, confirmation,
  * handler, zone check) -> command `mcp_tool_result(callId, McpToolOutcome)` -> Rust -> client.
  *
- * Data zones (ADR 0005/0011): an MCP client is an external AI. Handlers never touch MiData/NDS data
+ * Data zones (ADR 0005/0012): an MCP client is an external AI. Handlers never touch MiData/NDS data
  * (red), redact every yellow text with the camp's redactor and the dispatcher runs every serialized
  * result through zones/mcpZone.ts assertMcpSendable().
  */

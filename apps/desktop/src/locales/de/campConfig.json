@@ -1,0 +1,104 @@
+{
+  "campConfig": {
+    "tri": { "yes": "ja", "no": "nein", "unset": "–" },
+    "modules": {
+      "title": "Regelmodule",
+      "intro": "Welche Regelmodule für dieses Lager geprüft werden. «automatisch» schaltet ein Modul ein, sobald das Lager dazu passt; du kannst es jederzeit überstimmen.",
+      "jsHint": "Ob das Lager ein J+S-Lager ist, stellst du oben unter «Allgemein» ein.",
+      "sport": {
+        "label": "Sportart",
+        "lst": "Lagersport/Trekking",
+        "other": "andere Sportart"
+      },
+      "effective": "Aktuell",
+      "reasonsTitle": "Gründe",
+      "waiting": "Lagerdaten werden geladen, Gründe folgen.",
+      "saveFailed": "Konnte nicht gespeichert werden"
+    },
+    "keywordSet": {
+      "MOUNTAIN": "Berg",
+      "WATER": "Wasser",
+      "WINTER": "Winter",
+      "EBB_A": "Bewegungsblock A",
+      "EBB_B": "Bewegungsblock B"
+    },
+    "fields": {
+      "region": "Region",
+      "campForm": "Lagerform",
+      "winterSafeAccess": "wintersichere Zufahrt",
+      "abroad": "Ausland",
+      "sport": "Sportart",
+      "other4DayCamp": "weiteres Lager im Angebot",
+      "unternehmungElsewhere": "Unternehmung anderswo",
+      "efCoveredElsewhere": "Erscheinungsformen anderswo"
+    },
+    "context": {
+      "title": "Lagerkontext",
+      "region": {
+        "label": "Region",
+        "mittelland": "Mittelland",
+        "jura": "Jura",
+        "voralpen": "Voralpen",
+        "alpen": "Alpen",
+        "ausland": "Ausland"
+      },
+      "campForm": {
+        "label": "Lagerform",
+        "haus": "Haus",
+        "zelt": "Zelt",
+        "gemischt": "gemischt"
+      },
+      "winterSafeAccess": "Wintersichere Zufahrt",
+      "abroad": "Lager im Ausland"
+    },
+    "angebot": {
+      "title": "Angebotskontext",
+      "other4DayCamp": "Weiteres Lager ≥ 4 Tage (ab 2027: J+S-Tage) im selben Angebot",
+      "unternehmungElsewhere": "Unternehmung in anderem Lager des Angebots",
+      "efCoveredElsewhere": "Erscheinungsformen in anderem Lager abgedeckt",
+      "lastActivityDate": "Letzte J+S-Aktivität des Angebots am"
+    },
+    "sb": {
+      "title": "Sicherheitsbereich: Bewilligung",
+      "campTitle": "Bewilligung Sicherheitsbereich Winter (Lager)",
+      "campHint": "Ohne wintersichere Zufahrt braucht das Lager eine Bewilligung der J+S-Expertin bzw. des J+S-Experten.",
+      "activityHint": "Bewilligung für diese Aktivität",
+      "kind": {
+        "label": "Bewilligt durch",
+        "experte": "J+S-Experte/Expertin",
+        "bergfuehrer": "Bergführer/in"
+      },
+      "date": "Bewilligt am",
+      "noDateNeeded": "Bei Bergführer/in ist kein Datum nötig.",
+      "none": "keine Bewilligung erfasst"
+    },
+    "tags": {
+      "title": "Markierungen",
+      "hint": "Deine Markierungen übersteuern die Stichwort-Erkennung der Regeln.",
+      "label": "Markierungen dieser Aktivität",
+      "saveFailed": "Markierungen konnten nicht gespeichert werden"
+    },
+    "checklist": {
+      "title": "Coach-Checkliste",
+      "intro": "Punkte, die du als Coach vor und im Lager abhakst. Es erscheinen nur Punkte der aktiven Regelmodule.",
+      "empty": "Keine Punkte: Es sind keine Regelmodule aktiv oder die Lagerdaten fehlen noch.",
+      "progress": "{done} von {total} erledigt",
+      "done": "erledigt",
+      "note": "Notiz",
+      "noteAdd": "Notiz hinzufügen",
+      "source": "Quelle",
+      "kind": {
+        "B": "verbindlich",
+        "E": "Empfehlung",
+        "2014": "Quelle 2014, ungeprüft"
+      },
+      "kindHint": {
+        "B": "Vorgabe aus einer verbindlichen Quelle",
+        "E": "Empfehlung oder Hilfsmittel, nicht verbindlich",
+        "2014": "Quelle ist veraltet (2014): Punkt nur als Anhaltspunkt"
+      },
+      "doneAt": "erledigt am {date}",
+      "saveFailed": "Stand konnte nicht gespeichert werden"
+    }
+  }
+}

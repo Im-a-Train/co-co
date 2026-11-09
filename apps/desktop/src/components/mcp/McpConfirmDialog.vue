@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Global confirmation dialog for MCP tool calls (ADR 0011), mounted once in App.vue. */
+/** Global confirmation dialog for MCP tool calls (ADR 0012), mounted once in App.vue. */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { currentConfirm, pendingConfirmCount, resolveCurrent } from '@/composables/mcpConfirm'

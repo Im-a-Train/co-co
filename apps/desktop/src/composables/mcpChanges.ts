@@ -1,5 +1,5 @@
 /**
- * Change signal for data written by MCP tools (ADR 0011). The MCP bridge writes straight to the Dexie stores;
+ * Change signal for data written by MCP tools (ADR 0012). The MCP bridge writes straight to the Dexie stores;
  * composables that keep their own non-live copy (useFeedback, useRounds) watch `lastMcpChange` and reload the
  * affected camp, so a later UI edit never writes stale data over an MCP change.
  */

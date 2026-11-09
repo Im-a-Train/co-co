@@ -1,4 +1,4 @@
-/** MCP / OpenAI-compatible provider flows of the UI harness (imported by run.mjs): Settings > KI (ADR 0011). */
+/** MCP / OpenAI-compatible provider flows of the UI harness (imported by run.mjs): Settings > KI (ADR 0012). */
 
 export async function mcpFlows({ page, step, shot, BASE }) {
   const tid = (id) => page.getByTestId(id)

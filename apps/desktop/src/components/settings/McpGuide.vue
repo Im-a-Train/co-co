@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > KI > MCP-Server: short connection guide per client (ADR 0011). Snippets show the masked token. */
+/** Settings > KI > MCP-Server: short connection guide per client (ADR 0012). Snippets show the masked token. */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMcp } from '@/composables/useMcp'

@@ -20,6 +20,7 @@ import type {
   FindingExplanation,
   IsoDate,
   IsoDateTime,
+  ModuleState,
   RuleContext,
   RuleHit,
   RuleMeta,
@@ -37,8 +38,8 @@ function formatDate(iso: IsoDateTime | null | undefined): string | null {
 /** Which red sources contribute to this hit (rule tags, hit.redKeys, evidence labels, context). */
 export function redSources(meta: RuleMeta, hit: RuleHit, ctx: RuleContext): { midata: boolean; nds: boolean } {
   const tags = meta.tags ?? []
-  let midata = tags.includes('midata')
-  let nds = tags.includes('nds')
+  let midata = tags.includes('midata') || (meta.inputs ?? []).includes('midata')
+  let nds = tags.includes('nds') || (meta.inputs ?? []).includes('nds')
   if (hit.redKeys && hit.redKeys.length > 0) {
     const labels = (hit.evidence ?? []).map((e) => e.label)
     const evMidata = labels.some((l) => /Quelle:\s*MiData/.test(l))
@@ -62,6 +63,7 @@ export function buildExplanation(
   ctx: RuleContext,
   evaluatedFor: IsoDate,
   finalSeverity: Severity,
+  extra: { moduleState?: ModuleState; reason?: FindingExplanation['severityReason'] } = {},
 ): FindingExplanation {
   const inputs: ExplainInput[] = []
   for (const key of meta.inputs ?? []) {
@@ -72,6 +74,13 @@ export function buildExplanation(
     } else if (key === 'documents') {
       const n = ctx.documents.length
       inputs.push(n > 0 ? { key, state: 'used', detail: `${n} ${n === 1 ? 'Dokument' : 'Dokumente'}` } : { key, state: 'missing' })
+    } else if (key === 'midata' || key === 'nds') {
+      // Reported below from redSources (with «Stand»).
+    } else if (key === 'activityTags') {
+      const n = Object.values(ctx.campConfig?.activityTags ?? {}).filter((t) => t.length > 0).length
+      inputs.push(n > 0 ? { key, state: 'used', detail: `${n} ${n === 1 ? 'Aktivität' : 'Aktivitäten'}` } : { key, state: 'missing' })
+    } else if (key === 'campConfig') {
+      inputs.push({ key, state: ctx.campConfig && !ctx.campConfig.isDefault ? 'used' : 'missing' })
     } else {
       inputs.push({ key, state: 'used' })
     }
@@ -98,7 +107,9 @@ export function buildExplanation(
   for (const [k, v] of Object.entries(hit.params ?? {})) if (!k.startsWith('_')) push(k, v)
 
   let severityReason: FindingExplanation['severityReason'] = 'rule'
-  if (meta.severity === 'must' && (meta.confidence === 'unverified' || meta.confidence === 'conflict')) {
+  if (extra.reason) {
+    severityReason = extra.reason
+  } else if (meta.severity === 'must' && (meta.confidence === 'unverified' || meta.confidence === 'conflict')) {
     severityReason = 'confidence-clamp'
   } else if (hit.severity && SEVERITY_RANK[hit.severity] > SEVERITY_RANK[meta.severity] && finalSeverity === hit.severity) {
     severityReason = 'hit-downgrade'
@@ -115,6 +126,9 @@ export function buildExplanation(
     evaluatedAt: ctx.now.toISOString(),
     baseSeverity: meta.severity,
     severityReason,
+    module: meta.module,
+    ...(extra.moduleState ? { moduleState: extra.moduleState } : {}),
+    ...(meta.formerIds?.length ? { formerIds: meta.formerIds } : {}),
     inputs,
     facts,
   }

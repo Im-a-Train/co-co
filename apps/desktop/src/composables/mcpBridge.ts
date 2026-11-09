@@ -1,5 +1,5 @@
 /**
- * MCP tool-call bridge (ADR 0011): listens to `mcp://tool-call`, runs domain/mcp/dispatch.ts with the real
+ * MCP tool-call bridge (ADR 0012): listens to `mcp://tool-call`, runs domain/mcp/dispatch.ts with the real
  * McpContext and answers with commands.mcpToolResult. Installed once from App.vue onMounted (Tauri only).
  *
  * - createMcpContext(): McpContext built from Dexie stores, useCampList/useCampFacts caches, useSession,

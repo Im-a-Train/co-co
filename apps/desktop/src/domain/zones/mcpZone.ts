@@ -1,5 +1,5 @@
 /**
- * Last line of defence for MCP tool results (ADR 0011): an MCP client is an external AI, so every
+ * Last line of defence for MCP tool results (ADR 0012): an MCP client is an external AI, so every
  * serialized result goes through assertMcpSendable() before it leaves co-co. Pure.
  */
 import type { CampFacts } from '../types'

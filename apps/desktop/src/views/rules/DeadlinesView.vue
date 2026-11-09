@@ -16,10 +16,11 @@ import {
   deadlineStatus,
   filterDeadlines,
   type DeadlineStatus,
-} from '@/domain/rules/deadlines'
+} from '@/domain/rules/lib/deadlines'
 import { toIcs } from '@/domain/rules/ics'
-import { computeMilestoneDeadlines, loadBundledMilestones, radarBucket, type RadarBucket } from '@/domain/rules/milestones'
-import type { CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
+import { computeMilestoneDeadlines, loadBundledMilestones, milestoneContextFromConfig, radarBucket, type RadarBucket } from '@/domain/rules/milestones'
+import { listCampRuleConfigs } from '@/domain/rules/campRuleConfigStore'
+import type { CampRuleConfig, CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
 import { commands } from '@/lib/tauri'
 
@@ -30,6 +31,7 @@ const inputsByCamp = ref<Record<Iri, CoachInputs>>({})
 const inputsError = ref<string | null>(null)
 const showDone = ref(false)
 const lastJsByCamp = ref<Record<Iri, string | null>>({})
+const ruleConfigByCamp = ref<Record<Iri, CampRuleConfig>>({})
 
 const MILESTONES_KEY = 'co-co.deadlines.showMilestones'
 function readShowMilestones(): boolean {
@@ -106,6 +108,7 @@ async function loadInputs() {
   try {
     lastJsByCamp.value = Object.fromEntries((await listCampSummaries()).map((s) => [s.campIri, s.lastJsDate ?? null]))
     inputsByCamp.value = Object.fromEntries((await listCoachInputs()).map((i) => [i.campIri, i]))
+    ruleConfigByCamp.value = Object.fromEntries((await listCampRuleConfigs()).map((c) => [c.campIri, c]))
     inputsError.value = null
   } catch (e) {
     inputsError.value = e instanceof Error ? e.message : String(e)
@@ -125,7 +128,7 @@ const campById = computed(() => new Map(camps.value.map((c) => [c.iri, c])))
 const deadlineCamps = computed(() =>
   camps.value
     .filter((c) => !c.isPrototype)
-    .map((c) => ({ iri: c.iri, title: c.title, start: c.start, end: c.end, lastJsDate: lastJsByCamp.value[c.iri] ?? null })),
+    .map((c) => ({ iri: c.iri, title: c.title, start: c.start, end: c.end, lastJsDate: lastJsByCamp.value[c.iri] ?? null, lastActivityDate: ruleConfigByCamp.value[c.iri]?.angebot?.lastActivityDate ?? null })),
 )
 
 const campOptions = computed(() => deadlineCamps.value.map((c) => ({ value: c.iri, title: c.title })))
@@ -135,7 +138,9 @@ const allDeadlines = computed<Deadline[]>(() => {
   const all = computeAllDeadlines(deadlineCamps.value, inputsByCamp.value)
   const ends = Object.fromEntries(deadlineCamps.value.map((c) => [c.iri, c.end]))
   if (!showMilestones.value) return archiveDeadlines(all, ends, today.value)
-  const ms = deadlineCamps.value.flatMap((c) => computeMilestoneDeadlines(c, inputsByCamp.value[c.iri] ?? null, milestoneList))
+  const ms = deadlineCamps.value.flatMap((c) =>
+    computeMilestoneDeadlines(c, inputsByCamp.value[c.iri] ?? null, milestoneList, milestoneContextFromConfig(ruleConfigByCamp.value[c.iri])),
+  )
   const merged = [...all, ...ms].sort((a, b) =>
     a.due < b.due ? -1 : a.due > b.due ? 1 : a.campTitle.localeCompare(b.campTitle) || a.kind.localeCompare(b.kind) || (a.milestoneId ?? '').localeCompare(b.milestoneId ?? ''),
   )

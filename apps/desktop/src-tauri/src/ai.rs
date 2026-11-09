@@ -1,5 +1,5 @@
 //! M5: Anthropic API key in the OS keychain and the `messages` call.
-//! ADR 0011: OpenAI-compatible Chat Completions (incl. local LLMs) with an optional key bound to its origin.
+//! ADR 0012: OpenAI-compatible Chat Completions (incl. local LLMs) with an optional key bound to its origin.
 //! Keys and prompt content are never logged or put into errors.
 
 use std::time::Duration;
@@ -105,7 +105,7 @@ async fn complete_anthropic(request: AiRequest) -> AppResult<AiResponse> {
     Ok(AiResponse { text, input_tokens, output_tokens })
 }
 
-// ---- ADR 0011: OpenAI-compatible provider ------------------------------------------------------
+// ---- ADR 0012: OpenAI-compatible provider ------------------------------------------------------
 
 const MAX_MODELS_BODY: usize = 2 * 1024 * 1024;
 

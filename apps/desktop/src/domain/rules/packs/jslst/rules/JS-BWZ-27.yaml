@@ -1,0 +1,25 @@
+id: JS-BWZ-27
+version: 2.0.0
+module: lst
+status: active
+title: "Bewegungszeit pro J+S-Tag ab 2027"
+description: "Ab 2027 sind pro J+S-Tag mindestens 120 Minuten sportlich-aktive Bewegungszeit nötig; ein Tag mit weniger zählt nicht als J+S-Tag."
+message: "{date}: nur {bwz} min Bewegungszeit (nötig {min}) – Tag zählt nicht als J+S-Tag."
+messageVariants:
+  noData: "Keine Angaben zur Bewegungszeit erfasst: ab 2027 sind {min} min pro J+S-Tag nötig."
+severity: should
+confidence: verified
+scope: day
+validFrom: 2027-01-01
+inputs: [mapping, activityTags, params]
+params: [js.minBwzDayMinutes, js.minDayMinutes, js.minBwzActivityMinutes]
+tags: [bewegungszeit]
+sources:
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: TOOL-V
+    page: "«Sportlich-aktive Bewegungszeit»"
+    binding: true
+  - key: PBS27
+    page: "Folie 6"

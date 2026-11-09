@@ -1,0 +1,22 @@
+id: LST-TREK-08
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Velo/Trottinett/Inline: Sicherheit"
+description: "Bei Velo, Trottinett und Inline-Skates werden Helme kontrolliert, Fahr- und Bremstechnik instruiert und bei Inline-Skates zusätzliche Schutzausrüstung getragen."
+message: "Für «{activity}» fehlen: {missing} (Helmkontrolle, Instruktion Fahr- und Bremstechnik, bei Inline-Skates Schutzausrüstung)."
+messageVariants:
+  missingJoin: ", "
+  bikeHelm: "Helmkontrolle"
+  bikeInstr: "Instruktion Fahr- und Bremstechnik"
+  bikeProtect: "Schutzausrüstung"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [BIKE, BIKE_INLINE, BIKE_HELM, BIKE_INSTR, BIKE_PROTECT]
+tags: [sicherheit, velo]
+sources:
+  - { key: MB-UP, page: "S. 2", quote: "kontrollieren, dass alle einen korrekt sitzenden Helm tragen …; instruieren vorgängig Fahr- und Bremstechnik …; benutzen Inline-Skates mit Bremsvorrichtung und tragen zusätzliche Schutzausrüstung", binding: true }
+  - { key: LAGER, page: "S. 11" }

@@ -6,6 +6,7 @@ import { getDb } from '@/domain/storage/db'
 import type { CampFacts, CategoryClass, DocumentRecord, Finding, Iri } from '@/domain/types'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import ActivityPreview from './ActivityPreview.vue'
+import ActivityTagEditor from './ActivityTagEditor.vue'
 import FindingCard from './FindingCard.vue'
 
 const props = defineProps<{
@@ -80,6 +81,8 @@ watch(
       </div>
 
       <ActivityPreview :facts="facts" :activity-iri="activityIri" :class-of="classOf" />
+
+      <ActivityTagEditor :camp-iri="campIri" :activity-iri="activity.iri" />
 
       <div class="text-subtitle-2">{{ t('cockpit.drawer.documents') }}</div>
       <div v-if="docs.length" class="d-flex flex-wrap ga-1 mb-3">

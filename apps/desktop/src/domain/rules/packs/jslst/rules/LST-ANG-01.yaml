@@ -1,0 +1,23 @@
+id: LST-ANG-01
+version: 1.0.0
+module: lst
+status: active
+title: "Keine Unternehmung im Programm"
+description: "Ein J+S-Angebot braucht mindestens eine Unternehmung (Aktivität ausserhalb des Lagerortes). Erfüllt durch den Tag «Unternehmung» oder eine J+S-Aktivität mit passendem Stichwort und anderem Ort."
+message: "Im Lager ist keine Unternehmung erkennbar (Aktivität ausserhalb des Lagerortes, z. B. Wanderung, Velotour). Ein J+S-Angebot braucht mindestens eine."
+severity: should
+confidence: heuristic
+scope: camp
+validFrom: 2027-01-01
+inputs: [mapping, keywords, activityTags, campConfig]
+keywords: [UNTERNEHMUNG]
+tags: [angebot]
+sources:
+  - key: TOOL-V
+    page: "«Das J+S-Angebot»"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: PBS27
+    page: "Folie 5"

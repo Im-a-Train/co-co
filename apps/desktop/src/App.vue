@@ -29,7 +29,7 @@ const navItems = [
 onMounted(() => {
   if (inTauri) {
     void init()
-    // ADR 0011: MCP tool calls run in this window; the server starts only if AI + MCP are enabled.
+    // ADR 0012: MCP tool calls run in this window; the server starts only if AI + MCP are enabled.
     void installMcpBridge().then(() => useMcp().init())
   }
   void backup.refresh()

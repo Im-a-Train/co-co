@@ -1,0 +1,16 @@
+id: CMP-CON-09
+version: 2.0.0
+module: js
+status: active
+title: "Geburtsdaten der Teilnehmenden in MiData"
+description: "Für alle Teilnehmenden in MiData ist das Geburtsdatum erfasst, damit das J+S-Alter geprüft werden kann."
+message: "Bei {count} Teilnehmenden fehlt in MiData das Geburtsdatum: Das J+S-Alter wird nach Jahrgang berechnet ({ageMin}–{ageMax} Jahre) und kann für sie nicht ermittelt werden (Quelle: MiData, Stand {stand})"
+severity: hint
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata, params]
+params: [js.ageMin, js.ageMax]
+tags: [vollstaendigkeit, midata]
+sources:
+  - { key: WEB-C, page: "«J+S-Alter»" }

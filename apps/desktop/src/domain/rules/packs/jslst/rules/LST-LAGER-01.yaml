@@ -1,0 +1,23 @@
+id: LST-LAGER-01
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Sicherheitskonzept fürs Lager"
+description: "Das Lager hat ein Sicherheitskonzept (Dokument) mit Notrufnummern, Spital, Krisenkontakt, Evakuation, Schlechtwetterplan, 3x3, Notfallapotheke und Lageradresse. Aktivitäten mit erhöhten Sicherheitsanforderungen sollen im Konzept vorkommen."
+message: "Kein Sicherheitskonzept für das Lager gefunden."
+messageVariants:
+  incomplete: "Im Sicherheitskonzept fehlen: {missing}."
+  riskNotNamed: "Aktivitäten mit erhöhten Sicherheitsanforderungen sind im Konzept nicht erwähnt: {list}."
+severity: should
+confidence: heuristic
+scope: camp
+validFrom: 2026-01-01
+inputs: [documents, keywords, activityTags]
+keywords: [DOC_SICHERHEITSKONZEPT, MOUNTAIN, WATER, WINTER, ROPE, EBB_A, EBB_B]
+formerIds: [SAFE-DOC-01]
+tags: [sicherheit, dokumente]
+sources:
+  - { key: MB-UP, page: "S. 1", quote: "haben ein Sicherheitskonzept, das … Massnahmen zur Verhinderung von Unfällen definiert und das Vorgehen im Notfall beinhaltet", binding: true }
+  - { key: LAGER, page: "S. 22" }
+  - { key: MAN, page: "S. 45" }
+  - { key: WINTER, page: "S. 27" }

@@ -1,0 +1,23 @@
+id: LST-EBB-01
+version: 1.0.0
+module: lst-ebb
+status: active
+title: "Ergänzender Bewegungsblock nicht gekennzeichnet"
+description: "Ergänzende Bewegungsblöcke (EBB) sind im Grobprogramm klar gekennzeichnet, mit J+S-Sportart (EBB A) bzw. Anbieter (EBB B). Erkennung über Stichwörter und Coach-Tags (Heuristik)."
+message: "«{activity}» ist vermutlich ein EBB {kind} («{term}»). EBB sind im Grobprogramm klar zu kennzeichnen – inkl. J+S-Sportart (EBB A) bzw. Anbieter (EBB B)."
+messageVariants:
+  incomplete: "«{activity}» ist als EBB gekennzeichnet, nennt aber {missing}."
+  missing_sport: "die J+S-Sportart"
+  missing_provider: "den Anbieter"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags]
+keywords: [EBB_A, EBB_B, EBB_B_PROVIDER]
+tags: [ebb]
+sources:
+  - key: EBB-L
+    page: "S. 1, S. 2"
+    quote: "EBB ‹J+S-Skifahren› – LS Pistenmorgen"
+    binding: true

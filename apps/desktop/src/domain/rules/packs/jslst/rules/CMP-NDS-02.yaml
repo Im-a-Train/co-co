@@ -1,0 +1,21 @@
+id: CMP-NDS-02
+version: 2.0.0
+module: js
+status: active
+title: "Offene Anwesenheitskontrolle (AWK) in der NDS"
+description: "Nach dem Lager ist die Anwesenheitskontrolle (AWK) aller Aktivitäten in der NDS erledigt. Grundlage ist der zuletzt abgerufene Stand aus der NDS."
+message: "In der NDS sind bei {count} Aktivitäten die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
+messageVariants:
+  one: "In der NDS ist bei 1 Aktivität die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
+severity: should
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-C
+    page: "«3. Schritt»"
+    quote: "AWK zeitnah und wahrheitsgetreu … erfasst"
+    binding: true
+  - { key: MAN, page: "S. 17" }

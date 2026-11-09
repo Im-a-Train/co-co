@@ -1,0 +1,17 @@
+id: LST-WINTER-07
+version: 1.0.0
+module: lst-winter
+status: active
+title: "Winteraktivität ausserhalb Lagersport/Trekking"
+description: "Skitouren, Gletscherüberquerungen und Aktivitäten mit LVS oder alpintechnischen Fähigkeiten sind in Lagersport/Trekking nicht erlaubt. Erkennung über Stichwörter (Heuristik)."
+message: "«{activity}» enthält «{term}». Mit LS/T nicht erlaubt sind Skitouren, Gletscherüberquerungen und Aktivitäten, die LVS oder alpintechnische Fähigkeiten voraussetzen. Möglich nur als ergänzender Bewegungsblock mit passender J+S-Anerkennung (z. B. Skitouren)."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags]
+keywords: [WINTER_FORBIDDEN]
+tags: [sicherheit, winter]
+sources:
+  - key: MB-UP
+    page: "S. 4, S. 6"

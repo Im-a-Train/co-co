@@ -1,4 +1,4 @@
-//! Pure logic of co-co's local MCP server (ADR 0011): HTTP request-head checks (loopback Host/Origin,
+//! Pure logic of co-co's local MCP server (ADR 0012): HTTP request-head checks (loopback Host/Origin,
 //! bearer token, method/path, size), JSON-RPC 2.0 message handling for the MCP "Streamable HTTP"
 //! transport (JSON responses only, no SSE), protocol-version negotiation, tool registration
 //! validation and token formatting. No sockets, no randomness, no Tauri: `src-tauri/src/mcp.rs` does I/O.

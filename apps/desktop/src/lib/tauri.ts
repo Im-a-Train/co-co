@@ -139,7 +139,7 @@ export type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain
 import type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
 export const EVENT_NDS_STATUS = 'nds://status'
 
-// ADR 0011: local MCP server. Types live in domain/mcp/types.ts.
+// ADR 0012: local MCP server. Types live in domain/mcp/types.ts.
 export type { McpLogEntry, McpStatus, McpToolCallEvent, McpToolCancelEvent, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
 import type { McpStatus, McpToolCallEvent, McpToolCancelEvent, McpToolOutcome, McpToolRegistration } from '@/domain/mcp/types'
 /** Rust -> main window: run a tool and answer with commands.mcpToolResult(callId, outcome). */
@@ -196,7 +196,7 @@ export const commands = {
   aiSetKey: (key: string) => call<void>('ai_set_key', { key }),
   aiHasKey: () => call<boolean>('ai_has_key'),
   aiClearKey: () => call<void>('ai_clear_key'),
-  // ADR 0011: OpenAI-compatible provider. The optional key is bound to the origin of baseUrl (keychain).
+  // ADR 0012: OpenAI-compatible provider. The optional key is bound to the origin of baseUrl (keychain).
   /** Stores the key for the origin of `baseUrl` (replaces any key stored for another origin). */
   aiOpenaiSetKey: (baseUrl: string, key: string) => call<void>('ai_openai_set_key', { baseUrl, key }),
   /** True only if a key is stored for exactly the origin of `baseUrl`. */
@@ -205,7 +205,7 @@ export const commands = {
   /** GET {baseUrl}/models -> sorted model ids. Also the «Verbindung testen» action (sends no camp data). */
   aiOpenaiModels: (baseUrl: string) => call<string[]>('ai_openai_models', { baseUrl }),
 
-  // ADR 0011: local MCP server (127.0.0.1 only, bearer token).
+  // ADR 0012: local MCP server (127.0.0.1 only, bearer token).
   mcpStatus: () => call<McpStatus>('mcp_status'),
   /** Starts (or restarts on another port) the server; creates the token if none exists. Emits EVENT_MCP_STATUS. */
   mcpStart: (port: number) => call<McpStatus>('mcp_start', { port }),
@@ -215,7 +215,7 @@ export const commands = {
   mcpSetTools: (tools: McpToolRegistration[]) => call<void>('mcp_set_tools', { tools }),
   /** Answers a `mcp://tool-call` event. Unknown or already answered callIds are ignored. */
   mcpToolResult: (callId: string, outcome: McpToolOutcome) => call<void>('mcp_tool_result', { callId, outcome }),
-  /** The bearer token for the MCP client config (ADR 0011 exception: shown in the KI tab). Created when missing. */
+  /** The bearer token for the MCP client config (ADR 0012 exception: shown in the KI tab). Created when missing. */
   mcpGetToken: () => call<string>('mcp_get_token'),
   /** Replaces the token; configured clients must be updated. */
   mcpRegenerateToken: () => call<string>('mcp_regenerate_token'),

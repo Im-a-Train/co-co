@@ -1,0 +1,16 @@
+id: LST-WASSER-07
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Springen ins Freigewässer"
+description: "Vom Springen in Freigewässer wird abgeraten."
+message: "«{activity}» erwähnt Springen. Vom Springen in Freigewässer wird abgeraten; falls doch: Kriterien (klares, tiefes Wasser, keine Hindernisse, umgehbar) festhalten."
+severity: hint
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [WATER, POOL, JUMP]
+sources:
+  - { key: WASSER, page: "S. 36" }
+tags: [sicherheit, wasser]

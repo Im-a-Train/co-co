@@ -234,7 +234,7 @@ function ndsAggregate(offerBusinessId: string, campBusinessId: string) {
   }
 }
 
-// ---- ADR 0011 mock: OpenAI-compatible key/models and the local MCP server --------------------------
+// ---- ADR 0012 mock: OpenAI-compatible key/models and the local MCP server --------------------------
 function isLoopbackUrl(url: string): boolean {
   try {
     return ['localhost', '127.0.0.1', '[::1]'].includes(new URL(url).hostname)

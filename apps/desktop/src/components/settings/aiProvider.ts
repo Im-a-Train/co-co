@@ -1,4 +1,4 @@
-/** Pure helpers for the OpenAI-compatible provider settings (mirrors the Rust URL checks, ADR 0011). */
+/** Pure helpers for the OpenAI-compatible provider settings (mirrors the Rust URL checks, ADR 0012). */
 import type { OpenAiPreset } from '@/domain/types'
 import { OPENAI_PRESET_URLS } from '@/domain/types'
 

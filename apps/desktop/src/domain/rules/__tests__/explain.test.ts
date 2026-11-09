@@ -8,7 +8,10 @@ function meta(over: Partial<RuleMeta> = {}): RuleMeta {
   return {
     id: 'T-RULE-01',
     version: '2.1.0',
+    module: 'js',
     group: 'js',
+    status: 'active',
+    sources: [{ key: 'WEB-L', page: '' }],
     title: 'Test',
     description: 'Beschreibung',
     message: 'Tag {day}',

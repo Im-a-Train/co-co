@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, archiveDeadlines, filterDeadlines, isArchivedCamp, type DeadlineFilter } from '../deadlines'
+import { addMonths, archiveDeadlines, filterDeadlines, isArchivedCamp, type DeadlineFilter } from '../lib/deadlines'
 import type { Deadline, DeadlineKind } from '../../types'
 
 const dl = (campIri: string, kind: DeadlineKind, due: string, done = false): Deadline => ({

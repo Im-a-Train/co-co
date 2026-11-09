@@ -90,10 +90,21 @@ fn qualification_labels() {
     assert_eq!(qual_keys_for_label("Modul BERG"), vec![Berg]);
     assert_eq!(qual_keys_for_label("Sicherheitsmodul Winter"), vec![Winter]);
     assert_eq!(qual_keys_for_label("Schneesport Zusatz"), vec![Winter]);
-    assert_eq!(qual_keys_for_label("SLRG Modul See"), vec![Wasser, Slrg]);
-    assert_eq!(qual_keys_for_label("Brevet Plus Pool"), vec![Slrg]);
+    assert_eq!(qual_keys_for_label("SLRG Modul See"), vec![Wasser, Slrg, WaterBath, WaterPoolUnsupervised, WaterLake]);
+    assert_eq!(qual_keys_for_label("Brevet Plus Pool"), vec![Slrg, WaterBath, WaterPoolUnsupervised]);
     assert_eq!(qual_keys_for_label("Rettungsschwimmer"), vec![Slrg]);
     assert_eq!(qual_keys_for_label("Bergführer Zusatz Lagerleiter"), vec![Lagerleiter, Berg]);
+    assert_eq!(qual_keys_for_label("Sicherheitsbereich Berg"), vec![Berg, SbBerg]);
+    assert_eq!(qual_keys_for_label("SB Berg"), vec![Berg, SbBerg]);
+    assert_eq!(qual_keys_for_label("Sicherheitsbereich Wasser"), vec![Wasser, SbWasser, WaterRiver]);
+    assert_eq!(qual_keys_for_label("Sicherheitsbereich Winter"), vec![Winter, SbWinter]);
+    assert_eq!(qual_keys_for_label("Modul Wasser LS/T"), vec![LeiterLsT, Wasser, WaterBath, WaterPoolUnsupervised, WaterLake]);
+    assert_eq!(qual_keys_for_label("Aufsichtsperson Wasser"), vec![Wasser, WaterBath, WaterPoolUnsupervised, WaterLake]);
+    assert_eq!(qual_keys_for_label("SLRG Basis Pool"), vec![Slrg, WaterBath]);
+    assert_eq!(qual_keys_for_label("Brevet Basis Pool"), vec![Slrg, WaterBath]);
+    assert_eq!(qual_keys_for_label("Modul See"), vec![Wasser, Slrg, WaterBath, WaterPoolUnsupervised, WaterLake]);
+    assert_eq!(qual_keys_for_label("Modul Fluss"), vec![Wasser, Slrg, WaterRiver]);
+    assert_eq!(qual_keys_for_label("J+S Kanusport Leiter"), vec![WaterBath, WaterPoolUnsupervised, WaterLake]);
     assert!(qual_keys_for_label("Erste Hilfe").is_empty());
     assert!(qual_keys_for_label("First Aid").is_empty());
 }
@@ -227,7 +238,7 @@ fn aggregate_leaders_and_qualifications() {
     let names: Vec<&str> = a.leaders.iter().map(|l| l.nickname.as_str()).collect();
     assert_eq!(names, vec!["Fuchs", "Ida", "Leiter/in 1", "Mira"]);
     for l in &a.leaders {
-        assert_eq!(l.qualifications.len(), 6);
+        assert_eq!(l.qualifications.len(), 13);
     }
     let fuchs = &a.leaders[0];
     assert_eq!(fuchs.role_label, "Hauptleitung");
@@ -328,11 +339,11 @@ fn serde_shape_matches_typescript() {
     for k in [
         "zone", "baseUrl", "eventId", "eventName", "eventDates", "location", "maximumParticipants", "participantsCount",
         "participantsJsAgeCount", "participantsWithoutBirthday", "minAge", "maxAge", "ageBands", "leadersCount", "leaders",
-        "coachMatch", "coachNickname", "qualificationsReadable", "qualificationKinds", "fetchedAt",
+        "coachMatch", "coachNickname", "qualificationsReadable", "qualificationKinds", "fetchedAt", "participantsByBirthYear",
     ] {
         assert!(o.contains_key(k), "missing {k}");
     }
-    assert_eq!(o.len(), 20);
+    assert_eq!(o.len(), 21);
     assert!(v["eventDates"][0].get("startAt").is_some() && v["eventDates"][0].get("finishAt").is_some());
     assert!(v["ageBands"][0].get("from").is_some() && v["ageBands"][0].get("count").is_some());
     let leader = &v["leaders"][0];
@@ -410,7 +421,7 @@ fn qualification_label_keywords_per_key() {
         assert!(qual_keys_for_label(l).contains(&Slrg), "{l}");
     }
     // SLRG modules imply both Slrg and Wasser
-    assert_eq!(qual_keys_for_label("SLRG Modul Fluss"), vec![Wasser, Slrg]);
+    assert_eq!(qual_keys_for_label("SLRG Modul Fluss"), vec![Wasser, Slrg, WaterRiver]);
     assert_eq!(qual_keys_for_label("Modul Pool"), vec![Slrg]);
 }
 
@@ -614,6 +625,44 @@ fn guests_and_inactive_participations() {
         ]
     });
     assert_eq!(leader_person_ids(std::slice::from_ref(&doc)), vec!["6"]);
+}
+
+fn year_aggregate(camp_start: &str, birthdays: &[&str]) -> MidataAggregate {
+    let mut data: Vec<Value> = Vec::new();
+    let mut included: Vec<Value> = vec![json!({"id": "r1", "type": "event_roles", "attributes": {"type": "Event::Role::Participant"}})];
+    for (i, b) in birthdays.iter().enumerate() {
+        let id = format!("{}", 900 + i);
+        data.push(json!({"id": format!("p{i}"), "type": "event_participations", "relationships": {
+            "participant": {"data": {"type": "people", "id": id}},
+            "roles": {"data": [{"type": "event_roles", "id": "r1"}]}}}));
+        included.push(json!({"id": id, "type": "people", "attributes": {"first_name": "A", "birthday": b}}));
+    }
+    let pages = vec![json!({"data": data, "included": included})];
+    let ev = event();
+    reduce_aggregate(&RawEventData {
+        base_url: "u",
+        event: &ev,
+        participation_pages: &pages,
+        qualification_pages: &[],
+        camp_start,
+        camp_end: camp_start,
+        coach_person_id: None,
+        fetched_at: "t",
+        qualifications_readable: true,
+        qual_mapping: None,
+    })
+    .unwrap()
+}
+
+#[test]
+fn js_age_by_jahrgang() {
+    // camp 2026: Jahrgang 2021 (5) .. 2006 (20) count, 2022 (4) and 2005 (21) do not,
+    // even when the birthday is after the camp start.
+    let a = year_aggregate("2026-07-18", &["2021-12-31", "2006-01-01", "2022-01-01", "2005-12-31", "2012-05-05", "2012-09-09"]);
+    assert_eq!(a.participants_js_age_count, 4);
+    assert_eq!(a.participants_by_birth_year.get(&2012), Some(&2));
+    assert_eq!(a.participants_by_birth_year.get(&2005), Some(&1));
+    assert_eq!(a.participants_by_birth_year.values().sum::<u32>(), 6);
 }
 
 #[test]

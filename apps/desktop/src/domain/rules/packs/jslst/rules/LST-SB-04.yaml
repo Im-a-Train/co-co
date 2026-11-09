@@ -1,0 +1,27 @@
+id: LST-SB-04
+version: 2.0.0
+module: lst
+status: active
+title: "Sicherheitsbereich nur mit Jugendlichen"
+description: "Aktivitäten im Sicherheitsbereich sind nur mit Jugendlichen erlaubt. Geprüft wird über den Jahrgang der Teilnehmenden (MiData). Wer teilnimmt, ist nicht bekannt, deshalb nur «Sollte»."
+message: "«{activity}» liegt im Sicherheitsbereich {area} und ist nur mit Jugendlichen erlaubt. Im Lager sind {n} Teilnehmende gemäss J+S-Jahrgangslogik noch Kinder (Jahrgang {fromYear} und jünger) – sie dürfen nicht teilnehmen."
+messageVariants:
+  camp: "Das Lager ohne wintersichere Zufahrt gilt als Sicherheitsbereich Winter und ist nur mit Jugendlichen erlaubt. Im Lager sind {n} Teilnehmende gemäss J+S-Jahrgangslogik noch Kinder (Jahrgang {fromYear} und jünger)."
+  areaBerg: "Berg"
+  areaWasser: "Wasser"
+  areaWinter: "Winter"
+  areaJoin: " / "
+severity: should
+confidence: verified
+scope: activity
+validFrom: 2026-01-01
+inputs: [activityTags, campConfig, midata, params]
+params: [lst.sbMinAgeByYear, lst.winterMonths]
+tags: [sicherheit, sicherheitsbereich, midata]
+sources:
+  - key: MB-UP
+    page: "S. 2"
+    quote: "nur mit Jugendlichen (10–20 Jahre) …, nicht aber mit Kindern unter 10 Jahren"
+    binding: true
+  - key: WEB-C
+    page: "Definition Kinder und Jugendliche"

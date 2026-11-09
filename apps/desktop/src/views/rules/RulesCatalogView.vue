@@ -6,23 +6,24 @@ import RuleCard from '@/components/rules/RuleCard.vue'
 import { useRuleState } from '@/composables/useRuleState'
 import { campsWithDisabled, isGloballyDisabled } from '@/domain/rules/ruleState'
 import { disableRuleStored, enableRuleStored } from '@/domain/rules/ruleStateStore'
-import { loadBundledPacks } from '@/domain/rules/packs'
-import type { Rule, RuleGroup, RulePack, Severity } from '@/domain/types'
+import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
+import type { ModuleId, Rule, RuleMeta, RulePack, Severity } from '@/domain/types'
 
 const { t } = useI18n()
 const { state: ruleState } = useRuleState()
 const stateError = ref<string | null>(null)
 
 /** Disabled state of one rule: everywhere, and in how many camps. */
-function disabledInfo(ruleId: string) {
-  const all = isGloballyDisabled(ruleState.value, ruleId)
-  const camps = campsWithDisabled(ruleState.value, ruleId)
+function disabledInfo(meta: RuleMeta) {
+  const former = meta.formerIds ?? []
+  const all = isGloballyDisabled(ruleState.value, meta.id, former)
+  const camps = campsWithDisabled(ruleState.value, meta.id, former)
   return { all, camps, any: all || camps > 0 }
 }
-async function toggle(ruleId: string, action: 'enable' | 'disableAll') {
+async function toggle(meta: RuleMeta, action: 'enable' | 'disableAll') {
   try {
-    if (action === 'enable') await enableRuleStored(ruleId)
-    else await disableRuleStored(ruleId, null)
+    if (action === 'enable') await enableRuleStored(meta.id, undefined, meta.formerIds ?? [])
+    else await disableRuleStored(meta.id, null, meta.formerIds ?? [])
     stateError.value = null
   } catch (e) {
     stateError.value = e instanceof Error ? e.message : String(e)
@@ -30,7 +31,6 @@ async function toggle(ruleId: string, action: 'enable' | 'disableAll') {
 }
 
 const SEVERITY_COLOR: Record<Severity, string> = { must: 'error', should: 'warning', hint: 'info' }
-const GROUPS: RuleGroup[] = ['js', 'completeness', 'safety', 'best-practice']
 
 const packs = ref<RulePack[]>([])
 const loadError = ref<string | null>(null)
@@ -41,7 +41,9 @@ try {
 }
 
 const search = ref('')
-const group = ref<RuleGroup | 'all'>('all')
+const group = ref<ModuleId | 'all'>('all')
+/** Filter options: the modules of the loaded packs (catalog v2). */
+const GROUPS = computed<ModuleId[]>(() => modulesOf(packs.value).map((m) => m.id))
 
 function matches(rule: Rule, query: string): boolean {
   if (!query) return true
@@ -57,10 +59,10 @@ function matches(rule: Rule, query: string): boolean {
 const visible = computed(() =>
   packs.value.map((pack) => ({
     pack,
-    byGroup: GROUPS.filter((g) => group.value === 'all' || group.value === g)
+    byGroup: GROUPS.value.filter((g) => group.value === 'all' || group.value === g)
       .map((g) => ({
         group: g,
-        rules: pack.rules.filter((r) => r.meta.group === g && matches(r, search.value)),
+        rules: pack.rules.filter((r) => r.meta.module === g && matches(r, search.value)),
       }))
       .filter((entry) => entry.rules.length > 0),
   })),
@@ -97,7 +99,7 @@ function fmt(iso: string): string {
       />
       <v-chip-group v-model="group" mandatory selected-class="text-primary">
         <v-chip value="all" size="small" filter>{{ t('rules.catalog.allGroups') }}</v-chip>
-        <v-chip v-for="g in GROUPS" :key="g" :value="g" size="small" filter>{{ t(`rules.catalog.group.${g}`) }}</v-chip>
+        <v-chip v-for="g in GROUPS" :key="g" :value="g" size="small" filter>{{ t(`rules.catalog.module.${g}`) }}</v-chip>
       </v-chip-group>
     </div>
 
@@ -119,34 +121,40 @@ function fmt(iso: string): string {
 
       <v-card-text>
         <section v-for="entry in byGroup" :key="entry.group" class="mb-4">
-          <h2 class="text-subtitle-1 mb-2">{{ t(`rules.catalog.group.${entry.group}`) }}</h2>
+          <h2 class="text-subtitle-1 mb-2">{{ t(`rules.catalog.module.${entry.group}`) }}</h2>
           <v-expansion-panels variant="accordion" density="compact">
-            <v-expansion-panel v-for="rule in entry.rules" :key="rule.meta.id">
+            <v-expansion-panel
+              v-for="rule in entry.rules"
+              :key="rule.meta.id"
+              :class="{ 'opacity-60': rule.meta.status === 'retired' }"
+              :data-testid="rule.meta.status === 'retired' ? 'rule-retired' : undefined"
+            >
               <v-expansion-panel-title>
                 <div class="d-flex align-center ga-3 flex-grow-1">
                   <v-chip size="x-small" label :color="SEVERITY_COLOR[rule.meta.severity]" variant="flat" class="flex-shrink-0">
                     {{ t(`severity.${rule.meta.severity}`) }}
                   </v-chip>
                   <code class="text-caption flex-shrink-0">{{ rule.meta.id }}</code>
-                  <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta.id).all }">{{ rule.meta.title }}</span>
-                  <v-chip v-if="disabledInfo(rule.meta.id).all" size="x-small" color="grey" label data-testid="rule-disabled">
+                  <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta).all }">{{ rule.meta.title }}</span>
+                  <v-chip v-if="rule.meta.status === 'retired'" size="x-small" color="grey" label>{{ t('rules.status.retired') }}</v-chip>
+                  <v-chip v-if="disabledInfo(rule.meta).all" size="x-small" color="grey" label data-testid="rule-disabled">
                     {{ t('rules.catalog.state.disabledAll') }}
                   </v-chip>
-                  <v-chip v-else-if="disabledInfo(rule.meta.id).camps" size="x-small" color="grey" label data-testid="rule-disabled">
-                    {{ t('rules.catalog.state.disabledCamps', { count: disabledInfo(rule.meta.id).camps }, disabledInfo(rule.meta.id).camps) }}
+                  <v-chip v-else-if="disabledInfo(rule.meta).camps" size="x-small" color="grey" label data-testid="rule-disabled">
+                    {{ t('rules.catalog.state.disabledCamps', { count: disabledInfo(rule.meta).camps }, disabledInfo(rule.meta).camps) }}
                   </v-chip>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <div class="mb-3">
                   <v-btn
-                    v-if="disabledInfo(rule.meta.id).any"
+                    v-if="disabledInfo(rule.meta).any"
                     size="small"
                     variant="tonal"
                     prepend-icon="mdi-check-circle-outline"
                     :text="t('rules.catalog.state.enable')"
                     data-testid="rule-enable"
-                    @click="toggle(rule.meta.id, 'enable')"
+                    @click="toggle(rule.meta, 'enable')"
                   />
                   <v-btn
                     v-else
@@ -154,7 +162,7 @@ function fmt(iso: string): string {
                     variant="text"
                     prepend-icon="mdi-cancel"
                     :text="t('rules.catalog.state.disableAll')"
-                    @click="toggle(rule.meta.id, 'disableAll')"
+                    @click="toggle(rule.meta, 'disableAll')"
                   />
                 </div>
                 <RuleCard :rule="rule" />

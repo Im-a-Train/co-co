@@ -2,6 +2,8 @@
 /** Details of one rule inside the catalogue (severity, confidence, validity, inputs, source). */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { safeExternalUrl } from '@/domain/cockpit'
+import { getSourceRegistry } from '@/domain/rules/packs/registry'
 import type { Rule, Severity } from '@/domain/types'
 
 const props = defineProps<{ rule: Rule }>()
@@ -10,7 +12,14 @@ const { t } = useI18n()
 const SEVERITY_COLOR: Record<Severity, string> = { must: 'error', should: 'warning', hint: 'info' }
 
 const meta = computed(() => props.rule.meta)
-const guarded = computed(() => meta.value.confidence === 'unverified' || meta.value.confidence === 'conflict')
+const sources = computed(() => {
+  const reg = getSourceRegistry()
+  return (meta.value.sources ?? []).map((ref) => {
+    const r = reg.resolve(ref)
+    return { key: ref.key, page: ref.page, quote: ref.quote, binding: r?.binding ?? ref.binding === true, title: r?.title ?? ref.key, url: safeExternalUrl(r?.url) }
+  })
+})
+const guarded =computed(() => meta.value.confidence === 'unverified' || meta.value.confidence === 'conflict')
 
 function fmt(iso: string): string {
   const [y, m, d] = iso.split('-')
@@ -29,6 +38,7 @@ function fmt(iso: string): string {
       </v-chip>
     </div>
 
+    <v-alert v-if="meta.status === 'retired'" type="info" variant="tonal" density="compact" class="mb-3" :text="t('rules.status.retired')" />
     <p class="text-body-2 mb-3">{{ meta.description }}</p>
 
     <v-table density="compact" class="rule-meta">
@@ -49,9 +59,18 @@ function fmt(iso: string): string {
           </td>
         </tr>
         <tr>
-          <th scope="row">{{ t('rules.catalog.card.source') }}</th>
-          <td>
-            <a :href="meta.source.url" target="_blank" rel="noopener noreferrer">{{ meta.source.title }}</a>
+          <th scope="row">{{ t('rules.catalog.card.sources') }}</th>
+          <td data-testid="rule-sources">
+            <ul class="sources">
+              <li v-for="s in sources" :key="`${s.key}${s.page}`">
+                <a v-if="s.url" :href="s.url" target="_blank" rel="noopener noreferrer">{{ s.title }}</a>
+                <span v-else>{{ s.title }}</span>
+                <span v-if="s.page">, {{ s.page }}</span>
+                <v-chip v-if="s.binding" size="x-small" label variant="tonal" color="primary" class="ml-1">{{ t('rules.catalog.card.sourceBinding') }}</v-chip>
+                <div v-if="s.quote" class="text-caption text-medium-emphasis">«{{ s.quote }}»</div>
+              </li>
+              <li v-if="!sources.length"><a :href="meta.source.url" target="_blank" rel="noopener noreferrer">{{ meta.source.title }}</a></li>
+            </ul>
           </td>
         </tr>
         <tr v-if="meta.tags?.length">
@@ -73,6 +92,11 @@ function fmt(iso: string): string {
   width: 9rem;
   font-weight: 500;
   vertical-align: top;
+}
+.sources {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 .rule-meta td {
   white-space: normal;

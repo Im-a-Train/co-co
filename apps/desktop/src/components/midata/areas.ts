@@ -1,22 +1,31 @@
-/** Safety areas of eCamp activities for the qualification matrix (reuses the rule pack's keyword sets). */
-import { activityText, matchKeywords, MOUNTAIN, WATER, type KeywordSet } from '@/domain/rules/packs/basis/predicates/util'
+/** Safety areas of eCamp activities for the qualification matrix (reuses the rule packs' keyword sets). */
 import type { SafetyArea } from '@/domain/midata'
-import type { ActivityFact } from '@/domain/types'
+import type { ActivityFact, KeywordSetDef } from '@/domain/types'
+import { ALL_ACTIVITY_FIELDS, activityField, compileKeywordSets, matchCompiled, type CompiledSet } from '@/domain/rules/lib/keywords'
+import { loadBundledPacks } from '@/domain/rules/packs'
 
-export const WINTER: KeywordSet = {
-  keywords: ['=ski', '^skitour', '^skifahr', 'schnee', 'winter', 'iglu', 'schneeschuh', '=schlitteln', 'langlauf'],
+/** Matrix winter area (broader than the rules' WINTER set: includes ski / langlauf). */
+export const WINTER: KeywordSetDef = {
+  id: 'AREA_WINTER',
+  include: ['=ski', '^skitour', '^skifahr', 'schnee', 'winter', 'iglu', 'schneeschuh', '=schlitteln', 'langlauf'],
   exclude: ['schneewittchen'],
 }
 
 export const SAFETY_AREAS: readonly SafetyArea[] = ['wasser', 'berg', 'winter']
-const SETS: Record<SafetyArea, KeywordSet> = { wasser: WATER, berg: MOUNTAIN, winter: WINTER }
+const SET_IDS: Record<SafetyArea, string> = { wasser: 'WATER', berg: 'MOUNTAIN', winter: 'AREA_WINTER' }
+
+let compiled: Map<string, CompiledSet> | null = null
+function sets(): Map<string, CompiledSet> {
+  compiled ??= compileKeywordSets([...loadBundledPacks().flatMap((p) => p.keywordSets ?? []), WINTER])
+  return compiled
+}
 
 /** Matched keywords per area (areas without a match are absent). */
 export function areaMatches(a: ActivityFact): Partial<Record<SafetyArea, string[]>> {
-  const text = activityText(a)
+  const text = ALL_ACTIVITY_FIELDS.map((f) => activityField(a, f)).join('\n')
   const out: Partial<Record<SafetyArea, string[]>> = {}
   for (const area of SAFETY_AREAS) {
-    const m = matchKeywords(text, SETS[area])
+    const m = matchCompiled(sets().get(SET_IDS[area])!, text)
     if (m.length) out[area] = m
   }
   return out

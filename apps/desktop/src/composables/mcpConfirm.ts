@@ -1,5 +1,5 @@
 /**
- * In-app confirmation queue for MCP tool calls (ADR 0011). The bridge (mcpBridge.ts) calls requestConfirm();
+ * In-app confirmation queue for MCP tool calls (ADR 0012). The bridge (mcpBridge.ts) calls requestConfirm();
  * components/mcp/McpConfirmDialog.vue (mounted once in App.vue) shows `current` and answers with resolveCurrent().
  * One dialog at a time; further requests wait in FIFO order.
  *

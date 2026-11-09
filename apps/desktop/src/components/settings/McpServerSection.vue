@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > KI > MCP-Server (ADR 0011): enable switch, status, port, URL, token, confirmations, activity log. */
+/** Settings > KI > MCP-Server (ADR 0012): enable switch, status, port, URL, token, confirmations, activity log. */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAi } from '@/composables/useAi'

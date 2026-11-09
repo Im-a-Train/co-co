@@ -1,0 +1,27 @@
+id: LST-WINTER-04
+version: 1.0.0
+module: lst-winter
+status: active
+title: "Schlitteln: Helm und Pistensicherheit"
+description: "Beim Schlitteln sind Helm, Pistentest, Sicherheitszone und Aufsicht an Start und Auslauf in den Sicherheitsüberlegungen festgehalten. Erkennung über Stichwörter (Heuristik)."
+message: "Für «{activity}» fehlen: {missing} (Helm und feste Schuhe, Pistentest durch Leitende, Sicherheitszone/Auslauf, Aufsicht an Start und Auslauf)."
+messageVariants:
+  sled_helm: "Helm"
+  sled_test: "Pistentest"
+  sled_zone: "Sicherheitszone/Auslauf"
+  sled_aufsicht: "Aufsicht"
+  missingJoin: ", "
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [SLED, SLED_HELM, SLED_TEST, SLED_ZONE, SLED_AUFSICHT]
+tags: [sicherheit, winter]
+sources:
+  - key: MB-UP
+    page: "S. 4"
+    quote: "tragen beim Schlitteln Helm und feste Schuhe und halten sich an die zehn Verhaltensregeln"
+    binding: true
+  - key: WINTER
+    page: "S. 19"

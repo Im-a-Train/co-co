@@ -77,6 +77,7 @@ const PRIMARY_KEY: Record<string, string> = {
   midata: 'campIri',
   nds: 'campIri',
   selfChecks: 'id',
+  campRuleConfig: 'campIri',
 }
 
 export interface ExportOptions {
@@ -210,7 +211,7 @@ function sanitizeRows(name: string, rows: unknown[] | undefined): unknown[] | un
   if (name === 'settings') {
     return rows.map((r) => {
       const row = r as { key?: string; value?: { ai?: Record<string, unknown>; mcp?: Record<string, unknown> } }
-      // AI and the local MCP server (ADR 0011) are switched off by every import.
+      // AI and the local MCP server (ADR 0012) are switched off by every import.
       if (row.key === 'app' && row.value && typeof row.value === 'object')
         return {
           ...row,

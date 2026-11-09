@@ -1,5 +1,5 @@
 /**
- * Guard (ADR 0011): the MCP code path must never touch red-zone (MiData/NDS) data or the AI command,
+ * Guard (ADR 0012): the MCP code path must never touch red-zone (MiData/NDS) data or the AI command,
  * and domain/mcp stays framework/IO free (only composables/mcpBridge.ts may talk to Dexie/Tauri).
  * Test files (__tests__) are exempt. domain/mcp/sanitize.ts may name midataFields/ndsFields on purpose
  * (it strips them), so only the `.midata.` / `.nds.` table-access patterns are checked there.

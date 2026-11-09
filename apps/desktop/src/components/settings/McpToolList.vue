@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > KI > MCP-Server: tool list grouped «Lesen» / «Schreiben» with one switch per tool (ADR 0011). */
+/** Settings > KI > MCP-Server: tool list grouped «Lesen» / «Schreiben» with one switch per tool (ADR 0012). */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMcp } from '@/composables/useMcp'

@@ -18,6 +18,7 @@ import { explainFlows } from './explain-flows.mjs'
 import { selfCheckFlows } from './selfcheck-flows.mjs'
 import { radarFlows } from './radar-flows.mjs'
 import { mcpFlows } from './mcp-flows.mjs'
+import { campConfigFlows } from './campconfig-flows.mjs'
 import { exclusionFlows } from './exclusion-flows.mjs'
 import { personsFlows } from './persons-flows.mjs'
 import { dataZonesFlows } from './datazones-flows.mjs'
@@ -68,7 +69,7 @@ function record(ok, name, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' - ' + detail : ''}`)
 }
 
-const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata|nds|selfCheck|mcp).[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
+const RAW_KEY = /\b(?:app|nav|cockpit|camps|camp|campTabs|activities|feedback|documents|rounds|rules|deadlines|settings|connection|backup|ai|common|findings|mapping|inputs|midata|nds|selfCheck|campConfig|mcp).[a-zA-Z]+(?:\.[a-zA-Z0-9]+)+\b/
 
 async function shot(page, name) {
   const file = join(SHOTS, `${name}.png`)
@@ -194,6 +195,7 @@ async function main() {
   await selfCheckFlows({ page, step, go, shot, BASE })
   await radarFlows({ page, step, go, shot, BASE })
   await mcpFlows({ page, step, shot, BASE })
+  await campConfigFlows({ page, step, go, shot, BASE })
   await exclusionFlows({ page, step, go, shot, BASE })
   await personsFlows({ page, step, go, shot, BASE })
   await dataZonesFlows({ page, step, go, shot, BASE })

@@ -1,5 +1,5 @@
 /**
- * MCP tool implementations (ADR 0011). Pure domain code: everything impure goes through McpContext.
+ * MCP tool implementations (ADR 0012). Pure domain code: everything impure goes through McpContext.
  *
  * Data zones: handlers never touch MiData/NDS data. Every free text that comes from eCamp or from the
  * coach passes the camp's redactor before it is returned; collaborator names, user IRIs, e-mails and

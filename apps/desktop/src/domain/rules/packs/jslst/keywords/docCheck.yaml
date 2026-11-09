@@ -1,0 +1,26 @@
+# Safety-concept document check (documents/index.ts checkSafetyConcept, SAFE-DOC-01 / LST-LAGER-01).
+# Not a keyword set list: loaded by lib/docCheck.ts. Regexes are matched case-insensitively on the raw text.
+labels:
+  emergencyNumbers: Notrufnummern
+  hospital: Spital
+  crisisContact: Krisenkontakt
+  evacuation: Evakuation/Notunterkunft
+  badWeather: Schlechtwetterplan
+  threeByThree: 3x3
+  firstAid: Notfallapotheke
+  campAddress: Lageradresse/Koordinaten
+emergencyNumbers:
+  numbers: ["144", "1414", "117", "118", "145", "112"]
+  required: ["144"]
+  minCount: 3
+patterns:
+  hospital: '(spital|klinik|notfallstation|notfallpraxis|hospital)'
+  crisisContact: '(krisen|helpline|krisenkontakt|krisenteam|pfadi[- ]?notruf|ansprechperson)'
+  evacuation: '(evakuier|evakuation|notunterkunft|sammelplatz|sammelstelle|notquartier|schlechtwetterunterkunft)'
+  badWeather: '(schlechtwetter|gewitter|unwetter|regenprogramm|wetterumschlag|wettervariante)'
+  threeByThree: '(3\s*[x×*]\s*3|drei\s*mal\s*drei|3\s*mal\s*3|3-mal-3|dreimal\s*3)'
+  firstAid: '(apotheke|erste[- ]hilfe|sanität|first[- ]aid)'
+coordinates: '(\b4[5-8]\.\d{3,}\s*[,;/ ]\s*[5-9]\.\d{3,}|\b2[5-8]\d{2}[''’ ]?\d{3}\s*[,/ ]\s*1[0-3]\d{2}[''’ ]?\d{3}|koordinaten|lagerplatz|lagerort|lageradresse|adresse)'
+sources:
+  - { key: WEB-SICH, page: "«Notfallorganisation»" }
+  - { key: MB-UP, page: "S. 1" }

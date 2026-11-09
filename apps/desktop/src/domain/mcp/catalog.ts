@@ -1,5 +1,5 @@
 /**
- * MCP tool catalogue (ADR 0011): static definitions shared by the settings UI (switches, grouped
+ * MCP tool catalogue (ADR 0012): static definitions shared by the settings UI (switches, grouped
  * «Lesen» / «Schreiben»), the Rust registration (`mcp_set_tools`) and the dispatcher.
  * Handlers live in ./handlers.ts. Read tools default ON, write tools default OFF.
  *

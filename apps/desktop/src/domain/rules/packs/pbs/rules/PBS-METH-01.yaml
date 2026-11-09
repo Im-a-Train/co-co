@@ -1,0 +1,31 @@
+id: PBS-METH-01
+version: 1.0.0
+module: pbs
+status: active
+title: "Pfadimethoden und Beziehungen"
+description: "Im Lagerprogramm ist für die Pfadi-Methoden und -Beziehungen ein Programmpunkt erkennbar. Die Stichwortlisten sind provisorisch, bis das Pfadiprofil vorliegt."
+message: "Für folgende Pfadi-Methoden/Beziehungen ist kein Programmpunkt erkennbar: {list}."
+messageVariants:
+  m_fortschritt: "Persönlicher Fortschritt"
+  m_gesetz: "Gesetz und Versprechen"
+  m_gruppe: "Leben in der Gruppe"
+  m_rituale: "Rituale und Traditionen"
+  m_mitbestimmen: "Mitbestimmen und Verantwortung tragen"
+  m_draussen: "Draussen leben"
+  m_spielen: "Spielen"
+  r_persoenlichkeit: "Beziehung zu sich selbst (Persönlichkeit)"
+  r_mitmenschen: "Beziehung zu den Mitmenschen"
+  r_umwelt: "Beziehung zur Umwelt"
+  r_spiritualitaet: "Spiritualität"
+  r_koerper: "Beziehung zum Körper"
+  listJoin: ", "
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [PBS_METH_FORTSCHRITT, PBS_METH_GESETZ, PBS_METH_GRUPPE, PBS_METH_RITUALE, PBS_METH_MITBESTIMMEN, PBS_METH_DRAUSSEN, PBS_METH_SPIELEN, PBS_REL_PERSOENLICHKEIT, PBS_REL_MITMENSCHEN, PBS_REL_UMWELT, PBS_REL_SPIRITUALITAET, PBS_REL_KOERPER]
+tags: [pbs, programm]
+sources:
+  - key: PBS27
+    page: "Folien 3, 5, 7"

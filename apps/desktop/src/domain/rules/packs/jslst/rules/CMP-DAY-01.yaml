@@ -1,0 +1,14 @@
+id: CMP-DAY-01
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Tag ohne Tagesverantwortung"
+description: "Jeder Lagertag hat eine verantwortliche Person."
+message: "Für den {date} ist keine Tagesverantwortung eingetragen"
+severity: hint
+confidence: unverified
+scope: day
+validFrom: 2026-01-01
+tags: [vollstaendigkeit]
+sources:
+  - { key: LAGER, page: "S. 8, 18" }

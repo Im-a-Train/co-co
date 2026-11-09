@@ -1,7 +1,8 @@
 /** Public API of the rules module. */
-export { evaluate, countFindings, validateRuleMeta, isValidOn, findingId, fillTemplate, compareFindings } from './engine'
+export { evaluate, countFindings, validateRuleMeta, isValidOn, findingId, fillTemplate, compareFindings, renderMessage } from './engine'
 export {
   computeJsDays,
+  buildJsDayModel,
   hasJsMapping,
   lastJsDate,
   trainingFreeDays,
@@ -9,6 +10,8 @@ export {
   type JsDayReport,
   type JsUnit,
   type SozialzeitGap,
-} from './jsDays'
-export { computeDeadlines, computeAllDeadlines, deadlineStatus, addDays, daysBetween, type DeadlineCamp, type DeadlineStatus } from './deadlines'
-export { loadBundledPacks, parseRuleYaml, assemblePack } from './packs'
+} from './lib/jsDays'
+export { computeDeadlines, computeAllDeadlines, deadlineStatus, addDays, daysBetween, type DeadlineCamp, type DeadlineStatus } from './lib/deadlines'
+export { loadBundledPacks, parseRuleYaml, assemblePack, selectPacks, modulesOf } from './packs'
+export { resolveModuleStates } from './lib/moduleState'
+export { completeContext } from './lib/context'

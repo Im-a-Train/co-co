@@ -1,4 +1,4 @@
-/** Red-zone sanitising for MCP (ADR 0011). Pure. */
+/** Red-zone sanitising for MCP (ADR 0012). Pure. */
 import { emptyCoachInputs } from '../campFacts/store'
 import type { CoachInputs, FeedbackItem } from '../types'
 import { RED_DERIVED_MARKER } from '../zones/aiGateway'

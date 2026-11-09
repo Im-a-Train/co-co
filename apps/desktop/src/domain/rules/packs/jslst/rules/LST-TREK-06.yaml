@@ -1,0 +1,24 @@
+id: LST-TREK-06
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Notfallausrüstung unterwegs"
+description: "Im Gelände sind eine Notfallapotheke, eine Rettungsdecke oder ein Biwaksack und ein Alarmierungsmittel dabei. Das J+S-Notfallblatt wird empfohlen."
+message: "Im Material/Sicherheitsteil von «{activity}» fehlt: {missing} (Notfallapotheke, Rettungsdecke oder Biwaksack, Alarmierungsmittel)."
+messageVariants:
+  missingJoin: ", "
+  kitApotheke: "Notfallapotheke"
+  kitRettungsdecke: "Rettungsdecke oder Biwaksack"
+  kitAlarm: "Alarmierungsmittel"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags]
+keywords: [HIKE, BIWAK, WATER, POOL, WINTER, OUTDOOR, KIT_APOTHEKE, KIT_RETTUNGSDECKE, KIT_ALARM]
+tags: [sicherheit, material]
+sources:
+  - { key: MB-UP, page: "S. 1", quote: "haben im Gelände eine Notfallapotheke, eine Rettungsdecke oder einen Biwaksack dabei und können im Notfall alarmieren", binding: true }
+  - { key: WEB-SICH, page: "", quote: "Mobiltelefon" }
+  - { key: BERG, page: "S. 49" }
+  - { key: LAGER, page: "S. 37" }

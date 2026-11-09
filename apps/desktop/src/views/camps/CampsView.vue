@@ -7,7 +7,7 @@ import { buildCampRows, campPhase, filterCampRows, filterCampsByPhase, formatIso
 import { useCampList } from '@/composables/useCampList'
 import { isLeaderRole } from '@/domain/selfCheck'
 import { listCoachInputs } from '@/domain/campFacts/store'
-import { daysBetween, deadlineStatus } from '@/domain/rules/deadlines'
+import { daysBetween, deadlineStatus } from '@/domain/rules/lib/deadlines'
 import { listCampSummaries } from '@/domain/rules/store'
 import { listAllRounds, listReviews } from '@/domain/rounds/store'
 import type { CampRowSources } from '@/components/camps/campRows'

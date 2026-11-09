@@ -1,0 +1,37 @@
+- id: EBB_A
+  module: lst-ebb
+  description: "Ergänzende Bewegungsblöcke Kategorie A (Schneesport, Bergsport, Wasser, Pferd, Schiessen)"
+  include: ["=ski", "^skifahr", "^skitag", "^pistenmorgen", "=piste", "snowboard", "biathlon", "^skispring", "sportklettern", "kletterhalle", "=boulder", "^bergsteig", "hochtour", "skitour", "^kanusport", "^kanutraining", "^kanukurs", "eskimorolle", "rettungsschwimm", "^schwimmtraining", "^schwimmkurs", "^schwimmunterricht", "^rudertraining", "^ruderkurs", "segeln", "^segelkurs", "windsurf", "wasserball", "wasserspring", "^wasserfahren", "pontonier", "triathlon", "^synchronschwimm", "artistic swimming", "=reiten", "^reitstunde", "^ausritt", "voltige", "armbrust", "^bogenschiess", "luftgewehr", "=gewehr", "=pistole", "sportschiess", "^schiessstand"]
+  exclude: ["skilift spiel", "wasserpistole"]
+  sources: [{ key: EBB-C }, { key: EBB-L }]
+- id: EBB_B
+  module: lst-ebb
+  description: "Ergänzende Bewegungsblöcke Kategorie B (kommerzielle Anbieter)"
+  include: ["seilpark", "hochseilgarten", "kletterpark", "^sommerrodel", "rodelbahn", "trottinett abfahrt", "trottiabfahrt", "river rafting", "rafting", "^lasertag", "^trampolinhalle"]
+  exclude: []
+  sources: [{ key: EBB-C }, { key: EBB-L }]
+- id: EBB_B_PROVIDER
+  module: lst-ebb
+  description: "Nur Verstärker für EBB_B, nie allein"
+  include: ["anbieter", "firma", "=ag", "=gmbh", "^eintritt", "gebucht"]
+  exclude: []
+- id: EBB_INSTR
+  module: lst-ebb
+  include: ["instruktion", "einführung", "briefing"]
+  exclude: []
+- id: EBB_BEGLEIT
+  module: lst-ebb
+  include: ["begleit", "betreu", "aufsicht"]
+  exclude: []
+- id: EBB_ANBIETER
+  module: lst-ebb
+  include: ["anbieter", "geprüft", "seriös", "qualifiziert", "anerkennung"]
+  exclude: []
+- id: EBB_FAEHIGKEIT
+  module: lst-ebb
+  include: ["fähigkeit", "=gruppe", "niveau"]
+  exclude: []
+- id: EBB_WOHL
+  module: lst-ebb
+  include: ["wohlergehen", "wohlbefinden", "verzicht", "abbruch"]
+  exclude: []

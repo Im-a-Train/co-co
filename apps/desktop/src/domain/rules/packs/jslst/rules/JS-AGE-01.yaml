@@ -1,0 +1,21 @@
+id: JS-AGE-01
+version: 1.0.0
+module: js
+status: active
+title: "Teilnehmende ausserhalb des J+S-Alters"
+description: "Teilnehmende ausserhalb des J+S-Alters (nach Jahrgang) zählen nicht für die Mindestzahl. Grundlage sind die Jahrgänge aus MiData (nur Summen, keine Personen)."
+message: "{n} Teilnehmende liegen ausserhalb des J+S-Alters (J+S-Alter: Jahrgänge {fromYear}–{toYear}) und zählen nicht für die Mindestzahl."
+severity: hint
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata, params]
+params: [js.ageMin, js.ageMax]
+tags: [teilnehmende, midata]
+sources:
+  - key: WEB-C
+    page: "«J+S-Alter»"
+    quote: "erstmals am 1. Januar des Jahres, in dem ein Kind 5 Jahre alt wird, und letztmals am 31. Dezember des Jahres, in dem das 20. Altersjahr vollendet wurde"
+    binding: true
+  - { key: LEITFADEN, binding: true }
+  - { key: PBS27, page: "Folie 9" }

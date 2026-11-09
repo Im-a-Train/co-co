@@ -249,7 +249,7 @@ pub async fn ai_complete<R: Runtime>(
     crate::ai::complete(request).await
 }
 
-// ---- ADR 0011: OpenAI-compatible provider (MCP commands live in crate::mcp)
+// ---- ADR 0012: OpenAI-compatible provider (MCP commands live in crate::mcp)
 
 #[tauri::command]
 pub async fn ai_openai_set_key<R: Runtime>(webview: Webview<R>, base_url: String, key: String) -> AppResult<()> {
