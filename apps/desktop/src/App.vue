@@ -23,6 +23,7 @@ const navItems = [
   { to: '/lager', icon: 'mdi-tent', titleKey: 'nav.camps', auth: true },
   { to: '/fristen', icon: 'mdi-calendar-clock', titleKey: 'nav.deadlines', auth: true },
   { to: '/regeln', icon: 'mdi-book-check-outline', titleKey: 'nav.rules', auth: true },
+  { to: '/hilfsmittel', icon: 'mdi-bookshelf', titleKey: 'nav.resources', auth: true },
   { to: '/einstellungen', icon: 'mdi-cog-outline', titleKey: 'nav.settings', auth: true },
 ]
 

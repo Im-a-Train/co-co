@@ -26,4 +26,6 @@ export const TABLE_ENCRYPTION: Readonly<Record<string, TableEncryptionConfig>> =
   nds: { plain: ['campIri'] },
   selfChecks: { plain: ['id', 'campIri'] },
   campRuleConfig: { plain: ['campIri'] },
+  resources: { plain: ['key'] },
+  ruleEdits: { plain: ['ruleId'] },
 }
