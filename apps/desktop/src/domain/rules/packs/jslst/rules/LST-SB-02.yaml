@@ -1,0 +1,30 @@
+id: LST-SB-02
+version: 2.0.0
+module: lst
+status: active
+title: "Sicherheitsbereich ohne Expertenbewilligung"
+description: "Jede Aktivität im Sicherheitsbereich Berg, Wasser oder Winter muss vor der Durchführung durch eine J+S-Expertin oder einen J+S-Experten LS/T bewilligt werden. Gilt auch für das Lager ohne wintersichere Zufahrt im Winter."
+message: "«{activity}» ist im Sicherheitsbereich {area}. Jede solche Aktivität muss vor der Durchführung durch eine J+S-Expertin / einen J+S-Experten LS/T mit Zusatz im Sicherheitsbereich {area} bewilligt werden – Bewilligung nicht erfasst."
+messageVariants:
+  camp: "Lager ohne wintersichere Zufahrt gilt als Sicherheitsbereich Winter – Expertenbewilligung nicht erfasst."
+  areaBerg: "Berg"
+  areaWasser: "Wasser"
+  areaWinter: "Winter"
+  areaJoin: " / "
+severity: must
+confidence: verified
+scope: activity
+validFrom: 2026-01-01
+inputs: [activityTags, campConfig, params]
+params: [lst.winterMonths]
+tags: [sicherheit, sicherheitsbereich]
+sources:
+  - key: WEB-C
+    page: "1. Schritt: Anmeldung durch J+S-Coach"
+    quote: "Folgende Sicherheitsaktivitäten müssen angemeldet und vor ihrer Durchführung durch eine J+S-Expertin oder einen J+S-Experten der entsprechenden Sportart oder Disziplin bewilligt werden: […] in der Sportart Lagersport/Trekking jede Aktivität in den Sicherheitsbereichen «Berg», «Wasser» und «Winter»."
+    binding: true
+  - key: MB-UP
+    page: "S. 2"
+    binding: true
+  - key: WEB-SICH
+    page: "Sicherheitsbereiche"

@@ -1,0 +1,17 @@
+id: CMP-ACT-01
+version: 1.0.0
+module: lst
+status: active
+title: "Aktivität ohne Verantwortliche"
+description: "Jede Aktivität hat mindestens eine verantwortliche Person."
+message: "«{title}» hat keine verantwortliche Person"
+severity: should
+confidence: best-practice
+scope: activity
+validFrom: 2026-01-01
+tags: [vollstaendigkeit]
+sources:
+  - key: MAN
+    page: "S. 39"
+  - key: TOOL-P
+    page: "Schritt 1"

@@ -3,6 +3,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fromTri, INPUT_RULES, normalizeInputs, parseCount, STUFEN, toTri, validateInputs, type TriState } from '@/components/camps/inputsForm'
+import CoachChecklistCard from '@/components/camps/CoachChecklistCard.vue'
+import RuleModulesCard from '@/components/camps/RuleModulesCard.vue'
 import MidataBadge from '@/components/midata/MidataBadge.vue'
 import MidataCard from '@/components/midata/MidataCard.vue'
 import NdsBadge from '@/components/nds/NdsBadge.vue'
@@ -82,7 +84,7 @@ function withoutNdsBadge(key: string): Pick<CoachInputs, 'ndsFields'> {
 const ndsBadgeOf = (key: string): string | null => draft.value.ndsFields?.[key as NdsField] ?? null
 const badgeOf = (key: string): string | null => draft.value.midataFields?.[key as MidataField] ?? null
 
-function setNum(key: 'participantsCount' | 'participantsJsAgeCount' | 'minAge' | 'maxAge' | 'leadersCount' | 'slrgCount', v: string | null): void {
+function setNum(key: 'participantsCount' | 'participantsJsAgeCount' | 'minAge' | 'maxAge' | 'leadersCount' | 'jsLeadersCount' | 'slrgCount', v: string | null): void {
   draft.value = { ...draft.value, [key]: parseCount(v), midataFields: withoutBadge(key), ...withoutNdsBadge(key) }
   saved.value = false
 }
@@ -126,13 +128,14 @@ const numberFields = [
   { key: 'minAge', section: 'participants' },
   { key: 'maxAge', section: 'participants' },
   { key: 'leadersCount', section: 'participants' },
+  { key: 'jsLeadersCount', section: 'participants' },
   { key: 'slrgCount', section: 'participants' },
 ] as const
 const flagFields = [
   { key: 'ndsRegistered', date: 'ndsRegisteredOn' },
   { key: 'ndsClosed', date: 'ndsClosedOn' },
-  { key: 'leihmaterialOrdered', date: null },
-  { key: 'landeskartenOrdered', date: null },
+  { key: 'leihmaterialOrdered', date: 'leihmaterialDeliveryDate' },
+  { key: 'landeskartenOrdered', date: 'landeskartenDeliveryDate' },
   { key: 'lagerbewilligungDone', date: null },
 ] as const
 </script>
@@ -178,6 +181,8 @@ const flagFields = [
           />
         </v-card-text>
       </v-card>
+
+      <RuleModulesCard :camp-iri="campIri" />
 
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1">{{ t('camps.inputs.sections.participants') }}</v-card-title>
@@ -264,7 +269,9 @@ const flagFields = [
         </v-card-text>
       </v-card>
 
-      <v-alert v-for="e in errors" :key="e" type="error" variant="tonal" class="mb-2">{{ t(`camps.inputs.errors.${e}`) }}</v-alert>
+      <CoachChecklistCard :camp-iri="campIri" />
+
+      <v-alert v-for="e in errors":key="e" type="error" variant="tonal" class="mb-2">{{ t(`camps.inputs.errors.${e}`) }}</v-alert>
       <v-alert v-if="saveError" type="error" variant="tonal" class="mb-2">{{ t('camps.inputs.saveFailed') }}: {{ saveError }}</v-alert>
 
       <div class="d-flex align-center ga-3">

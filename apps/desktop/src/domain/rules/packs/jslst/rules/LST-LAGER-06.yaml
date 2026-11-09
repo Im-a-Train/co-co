@@ -1,0 +1,17 @@
+id: LST-LAGER-06
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Auf-/Abbau in der Nachtruhe"
+description: "Auf- und Abbau liegen nicht in der Nachtruhe."
+message: "«{activity}» (Auf-/Abbau) liegt zwischen {from} und {to}."
+severity: hint
+confidence: unverified
+scope: scheduleEntry
+validFrom: 2026-01-01
+inputs: [keywords, params]
+params: [lst.buildQuietWindow]
+keywords: [BUILD]
+tags: [lagerleben, nacht]
+sources:
+  - { key: LAGER, page: "S. 40" }

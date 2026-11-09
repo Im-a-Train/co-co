@@ -4,7 +4,7 @@
       "title": "Regelkatalog",
       "intro": "Alle Regeln der eingebauten Regelpakete mit Schweregrad, Konfidenz, Gültigkeit und Quelle. Regeln mit Konfidenz «ungeprüft» oder «widersprüchlich» sind nie ein «Muss».",
       "search": "Regeln durchsuchen",
-      "allGroups": "Alle",
+      "allGroups": "Alle Module",
       "empty": "Keine Regel passt zu deiner Suche.",
       "loadFailed": "Regelpakete konnten nicht geladen werden",
       "pack": {
@@ -12,12 +12,6 @@
         "validFrom": "gültig ab {date}",
         "validTo": "gültig bis {date}",
         "count": "{count} Regeln"
-      },
-      "group": {
-        "js": "J+S-Regeln",
-        "completeness": "Vollständigkeit",
-        "safety": "Sicherheit",
-        "best-practice": "PBS Best Practice"
       },
       "scope": {
         "camp": "Lager",
@@ -30,12 +24,21 @@
         "mapping": "Kategorie-Zuordnung",
         "coachInputs": "Lager-Angaben",
         "documents": "Dokumente",
-        "settings": "Einstellungen"
+        "settings": "Einstellungen",
+        "midata": "MiData",
+        "nds": "NDS",
+        "campConfig": "Regelmodule und Lagerkontext",
+        "activityTags": "Aktivitäts-Markierungen",
+        "params": "Parameter",
+        "keywords": "Stichwortlisten"
       },
       "card": {
         "description": "Beschreibung",
         "message": "Meldung",
         "source": "Quelle",
+        "sources": "Quellen",
+        "sourceBinding": "verbindlich",
+        "sourceQuote": "Zitat",
         "validity": "Gültigkeit",
         "validFrom": "ab {date}",
         "validTo": "bis {date}",
@@ -52,6 +55,17 @@
         "enable": "Wieder aktivieren",
         "disableAll": "Für alle Lager deaktivieren",
         "disabledTag": "deaktiviert"
+      },
+      "module": {
+        "js": "J+S Lager allgemein",
+        "lst": "Lagersport/Trekking – Kern",
+        "lst-lager": "Lagerleben und Organisation",
+        "lst-trekking": "Unterwegs / Trekking",
+        "lst-berg": "Berg",
+        "lst-wasser": "Wasser",
+        "lst-winter": "Winter",
+        "lst-ebb": "Ergänzende Bewegungsblöcke",
+        "pbs": "PBS Best Practice"
       }
     },
     "deadlines": {
@@ -134,6 +148,64 @@
       },
       "openCamp": "Lager-Angaben öffnen",
       "rule": "Regel {id}"
+    },
+    "module": {
+      "state": {
+        "on": "an",
+        "off": "aus",
+        "auto": "automatisch",
+        "suggested": "vorgeschlagen"
+      },
+      "suggestedNote": "Modul {module} vorgeschlagen ({reason}) – bestätigen, um vollständig zu prüfen.",
+      "reason": {
+        "keywordSet": "{count} Aktivität(en) mit {set}-Stichworten",
+        "gpxHighestPointAbove": "GPX-Route bis {meters} m ü. M. (über {threshold} m)",
+        "campStartMonths": "Lagerstart im {month}",
+        "campOverlapsMonths": "Lager reicht in den Monat {month} (Wintermonat)",
+        "campConfigAndMonths": "Lagerkontext: {field} = {value}, Lager im Monat {month}",
+        "campConfig": "Lagerkontext: {field} = {value}",
+        "activityTag": "{count} Aktivität(en) markiert als {tag}",
+        "coachInput": "Angabe: {field} = {value}",
+        "coachOn": "vom Coach eingeschaltet",
+        "coachOff": "vom Coach ausgeschaltet",
+        "default": "standardmässig an",
+        "noTrigger": "keine Hinweise im Lager gefunden",
+        "notJsCamp": "kein J+S-Lager",
+        "sport": "Sportart ist nicht Lagersport/Trekking",
+        "moduleOff": "Modul {module} ist aus",
+        "organizer": "kein PBS-Lager",
+        "notApplicable": "Modul {module} ist nicht geladen"
+      }
+    },
+    "activityTag": {
+      "unternehmung": "Unternehmung",
+      "keine-unternehmung": "keine Unternehmung",
+      "js-aktivitaet": "J+S-Aktivität",
+      "keine-js-aktivitaet": "keine J+S-Aktivität",
+      "sb-berg": "Sicherheitsbereich Berg",
+      "sb-wasser": "Sicherheitsbereich Wasser",
+      "sb-winter": "Sicherheitsbereich Winter",
+      "kein-sb": "kein Sicherheitsbereich",
+      "ebb-a": "Ergänzender Bewegungsblock A",
+      "ebb-b": "Ergänzender Bewegungsblock B",
+      "kein-ebb": "kein Ergänzender Bewegungsblock",
+      "ef1": "Erscheinungsform 1",
+      "ef2": "Erscheinungsform 2",
+      "ef3": "Erscheinungsform 3",
+      "ef4": "Erscheinungsform 4",
+      "ef5": "Erscheinungsform 5",
+      "ef6": "Erscheinungsform 6",
+      "gesicherter-bereich": "gesicherter Bereich",
+      "wasser-bad-beaufsichtigt": "beaufsichtigtes Bad",
+      "wasser-pool": "Pool",
+      "wasser-see": "See",
+      "wasser-fluss": "Fluss",
+      "externe-wasseraufsicht": "externe Wasseraufsicht"
+    },
+    "paramNote": "Parameter angepasst: {label} = {value} (Standard {default})",
+    "sourceUpdated": "Quelle aktualisiert – erneut prüfen",
+    "status": {
+      "retired": "ausser Kraft"
     }
   }
 }

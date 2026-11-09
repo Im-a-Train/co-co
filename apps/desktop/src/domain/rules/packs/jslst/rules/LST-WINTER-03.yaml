@@ -1,0 +1,20 @@
+id: LST-WINTER-03
+version: 1.0.0
+module: lst-winter
+status: active
+title: "Winterwanderung über 1800 m"
+description: "Winteraktivitäten finden unterhalb der maximalen Höhe statt, ausser in gesicherten Bereichen. Höhe aus dem GPX, Erkennung der Aktivität und des gesicherten Bereichs über Stichwörter (Heuristik)."
+message: "Höchster Punkt von «{activity}» {m} m ü. M. – Winteraktivitäten unterhalb von {max} m halten (ausser in gesicherten Bereichen)."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [documents, keywords, activityTags, params]
+params: [lst.winterMaxAltitude, lst.winterMonths]
+keywords: [SNOWSHOE, WINTERHIKE, WINTER_SECURED]
+tags: [sicherheit, winter]
+sources:
+  - key: MB-UP
+    page: "S. 4"
+    quote: "bei allen Aktivitäten folgende 5 Grundregeln einzuhalten"
+    binding: true

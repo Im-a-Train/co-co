@@ -1,0 +1,16 @@
+id: LST-TREK-07
+version: 2.0.0
+module: lst-trekking
+status: active
+title: "Biwak mit jüngeren Kindern"
+description: "Biwaks und Zelttrekking eignen sich primär für Jugendliche."
+message: "«{activity}» ist ein Biwak/Zelttrekking. Biwaks eignen sich primär für Jugendliche."
+severity: hint
+confidence: unverified
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, coachInputs, midata]
+keywords: [BIWAK]
+tags: [wanderung, kinder]
+sources:
+  - { key: BERG, page: "S. 43" }

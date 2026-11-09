@@ -48,6 +48,7 @@ const PK: Record<string, string> = {
   midata: 'campIri',
   nds: 'campIri',
   selfChecks: 'id',
+  campRuleConfig: 'campIri',
 }
 function makeStore(): BackupStore {
   return Object.fromEntries(TABLE_NAMES.map((n) => [n, memTable(PK[n]!)]))
@@ -76,6 +77,28 @@ describe('backup', () => {
     expect(rep.written.reviews).toBe(1)
     expect(await b.feedback!.toArray()).toEqual([])
     for (const n of TABLE_NAMES) expect(await b[n]!.toArray()).toEqual(await a[n]!.toArray())
+  })
+
+  it('roundtrips campRuleConfig (rules v2) through JSON', async () => {
+    const a = makeStore()
+    const cfg = {
+      campIri: '/api/camps/1',
+      zone: 'green',
+      sport: 'lst',
+      modules: { 'lst-berg': 'on' },
+      activityTags: { '/api/activities/a1': ['sb-berg'] },
+      sbApprovals: { camp: { approvedOn: '2031-06-01', kind: 'experte' } },
+      camp: { region: 'alpen', campForm: 'zelt', winterSafeAccess: null, abroad: false },
+      angebot: { other4DayCamp: null, unternehmungElsewhere: null, efCoveredElsewhere: null, lastActivityDate: null },
+      params: { 'lst.treelineM': 1900 },
+      checklist: { 'CL-1': { done: true, at: '2031-06-01T10:00:00.000Z' } },
+      updatedAt: '2031-06-01T10:00:00.000Z',
+    }
+    await a.campRuleConfig!.bulkPut([cfg])
+    const b = makeStore()
+    const rep = await importIntoStore(b, parseExport(JSON.stringify(await exportFromStore(a))), 'replace')
+    expect(rep.written.campRuleConfig).toBe(1)
+    expect(await b.campRuleConfig!.toArray()).toEqual([cfg])
   })
 
   it('merge keeps local settings and existing rows, adds new ones, appends aiLog', async () => {

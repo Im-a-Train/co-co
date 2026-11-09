@@ -1,0 +1,17 @@
+id: CMP-PROG-01
+version: 1.0.0
+module: pbs
+status: active
+title: "Planungsstand ab 3 Wochen vor Lagerbeginn"
+description: "Ab 3 Wochen vor Lagerbeginn stehen alle Aktivitäten im höchsten Fortschrittsstatus."
+message: "{count} Aktivitäten sind noch nicht im Status «{label}» (Lagerbeginn in {days} Tagen)"
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+inputs: [params]
+params: [pbs.progressLeadDays]
+tags: [vollstaendigkeit]
+sources:
+  - key: H
+    page: ""

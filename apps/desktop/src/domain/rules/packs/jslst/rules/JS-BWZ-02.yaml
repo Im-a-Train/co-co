@@ -1,0 +1,29 @@
+id: JS-BWZ-02
+version: 1.0.0
+module: lst
+status: active
+title: "Bewegungszeit korrekt ausweisen"
+description: "Die sportlich-aktive Bewegungszeit wird pro J+S-Aktivität ab 30 Minuten und in 15-Minuten-Schritten auf dem Lagerprogramm ausgewiesen. Nicht in Schritten ausgewiesene Werte sind ein Mangel im Programm (must); zu kurze, fehlende oder zu lange Werte werden nicht angerechnet bzw. sind unplausibel (should)."
+message: "Bewegungszeit von «{activity}» ({value} min): {problem}."
+messageVariants:
+  under30: "Bewegungszeit von «{activity}» ({value} min): unter {min} min – wird nicht angerechnet."
+  step: "Bewegungszeit von «{activity}» ({value} min): nicht in {step}-Minuten-Schritten."
+  missing: "Bewegungszeit von «{activity}»: fehlt."
+  tooLong: "Bewegungszeit von «{activity}» ({value} min): länger als die Aktivität ({duration} min)."
+severity: must
+confidence: verified
+scope: activity
+validFrom: 2027-01-01
+inputs: [mapping, activityTags, params]
+params: [js.minBwzActivityMinutes, js.bwzStepMinutes]
+tags: [bewegungszeit]
+sources:
+  - key: TOOL-V
+    page: "«Sportlich-aktive Bewegungszeit»"
+    quote: "muss ab einer Dauer von 30 Minuten pro Aktivität und in 15-Minuten-Schritten auf dem Lagerprogramm ausgewiesen werden"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: PBS27
+    page: "Folie 6"

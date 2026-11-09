@@ -1,0 +1,18 @@
+- id: WW_HIGH
+  module: js
+  description: "Wildwasser ab Stufe III (verbotene Sportart, Ausnahme Kanusport Art. 3 Abs. 3 VSpoFöP)"
+  include:
+    - { regex: '\b(ww|wildwasser)\s*(iii|iv|v|vi|[3-6])\b' }
+  exclude: []
+  sources: [{ key: WEB-C, page: "«Verbotene Sportarten»" }]
+- id: EXCLUDED
+  module: js
+  description: "Von J+S ausgeschlossene Sportarten und Aktivitäten"
+  include: ["canyoning", "bungee", "^gleitschirm", "paragliding", "^deltaseg", "^fallschirm", "^tandemflug", "^heissluftballon", "motocross", "go kart", "=kart", "quad fahren", "^quadfahr", "^quadtour", "quad tour", "=quads", "^quadbike", "^motorboot", "jetski", "^boxkampf", "^kickbox", "^thaibox", "=mma", "bruchtest"]
+  exclude: ["boxenstopp", "kartenlesen", "karte", "kartoffel", "schlucht"]
+  sources: [{ key: WEB-C, page: "«Verbotene Sportarten»" }]
+- id: MEAL
+  module: js
+  description: "Mahlzeiten (keine J+S-Aktivität)"
+  include: ["^zmorge", "^frühstück", "^zmittag", "^mittagessen", "^znacht", "^abendessen", "^znüni", "^zvieri", "^brunch", "^essen", "^mahlzeit"]
+  exclude: []

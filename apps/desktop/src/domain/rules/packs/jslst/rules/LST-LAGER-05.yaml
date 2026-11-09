@@ -1,0 +1,17 @@
+id: LST-LAGER-05
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Lagerregeln und Sicherheitsinfo am ersten Tag"
+description: "Am ersten Lagertag werden Lagerregeln und Sicherheitsinformationen besprochen."
+message: "Am ersten Lagertag ist kein Programmpunkt zu Lagerregeln oder Sicherheit erkennbar."
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [DAY1_INFO]
+tags: [lagerleben]
+sources:
+  - { key: LAGER, page: "S. 31–32, 37" }
+  - { key: MB-UP, page: "S. 1", quote: "legen klare Regeln fest", binding: true }

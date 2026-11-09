@@ -1,0 +1,16 @@
+id: CMP-CON-08
+version: 1.0.0
+module: js
+status: active
+title: "Höchstzahl Teilnehmende in MiData"
+description: "Die Zahl der Angemeldeten in MiData überschreitet die Höchstzahl nicht."
+message: "In MiData sind {participants} Teilnehmende angemeldet, die Höchstzahl beträgt {max} (Quelle: MiData, Stand {stand})"
+severity: hint
+confidence: conflict
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata]
+tags: [vollstaendigkeit, midata]
+sources:
+  - key: WEB-L
+    page: ""

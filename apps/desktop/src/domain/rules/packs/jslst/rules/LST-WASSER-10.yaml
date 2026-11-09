@@ -1,0 +1,17 @@
+id: LST-WASSER-10
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Westen bei Boots- und Flossaktivitäten"
+description: "Bei Boots- und Flossaktivitäten sind Schwimm- bzw. Rettungswesten vorgesehen."
+message: "Bei «{activity}» sind keine Schwimm- bzw. Rettungswesten erwähnt. Auf dem See tragen alle eine Schwimmweste; auf Fliessgewässern auf Kanu/SUP Schwimmweste, auf anderen Booten und Flossen Rettungsweste mit Kragen."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [BOAT, FLOSS, VEST]
+sources:
+  - { key: MB-UP, page: "S. 5", quote: "Beim Bootfahren auf dem See müssen alle eine Schwimmweste tragen", binding: true }
+  - { key: MB-UP, page: "S. 5", quote: "Für alle anderen Boote und Flosse sind Rettungswesten mit Kragen und höherem Auftrieb vorgeschrieben", binding: true }
+tags: [sicherheit, wasser]

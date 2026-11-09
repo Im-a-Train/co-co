@@ -1,0 +1,17 @@
+id: LST-WASSER-03
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Floss: Bewilligung und Westen"
+description: "Flösse ab 2,50 m Länge brauchen eine Bewilligung; auf dem See gelten Westenpflicht und Uferzone."
+message: "Floss bei «{activity}»: Flösse ab 2,50 m Länge brauchen eine Bewilligung des kantonalen Schifffahrtsamts. Auf dem See tragen alle eine Schwimmweste; ausserhalb der Uferzone (300 m) zusätzlich Rettungswesten mitführen."
+severity: hint
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [FLOSS, FLOSS_OK]
+sources:
+  - { key: WASSER, page: "S. 20, 23" }
+  - { key: MB-UP, page: "S. 5" }
+tags: [sicherheit, wasser]

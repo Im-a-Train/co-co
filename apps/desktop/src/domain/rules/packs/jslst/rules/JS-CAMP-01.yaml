@@ -1,0 +1,41 @@
+id: JS-CAMP-01
+version: 2.0.0
+module: lst
+status: active
+title: "Lager mit mindestens 4 aufeinanderfolgenden Tagen"
+description: "Ein J+S-Lager dauert mindestens 4 aufeinanderfolgende Tage (mit Angebotspartner 3). Ab 2027 zählen nur J+S-Tage: Tage ohne J+S-Aktivitäten und Tage, welche die J+S-Tag-Kriterien nicht erfüllen, werden übersprungen."
+message: "Das Lager dauert nur {days} aufeinanderfolgende Tage (nötig: mindestens {min})."
+messageVariants:
+  jsDays: "Das Lager hat nur {jsDays} J+S-Tage (nötig: mindestens {min}). Tage ohne J+S-Aktivitäten und Tage, welche die J+S-Tag-Kriterien nicht erfüllen, werden übersprungen: Sie zählen nicht, unterbrechen die Folge aber auch nicht."
+  noMapping: "Kategorie-Zuordnung fehlt: Ohne bestätigte Zuordnung der Aktivitäten (LS/LA bzw. J+S-Aktivität) können J+S-Tage und Tagesregeln nicht geprüft werden."
+severity: must
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, campConfig, params]
+params:
+  - js.consecutiveMode
+  - js.minConsecutiveDays
+  - js.minConsecutiveDaysWithOfferPartner
+  - js.minUnitMinutes
+  - js.minGapMinutes
+  - js.minDayMinutes
+  - js.minDayUnits
+  - js.minBwzDayMinutes
+  - js.minBwzActivityMinutes
+tags: [lagerdauer]
+sources:
+  - key: LEITFADEN
+    page: "«Lagerdauer» (Art. 14 Abs. 1 und 6 VSpoFöP)"
+    binding: true
+  - key: WEB-L
+    page: "«Voraussetzungen»"
+    binding: true
+  - key: TOOL-V
+    page: "«Das J+S-Lager»"
+    binding: true
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: PBS27
+    page: "Folien 5–6"

@@ -1,0 +1,18 @@
+id: CMP-MD-01
+version: 1.0.0
+module: js
+status: active
+title: "Lagerdaten in eCamp und MiData abgleichen"
+description: "Die Lagerdaten in eCamp stimmen mit dem Anlass in MiData überein. Grundlage ist der zuletzt abgerufene Stand aus MiData."
+message: "{diffs} (Quelle: MiData, Stand {stand})"
+messageVariants:
+  dates: "Lagerdaten in eCamp ({ecamp}) und MiData ({midata}) stimmen nicht überein"
+  place: "Lagerort in eCamp («{ecampPlace}») und MiData («{midataPlace}») stimmen nicht überein"
+severity: hint
+confidence: best-practice
+scope: camp
+validFrom: 2026-01-01
+inputs: [midata]
+tags: [vollstaendigkeit, midata]
+sources:
+  - { key: MD, page: "" }

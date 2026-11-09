@@ -43,22 +43,25 @@ describe('documents -> rules (full engine, bundled packs)', () => {
     b.entry(a, 2, '08:00', '12:00')
     return { b, a }
   }
-  it('a linked GPX document silences SAFE-MTN-01 and triggers SAFE-MTN-02 when too slow', () => {
+  it('a linked GPX document covers route + time in LST-TREK-01 and triggers LST-TREK-02 when too slow', () => {
     const { b, a } = build()
     const doc = makeDoc({ id: 'g1', name: 'route.gpx', kind: 'gpx', activityIris: [a.iri], gpx })
     const withDoc = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [doc] }))
-    expect(withDoc.some((f) => f.ruleId === 'SAFE-MTN-01' && f.targets.includes(a.iri))).toBe(false)
-    const slow = withDoc.find((f) => f.ruleId === 'SAFE-MTN-02')
+    const trek01With = withDoc.find((f) => f.ruleId === 'LST-TREK-01' && f.targets.includes(a.iri))
+    const slow = withDoc.find((f) => f.ruleId === 'LST-TREK-02')
     expect(slow?.targets).toEqual([a.iri, 'g1'])
 
     const without = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [] }))
-    expect(without.some((f) => f.ruleId === 'SAFE-MTN-01' && f.targets.includes(a.iri))).toBe(true)
-    expect(without.some((f) => f.ruleId === 'SAFE-MTN-02')).toBe(false)
+    const trek01Without = without.find((f) => f.ruleId === 'LST-TREK-01' && f.targets.includes(a.iri))
+    expect(trek01Without).toBeDefined()
+    // With the GPX linked, fewer planning parts are missing (route and time calculation are covered).
+    expect((trek01With?.message.length ?? 0) < (trek01Without?.message.length ?? 0)).toBe(true)
+    expect(without.some((f) => f.ruleId === 'LST-TREK-02')).toBe(false)
   })
-  it('SAFE-DOC-01 reacts to documents (hint without safety concept)', () => {
+  it('LST-LAGER-01 (formerly SAFE-DOC-01) reacts to documents (no safety concept)', () => {
     const { b } = build()
     const none = evaluate(loadBundledPacks(), makeCtx(b.facts, { mapping: MAPPING, documents: [] }))
-    expect(none.some((f) => f.ruleId === 'SAFE-DOC-01')).toBe(true)
+    expect(none.some((f) => f.ruleId === 'LST-LAGER-01')).toBe(true)
   })
 })
 

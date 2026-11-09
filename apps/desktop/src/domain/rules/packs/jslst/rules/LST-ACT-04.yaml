@@ -1,0 +1,23 @@
+id: LST-ACT-04
+version: 1.0.0
+module: lst
+status: active
+title: "Detailplanung unvollständig"
+description: "Die Detailplanung einer J+S-Aktivität enthält Ort, Material, Schlechtwettervariante (bei Aktivitäten im Freien) und Sicherheitsüberlegungen. Die verantwortliche Person prüft CMP-ACT-01."
+message: "Bei «{activity}» fehlen Rubriken der Detailplanung: {missing}."
+messageVariants:
+  location: "Ort"
+  material: "Material"
+  weather: "Schlechtwettervariante"
+  safety: "Sicherheitsüberlegungen"
+  missingJoin: ", "
+severity: hint
+confidence: best-practice
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, keywords]
+keywords: [OUTDOOR, SCHLECHTWETTER]
+tags: [vollstaendigkeit]
+sources:
+  - key: MAN
+    page: "S. 39"

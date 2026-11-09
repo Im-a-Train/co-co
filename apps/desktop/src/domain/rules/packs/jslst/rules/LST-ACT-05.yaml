@@ -1,0 +1,20 @@
+id: LST-ACT-05
+version: 1.0.0
+module: lst
+status: active
+title: "Keine Erscheinungsform erkennbar"
+description: "Jede J+S-Aktivität zielt auf die Erscheinungsformen (EF1–EF6) ab. Erkennung über EF-Tags oder Stichwörter."
+message: "«{activity}» lässt sich keiner Erscheinungsform zuordnen. Jede J+S-Aktivität zielt auf die Erscheinungsformen ab – ggf. EF-Tag setzen."
+severity: hint
+confidence: heuristic
+scope: activity
+validFrom: 2027-01-01
+inputs: [mapping, keywords, activityTags]
+keywords: [EF1, EF2, EF3, EF4, EF5, EF6]
+tags: [programm]
+sources:
+  - key: MAN
+    page: "S. 21"
+    binding: true
+  - key: PBS27
+    page: "Folie 7"

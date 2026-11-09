@@ -1,0 +1,135 @@
+# J+S / LS/T milestones for the deadline radar (catalog v2 §9). The PBS milestones live in packs/pbs/milestones.yaml.
+# Anchors: start | end | leihmaterialDelivery | landeskartenDelivery | lastActivity | firstSb | outageOrderBy.
+# offsetDays = latest date; offsetEarliestDays = start of a recommended range (informational).
+# Confidence `unverified` = only the 2014 LAGER brochure (labelled «unbestätigt» in the radar).
+id: jslst-milestones
+name: J+S-Meilensteine (Lagersport/Trekking)
+version: "2026.2"
+milestones:
+  - id: M-JS-PROGRAMM-NDS
+    title: Definitives Lagerprogramm in der NDS hochgeladen
+    description: Das definitive Lagerprogramm ist bis zum Abschluss des Angebots in der NDS hochgeladen.
+    anchor: lastActivity
+    offsetDays: 30
+    module: js
+    confidence: verified
+    sources: [{ key: WEB-L, page: "Lagerprogramm" }]
+  - id: M-JS-LIEFERUNTERBRUCH
+    title: Bestellschluss Lieferunterbruch Leihmaterial 2026/27
+    description: Wegen des Systemwechsels im Armeelogistikcenter wird zwischen dem 11.12.2026 und 10.01.2027 kein Leihmaterial ausgeliefert oder abgeholt. Bestellschluss für diesen Zeitraum ist der 04.11.2026.
+    anchor: outageOrderBy
+    offsetDays: 0
+    module: js
+    confidence: verified
+    sources: [{ key: WEB-LU, page: "" }]
+  - id: M-LST-SB-BEWILLIGUNG
+    title: "Sicherheitsbereich: Expertenbewilligung eingeholt"
+    description: Die Bewilligung der J+S-Expertin oder des J+S-Experten liegt vor der ersten Aktivität im Sicherheitsbereich vor. Empfohlen ist ein Puffer von 14 Tagen.
+    anchor: firstSb
+    offsetDays: -14
+    module: lst
+    confidence: best-practice
+    sources: [{ key: WEB-C, page: "" }]
+  - id: M-LST-PROGRAMM-COACH
+    title: Lagerprogramm inkl. Wanderunterlagen beim Coach
+    description: Lagerprogramm und Wanderunterlagen liegen dem Coach 6 Wochen vor Lagerbeginn vor.
+    anchor: start
+    offsetDays: -42
+    module: lst-trekking
+    confidence: unverified
+    sources: [{ key: MB-UP, page: "S. 3" }, { key: LAGER, page: "S. 23" }]
+  - id: M-LST-GROBPROGRAMM
+    title: Grobprogramm an den Coach
+    description: Das Grobprogramm ist dem Coach 17 bis 13 Wochen vor Lagerbeginn zugestellt.
+    anchor: start
+    offsetDays: -90
+    offsetEarliestDays: -120
+    module: lst
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 3" }]
+  - id: M-LST-DETAILPROGRAMM
+    title: Detailprogramm an den Coach
+    description: Das Detailprogramm ist dem Coach 12 bis 6 Wochen vor Lagerbeginn zugestellt.
+    anchor: start
+    offsetDays: -42
+    offsetEarliestDays: -84
+    module: lst
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 3" }]
+  - id: M-LST-LAGERDOSSIER
+    title: Lagerdossier an den Coach
+    description: Das Lagerdossier ist dem Coach 6 bis 4 Wochen vor Lagerbeginn zugestellt.
+    anchor: start
+    offsetDays: -28
+    offsetEarliestDays: -42
+    module: lst-lager
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 23" }]
+  - id: M-LST-LAGERREGELN
+    title: Lagerregeln fertig
+    description: Die Lagerregeln sind 4 bis 2 Wochen vor Lagerbeginn fertig.
+    anchor: start
+    offsetDays: -14
+    offsetEarliestDays: -28
+    module: lst-lager
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 3" }]
+  - id: M-LST-TN-LISTE
+    title: Definitive Teilnehmendenliste
+    description: Die definitive Teilnehmendenliste liegt 4 bis 2 Wochen vor Lagerbeginn vor.
+    anchor: start
+    offsetDays: -14
+    offsetEarliestDays: -28
+    module: js
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 3" }]
+  - id: M-LST-ELTERNINFO
+    title: Detaillierte Elterninformation versandt
+    description: Die detaillierte Elterninformation ist 3 Wochen vor Lagerbeginn versandt.
+    anchor: start
+    offsetDays: -21
+    module: lst-lager
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 28" }]
+  - id: M-LST-JUGENDURLAUB
+    title: Jugendurlaub beantragt
+    description: Der Jugendurlaub ist rund 2 Monate vor Lagerbeginn beantragt.
+    anchor: start
+    offsetDays: -60
+    module: js
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 5" }]
+  - id: M-LST-AWK-COACH
+    title: AWK und Teilnehmendenliste an den Coach
+    description: Die Anwesenheitskontrolle (AWK) und die Teilnehmendenliste sind 2 Wochen nach Lagerende beim Coach.
+    anchor: end
+    offsetDays: 14
+    module: js
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 4, S. 45" }]
+  - id: M-LST-ABRECHNUNG
+    title: Lagerabrechnung
+    description: Die Lagerabrechnung ist 2 Wochen nach Lagerende erstellt.
+    anchor: end
+    offsetDays: 14
+    module: lst-lager
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 45" }]
+  - id: M-LST-AUSWERTUNG
+    title: Auswertung im Team
+    description: Die Auswertung im Team findet 2 bis 6 Wochen nach Lagerende statt.
+    anchor: end
+    offsetDays: 42
+    offsetEarliestDays: 14
+    module: lst
+    confidence: unverified
+    sources: [{ key: LAGER, page: "S. 45" }]
+  - id: M-WINTER-LAWINENBULLETIN
+    title: Lawinenbulletin täglich lesen
+    description: Ab einer Woche vor Lagerbeginn wird täglich das Lawinenbulletin gelesen.
+    anchor: start
+    offsetDays: 0
+    offsetEarliestDays: -7
+    module: lst-winter
+    confidence: best-practice
+    sources: [{ key: WINTER, page: "S. 13" }]

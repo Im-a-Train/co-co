@@ -1,0 +1,28 @@
+id: JS-FREE-01
+version: 2.0.0
+module: lst
+status: active
+title: "Trainingsfreie Tage"
+description: "Obergrenze für trainingsfreie Tage (Tage ohne J+S-Tag-Kriterien im Lagerinneren). Leitfaden-Text und Beispieltabelle widersprechen sich; ab 2027 erlauben die J+S-Vorgaben Tage ohne J+S-Aktivitäten, solange die Mindestzahl J+S-Tage erreicht ist."
+message: "{free} trainingsfreie Tage bei {days} Lagertagen – erlaubt sind {allowed}. Trainingsfreie Tage werden nicht beitragsberechtigt gezählt."
+messageVariants:
+  conflict: "{free} trainingsfreie Tage bei {days} Lagertagen. Der Leitfaden-Text erlaubt {allowed}, seine Beispieltabelle aber {allowedTable} – die Quellen widersprechen sich. Beim J+S-Coach-Support klären."
+  conflict2027: "{free} trainingsfreie Tage bei {days} Lagertagen. Der Leitfaden erlaubt {allowed}; die J+S-Vorgaben ab 2027 erlauben Tage ohne J+S-Aktivitäten, solange die Mindestzahl J+S-Tage erreicht ist. Ob die Obergrenze weiter gilt, ist offen – beim J+S-Coach-Support klären."
+severity: should
+confidence: verified
+scope: camp
+validFrom: 2026-01-01
+inputs: [mapping, activityTags, params]
+params: [js.freeDaysFirstAt, js.freeDaysEveryFurther, js.consecutiveMode, js.minDayMinutes, js.minDayUnits, js.minUnitMinutes, js.minGapMinutes, js.minBwzDayMinutes]
+tags: [lagertag]
+sources:
+  - key: LEITFADEN
+    page: "«Trainingsfreie Tage»"
+    binding: true
+  - key: WEB-L
+    page: "«Trainingsfreie Tage»"
+    binding: true
+  - key: TOOL-V
+    page: "«Das J+S-Lager»"
+    quote: "Es ist möglich, einen Tag ohne J+S-Aktivitäten zu planen, sofern die Mindestanzahl an J+S-Tagen eingehalten wird"
+    binding: true

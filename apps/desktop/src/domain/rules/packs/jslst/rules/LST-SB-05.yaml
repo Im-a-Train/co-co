@@ -1,0 +1,24 @@
+id: LST-SB-05
+version: 2.0.0
+module: lst
+status: active
+title: "Sicherheitsbereich: detaillierte Planung fehlt"
+description: "Aktivitäten im Sicherheitsbereich brauchen eine detaillierte Planung mit Sicherheitskonzept: ausreichend langer Sicherheitstext oder verknüpftes Dokument."
+message: "Für «{activity}» (Sicherheitsbereich {area}) fehlt eine detaillierte Planung mit Sicherheitskonzept."
+messageVariants:
+  areaBerg: "Berg"
+  areaWasser: "Wasser"
+  areaWinter: "Winter"
+  areaJoin: " / "
+severity: should
+confidence: verified
+scope: activity
+validFrom: 2026-01-01
+inputs: [activityTags, documents, params]
+params: [lst.sbSafetyMinChars]
+tags: [sicherheit, sicherheitsbereich]
+sources:
+  - key: MB-UP
+    page: "S. 2"
+    quote: "Alle Aktivitäten im Sicherheitsbereich müssen detailliert geplant und vorbereitet werden inkl. Sicherheitskonzept"
+    binding: true

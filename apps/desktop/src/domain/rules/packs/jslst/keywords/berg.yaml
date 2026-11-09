@@ -1,0 +1,21 @@
+- id: MOUNTAIN
+  module: lst-berg
+  include: ["wanderung", "wandern", "hike", "hiking", "berg", "gipfel", "=grat", "=pass", "^passübergang", "biwak", "bivouac", "kletter", "trekking", "höhenmeter", "^alpwanderung", "=sac", "=hütte", "^berghütte", "^alp", "aufstieg", "abstieg", "^schrofen", "^geröll", "^schneefeld"]
+  exclude: ["bergfest", "kletterhalle"]
+- id: ALPINE
+  module: lst-berg
+  include: ["alpinwander", "weiss blau weiss", "gletscher", "firn", "klettersteig", "via ferrata", "steigeisen", "=pickel", "anseilen", "angeseilt", "klettergurt", "anseilgurt", "hochtour", { regex: '\bt\s?[4-6]\b' }]
+  exclude: []
+- id: T3
+  module: lst-berg
+  include:
+    - { regex: '\bt\s?3\b' }
+  exclude: []
+- id: GEWITTER
+  module: lst-berg
+  include: ["gewitter"]
+  exclude: []
+- id: SNOW_FOG
+  module: lst-berg
+  include: ["schnee", "nebel"]
+  exclude: []

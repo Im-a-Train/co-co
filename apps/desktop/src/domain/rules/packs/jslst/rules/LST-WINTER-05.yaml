@@ -1,0 +1,20 @@
+id: LST-WINTER-05
+version: 1.0.0
+module: lst-winter
+status: active
+title: "Draussen nach Einbruch der Dunkelheit"
+description: "Draussen-Aktivitäten im Winter enden vor dem Sonnenuntergang (plus 15 Minuten). Erkennung über Stichwörter (Heuristik)."
+message: "«{activity}» endet um {end}, Sonnenuntergang ca. {sunset}. Im Winter sind die Tage kurz."
+messageVariants:
+  sled: "«{activity}» endet um {end}, Sonnenuntergang ca. {sunset}. Im Winter sind die Tage kurz, Schlitteln im Dunkeln nur bei genügender Sicht."
+severity: hint
+confidence: heuristic
+scope: scheduleEntry
+validFrom: 2026-01-01
+inputs: [keywords, params]
+params: [lst.winterMonths, lst.sunsetTable]
+keywords: [OUTDOOR, HIKE, SNOWSHOE, SLED]
+tags: [sicherheit, winter]
+sources:
+  - key: WINTER
+    page: "S. 19, 20, 27"

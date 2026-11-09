@@ -1,0 +1,28 @@
+id: LST-WASSER-04
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Wasseraufsicht: Qualifikation fehlt"
+description: "Für Baden und Schwimmen braucht es je nach Setting (beaufsichtigtes Bad, Pool, See, Fluss) eine Person mit passender Wasserqualifikation im Leitungsteam (MiData)."
+message: "Für «{activity}» ({setting}) braucht es eine Person mit {required} – im Leitungsteam ist keine erfasst. Alternativ eine qualifizierte Aufsichtsperson engagieren."
+messageVariants:
+  unknown: "Für «{activity}» ({setting}) sind die Qualifikationen im Leitungsteam nicht prüfbar (MiData nicht geladen, nicht lesbar oder noch ohne Daten zu den Wasserqualifikationen – MiData neu laden)."
+  settingBad: "beaufsichtigtes Bad"
+  settingPool: "Pool ohne Badeaufsicht"
+  settingSee: "See"
+  settingFluss: "Fluss"
+  requiredBad: "Qualifikation für beaufsichtigte Bäder (z. B. Brevet Basis Pool)"
+  requiredPool: "Qualifikation für unbeaufsichtigte Pools (z. B. Plus Pool oder Modul Wasser LS/T)"
+  requiredSee: "Qualifikation für Baden im See (z. B. Modul See oder Modul Wasser LS/T)"
+  requiredFluss: "Qualifikation für Schwimmen im Fluss (Modul Fluss bzw. Sicherheitsbereich Wasser)"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, activityTags, midata]
+keywords: [WATER, POOL, LAKE, RIVER, SWIM, UNSUPERVISED, AM_WATER, BOAT, DIVING]
+sources:
+  - { key: MB-UP, page: "S. 5", quote: "Beaufsichtigtes Bad (Hallenbad/Freibad/Seebad/Flussbad)", binding: true }
+  - { key: WEB-SICH, page: "" }
+  - { key: WEB-L, page: "", quote: "Wassersicherheit" }
+tags: [sicherheit, wasser, midata]

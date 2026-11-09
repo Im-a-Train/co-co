@@ -1,0 +1,18 @@
+id: LST-ACT-03
+version: 1.0.0
+module: lst
+status: active
+title: "Ziele der Aktivität fehlen"
+description: "Jede J+S-Aktivität hat Ziele, abgeleitet aus Analyse, Erscheinungsformen und J+S-Zielen."
+message: "«{activity}» hat keine Ziele. Ziele leiten sich aus Analyse, Erscheinungsformen und J+S-Zielen ab."
+severity: hint
+confidence: best-practice
+scope: activity
+validFrom: 2026-01-01
+inputs: [mapping, activityTags]
+tags: [vollstaendigkeit]
+sources:
+  - key: TOOL-P
+    page: "Schritt 2"
+  - key: MAN
+    page: "S. 37"

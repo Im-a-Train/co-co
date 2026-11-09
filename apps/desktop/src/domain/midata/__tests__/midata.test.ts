@@ -15,7 +15,7 @@ import {
   type SafetyArea,
 } from '../index'
 
-const noQual: Record<MidataQualKey, boolean> = { lagerleiter: false, leiterLsT: false, wasser: false, berg: false, winter: false, slrg: false }
+const noQual: MidataLeader['qualifications'] = { lagerleiter: false, leiterLsT: false, wasser: false, berg: false, winter: false, slrg: false }
 const leader = (nickname: string, q: Partial<Record<MidataQualKey, boolean>> = {}): MidataLeader => ({
   nickname,
   roleLabel: 'Leitung',

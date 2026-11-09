@@ -1,0 +1,17 @@
+id: LST-WASSER-08
+version: 2.0.0
+module: lst-wasser
+status: active
+title: "Seil oder Abseilen im Fliessgewässer / in der Schlucht"
+description: "Seil oder Abseilen in Fluss oder Schlucht ist mit LS/T nicht erlaubt; Canyoning ist von J+S ausgeschlossen."
+message: "«{activity}» kombiniert Seil/Abseilen mit Fluss oder Schlucht. Man darf sich nie angeseilt in einen Fluss begeben; Flusstrekking mit Seil oder Abseilen ist mit LS/T nicht erlaubt, Canyoning ist von J+S ausgeschlossen."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [RIVER, GORGE, ROPE_IN_WATER]
+sources:
+  - { key: MB-UP, page: "S. 5", binding: true }
+  - { key: WASSER, page: "S. 21, 35" }
+tags: [sicherheit, wasser]

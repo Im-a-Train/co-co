@@ -1,0 +1,22 @@
+id: SAFE-ROPE-01
+version: 2.0.0
+module: lst-lager
+status: active
+title: "Seilaktivität: Sicherungskonzept"
+description: "Aktivitäten mit Seilen (Pionierbau, Seilbrücke, Flying Fox, Abseilen) haben einen ausreichend langen Sicherheitstext, der Sicherung, Verankerung oder Bremse erwähnt. Seilpärke zählen als ergänzender Bewegungsblock B."
+message: "«{title}» (Seil/Pionier): {reasons}"
+messageVariants:
+  tooShort: "Sicherheitstext zu kurz ({chars} von {min} Zeichen)"
+  noTopics: "weder Sicherung, Verankerung noch Bremse erwähnt"
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [params, keywords]
+params: [lst.ropeMinSafetyChars]
+keywords: [ROPE, ROPE_SAFETY]
+tags: [sicherheit, seil]
+sources:
+  - { key: TOOL-G, page: "EF1" }
+  - { key: MAN, page: "S. 26, 64" }
+  - { key: MB-UP, page: "S. 1", quote: "haben ein Sicherheitskonzept, das … Massnahmen zur Verhinderung von Unfällen definiert", binding: true }

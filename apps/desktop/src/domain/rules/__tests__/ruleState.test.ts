@@ -9,6 +9,7 @@ import {
   isGloballyDisabled,
   muteRule,
   normalizeRuleState,
+  resolveRule,
 } from '../ruleState'
 import { evaluate } from '../engine'
 import type { Override, Rule, RulePack } from '@/domain/types'
@@ -77,7 +78,10 @@ describe('evaluate skips disabled rules', () => {
     meta: {
       id,
       version: '1',
+      module: 'js',
       group: 'js',
+      status: 'active',
+      sources: [{ key: 'WEB-L', page: '' }],
       title: id,
       description: 'd',
       message: 'm',
@@ -106,5 +110,24 @@ describe('evaluate skips disabled rules', () => {
   it('a globally disabled rule is skipped everywhere', () => {
     const state = disableRule(EMPTY_RULE_STATE, 'T-B-01', null)
     expect(evaluate([pack], ctx(), { disabledRuleIds: disabledRuleIds(state, 'cX') }).map((f) => f.ruleId)).toEqual(['T-A-01'])
+  })
+})
+
+describe('formerIds', () => {
+  const rules = [{ meta: { id: 'LST-SB-03', formerIds: ['SAFE-MTN-03'] } }, { meta: { id: 'X-1' } }]
+  it('resolves a stored former id to the current rule', () => {
+    expect(resolveRule(rules, 'SAFE-MTN-03')?.meta.id).toBe('LST-SB-03')
+    expect(resolveRule(rules, 'LST-SB-03')?.meta.id).toBe('LST-SB-03')
+    expect(resolveRule(rules, 'nope')).toBeUndefined()
+  })
+  it('treats a rule disabled under a former id as disabled and enable removes all ids', () => {
+    const st = { disabled: [{ ruleId: 'SAFE-MTN-03', campIri: null }, { ruleId: 'LST-SB-03', campIri: '/c/1' }], muted: [], excludedCategories: [] }
+    expect(isGloballyDisabled(st, 'LST-SB-03', ['SAFE-MTN-03'])).toBe(true)
+    expect(campsWithDisabled(st, 'LST-SB-03', ['SAFE-MTN-03'])).toBe(1)
+    expect(enableRule(st, 'LST-SB-03', undefined, ['SAFE-MTN-03']).disabled).toEqual([])
+  })
+  it('does not duplicate when disabling a rule already disabled under a former id', () => {
+    const st = { disabled: [{ ruleId: 'SAFE-MTN-03', campIri: null }], muted: [], excludedCategories: [] }
+    expect(disableRule(st, 'LST-SB-03', null, ['SAFE-MTN-03'])).toBe(st)
   })
 })

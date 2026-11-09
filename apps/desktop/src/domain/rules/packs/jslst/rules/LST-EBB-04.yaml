@@ -1,0 +1,20 @@
+id: LST-EBB-04
+version: 1.0.0
+module: lst-ebb
+status: active
+title: "EBB ohne begleitende Leitungsperson"
+description: "Ein vom Coach als EBB gekennzeichneter Block hat eine verantwortliche Leitungsperson. EBB mit externen Personen oder Anbietern werden von einer J+S-Leiterperson begleitet."
+message: "Für den EBB «{activity}» ist keine verantwortliche Leitungsperson eingetragen. EBB mit externen Personen oder Anbietern müssen von einer J+S-Leitungsperson begleitet werden."
+severity: should
+confidence: verified
+scope: activity
+validFrom: 2026-01-01
+inputs: [activityTags]
+tags: [ebb, leitung]
+sources:
+  - key: WEB-L
+    page: "Aktivitäten im J+S-Lager"
+    quote: "müssen diese Aktivitäten von einer J+S-Leiterperson begleitet werden"
+    binding: true
+  - key: MB-UP
+    page: "S. 6"

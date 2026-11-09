@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, computeAllDeadlines, computeDeadlines, daysBetween, deadlineStatus, landeskartenLeadDays } from '../deadlines'
+import { addDays, computeAllDeadlines, computeDeadlines, daysBetween, deadlineStatus, landeskartenLeadDays } from '../lib/deadlines'
 import { makeCoachInputs } from './factory'
 
 const camp = (start: string | null, end: string | null = null, lastJsDate: string | null = null) => ({
@@ -11,6 +11,14 @@ const camp = (start: string | null, end: string | null = null, lastJsDate: strin
 })
 const byKind = (start: string, end: string | null = null, inputs = null as ReturnType<typeof makeCoachInputs> | null, last: string | null = null) =>
   Object.fromEntries(computeDeadlines(camp(start, end, last), inputs).map((d) => [d.kind, d]))
+
+describe('nds-closing anchor', () => {
+  it('prefers the coach-entered lastActivityDate over lastJsDate and camp end', () => {
+    const c = { ...camp('2031-07-01', '2031-07-10', '2031-07-09'), lastActivityDate: '2031-07-20' }
+    const d = Object.fromEntries(computeDeadlines(c, null).map((x) => [x.kind, x]))
+    expect(d['nds-closing'].due).toBe('2031-08-19')
+  })
+})
 
 describe('date helpers', () => {
   it('adds days across month and year borders', () => {
@@ -45,6 +53,12 @@ describe('computeDeadlines', () => {
     const d = byKind('2031-07-12', '2031-07-19')
     expect(d['landeskarten'].due).toBe('2031-06-07')
     expect(d['nds-closing'].due).toBe('2031-08-18')
+  })
+
+  it('counts Leihmaterial and Landeskarten back from the delivery dates when set (JS-DL-03)', () => {
+    const d = byKind('2031-07-12', '2031-07-19', makeCoachInputs({ leihmaterialDeliveryDate: '2031-07-01', landeskartenDeliveryDate: '2031-05-20' }))
+    expect(d['leihmaterial'].due).toBe('2031-05-27')
+    expect(d['landeskarten'].due).toBe('2031-04-29')
   })
 
   it('takes done flags and rule ids from inputs', () => {
