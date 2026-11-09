@@ -7,7 +7,7 @@
  * so mix.mjs can lay the voice clips exactly under the picture. See README.md for the full pipeline.
  *
  *   node tools/promo-video/record.mjs [outDir]     (voice clips expected in <outDir>/voice)
- * Env: PROMO_PORT (default 1437), PROMO_VOICE_DIR, PROMO_FFMPEG
+ * Env: PROMO_PORT (default 1437), PROMO_SCENARIO (default promo), PROMO_VOICE_DIR, PROMO_FFMPEG
  */
 import { spawn } from 'node:child_process'
 import { mkdirSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -19,7 +19,8 @@ import { BEATS } from './story.mjs'
 
 const repo = fileURLToPath(new URL('../..', import.meta.url))
 const PORT = Number(process.env.PROMO_PORT || 1437)
-const APP = `http://localhost:${PORT}/?mock=1`
+const SCENARIO = process.env.PROMO_SCENARIO ?? 'promo' // mock scenario with a nice camp week (src/dev)
+const APP = `http://localhost:${PORT}/?mock=1${SCENARIO ? `&scenario=${SCENARIO}` : ''}`
 const CAMP = '70ca971c992f'
 const OUT = resolve(process.argv[2] || join(repo, 'promo-out'))
 const W = 1600 // CSS viewport
@@ -276,7 +277,17 @@ async function main() {
   }
   async function captionOff() { await P('hideCaption'); await wait(350) }
 
-  // ---------------- Kapitel 0/1: Intro + Auftrag ----------------
+  // ---------------- Pre-roll (not recorded): enable the NDS connection in the settings ----------------
+  await page.goto(`${APP}#/einstellungen`)
+  await page.waitForSelector('[data-testid="nds-settings"]', { timeout: 15000 })
+  await wait(800)
+  {
+    const sw = page.getByTestId('nds-enable').locator('input')
+    if (!(await sw.isChecked().catch(() => true))) await sw.check().catch(() => {})
+    await wait(500)
+  }
+
+  // ---------------- Intro + Kapitel 1 ----------------
   await page.goto('data:text/html,<body style="margin:0;background:%230e2f47"></body>')
   await page.waitForFunction(() => !!window.__promo)
   await P('card', ...byId.intro.card)
@@ -284,7 +295,7 @@ async function main() {
   await scene('intro', async () => {
     await beat('intro')
     await wait(800)
-    await page.goto(`${APP}&promoIntro=1#/lager`)
+    await page.goto(`${APP}&promoIntro=1#/verbindung`)
     await page.waitForFunction(() => !!window.__promo)
     await P('card', ...byId.intro.card)
     await page.waitForSelector('.v-application', { timeout: 15000 })
@@ -293,41 +304,84 @@ async function main() {
   await P('hideCard')
   await wait(700)
 
-  // ---------------- Kapitel 2: Überblick ----------------
+  // ---------------- Kapitel 2: Los geht's ----------------
+  await scene('login', async () => {
+    await beat('login')
+    await highlight(page.locator('.v-card', { hasText: 'Sitzung' }).first(), 2000)
+    await highlight(page.locator('.v-card', { hasText: 'Lokale Daten' }).first(), 3000)
+  })
   await scene('lager', async () => {
+    await captionOff()
+    await nav('/lager')
     await beat('lager')
-    await highlight(page.locator('tbody tr').first(), 3500)
+    await highlight(page.locator('tbody tr').first(), 2500)
     await finishBeat(0)
     await click(page.locator('tbody tr'), { after: 1200 })
   })
-
-  // ---------------- Kapitel 3: Erste Durchsicht ----------------
   await scene('cockpit', async () => {
     await captionOff()
     await beat('cockpit')
-    await wait(800)
+    await wait(600)
     await highlight(page.locator('.v-card', { hasText: 'Muss-Befunde' }).first(), 1500)
-    await highlight(page.locator('.v-card', { hasText: 'Soll-Befunde' }).first(), 1800)
-    await highlight(page.locator('.v-card', { hasText: 'Gültige J+S-Tage' }).first(), 2600)
-  })
-  await scene('zuordnung', async () => {
-    await captionOff()
-    await tab('zuordnung')
-    await beat('zuordnung')
-    await highlight(page.locator('table').first(), 2200)
-    await click(page.getByRole('button', { name: /bestätigen/i }), { after: 900 })
-    await highlight(page.locator('.v-alert', { hasText: /bestätigt/i }).first(), 2200)
-  })
-  await scene('raster', async () => {
-    await captionOff()
-    await tab('raster')
-    await beat('raster')
-    await wait(1200)
-    await scrollTo(200, 2500)
-    await scrollTo(0, 1500)
+    await highlight(page.locator('.v-card', { hasText: 'Soll-Befunde' }).first(), 1500)
+    await scrollTo(520, 1800)
+    await scrollTo(0, 900)
   })
 
-  // ---------------- Kapitel 4: Befunde durchgehen ----------------
+  // ---------------- Kapitel 3: GP ----------------
+  await scene('gp', async () => {
+    await captionOff()
+    await tab('raster')
+    await beat('gp')
+    await wait(1500)
+    await highlight(page.locator('.wg-block').first(), 1800)
+    await scrollTo(260, 2600)
+    await scrollTo(0, 1500)
+  })
+  await scene('zuordnung', async () => {
+    await beat('zuordnung')
+    const link = page.getByTestId('grid-mapping-link')
+    if (await link.count()) await click(link, { after: 1200 })
+    else await page.getByTestId('grid-mapping-panel').scrollIntoViewIfNeeded()
+    await highlight(page.getByTestId('mapping-table'), 1400)
+    await click(page.getByTestId('mapping-confirm'), { after: 700 })
+    await highlight(page.getByTestId('mapping-confirmed'), 1100)
+    await scrollTo(0, 1400)
+    await wait(500)
+  })
+
+  // ---------------- Kapitel 4: DP ----------------
+  await scene('dp', async () => {
+    await captionOff()
+    await tab('aktivitaeten')
+    await beat('dp')
+    await highlight(page.locator('tbody tr').first(), 1200)
+    const rows = page.locator('tbody tr')
+    const preferred = rows.filter({ hasText: /Wanderung|Seil|OL|Gelände/ }).first()
+    await click((await preferred.count()) ? preferred : rows.first(), { after: 1200 })
+    const drawer = page.locator('.v-navigation-drawer--active').last()
+    for (const y of [250, 500, 800]) {
+      await drawer.evaluate((el, top) => {
+        const sc = el.querySelector('.v-navigation-drawer__content') || el
+        sc.scrollTo({ top, behavior: 'smooth' })
+      }, y).catch(() => {})
+      await wait(1500)
+    }
+    await page.keyboard.press('Escape')
+    await wait(500)
+  })
+  await scene('module', async () => {
+    await captionOff()
+    await tab('angaben')
+    await page.waitForSelector('[data-testid="rule-modules-card"]', { timeout: 8000 })
+    await beat('module')
+    await page.getByTestId('rule-modules-card').scrollIntoViewIfNeeded()
+    await highlight(page.getByTestId('module-lst-berg-effective'), 1600)
+    await highlight(page.getByTestId('module-lst-wasser-effective'), 1600)
+    await highlight(page.getByTestId('checklist-group-js'), 3000)
+  })
+
+  // ---------------- Kapitel 5: Durchsehen ----------------
   await scene('triage', async () => {
     await captionOff()
     await tab('befunde')
@@ -351,18 +405,20 @@ async function main() {
     await highlight(page.locator('[data-testid="finding-explain-body"]'), 5000)
   })
 
-  // ---------------- Kapitel 5: Feedback geben ----------------
+  // ---------------- Kapitel 6: Rückmeldung ----------------
   await scene('feedback', async () => {
     await captionOff()
     await tab('feedback')
     await beat('feedback')
     await click(page.getByRole('button', { name: 'Aktivitäts-Punkt' }), { after: 800 })
     await click(page.locator('.v-select'), { after: 600 })
-    await click(page.locator('.v-overlay--active .v-list-item'), { after: 500 })
-    await page.locator('.v-card textarea').first().pressSequentially('Bitte Sicherheitsüberlegungen und Schlechtwettervariante ergänzen.', { delay: 12 })
+    const items = page.locator('.v-overlay--active .v-list-item')
+    const wanted = items.filter({ hasText: /Baden|See|Wasser/ }).first()
+    await click((await wanted.count()) ? wanted : items.first(), { after: 500 })
+    await page.locator('.v-card textarea').first().pressSequentially('Bitte Sicherheitsüberlegungen ergänzen: Wer schwimmt, wer schaut zu?', { delay: 12 })
     await wait(400)
     await click(page.getByRole('button', { name: 'Speichern', exact: true }), { after: 900 })
-    const card = page.getByTestId('feedback-item').filter({ hasText: 'Schlechtwettervariante' })
+    const card = page.getByTestId('feedback-item').filter({ hasText: 'wer schaut zu' })
     await click(card.getByRole('button', { name: 'In eCamp posten' }), { after: 900 })
     await highlight(card, 900)
   })
@@ -382,53 +438,70 @@ async function main() {
     await highlight(preview, 2200)
   })
 
-  // ---------------- Kapitel 6: Sicherheit (MiData) ----------------
+  // ---------------- Kapitel 7: Wer leitet was? (MiData) ----------------
   await scene('midata-card', async () => {
     await beat('midata-card')
     await wait(1200)
     await settle()
-    await page.goto(`${APP}#/einstellungen`) // happens behind the title card
-    await page.waitForSelector('[data-testid="midata-settings"]', { timeout: 10000 })
-  })
-  await scene('midata-settings', async () => {
-    await P('hideCard')
-    await wait(800)
-    await beat('midata-settings')
-    await highlight(page.getByTestId('midata-settings'), 5000)
+    await page.goto(`${APP}#/lager/${CAMP}/angaben`) // behind the title card
+    await page.waitForSelector('[data-testid="midata-card"]', { timeout: 10000 })
+    await page.getByTestId('midata-card').scrollIntoViewIfNeeded()
   })
   await scene('midata-pick', async () => {
-    await captionOff()
-    await tab('angaben')
-    await page.waitForSelector('[data-testid="midata-card"]', { timeout: 8000 })
+    await P('hideCard')
+    await wait(700)
     await beat('midata-pick')
     const pick = page.getByTestId('midata-pick')
     if (await pick.count()) {
       await click(pick, { after: 900 })
       await page.getByTestId('midata-event-4101').waitFor({ timeout: 5000 })
       await highlight(page.getByTestId('midata-event-4101'), 1200)
-      await finishBeat(0)
       await click(page.getByTestId('midata-event-4101'), { after: 700 })
     }
-  })
-  await scene('midata-numbers', async () => {
     await click(page.getByTestId('midata-refresh'), { after: 800 })
     await page.waitForSelector('[data-testid="midata-summary"]', { timeout: 8000 })
-    await beat('midata-numbers')
-    await highlight(page.getByTestId('midata-summary'), 6000)
-  })
-  await scene('midata-adopt', async () => {
-    await beat('midata-adopt')
-    await click(page.getByTestId('midata-adopt-open'), { after: 1800 })
-    await click(page.getByTestId('adopt-apply'), { after: 900 })
-    await highlight(page.getByTestId('input-participantsCount'), 2000)
+    await highlight(page.getByTestId('midata-summary'), 1500)
   })
   await scene('matrix', async () => {
     await beat('matrix')
-    await highlight(page.getByTestId('qual-matrix'), 4000)
-    await highlight(page.getByTestId('qual-activities-source').locator('xpath=..'), 2800)
+    await highlight(page.getByTestId('qual-matrix'), 6500)
   })
 
-  // ---------------- Kapitel 7: Selbstcheck ----------------
+  // ---------------- Kapitel 8: Anmeldung bei J+S (NDS + Personen) ----------------
+  await scene('nds', async () => {
+    await captionOff()
+    await page.getByTestId('nds-card').scrollIntoViewIfNeeded()
+    await beat('nds')
+    const pick = page.getByTestId('nds-pick')
+    if (await pick.count()) {
+      await click(pick, { after: 900 })
+      await click(page.getByTestId('nds-camp-camp-9001'), { after: 700 })
+    }
+    await click(page.getByTestId('nds-refresh'), { after: 900 })
+    await page.waitForSelector('[data-testid="nds-summary"]', { timeout: 8000 })
+    await highlight(page.getByTestId('nds-summary'), 3500)
+    await highlight(page.getByTestId('nds-awk-open'), 2500)
+  })
+  await scene('personen', async () => {
+    await captionOff()
+    await tab('personen')
+    await page.getByTestId('persons-banner').waitFor({ timeout: 8000 })
+    await beat('personen')
+    await click(page.getByTestId('persons-load-midata'), { after: 900 })
+    await page.getByTestId('persons-row').first().waitFor({ timeout: 8000 })
+    await click(page.getByTestId('persons-load-nds'), { after: 900 })
+    await page.getByTestId('persons-chip-state-missing_in_nds').waitFor({ timeout: 8000 })
+    await highlight(page.getByTestId('persons-row').filter({ hasText: 'fehlt in NDS' }).first(), 2200)
+    await highlight(page.getByTestId('persons-row').filter({ hasText: 'unklar' }).first(), 2000)
+    await highlight(page.locator('table').first(), 2000)
+  })
+  await scene('datenschutz', async () => {
+    await beat('datenschutz')
+    await highlight(page.getByTestId('persons-banner'), 3000)
+    await highlight(page.getByTestId('persons-birth').first(), 2000)
+  })
+
+  // ---------------- Kapitel 9: Selbstcheck ----------------
   await scene('selfcheck', async () => {
     await captionOff()
     await tab('selbstcheck')
@@ -436,12 +509,12 @@ async function main() {
     await beat('selfcheck')
     await page.waitForFunction(() => !document.querySelector('[data-testid="selfcheck-start"]')?.hasAttribute('disabled'), null, { timeout: 8000 })
     await click(page.getByTestId('selfcheck-start'), { after: 800 })
-    await page.locator('[data-testid="selfcheck-note"] textarea').first().pressSequentially('Entwurf vor der Abgabe', { delay: 35 })
+    await page.locator('[data-testid="selfcheck-note"] textarea').first().pressSequentially('Entwurf vor der Abgabe', { delay: 30 })
     await click(page.getByTestId('selfcheck-confirm'), { after: 1500 })
     await highlight(page.getByTestId('selfcheck-report'), 3000)
   })
 
-  // ---------------- Kapitel 8: Fristen ----------------
+  // ---------------- Kapitel 10: Fristen ----------------
   await scene('radar', async () => {
     await captionOff()
     await nav('/fristen')
