@@ -790,7 +790,15 @@ export interface RuleHit {
   inputs?: Record<string, string | number | boolean | null>
   /** Keys of `inputs` whose values come from MiData/NDS (red-derived; hidden from AI, labelled in UI). */
   redKeys?: string[]
+  /**
+   * Set on the gap variants of a rule: the finding exists only because the coach has not given an input
+   * yet. Such findings are the coach's own homework, never feedback for the leaders (UX review TRIAGE-02).
+   */
+  needsInput?: NeedsInput
 }
+
+/** What the coach has to provide before a gap finding can be evaluated (see RuleHit.needsInput). */
+export type NeedsInput = 'mapping' | 'coachInputs' | 'campConfig' | 'midata'
 
 // ---- Params (packs/<pack>/params.yaml) --------------------------------------------------------
 
@@ -1108,6 +1116,8 @@ export interface Finding {
   override: Override | null
   /** Explainability panel data (rule findings only; absent for AI findings). Never sent to the AI. */
   explain?: FindingExplanation
+  /** Copied from RuleHit.needsInput: the coach's own homework, not feedback for the leaders. */
+  needsInput?: NeedsInput
 }
 
 /** Availability of one rule input for this evaluation (see RuleMeta.inputs). */
@@ -1178,6 +1188,23 @@ export interface CampSummaryRecord {
   /** Date of the last J+S unit (null if unknown), for the deadlines page. */
   lastJsDate?: IsoDate | null
   evaluatedAt: IsoDateTime
+  /**
+   * Review progress as last computed on the camp's Übersicht («Meine Lager» shows the next step).
+   * Not indexed; writers of the summary must keep an existing value (merge, never drop it).
+   */
+  progress?: CampProgressSummary
+}
+
+/** Snapshot of `reviewProgress()` for «Meine Lager» (UX review FIRST-03). */
+export interface CampProgressSummary {
+  percent: number
+  /** First open step (a `ReviewStepKey` of domain/cockpit/progress.ts); null when every step is done. */
+  nextStep: string | null
+  /** Findings (rules + manual, grouped topics not expanded) that are still open in triage. */
+  triageOpen: number
+  /** Open (not ignored) Muss findings. */
+  openMust: number
+  updatedAt: IsoDateTime
 }
 
 export type DeadlineKind =
@@ -1243,7 +1270,13 @@ export interface FeedbackItem {
   /** Text quotes MiData (red-derived): refused by the AI gateway. */
   redDerived?: boolean
   ruleId?: string
+  /** First (or only) finding this item was created from. */
   findingId?: string
+  /**
+   * All findings this item covers when it was created from a group of same-rule findings
+   * (UX review TRIAGE-06 / GOLDEN-03). Includes `findingId`. Not indexed.
+   */
+  findingIds?: string[]
   roundId?: string
   status: FeedbackStatus
   postedCommentIri?: Iri
@@ -1302,6 +1335,8 @@ export interface DocCheckItem {
   key: SafetyCheckKey
   found: boolean
   snippets: string[]
+  /** Only some of the expected values were found (e.g. 2 of at least 3 emergency numbers). */
+  partial?: { present: string[]; min: number }
 }
 
 export interface DocCheckResult {
@@ -1362,6 +1397,13 @@ export interface DocumentRecord {
   aiAllowed: boolean
   /** Optional AI summary (M5), only if aiAllowed. */
   aiSummary: string | null
+  /**
+   * Is this the camp's safety concept? null/undefined = not decided (the file name may suggest it),
+   * true/false = confirmed by the coach (UX review DOCS-02). Not indexed.
+   */
+  safetyConcept?: boolean | null
+  /** Checklist items the coach confirmed by hand («Ist vorhanden»); survives re-ingest (DOCS-03). */
+  docCheckConfirmed?: SafetyCheckKey[]
 }
 
 // ---------------------------------------------------------------------------------------------

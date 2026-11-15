@@ -3,7 +3,8 @@
  * (dev-only Tauri IPC mock, see src/dev/mockTauri.ts) in the installed Microsoft Edge, visits every route,
  * collects console errors, takes screenshots and exercises the main flows.
  *
- * Usage: npm run test:ui   (env UI_SHOTS_DIR overrides the screenshot directory)
+ * Usage: npm run test:ui   (env UI_SHOTS_DIR overrides the screenshot directory; UI_BROWSER_PATH runs
+ *        another Chromium binary instead of Edge, e.g. UI_BROWSER_PATH=/opt/pw-browsers/chromium on Linux)
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -106,7 +107,12 @@ async function step(name, fn) {
 
 async function main() {
   await ensureServer()
-  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  // Edge by default (Windows dev machines); UI_BROWSER_PATH points at another Chromium binary (e.g. on Linux).
+  const browser = await chromium.launch(
+    process.env.UI_BROWSER_PATH
+      ? { executablePath: process.env.UI_BROWSER_PATH, headless: true }
+      : { channel: 'msedge', headless: true },
+  )
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 }, locale: 'de-CH' })
   const page = await ctx.newPage()
   pageRef = page

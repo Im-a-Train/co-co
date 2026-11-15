@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useCamps } from '@/composables/useCamps'
 import { useSession } from '@/composables/useSession'
+import { useSignOut } from '@/composables/useSignOut'
 import { formatDuration, normalizeEpochMs } from '@/lib/refresh'
 
 const { t, d } = useI18n()
-const { session, user, userError, userLoading, busy, now, nextRefreshAt, secondsLeft, expired, refresh, logout, loadUser } =
-  useSession()
-const camps = useCamps()
+const { session, user, userError, userLoading, busy, now, nextRefreshAt, secondsLeft, expired, refresh, loadUser } = useSession()
+const signOut = useSignOut()
 
 const expiresAt = computed(() => (session.value?.exp != null ? new Date(session.value.exp * 1000) : null))
 const obtainedAt = computed(() => (session.value ? new Date(normalizeEpochMs(session.value.obtainedAt)) : null))
@@ -17,8 +16,7 @@ const nextRefreshIn = computed(() =>
 )
 
 async function doLogout(): Promise<void> {
-  await logout()
-  camps.reset()
+  await signOut()
 }
 </script>
 
