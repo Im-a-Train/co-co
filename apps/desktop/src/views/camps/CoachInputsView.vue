@@ -3,7 +3,7 @@
  * /lager/:campId/angaben: Lager-Angaben form (CoachInputs), persisted via useCampSettings.
  * Autosave (debounced, only while the draft is valid); the first card lists what open findings still wait for.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import {
@@ -31,7 +31,7 @@ import { adoptNdsFields, useNds } from '@/composables/useNds'
 import { emptyCoachInputs } from '@/domain/campFacts/store'
 import { adoptFields } from '@/domain/midata'
 import { loadEffectivePacks } from '@/domain/rules/editsStore'
-import type { CoachInputs, MidataAggregate, MidataField, NdsAggregate, NdsField } from '@/domain/types'
+import type { CoachInputs, Iri, MidataAggregate, MidataField, NdsAggregate, NdsField } from '@/domain/types'
 
 const AUTOSAVE_MS = 600
 
@@ -63,7 +63,6 @@ function resetDraft(): void {
 }
 async function init(): Promise<void> {
   ready.value = false
-  shownMissing.value = []
   try {
     await settings.load()
   } catch (e) {
@@ -152,16 +151,31 @@ watch(draft, () => {
   if (!pending.value || errors.value.length > 0) return
   timer = setTimeout(() => void save(), AUTOSAVE_MS)
 })
+/**
+ * Leaving the page saves a pending valid draft. A change that cannot be saved (invalid, or the save failed)
+ * is never dropped silently: the coach chooses between going back to the form and discarding it.
+ */
+const leaveDialog = ref(false)
+let leaveAnswer: ((leave: boolean) => void) | null = null
+function answerLeave(leave: boolean): void {
+  leaveDialog.value = false
+  leaveAnswer?.(leave)
+  leaveAnswer = null
+}
 onBeforeRouteLeave(async () => {
   await flush()
-  return true
+  if (!pending.value) return true
+  leaveDialog.value = true
+  return new Promise<boolean>((resolve) => {
+    leaveAnswer = resolve
+  })
 })
 onBeforeUnmount(clearTimer)
 
-type StatusState = 'saving' | 'invalid' | 'saved' | 'idle'
+type StatusState = 'saving' | 'invalid' | 'failed' | 'saved' | 'idle'
 const status = computed<StatusState>(() => {
   if (saving.value) return 'saving'
-  if (pending.value) return errors.value.length > 0 ? 'invalid' : 'saving'
+  if (pending.value) return errors.value.length > 0 ? 'invalid' : saveError.value ? 'failed' : 'saving'
   return savedOnce.value ? 'saved' : 'idle'
 })
 
