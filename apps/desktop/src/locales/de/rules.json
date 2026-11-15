@@ -17,7 +17,6 @@
       "empty": "Keine Regel passt zu deiner Suche.",
       "loadFailed": "Regelpakete konnten nicht geladen werden",
       "pack": {
-        "version": "Version {version}",
         "validFrom": "gültig ab {date}",
         "validTo": "gültig bis {date}",
         "count": "{count} Regeln"
@@ -56,6 +55,7 @@
         "needs": "Benötigt",
         "scope": "Bezieht sich auf",
         "version": "Regelversion {version}",
+        "packVersion": "Regelpaket {version}",
         "tags": "Stichwörter",
         "mustGuard": "Die Verlässlichkeit begrenzt den Schweregrad: nie «Muss»",
         "example": "So sieht der Befund aus",

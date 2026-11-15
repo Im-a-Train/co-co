@@ -78,7 +78,8 @@ async function focusRule(id: string) {
   kindFilter.value = 'all'
   openRule.value = rule.meta.id
   await nextTick()
-  setTimeout(() => document.getElementById(`rule-${rule.meta.id}`)?.scrollIntoView({ block: 'center' }), 150)
+  // 'start' + scroll-margin-top (below the app bar): an expanded rule can be taller than the window.
+  setTimeout(() => document.getElementById(`rule-${rule.meta.id}`)?.scrollIntoView({ block: 'start' }), 150)
 }
 
 const search = ref('')
@@ -186,7 +187,6 @@ function fmt(iso: string): string {
     <v-card v-for="{ pack, byGroup } in visible" :key="pack.id" class="mb-4" variant="outlined">
       <v-card-title class="d-flex flex-wrap align-center ga-2">
         <span>{{ pack.name }}</span>
-        <v-chip size="x-small" label variant="tonal">{{ t('rules.catalog.pack.version', { version: pack.version }) }}</v-chip>
         <v-chip v-if="pack.validFrom" size="x-small" label variant="tonal">
           {{ t('rules.catalog.pack.validFrom', { date: fmt(pack.validFrom) }) }}
         </v-chip>
@@ -206,6 +206,7 @@ function fmt(iso: string): string {
               :id="`rule-${rule.meta.id}`"
               :key="rule.meta.id"
               :value="rule.meta.id"
+              class="rule-panel"
               :class="{ 'opacity-60': rule.meta.status === 'retired' }"
               :data-testid="rule.meta.status === 'retired' ? 'rule-retired' : undefined"
             >
@@ -266,7 +267,7 @@ function fmt(iso: string): string {
                     @click="disableTarget = rule.meta"
                   />
                 </div>
-                <RuleCard :rule="rule" />
+                <RuleCard :rule="rule" :pack-version="pack.version" />
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
@@ -296,5 +297,8 @@ function fmt(iso: string): string {
 .search-field {
   max-width: 22rem;
   min-width: 14rem;
+}
+.rule-panel {
+  scroll-margin-top: 72px;
 }
 </style>

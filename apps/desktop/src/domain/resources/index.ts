@@ -204,7 +204,14 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
     let where: 'meta' | 'content'
     if (inMeta) {
       where = 'meta'
-      const src = words.some((w) => summary.includes(w)) ? r.summary! : words.some((w) => notes.includes(w)) ? r.notes! : r.title
+      // Title first when it carries every word; the notes (maintainer remarks) only as a last resort.
+      const src = words.every((w) => title.includes(w))
+        ? r.title
+        : words.some((w) => summary.includes(w))
+          ? r.summary!
+          : words.some((w) => notes.includes(w))
+            ? r.notes!
+            : r.title
       snippet = snippetAround(src, normalizeText(src), words)
     } else {
       where = 'content'

@@ -88,7 +88,7 @@ const filtered = computed<ResourceRecord[]>(() => {
 /** Current documents first (binding, PBS, didactic, info), outdated ones in their own collapsed group. */
 const visible = computed(() => filtered.value.filter((r) => r.weight !== 'outdated'))
 const outdated = computed(() => filtered.value.filter((r) => r.weight === 'outdated'))
-const outdatedShown = computed(() => outdatedOpen.value || !!query.value.trim() || opened.value.some((k) => outdated.value.some((r) => r.key === k)))
+const outdatedShown = computed(() => outdatedOpen.value || !!query.value.trim())
 const filtersPresent = computed<Array<Exclude<WeightFilter, 'all'>>>(() => (['binding', 'pbs', 'other'] as const).filter((f) => store.resources.value.some((r) => FILTER_OF[r.weight] === f)))
 type Row = { kind: 'item'; r: ResourceRecord } | { kind: 'group' }
 const rows = computed<Row[]>(() => {
@@ -121,7 +121,8 @@ async function openFromRoute() {
   if (rec.weight === 'outdated') outdatedOpen.value = true
   await nextTick()
   setTimeout(() => {
-    document.getElementById(`res-${rec.key}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    // 'start' + scroll-margin-top (below the app bar): an expanded entry is often taller than the window.
+    document.getElementById(`res-${rec.key}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
     highlightKey.value = rec.key
     setTimeout(() => {
       if (highlightKey.value === rec.key) highlightKey.value = null
@@ -156,7 +157,10 @@ async function onSave(p: { key: string; patch: ResourcePatch } | { key: null; in
     if (p.key === null) await store.add(p.input)
     else await store.update(p.key, p.patch)
     editOpen.value = false
-    if (p.key === null) opened.value = [p.input.key]
+    if (p.key === null) {
+      opened.value = [p.input.key]
+      if (p.input.weight === 'outdated') outdatedOpen.value = true
+    }
   })
 }
 
@@ -219,6 +223,7 @@ async function confirmReset() {
         v-model="query"
         :label="t('resources.search')"
         :placeholder="t('resources.searchPlaceholder')"
+        persistent-placeholder
         prepend-inner-icon="mdi-magnify"
         density="compact"
         variant="outlined"
@@ -244,9 +249,9 @@ async function confirmReset() {
     <v-expansion-panels v-model="opened" multiple variant="accordion" data-testid="resources-list">
       <template v-for="row in rows" :key="row.kind === 'group' ? 'outdated-group' : row.r.key">
       <div v-if="row.kind === 'group'" class="outdated-group" data-testid="resources-outdated-group">
-        <v-btn variant="text" size="small" :prepend-icon="outdatedShown ? 'mdi-chevron-down' : 'mdi-chevron-right'" :text="t('resources.outdatedGroup', { count: outdated.length })" :disabled="!!query.trim()" data-testid="resources-outdated-toggle" @click="outdatedOpen = !outdatedOpen" />
+        <v-btn variant="text" size="small" :prepend-icon="outdatedShown ? 'mdi-chevron-down' : 'mdi-chevron-right'" :text="t('resources.outdatedGroup', { count: outdated.length })" :disabled="!!query.trim()" :aria-expanded="outdatedShown" data-testid="resources-outdated-toggle" @click="outdatedOpen = !outdatedOpen" />
       </div>
-      <v-expansion-panel v-else :id="`res-${row.r.key}`" :value="row.r.key" :class="{ 'res-highlight': highlightKey === row.r.key }" data-testid="resource-item">
+      <v-expansion-panel v-else :id="`res-${row.r.key}`" :value="row.r.key" class="res-panel" :class="{ 'res-highlight': highlightKey === row.r.key }" data-testid="resource-item">
         <v-expansion-panel-title>
           <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
             <div class="d-flex flex-wrap align-center ga-2">
@@ -276,7 +281,7 @@ async function confirmReset() {
               <span v-if="row.r.publisher && row.r.edition"> · </span>
               <span>{{ row.r.edition }}</span>
             </div>
-            <div v-if="hits?.get(row.r.key)" class="text-caption mt-1 snippet" data-testid="resource-snippet">
+            <div v-if="hits?.get(row.r.key) && hits.get(row.r.key)!.snippet !== row.r.title" class="text-caption mt-1 snippet" data-testid="resource-snippet">
               <template v-for="(seg, i) in highlightSegments(hits.get(row.r.key)!.snippet, query)" :key="i">
                 <mark v-if="seg.hit">{{ seg.text }}</mark>
                 <span v-else>{{ seg.text }}</span>
@@ -405,9 +410,13 @@ async function confirmReset() {
   padding: 0;
   margin: 0;
 }
+/* A full-width group heading inside the panel list (v-expansion-panels centres its children). */
 .outdated-group {
-  padding: 4px 0;
-  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  flex: 1 0 100%;
+  padding: 12px 0 4px;
+}
+.res-panel {
+  scroll-margin-top: 72px;
 }
 .res-highlight {
   animation: res-flash 2s ease-out;

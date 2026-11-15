@@ -2,6 +2,7 @@
 /** Field-by-field difference between two versions of a rule (before / after). */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatDateDe } from '@/domain/resources'
 import type { RuleMeta } from '@/domain/types'
 import { fieldDiffs, type FieldDiff } from './ruleDiff'
 
@@ -18,6 +19,7 @@ function text(field: FieldDiff['field'], v: string): string {
   if (field === 'severity') return t(`severity.${v}`)
   if (field === 'confidence') return t(`confidence.${v}`)
   if (field === 'status') return t(`rules.edit.status.${v}`)
+  if (field === 'validFrom' || field === 'validTo') return formatDateDe(v)
   return v
 }
 </script>

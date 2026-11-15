@@ -36,6 +36,10 @@ export async function resourcesFlows({ page, step, shot, BASE }) {
     if ((await open.count()) !== 1) throw new Error('MAN panel not open')
     const txt = await open.innerText()
     if (!/Zuletzt geprüft/i.test(txt) || !/Bearbeiten/i.test(txt)) throw new Error('details/actions missing')
+    // The entry title must not end up under the app bar (GLOBAL-13).
+    const titleTop = await open.locator('.v-expansion-panel-title').evaluate((el) => el.getBoundingClientRect().top)
+    const barBottom = await page.locator('.v-app-bar').first().evaluate((el) => el.getBoundingClientRect().bottom)
+    if (titleTop < barBottom - 1) throw new Error(`entry title under the app bar: ${titleTop} < ${barBottom}`)
     await shot(page, 'hilfsmittel-detail')
   })
 

@@ -43,10 +43,18 @@ function kindOf(d: ParamDef): ParamKind {
 const mapRaw = reactive<Record<string, Record<string, string>>>({})
 const asMap = (v: ParamValue): Record<string, number> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, number>) : {})
 
-/** German unit label; '' for unknown or unit-less params. */
+/** German unit label; '' for unknown or unit-less params. `map` names the unit of numeric maps (hours per Stufe) only. */
 function unitLabel(d: ParamDef): string {
+  if (d.unit === 'map' && kindOf(d) !== 'map') return ''
   const k = `rules.edit.params.unit.${d.unit}`
   return te(k) ? t(k) : ''
+}
+/** Defaults of a numeric map, e.g. «Biber 11 h, Wölfe 10 h». */
+function mapDefaultText(d: ParamDef): string {
+  const unit = unitLabel(d)
+  return Object.entries(asMap(defaultOf(d)))
+    .map(([k, v]) => `${keyLabel(k)} ${v}${unit ? ` ${unit}` : ''}`)
+    .join(', ')
 }
 /** Label of one map key: Stufen use the camp-input names, anything else shows the key. */
 function keyLabel(k: string): string {
@@ -65,6 +73,8 @@ function fill(d: ParamDef) {
 }
 
 async function load() {
+  // Fill right away: the map fields bind to mapRaw before the stored values arrive.
+  for (const d of defs.value) fill(d)
   try {
     stored.value = { ...((await getAppSettings()).ruleParams ?? {}) }
   } catch {
@@ -152,13 +162,14 @@ async function reset(d: ParamDef) {
         <v-chip v-if="d.key in stored" size="x-small" label color="warning">{{ t('rules.edit.params.changed') }}</v-chip>
       </div>
       <p v-if="d.description" class="text-caption text-medium-emphasis mb-2">{{ d.description }}</p>
-      <div v-if="kindOf(d) !== 'map'" class="text-body-2 mb-2">
+      <div v-if="kindOf(d) === 'map'" class="text-body-2 mb-2">{{ t('rules.edit.params.default') }}: {{ mapDefaultText(d) }}</div>
+      <div v-else class="text-body-2 mb-2">
         {{ t('rules.edit.params.default') }}: <code>{{ fmt(defaultOf(d)) }}</code>
-        <span v-if="unitLabel(d)"> {{ unitLabel(d) }}</span>
+        <span v-if="unitLabel(d)" class="ml-1">{{ unitLabel(d) }}</span>
       </div>
       <p v-if="d.overridable === 'none'" class="text-caption text-medium-emphasis mb-0">{{ t('rules.edit.params.readonly') }}</p>
       <template v-else>
-        <div v-if="kindOf(d) === 'map'" class="d-flex flex-wrap ga-2 mb-2">
+        <div v-if="kindOf(d) === 'map' && mapRaw[d.key]" class="d-flex flex-wrap ga-2 mb-2">
           <v-text-field
             v-for="(_, k) in asMap(defaultOf(d))"
             :key="k"

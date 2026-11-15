@@ -9,7 +9,7 @@ import { safeExternalUrl } from '@/domain/cockpit'
 import { getSourceRegistry } from '@/domain/rules/packs/registry'
 import type { Rule } from '@/domain/types'
 
-const props = defineProps<{ rule: Rule }>()
+const props = defineProps<{ rule: Rule; packVersion?: string }>()
 const { t } = useI18n()
 const { version: resourcesVersion } = useResources()
 const { ready: aiReady } = useAi()
@@ -145,6 +145,7 @@ function fmt(iso: string): string {
       </v-table>
       <div class="text-caption text-medium-emphasis mt-2">
         {{ t('rules.catalog.card.version', { version: meta.version }) }}
+        <span v-if="packVersion"> · {{ t('rules.catalog.card.packVersion', { version: packVersion }) }}</span>
         <span v-if="guarded"> · {{ t('rules.catalog.card.mustGuard') }}</span>
       </div>
     </details>

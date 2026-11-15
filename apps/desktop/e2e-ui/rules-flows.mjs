@@ -91,4 +91,19 @@ export async function rulesFlows({ page, step, shot, BASE }) {
     if (v !== 'Seeschwimmen') throw new Error(`search not prefilled: ${v}`)
     await shot(page, 'flow-rules-query')
   })
+
+  await step('flow: thresholds per Stufe are number fields with German labels', async () => {
+    await openCatalog('?rule=BP-SLEEP-01')
+    await page.waitForSelector('#rule-BP-SLEEP-01.v-expansion-panel--active', { timeout: 5000 })
+    await page.locator('#rule-BP-SLEEP-01 [data-testid="rule-edit-open"]').click({ timeout: 5000 })
+    await waitDialogSettled()
+    await page.locator('[data-testid="rule-tab-params"]').click()
+    await page.waitForSelector('[data-testid="param-pbs.sleepHours-woelfe"]', { timeout: 5000 })
+    await page.waitForTimeout(500)
+    const n = await page.locator('[data-testid^="param-pbs.sleepHours-"]').count()
+    if (n !== 6) throw new Error(`expected 6 Stufe fields, got ${n}`)
+    const txt = await page.locator('[data-testid="param-pbs.sleepHours"]').innerText()
+    if (!/Wölfe/.test(txt) || /pbs\.sleepHours|\{"/.test(txt)) throw new Error(`params panel: ${txt}`)
+    await shot(page, 'flow-rules-params-map')
+  })
 }

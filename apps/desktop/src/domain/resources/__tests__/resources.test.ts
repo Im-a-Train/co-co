@@ -83,6 +83,11 @@ describe('searchResources', () => {
   it('respects limit', () => {
     expect(searchResources(recs, 'wasser', { limit: 1 })).toHaveLength(1)
   })
+  it('takes the snippet from the title when it matches, not from the notes', () => {
+    const w = [mk('WASSER', { title: 'LS/T Wasser (Broschüre)', notes: 'S. 8: «Wildwasser I und II» ohne «nur».' })]
+    expect(searchResources(w, 'wasser')[0]!.snippet).toBe('LS/T Wasser (Broschüre)')
+    expect(searchResources(w, 'wildwasser')[0]!.snippet).toContain('Wildwasser')
+  })
 })
 
 describe('searchResources with citations', () => {
