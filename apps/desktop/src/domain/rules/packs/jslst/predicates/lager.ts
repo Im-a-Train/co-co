@@ -134,9 +134,12 @@ const RISK_TAGS = ['sb-berg', 'sb-wasser', 'sb-winter', 'ebb-a', 'ebb-b']
 
 const itemsFound = (d: DocumentRecord) => d.docCheck?.items.filter((i) => i.found).length ?? 0
 
-/** The safety concept: a document named like one, else the document with the most docCheck items found. */
+/**
+ * The safety concept: the document the coach marked as one, else a document named like one, else the
+ * document with the most docCheck items found. Documents the coach marked «not the safety concept» never count.
+ */
 function conceptDoc(ctx: RuleContext): DocumentRecord | null {
-  const checked = ctx.documents.filter((d) => d.docCheck)
+  const checked = ctx.documents.filter((d) => d.docCheck && d.safetyConcept !== false)
   if (checked.length === 0) return null
   const confirmed = checked.filter((d) => d.safetyConcept === true)
   if (confirmed.length > 0) return [...confirmed].sort((a, b) => itemsFound(b) - itemsFound(a))[0]

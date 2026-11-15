@@ -101,6 +101,12 @@ describe('problem sort', () => {
     expect(sortByProblem(rows).map((r) => r.key)).toEqual(['miss', 'only', 'amb', 'diff', 'rega', 'qual', 'ok'])
     expect(problemRank(row({}))).toBe(6)
   })
+  it('checks only the shown qualification columns when given', () => {
+    const r = row({ key: 'q', kind: 'leader', qualifications: { lagerleiter: 'valid', winter: 'invalid' } })
+    expect(problemRank(r)).toBe(5)
+    expect(problemRank(r, ['lagerleiter', 'leiterLsT'])).toBe(6)
+    expect(sortByProblem([row({ key: 'a' }), r], ['lagerleiter']).map((x) => x.key)).toEqual(['a', 'q'])
+  })
   it('is stable inside a rank', () => {
     const rows = [row({ key: 'a' }), row({ key: 'b' }), row({ key: 'c', state: 'ambiguous' })]
     expect(sortByProblem(rows).map((r) => r.key)).toEqual(['c', 'a', 'b'])

@@ -142,20 +142,25 @@ export function stateRank(state: ViewState): number {
 
 /**
  * How urgent a row is for the coach (0 = most urgent): missing in NDS, only in NDS, unclear, differing,
- * Rega not transmitted, expired qualification, everything else.
+ * Rega not transmitted, expired qualification, everything else. `qualKeys` limits the qualification check
+ * to the keys the table shows (the camp's columns); all keys when omitted.
  */
-export function problemRank(r: PersonViewRow): number {
+export function problemRank(r: PersonViewRow, qualKeys?: readonly string[]): number {
   const s = stateRank(r.state)
   if (s < 6) return s
   if (r.rega === false) return 4
-  if (r.kind === 'leader' && Object.values(r.qualifications).includes('invalid')) return 5
+  if (r.kind === 'leader') {
+    const q = r.qualifications as Record<string, string | undefined>
+    const keys = qualKeys ?? Object.keys(q)
+    if (keys.some((k) => q[k] === 'invalid')) return 5
+  }
   return 6
 }
 
 /** Rows sorted problems first; stable inside a rank (keeps the source order). */
-export function sortByProblem(rows: readonly PersonViewRow[]): PersonViewRow[] {
+export function sortByProblem(rows: readonly PersonViewRow[], qualKeys?: readonly string[]): PersonViewRow[] {
   return rows
-    .map((r, i) => ({ r, i, k: problemRank(r) }))
+    .map((r, i) => ({ r, i, k: problemRank(r, qualKeys) }))
     .sort((a, b) => a.k - b.k || a.i - b.i)
     .map((x) => x.r)
 }

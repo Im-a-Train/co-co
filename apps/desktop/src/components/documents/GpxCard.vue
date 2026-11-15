@@ -21,8 +21,9 @@ const { t } = useI18n()
 const woelfeFromInputs = computed(() => props.stufe === 'woelfe')
 const woelfe = ref(woelfeFromInputs.value)
 const includeDescent = ref(props.includeDescentDefault)
+// Multi-source watch: saving the record (new doc object, e.g. after a link) must not reset the switches.
 watch(
-  () => [props.doc.id, props.stufe] as const,
+  [() => props.doc.id, () => props.stufe],
   () => {
     woelfe.value = woelfeFromInputs.value
     includeDescent.value = props.includeDescentDefault
@@ -71,8 +72,7 @@ const statsLine = computed(() => {
     </div>
 
     <div class="text-body-2 text-medium-emphasis mt-2" data-testid="gpx-stats">
-      {{ statsLine }}
-      <span v-if="stats.name" class="ml-2">· {{ stats.name }}</span>
+      {{ statsLine }}<span v-if="stats.name"> · {{ stats.name }}</span>
     </div>
 
     <v-expansion-panels variant="accordion" class="mt-3">
@@ -84,11 +84,7 @@ const statsLine = computed(() => {
             <v-switch v-model="includeDescent" :label="t('documents.gpx.includeDescent')" density="compact" hide-details color="primary" />
             <v-switch
               v-model="woelfe"
-              :label="
-                woelfeFromInputs
-                  ? `${t('documents.gpx.paceFromInputs')}: ${paceWoelfe} Lkm/h`
-                  : `${t('documents.gpx.paceWoelfe')} (${paceWoelfe} Lkm/h)`
-              "
+              :label="t(woelfeFromInputs ? 'documents.gpx.paceFromInputs' : 'documents.gpx.paceWoelfe', { pace: paceWoelfe })"
               density="compact"
               hide-details
               color="primary"

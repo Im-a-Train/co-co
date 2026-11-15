@@ -169,7 +169,10 @@ export function ndsDateRange(start: string | null | undefined, end: string | nul
   return `${a.d}.${a.m}.${a.y} – ${b.d}.${b.m}.${b.y}`
 }
 
-/** What the link line shows: stored link extras, falling back to the loaded aggregate (links saved before the extras existed). */
+/**
+ * What the link line shows. A loaded aggregate wins (it is the latest NDS state and always belongs to the
+ * linked camp, see saveNdsLink); otherwise the extras stored with the link at pick time.
+ */
 export interface NdsLinkInfo {
   groupName: string | null
   offerNumber: string | null
@@ -182,7 +185,7 @@ export function ndsLinkInfo(
 ): NdsLinkInfo {
   return {
     groupName: link.groupName ?? null,
-    offerNumber: link.offerNumber ?? agg?.offerNumber ?? null,
-    dates: ndsDateRange(link.start ?? agg?.start, link.end ?? agg?.end),
+    offerNumber: agg?.offerNumber ?? link.offerNumber ?? null,
+    dates: agg?.start ? ndsDateRange(agg.start, agg.end) : ndsDateRange(link.start, link.end),
   }
 }

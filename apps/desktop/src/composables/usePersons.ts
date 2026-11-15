@@ -64,7 +64,7 @@ export interface PersonsHandle {
   ndsCamp: CampNdsHandle
   /** Qualification matrix from the stored MiData aggregate (not from the in-memory person list). */
   qualMatrix: ComputedRef<QualificationMatrix | null>
-  /** At least one linked, usable source. */
+  /** At least one linked, connected (NDS: switched on) source. */
   canLoad: ComputedRef<boolean>
   loading: ComputedRef<boolean>
   loadingMidata: typeof loadingMidata
@@ -132,8 +132,11 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
   })
   const midataLinked = computed(() => mdCamp.link.value !== null)
   const ndsLinked = computed(() => ndsCamp.link.value !== null)
-  const ndsUsable = computed(() => ndsLinked.value && ndsSettings.enabled.value)
-  const canLoad = computed(() => midataLinked.value || ndsUsable.value)
+  // A source can load only when it is linked AND connected (NDS also switched on); otherwise the click would
+  // just end in an error, and the «Quellen» card shows the way to the settings instead.
+  const midataUsable = computed(() => midataLinked.value && md.connected.value)
+  const ndsUsable = computed(() => ndsLinked.value && ndsSettings.enabled.value && ndsSettings.connected.value)
+  const canLoad = computed(() => midataUsable.value || ndsUsable.value)
 
   async function loadMidata(): Promise<void> {
     const l = mdCamp.link.value
@@ -165,7 +168,7 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
   }
 
   async function loadAll(): Promise<void> {
-    await Promise.all([midataLinked.value ? loadMidata() : Promise.resolve(), ndsUsable.value ? loadNds() : Promise.resolve()])
+    await Promise.all([midataUsable.value ? loadMidata() : Promise.resolve(), ndsUsable.value ? loadNds() : Promise.resolve()])
   }
 
   return {

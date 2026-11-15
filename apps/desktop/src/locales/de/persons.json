@@ -79,7 +79,6 @@
       "roles": "Rolle",
       "birthDate": "Geburtsdatum",
       "age": "Alter bei Lagerbeginn",
-      "jsAge": "J+S-Alter",
       "quals": "Qualifikation",
       "state": "NDS-Status",
       "rega": "Rega"
@@ -115,8 +114,7 @@
       "hide": "Geburtsdaten verbergen"
     },
     "jsAge": {
-      "yes": "5–20",
-      "no": "ausserhalb"
+      "outside": "ausserhalb J+S-Alter"
     },
     "qual": {
       "valid": "gültig",

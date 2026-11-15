@@ -100,7 +100,8 @@ async function save() {
           <v-icon icon="mdi-map-marker-outline" size="x-small" /> {{ t('findings.manual.anchor', { label: anchorText }) }}
         </div>
         <div class="text-subtitle-2 mb-1">{{ t('findings.manual.categoryLabel') }}</div>
-        <v-chip-group v-model="category" mandatory selected-class="text-primary" class="mb-2" data-testid="manual-finding-category">
+        <!-- column: all categories stay visible, so a preselected one (e.g. «Dokumente») is never scrolled away. -->
+        <v-chip-group v-model="category" mandatory column selected-class="text-primary" class="mb-2" data-testid="manual-finding-category">
           <v-chip
             v-for="c in MANUAL_FINDING_CATEGORIES"
             :key="c"

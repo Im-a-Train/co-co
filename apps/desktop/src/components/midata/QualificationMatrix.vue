@@ -3,8 +3,18 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { germanRoleLabel } from '@/domain/persons/roleLabels'
-import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type QualMatrixRow } from '@/domain/midata'
+import {
+  effectiveKeys,
+  isUnmappedKind,
+  nextQualMapping,
+  qualMappingChanged,
+  type QualificationMatrix,
+  type QualMapping,
+  type QualMatrixActivityCheck,
+  type QualMatrixRow,
+} from '@/domain/midata'
 import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2, type MidataQualKey, type MidataQualKind } from '@/domain/types'
+import { formatStand } from './format'
 
 const props = withDefaults(
   defineProps<{
@@ -44,6 +54,23 @@ function setKeys(label: string, keys: MidataQualKey[]): void {
   justSaved.value = false
 }
 
+type ActivityState = 'ok' | 'noQual' | 'nobody' | 'unknown'
+const ACTIVITY_ICON: Record<ActivityState, { icon: string; color: string }> = {
+  ok: { icon: 'mdi-check', color: 'success' },
+  noQual: { icon: 'mdi-close', color: 'error' },
+  nobody: { icon: 'mdi-alert-circle-outline', color: 'warning' },
+  unknown: { icon: 'mdi-help', color: 'grey' },
+}
+/**
+ * Row state of a safety activity. Nobody responsible is its own (orange) state; unreadable MiData
+ * qualifications make every answer unknown (they would otherwise all read as «keine passende Ausbildung»).
+ */
+function activityState(a: QualMatrixActivityCheck): ActivityState {
+  if (a.responsibles.length === 0) return 'nobody'
+  if (!props.matrix.qualificationsReadable || a.ok === null) return 'unknown'
+  return a.ok ? 'ok' : 'noQual'
+}
+
 function fmtDate(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split('-')
   return `${d}.${m}.${y}`
@@ -67,6 +94,8 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
     <v-card-title class="text-subtitle-1">{{ title ?? t('midata.matrix.title') }}</v-card-title>
     <v-card-text>
       <p v-if="!compact" class="text-medium-emphasis mb-3">{{ t('midata.matrix.intro') }}</p>
+      <!-- Compact (Personen): built from the stored aggregate, which can be older than the people list below. -->
+      <p v-else class="text-caption text-medium-emphasis mb-2" data-testid="qual-stand">{{ t('midata.card.stand', { date: formatStand(matrix.fetchedAt) }) }}</p>
       <v-alert
         v-if="!matrix.qualificationsReadable"
         type="warning"
@@ -82,27 +111,26 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
         <ul class="activity-list">
           <li v-for="a in matrix.activities" :key="`${a.activityIri}-${a.area}`" class="d-flex align-baseline ga-2" data-testid="qual-activity">
             <v-icon
-              v-if="a.ok === true"
-              icon="mdi-check"
-              color="success"
+              :icon="ACTIVITY_ICON[activityState(a)].icon"
+              :color="ACTIVITY_ICON[activityState(a)].color"
               size="small"
-              :aria-label="t('midata.matrix.activities.ok')"
-              data-testid="qual-activity-ok"
+              :aria-label="t(`midata.matrix.activities.${activityState(a)}`)"
+              :data-testid="`qual-activity-${activityState(a)}`"
             />
-            <v-icon
-              v-else-if="a.ok === false"
-              icon="mdi-close"
-              color="error"
-              size="small"
-              :aria-label="t('midata.matrix.activities.noQual')"
-              data-testid="qual-activity-bad"
-            />
-            <v-icon v-else icon="mdi-help" color="grey" size="small" :aria-label="t('midata.matrix.activities.unknown')" data-testid="qual-activity-unknown" />
             <span>
-              {{ t('midata.matrix.activities.row', { activity: a.activityTitle, area: t(`midata.matrix.activities.area.${a.area}`) }) }}
-              {{ a.responsibles.length ? t('midata.matrix.activities.responsible', { names: a.responsibles.join(', ') }) : t('midata.matrix.activities.nobody') }}
-              <span v-if="a.ok === false" class="text-error">{{ t('midata.matrix.activities.noQual') }}</span>
-              <span v-else-if="a.ok === null" class="text-medium-emphasis">{{ t('midata.matrix.activities.unknown') }}</span>
+              {{ t('midata.matrix.activities.row', { activity: a.activityTitle, area: t(`midata.matrix.activities.area.${a.area}`) }) }} –
+              <span v-if="activityState(a) === 'nobody'" class="text-warning">{{ t('midata.matrix.activities.nobody') }}</span>
+              <template v-else>
+                {{ t('midata.matrix.activities.responsible', { names: a.responsibles.join(', ') }) }}
+                <template v-if="activityState(a) === 'noQual'">
+                  · <span class="text-error">{{ t('midata.matrix.activities.noQual') }}</span>
+                </template>
+                <template v-else-if="activityState(a) === 'unknown'">
+                  · <span class="text-medium-emphasis" :title="t(matrix.qualificationsReadable ? 'midata.matrix.activities.unknownHint' : 'midata.matrix.notReadable')">{{
+                    t('midata.matrix.activities.unknown')
+                  }}</span>
+                </template>
+              </template>
             </span>
           </li>
         </ul>

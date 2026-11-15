@@ -5,11 +5,11 @@ import { useI18n } from 'vue-i18n'
 import MidataEventPicker from '@/components/midata/MidataEventPicker.vue'
 import QualificationMatrix from '@/components/midata/QualificationMatrix.vue'
 import NdsCampPicker from '@/components/nds/NdsCampPicker.vue'
+import { ndsLinkLabel } from '@/components/nds/format'
 import PersonsTable from '@/components/persons/PersonsTable.vue'
 import { STATE_COLOR } from '@/components/persons/stateColor'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { usePersons } from '@/composables/usePersons'
-import { ndsLinkInfo } from '@/domain/nds'
 import type { PersonKind } from '@/domain/persons/types'
 import { countBy, filterRows, NO_FILTERS, sortByProblem, summarizePersons, toggleValue, toViewRows, type PersonFilters, type ViewState } from '@/domain/persons/view'
 import type { MidataQualKey, NdsCampSummary } from '@/domain/types'
@@ -28,13 +28,14 @@ const regaMissingOnly = computed({
   set: (v: boolean | null) => (filters.value.rega = v ? 'missing' : 'all'),
 })
 
+// Columns of the qualification chips: the ones the camp needs (team card); LL and LS/T without a MiData aggregate.
+const qualColumns = computed<MidataQualKey[]>(() => p.qualMatrix.value?.columns ?? DEFAULT_QUALS)
 const allRows = computed(() => toViewRows(p.rows.value, p.campStart.value, p.compared.value))
-const shown = computed(() => sortByProblem(filterRows(allRows.value, filters.value)))
+const shown = computed(() => sortByProblem(filterRows(allRows.value, filters.value), qualColumns.value))
 const kindCounts = computed(() => countBy(allRows.value.map((r) => r.kind)))
 const summary = computed(() => summarizePersons(allRows.value))
 const stateCounts = computed(() => countBy(allRows.value.map((r) => r.state)))
 const hasData = computed(() => p.midata.value !== null || p.nds.value !== null)
-const qualColumns = computed<MidataQualKey[]>(() => p.qualMatrix.value?.columns ?? DEFAULT_QUALS)
 
 const jsItems = computed(() => [
   { value: 'all', title: t('persons.filter.jsAge') },
@@ -48,9 +49,12 @@ async function openMidataPicker(): Promise<void> {
   midataPickerOpen.value = true
   await p.midataCamp.findEvents()
 }
+// A different source means the loaded lists belong to another event / camp: forget them (memory and Rust).
 async function pickMidata(id: string): Promise<void> {
   midataPickerOpen.value = false
+  const before = p.midataCamp.link.value?.eventId ?? null
   await p.midataCamp.pickEvent(id)
+  if (hasData.value && p.midataCamp.link.value?.eventId !== before) await p.clear()
 }
 async function openNdsPicker(): Promise<void> {
   ndsPickerOpen.value = true
@@ -58,17 +62,14 @@ async function openNdsPicker(): Promise<void> {
 }
 async function pickNds(c: NdsCampSummary): Promise<void> {
   ndsPickerOpen.value = false
+  const before = p.ndsCamp.link.value?.campBusinessId ?? null
   await p.ndsCamp.pickCamp(c)
+  if (hasData.value && p.ndsCamp.link.value?.campBusinessId !== before) await p.clear()
 }
 
-const ndsLinkText = computed(() => {
-  const l = p.ndsCamp.link.value
-  if (!l) return ''
-  const info = ndsLinkInfo(l, p.ndsCamp.record.value?.aggregate ?? null)
-  const main = [info.groupName, info.offerNumber ? t('nds.card.link.offer', { n: info.offerNumber }) : ''].filter(Boolean).join(' · ')
-  if (!main && !info.dates) return l.campBusinessId
-  return info.dates ? `${main || l.campBusinessId} (${info.dates})` : main
-})
+const ndsLinkText = computed(() =>
+  p.ndsCamp.link.value ? ndsLinkLabel(p.ndsCamp.link.value, p.ndsCamp.record.value?.aggregate ?? null, t) : '',
+)
 
 const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('de-CH', { dateStyle: 'short', timeStyle: 'short' }) : '')
 </script>
@@ -84,13 +85,14 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
     <v-card variant="outlined" class="mb-3" data-testid="persons-sources">
       <v-card-title class="text-subtitle-1">{{ t('persons.sources.title') }}</v-card-title>
       <v-card-text>
+        <!-- One row per source: what is linked, and the one next step (pick, change, connect, switch on). -->
         <div class="source-row" data-testid="persons-source-midata">
           <span class="font-weight-medium source-name">{{ t('persons.sources.midata') }}</span>
           <span v-if="p.midataCamp.link.value" data-testid="persons-midata-link">
             {{ t(p.midataCamp.link.value.source === 'ecamp' ? 'persons.sources.midataLinkedEcamp' : 'persons.sources.midataLinked', { id: p.midataCamp.link.value.eventId }) }}
           </span>
-          <span v-else-if="!p.midataConnected.value" class="text-medium-emphasis" data-testid="persons-midata-notconnected">
-            {{ t('persons.sources.midataNotConnected') }}
+          <span v-if="!p.midataConnected.value" class="text-medium-emphasis" data-testid="persons-midata-notconnected">
+            <template v-if="p.midataCamp.link.value">· </template>{{ t('persons.sources.midataNotConnected') }}
           </span>
           <v-btn
             v-if="p.midataConnected.value && (!p.midataCamp.link.value || p.midataCamp.link.value.source === 'manual')"
@@ -101,7 +103,7 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
           >
             {{ p.midataCamp.link.value ? t('persons.sources.changeEvent') : t('persons.sources.pickEvent') }}
           </v-btn>
-          <v-btn v-else-if="!p.midataConnected.value && !p.midataCamp.link.value" size="small" variant="tonal" to="/einstellungen">
+          <v-btn v-else-if="!p.midataConnected.value" size="small" variant="tonal" to="/einstellungen" data-testid="persons-midata-to-settings">
             {{ t('persons.sources.toSettings') }}
           </v-btn>
         </div>
@@ -113,11 +115,13 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
           </template>
           <template v-else>
             <span v-if="p.ndsCamp.link.value" data-testid="persons-nds-link">{{ t('persons.sources.ndsLinked', { label: ndsLinkText }) }}</span>
-            <span v-else-if="!p.ndsConnected.value" class="text-medium-emphasis">{{ t('persons.sources.ndsNotConnected') }}</span>
+            <span v-if="!p.ndsConnected.value" class="text-medium-emphasis" data-testid="persons-nds-notconnected">
+              <template v-if="p.ndsCamp.link.value">· </template>{{ t('persons.sources.ndsNotConnected') }}
+            </span>
             <v-btn v-if="p.ndsConnected.value" size="small" :variant="p.ndsCamp.link.value ? 'text' : 'tonal'" data-testid="persons-nds-pick" @click="openNdsPicker">
               {{ p.ndsCamp.link.value ? t('persons.sources.changeCamp') : t('persons.sources.pickCamp') }}
             </v-btn>
-            <v-btn v-else-if="!p.ndsCamp.link.value" size="small" variant="tonal" to="/einstellungen">{{ t('persons.sources.toSettings') }}</v-btn>
+            <v-btn v-else size="small" variant="tonal" to="/einstellungen" data-testid="persons-nds-to-settings">{{ t('persons.sources.toSettings') }}</v-btn>
           </template>
         </div>
 
@@ -160,6 +164,7 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
             label
             :variant="filters.kinds.includes(k) ? 'flat' : 'outlined'"
             :color="filters.kinds.includes(k) ? 'primary' : undefined"
+            :aria-pressed="filters.kinds.includes(k)"
             :data-testid="`persons-chip-${k}`"
             @click="filters.kinds = toggleValue(filters.kinds, k)"
           >
@@ -174,6 +179,7 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
               label
               :variant="filters.states.includes(s) ? 'flat' : 'tonal'"
               :color="STATE_COLOR[s]"
+              :aria-pressed="filters.states.includes(s)"
               :data-testid="`persons-chip-state-${s}`"
               @click="filters.states = toggleValue(filters.states, s)"
             >

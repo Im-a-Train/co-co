@@ -95,11 +95,15 @@ const icon = (k: string) => ICONS[k] ?? 'mdi-file-outline'
             {{ titleOf(iri) }}
           </v-chip>
         </v-list-item-subtitle>
-        <div v-if="isConceptGuess(d)" class="d-flex align-center ga-1 mt-1 text-caption" data-testid="document-concept-guess">
-          <v-icon size="x-small" icon="mdi-shield-check-outline" />
-          <span>{{ t('documents.list.conceptQuestion') }}</span>
-          <v-btn size="x-small" variant="text" color="success" icon="mdi-check" :title="t('documents.list.conceptYes')" :aria-label="t('documents.list.conceptYes')" @click.stop="emit('setConcept', d.id, true)" />
-          <v-btn size="x-small" variant="text" icon="mdi-close" :title="t('documents.list.conceptNo')" :aria-label="t('documents.list.conceptNo')" @click.stop="emit('setConcept', d.id, false)" />
+        <div v-if="d.kind !== 'gpx' && isConceptGuess(d)" class="d-flex flex-wrap align-center ga-1 mt-1 text-caption" data-testid="document-concept-guess">
+          <span class="d-flex align-center ga-1">
+            <v-icon size="x-small" icon="mdi-shield-check-outline" />
+            {{ t('documents.list.conceptQuestion') }}
+          </span>
+          <span class="d-flex align-center">
+            <v-btn size="x-small" variant="text" color="success" icon="mdi-check" :title="t('documents.list.conceptYes')" :aria-label="t('documents.list.conceptYes')" data-testid="document-concept-yes" @click.stop="emit('setConcept', d.id, true)" />
+            <v-btn size="x-small" variant="text" icon="mdi-close" :title="t('documents.list.conceptNo')" :aria-label="t('documents.list.conceptNo')" data-testid="document-concept-no" @click.stop="emit('setConcept', d.id, false)" />
+          </span>
         </div>
         <div v-if="!d.activityIris.length" class="mt-1">
           <v-btn size="x-small" variant="text" prepend-icon="mdi-link-variant-plus" data-testid="document-link-action" @click.stop>
@@ -117,16 +121,18 @@ const icon = (k: string) => ICONS[k] ?? 'mdi-file-outline'
           </v-btn>
         </div>
         <div v-if="!d.activityIris.length && d.linkSuggestions.length" class="mt-1">
-          <div v-for="s in d.linkSuggestions.slice(0, 2)" :key="s.activityIri" class="d-flex align-center ga-1 text-caption">
+          <div v-for="s in d.linkSuggestions.slice(0, 2)" :key="s.activityIri" class="d-flex flex-wrap align-center ga-1 text-caption">
             <v-icon size="x-small" icon="mdi-link-variant" />
             <span>{{ titleOf(s.activityIri) }}</span>
             <span class="text-medium-emphasis">({{ t('documents.list.confirmQuestion') }})</span>
-            <v-btn size="x-small" variant="text" color="success" icon="mdi-check" :title="t('documents.list.confirm')" @click.stop="emit('confirm', d.id, s.activityIri)" />
-            <v-btn size="x-small" variant="text" icon="mdi-close" :title="t('documents.list.reject')" @click.stop="emit('reject', d.id, s.activityIri)" />
+            <span class="d-flex align-center">
+              <v-btn size="x-small" variant="text" color="success" icon="mdi-check" :title="t('documents.list.confirm')" :aria-label="t('documents.list.confirm')" @click.stop="emit('confirm', d.id, s.activityIri)" />
+              <v-btn size="x-small" variant="text" icon="mdi-close" :title="t('documents.list.reject')" :aria-label="t('documents.list.reject')" @click.stop="emit('reject', d.id, s.activityIri)" />
+            </span>
           </div>
         </div>
         <template #append>
-          <v-btn size="small" variant="text" icon="mdi-delete-outline" :title="t('documents.list.remove')" @click.stop="emit('remove', d.id)" />
+          <v-btn size="small" variant="text" icon="mdi-delete-outline" :title="t('documents.list.remove')" :aria-label="t('documents.list.remove')" data-testid="document-remove" @click.stop="emit('remove', d.id)" />
         </template>
       </v-list-item>
     </v-list>

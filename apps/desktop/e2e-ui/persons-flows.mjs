@@ -37,6 +37,15 @@ export async function personsFlows({ page, step, go, shot }) {
     if ((await page.getByTestId('persons-row').count()) !== all) throw new Error('second click did not clear the state filter')
     if ((await page.getByTestId('persons-filter-state').count()) !== 0) throw new Error('state select should be gone')
     if ((await page.getByTestId('persons-view').getByText('NDS-Nr.', { exact: true }).count()) !== 0) throw new Error('NDS-Nr. column should be gone')
+    const quals = await page.getByTestId('qual-chip').allInnerTexts()
+    if (quals.length === 0 || !quals.every((q) => /^(LL|LS\/T|Wasser|Berg|Winter|SLRG) [✓!✗]$/.test(q.trim())))
+      throw new Error(`qualification chips not labelled: ${quals.join(' | ')}`)
+    // Team card (stored MiData aggregate): Stand line and one readable sentence per safety activity.
+    const team = page.getByTestId('persons-view').getByTestId('qual-matrix')
+    await team.getByTestId('qual-stand').waitFor({ timeout: 5000 })
+    const acts = await team.getByTestId('qual-activity').allInnerTexts()
+    if (acts.length === 0 || !acts.every((a) => / – (verantwortlich: .+|niemand verantwortlich eingetragen)/.test(a)))
+      throw new Error(`safety activity rows unreadable: ${acts.join(' | ')}`)
   })
 
   await step('flow: birth dates are masked until revealed', async () => {

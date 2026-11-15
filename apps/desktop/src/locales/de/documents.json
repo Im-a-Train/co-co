@@ -1,6 +1,5 @@
 {
   "documents": {
-    "title": "Dokumente",
     "intro": "Dokumente bleiben auf deinem Computer. co-co speichert nur den extrahierten Text und die Metadaten im Browser-Speicher der App.",
     "drop": {
       "title": "Zieh Sicherheitskonzept, Routen (GPX) und Listen hierher",
@@ -11,11 +10,11 @@
     },
     "folders": {
       "title": "Überwachte Ordner",
-      "empty": "Noch kein Ordner überwacht.",
       "remove": "Überwachung beenden",
       "rescan": "Ordner neu einlesen",
-      "summary": "{n} Ordner überwacht · verwalten",
-      "hide": "Ordner ausblenden"
+      "summary": "{n} Ordner überwacht",
+      "hide": "Ordner ausblenden",
+      "manage": "Verwalten"
     },
     "list": {
       "title": "Dokumente dieses Lagers",
@@ -42,7 +41,7 @@
       "conceptChip": "Sicherheitskonzept",
       "conceptQuestion": "Sicherheitskonzept?",
       "conceptYes": "Als Sicherheitskonzept prüfen",
-      "conceptNo": "Nicht als Sicherheitskonzept",
+      "conceptNo": "Nicht als Sicherheitskonzept prüfen",
       "linkAction": "Aktivität verknüpfen …",
       "linkLabel": "Aktivität wählen",
       "linkDay": "Tag {n}",
@@ -76,10 +75,7 @@
     },
     "checklist": {
       "title": "Sicherheitskonzept: Checkliste",
-      "complete": "Alle Punkte gefunden",
-      "incomplete": "{found} von {total} gefunden",
       "notChecked": "Für dieses Dokument wurde keine Checkliste erstellt.",
-      "found": "gefunden",
       "missing": "nicht gefunden",
       "items": {
         "emergencyNumbers": "Notrufnummern (144, 1414, 117, 118, 145)",
@@ -110,29 +106,21 @@
       }
     },
     "gpx": {
-      "title": "GPX-Analyse",
-      "distance": "Distanz",
-      "ascent": "Aufstieg",
-      "descent": "Abstieg",
-      "highest": "Höchster Punkt",
       "lowest": "Tiefster Punkt",
-      "lkm": "Leistungskilometer",
       "lkmFormula": "Lkm = km + Aufstieg/100",
       "includeDescent": "Abstieg einrechnen (+ Abstieg/150)",
       "pace": "Tempo (Lkm pro Stunde)",
       "paceDefault": "Standard",
-      "paceWoelfe": "Wölfe",
-      "estimate": "Geschätzte Gehzeit",
+      "paceWoelfe": "Wölfe ({pace} Lkm/h)",
       "slot": "Geplanter Zeitslot",
       "fits": "Passt in den Zeitslot",
       "tooLong": "Gehzeit übersteigt den Zeitslot um {min} min",
       "noSlot": "Die verknüpfte Aktivität hat keinen Zeitslot.",
-      "points": "{n} Punkte",
       "lead": "Gehzeit ca. {time} ({lkm} Lkm bei {pace} Lkm/h)",
       "stats": "{km} km · ↑ {up} m · ↓ {down} m",
       "statsMax": " · max. {m} m",
       "adjust": "Berechnung anpassen",
-      "paceFromInputs": "Tempo Wölfe (aus «Angaben»)",
+      "paceFromInputs": "Tempo Wölfe (aus «Angaben»): {pace} Lkm/h",
       "pickActivity": "Zu welcher Aktivität gehört diese Route?"
     },
     "viewer": {

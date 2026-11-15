@@ -90,6 +90,8 @@ function fmtSize(n: number): string {
             :options="options"
             @link="(iri: Iri) => emit('link', doc!.id, iri)"
           />
+          <!-- A GPX file without a readable track: nothing to check, and it is never a safety concept. -->
+          <div v-else-if="doc.kind === 'gpx'" class="text-body-2">{{ t('documents.detail.noCheck') }}</div>
           <template v-else-if="asConcept">
             <v-expansion-panels v-model="panels" multiple variant="accordion">
               <v-expansion-panel data-testid="document-check-panel">

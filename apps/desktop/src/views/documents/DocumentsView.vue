@@ -22,20 +22,19 @@ const d = useDocuments(campIri)
 const route = useRoute()
 
 const selectedId = ref<string | null>(null)
-/** ?doc=<id> (from the activity drawer) selects that document as soon as the list is loaded. */
+/** The set of document ids; `persist` pushes/splices in place, so watching the array itself misses additions. */
+const docIds = computed(() => d.documents.value.map((x) => x.id).join('\n'))
+/**
+ * ?doc=<id> (from the activity drawer) selects that document as soon as the list is loaded. Without a valid
+ * selection the first document is selected, so «Details» is never empty.
+ */
 watch(
-  [() => route.query.doc, () => d.documents.value],
-  ([id, list]) => {
-    if (typeof id === 'string' && Array.isArray(list) && list.some((x) => x.id === id)) selectedId.value = id
-  },
-  { immediate: true },
-)
-/** Without a selection (and no ?doc target) the first document is selected, so «Details» is never empty. */
-watch(
-  () => d.documents.value,
-  (list) => {
-    if (list.length && !list.some((x) => x.id === selectedId.value) && typeof route.query.doc !== 'string') selectedId.value = list[0].id
-    else if (!list.length) selectedId.value = null
+  [() => route.query.doc, docIds],
+  ([q], old) => {
+    const list = d.documents.value
+    const has = (id: unknown) => typeof id === 'string' && list.some((x) => x.id === id)
+    if (has(q) && (!old || q !== old[0] || !has(selectedId.value))) selectedId.value = q as string
+    else if (!has(selectedId.value)) selectedId.value = list[0]?.id ?? null
   },
   { immediate: true },
 )
@@ -55,16 +54,24 @@ const options = computed(() => activityOptions(facts.value))
 /** Stufe from «Angaben»: presets the Wölfe pace of the GPX card. */
 const stufe = ref<Stufe | null>(null)
 
+watch(
+  campIri,
+  async (iri) => {
+    stufe.value = null
+    try {
+      stufe.value = (await getCoachInputs(iri))?.stufe ?? null
+    } catch {
+      /* no Angaben yet */
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
   try {
     gpx.value = (await getAppSettings()).gpx
   } catch {
     /* defaults */
-  }
-  try {
-    stufe.value = (await getCoachInputs(campIri.value))?.stufe ?? null
-  } catch {
-    /* no Angaben yet */
   }
   if (!facts.value) await load()
 })

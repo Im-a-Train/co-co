@@ -5,11 +5,11 @@ import { useI18n } from 'vue-i18n'
 import { formatDate, formatStand } from '@/components/midata/format'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampNds, useNds } from '@/composables/useNds'
-import { ndsFieldDiffs, ndsLinkInfo, ndsStateLabel } from '@/domain/nds'
+import { ndsFieldDiffs, ndsStateLabel } from '@/domain/nds'
 import type { CoachInputs, Iri, NdsAggregate, NdsCampSummary, NdsField } from '@/domain/types'
 import NdsAdoptDialog from './NdsAdoptDialog.vue'
 import NdsCampPicker from './NdsCampPicker.vue'
-import { countEntries } from './format'
+import { countEntries, ndsLinkLabel } from './format'
 
 const props = defineProps<{ campIri: Iri; inputs: CoachInputs }>()
 const emit = defineEmits<{ adopt: [fields: NdsField[], agg: NdsAggregate] }>()
@@ -49,14 +49,7 @@ const counts = computed(() => {
   ]
   return rows.filter((r) => r.planned !== null || r.actual !== null)
 })
-const linkLabel = computed(() => {
-  const l = camp.link.value
-  if (!l) return ''
-  const info = ndsLinkInfo(l, agg.value)
-  const main = [info.groupName, info.offerNumber ? t('nds.card.link.offer', { n: info.offerNumber }) : ''].filter(Boolean).join(' · ')
-  if (!main && !info.dates) return l.campBusinessId
-  return info.dates ? `${main || l.campBusinessId} (${info.dates})` : main
-})
+const linkLabel = computed(() => (camp.link.value ? ndsLinkLabel(camp.link.value, agg.value, t) : ''))
 const num = (n: number | null): string => (n === null ? '–' : String(n))
 const dates = computed(() => {
   const a = agg.value

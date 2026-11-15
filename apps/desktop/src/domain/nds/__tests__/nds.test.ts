@@ -148,6 +148,16 @@ describe('ndsDateRange / ndsLinkInfo', () => {
     expect(info).toEqual({ groupName: null, offerNumber: '999001', dates: '24.–30.01.2031' })
     expect(ndsLinkInfo({ groupName: 'Musterstufe', offerNumber: '1' }, null).groupName).toBe('Musterstufe')
   })
+  it('prefers the loaded aggregate over the extras stored at pick time', () => {
+    const link = { groupName: 'Musterstufe', offerNumber: '1', start: '2031-01-24', end: '2031-01-30' }
+    expect(ndsLinkInfo(link, null)).toEqual({ groupName: 'Musterstufe', offerNumber: '1', dates: '24.–30.01.2031' })
+    expect(ndsLinkInfo(link, { offerNumber: '999001', start: '2031-07-12', end: '2031-07-18' })).toEqual({
+      groupName: 'Musterstufe',
+      offerNumber: '999001',
+      dates: '12.–18.07.2031',
+    })
+    expect(ndsLinkInfo(link, { offerNumber: null, start: null, end: null })).toEqual({ groupName: 'Musterstufe', offerNumber: '1', dates: '24.–30.01.2031' })
+  })
   it('knows ATTENDANCE_OPEN', () => {
     expect(ndsStateLabel('ATTENDANCE_OPEN')).toBe('Präsenzkontrolle offen')
   })

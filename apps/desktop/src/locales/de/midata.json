@@ -147,11 +147,12 @@
       "activities": {
         "title": "Sicherheitsrelevante Aktivitäten – verantwortlich und ausgebildet?",
         "row": "{activity} ({area})",
-        "responsible": "– verantwortlich: {names}",
-        "nobody": "– niemand verantwortlich eingetragen",
+        "responsible": "verantwortlich: {names}",
+        "nobody": "niemand verantwortlich eingetragen",
         "ok": "ausgebildet",
         "noQual": "keine passende Ausbildung",
         "unknown": "nicht zuordenbar",
+        "unknownHint": "Keine der verantwortlichen Personen passt (Name oder Pfadiname) zu einer Leitungsperson aus MiData.",
         "area": {
           "wasser": "Wasser",
           "berg": "Berg",
