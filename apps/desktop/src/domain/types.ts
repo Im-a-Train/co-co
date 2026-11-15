@@ -749,6 +749,11 @@ export interface RuleMeta {
    * `message`. Same `{param}` placeholders as `message`; absent = generic sentence.
    */
   feedbackText?: string
+  /**
+   * Variant of `feedbackText` for a group of same-rule day findings (one feedback item for several days).
+   * Besides the placeholders of `message` it may use `{n}` (number of days) and `{dates}` (dates label).
+   */
+  feedbackTextGroup?: string
   severity: Severity
   confidence: Confidence
   scope: FindingScope
@@ -1108,6 +1113,8 @@ export interface Finding {
   message: string
   /** `RuleMeta.feedbackText` with params filled (only when the rule has one). Used by itemFromFinding. */
   feedbackText?: string
+  /** `RuleMeta.feedbackTextGroup` with the hit params filled; `{n}` and `{dates}` stay open for itemFromFindingGroup. */
+  feedbackTextGroup?: string
   scope: FindingScope
   targets: string[]
   evidence: Evidence[]

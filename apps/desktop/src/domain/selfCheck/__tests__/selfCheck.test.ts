@@ -123,7 +123,7 @@ describe('renderSelfCheckReport', () => {
   it('omits links without base URL and J+S line without days', () => {
     const text = renderSelfCheckReport(facts, findings, null, null, { ...base, instanceBaseUrl: null })
     expect(text).not.toContain('http')
-    expect(text).not.toContain('J+S-Tage')
+    expect(text).not.toContain('gültig')
   })
 
   it('excludes red-derived findings by default, includes with the option', () => {
@@ -275,6 +275,40 @@ describe('report grouping, provisional, fixed message (PREP-09 / PREP-01 / PREP-
     const html = renderSelfCheckReportHtml(buildSelfCheckReport(facts, findings, null, null, opts, true))
     expect(html.indexOf('Vorläufig')).toBeGreaterThan(-1)
     expect(html.indexOf('Vorläufig')).toBeLessThan(html.indexOf('Offen:'))
+  })
+  it('drops the J+S count while provisional and carries the minimum once confirmed', () => {
+    const js = { valid: 0, total: 7, required: 4 }
+    const prov = buildSelfCheckReport(facts, [finding('A:1')], js, null, opts, true)
+    expect(prov.jsDays).toBeNull()
+    const text = renderSelfCheckReport(facts, [finding('A:1')], js, null, opts, true)
+    expect(text).not.toContain('J+S-Tage:')
+    expect(renderSelfCheckReportHtml(prov)).not.toContain('gültig')
+    expect(buildSelfCheckReport(facts, [finding('A:1')], js, null, opts, false).jsDays).toEqual(js)
+  })
+  it('groups fixed day findings of one rule, sorted by date', () => {
+    const prev = {
+      id: 'r', campIri: 'x', createdAt: 'x', by: 'leader', snapshotId: null, note: '', counts: { must: 0, should: 0, hint: 0 }, validJsDays: null, totalDays: null,
+      findings: [2, 0, 3, 1].map((i) => ({ id: `R-DAY:${i}`, ruleId: 'R-DAY', severity: 'hint', title: 'Fixpunkte fehlen', message: `Am Tag ${i}`, targets: [`/api/days/x${i}`], redDerived: false })),
+    } as unknown as SelfCheckRun
+    const m = buildSelfCheckReport(f2 as never, [], null, compareWithRun(prev, []), opts)
+    expect(m.fixed).toHaveLength(1)
+    expect(m.fixed[0]).toMatchObject({ title: 'Fixpunkte fehlen', message: 'an 4 Tagen (26., 27., 29., 30.01.2031)' })
+    const text = renderSelfCheckReport(f2 as never, [], null, compareWithRun(prev, []), opts)
+    expect(text).toContain('Behoben seit letztem Selbstcheck (1)')
+    expect(text).toContain('- Fixpunkte fehlen – an 4 Tagen (26., 27., 29., 30.01.2031)')
+  })
+  it('progress ignores coach homework (needsInput)', () => {
+    const prev = {
+      id: 'r', campIri: 'x', createdAt: 'x', by: 'leader', snapshotId: null, note: '', counts: { must: 0, should: 0, hint: 0 }, validJsDays: null, totalDays: null,
+      findings: [{ id: 'H:1', ruleId: 'H', severity: 'must', title: 'Angabe', message: 'm', targets: [], redDerived: false }],
+    } as unknown as SelfCheckRun
+    const homework = finding('H:1', { ruleId: 'H', severity: 'must', targets: [], scope: 'camp', needsInput: 'coachInputs' })
+    const newHomework = finding('H:2', { ruleId: 'H', severity: 'must', targets: [], scope: 'camp', needsInput: 'coachInputs' })
+    const p = compareWithRun(prev, [homework, newHomework, finding('A:1')])
+    expect(p.remaining).toEqual([])
+    expect(p.fixed).toEqual([])
+    expect(p.added.map((f) => f.id)).toEqual(['A:1'])
+    expect(toSelfCheckFindings([homework, finding('A:1')]).map((f) => f.id)).toEqual(['A:1'])
   })
   it('lists fixed findings with title and old message', () => {
     const prev = { id: 'r', campIri: 'x', createdAt: 'x', by: 'leader', snapshotId: null, note: '', counts: { must: 0, should: 0, hint: 0 }, validJsDays: null, totalDays: null,

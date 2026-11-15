@@ -4,7 +4,6 @@
     "subtitle": "Coach Cockpit",
     "milestone": "M1–M5",
     "status": {
-      "loggedIn": "Angemeldet",
       "loggedOut": "Nicht angemeldet"
     },
     "account": {
@@ -28,7 +27,6 @@
     "delete": "Löschen",
     "edit": "Bearbeiten",
     "back": "Zurück",
-    "reload": "Neu laden",
     "copy": "Kopieren",
     "copied": "Kopiert",
     "confirm": "Bestätigen",

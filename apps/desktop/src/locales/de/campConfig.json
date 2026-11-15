@@ -76,7 +76,6 @@
     "tags": {
       "title": "Erkennung korrigieren",
       "hint": "co-co erkennt vieles aus den Texten. Hier korrigierst du die Erkennung für diese Aktivität; «Automatisch» heisst: co-co entscheidet selbst.",
-      "label": "Markierungen dieser Aktivität",
       "saveFailed": "Markierungen konnten nicht gespeichert werden",
       "auto": "Automatisch",
       "autoFromCategory": "Automatisch (aus Kategorie: {category})",
@@ -99,14 +98,11 @@
       }
     },
     "checklist": {
-      "tabTitle": "Checkliste",
       "tabIntro": "Fristen dieses Lagers und deine Coach-Checkliste an einem Ort. Verknüpfte Punkte teilen sich den Stand mit der Frist.",
       "deadlinesTitle": "Fristen dieses Lagers",
       "deadlinesEmpty": "Keine Fristen: Das Lager hat noch kein Startdatum.",
       "toFristen": "Alle Fristen",
       "dueOn": "Frist {date}",
-      "movedHint": "Die Coach-Checkliste und die Fristen dieses Lagers findest du jetzt im Tab «Checkliste».",
-      "movedLink": "Zur Checkliste",
       "title": "Coach-Checkliste",
       "intro": "Punkte, die du als Coach vor und im Lager abhakst. Es erscheinen nur Punkte der aktiven Regelmodule.",
       "empty": "Keine Punkte: Es sind keine Regelmodule aktiv oder die Lagerdaten fehlen noch.",

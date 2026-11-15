@@ -51,14 +51,15 @@ export const REVIEW_STEP_WEIGHTS: Record<ReviewStepKey, number> = {
 }
 
 /**
- * A document counts as reviewed when the coach did anything with it: it has a document check result,
- * a manual finding points at it, or it is linked to at least one activity.
+ * A document counts as reviewed only after a coach action or decision: a safety-concept decision, a
+ * confirmed check item, a manual finding on it, or a link to an activity. The automatic check result
+ * alone (made on import) does not count.
  */
 export function isDocumentReviewed(
-  doc: { docCheck: unknown | null; activityIris: readonly string[] },
+  doc: { safetyConcept?: boolean | null; docCheckConfirmed?: readonly unknown[]; activityIris: readonly string[] },
   manualFindingCount: number,
 ): boolean {
-  return doc.docCheck != null || manualFindingCount > 0 || doc.activityIris.length > 0
+  return doc.safetyConcept != null || (doc.docCheckConfirmed?.length ?? 0) > 0 || manualFindingCount > 0 || doc.activityIris.length > 0
 }
 
 function ratio(done: number, total: number): number {

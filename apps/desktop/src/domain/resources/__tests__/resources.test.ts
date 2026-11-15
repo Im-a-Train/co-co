@@ -67,11 +67,11 @@ describe('searchResources', () => {
     mk('B', { title: 'Allgemein', content: 'Beim Baden im See muss eine Aufsichtsperson dabei sein. Wasser ist kalt.' }),
     mk('C', { title: 'Nichts' }),
   ]
-  it('ranks meta above content, case/umlaut-insensitive', () => {
+  it('ranks document text above title/summary hits, case/umlaut-insensitive', () => {
     const h = searchResources(recs, 'WASSER')
-    expect(h.map((x) => x.key)).toEqual(['A', 'B'])
-    expect(h[0]!.in).toBe('meta')
-    expect(h[1]!.in).toBe('content')
+    expect(h.map((x) => x.key)).toEqual(['B', 'A'])
+    expect(h[0]!.in).toBe('content')
+    expect(h[1]!.in).toBe('meta')
     expect(h[1]!.snippet).toContain('Wasser')
   })
   it('ANDs words and folds umlauts', () => {
@@ -111,6 +111,43 @@ describe('searchResources with citations', () => {
     expect(h.map((x) => [x.key, x.in])).toEqual([['WASSER', 'meta']])
     const both = searchResources([mk('B', { title: 'Boot Info' }), ...recs], 'boot', { citations })
     expect(both.map((x) => [x.key, x.in])).toEqual([['B', 'meta'], ['WASSER', 'citation']])
+  })
+})
+
+describe('searchResources ranking tiers', () => {
+  const mk = (key: string, p: Partial<ResourceRecord>): ResourceRecord => ({
+    key, title: key, edition: '', url: null, weight: 'info', pageConvention: 'section', partlyRead: [], origin: 'custom', modified: false, updatedAt: NOW, updatedBy: 'manual', ...p,
+  })
+  it('ranks document text, then title/summary, then citations, then notes-only', () => {
+    const recs = [
+      mk('NOTE', { title: 'Alpha', notes: 'Notfall im Notfallset' }),
+      mk('CITE', { title: 'Beta' }),
+      mk('META', { title: 'Notfall Info' }),
+      mk('TEXT', { title: 'Gamma', content: 'Im Notfall anrufen.' }),
+    ]
+    const citations = new Map([['CITE', [{ id: 'X-1', title: 'Notfallkonzept', page: 'S. 1' }]]])
+    expect(searchResources(recs, 'notfall', { citations }).map((h) => h.key)).toEqual(['TEXT', 'META', 'CITE', 'NOTE'])
+  })
+  it('prefers the citation over a notes-only match of the same resource', () => {
+    const recs = [mk('R', { title: 'Alpha', notes: 'Hinweis Lager' })]
+    const citations = new Map([['R', [{ id: 'X-1', title: 'Lagerplatz', page: 'S. 1' }]]])
+    const h = searchResources(recs, 'lager', { citations })
+    expect(h).toHaveLength(1)
+    expect(h[0]!.in).toBe('citation')
+  })
+  it('picks the best citation: rule title above description', () => {
+    const recs = [mk('R', { title: 'Alpha' })]
+    const citations = new Map([['R', [
+      { id: 'A-1', title: 'Etwas', description: 'Beim Schwimmen ein Boot.' },
+      { id: 'A-2', title: 'Seeschwimmen ohne Boot' },
+    ]]])
+    expect(searchResources(recs, 'schwimmen', { citations, citationSnippet: (c) => c.id })[0]!.snippet).toBe('A-2')
+    const two = [mk('D', { title: 'D' }), mk('T', { title: 'T' })]
+    const cits = new Map([
+      ['D', [{ id: 'D-1', title: 'Etwas', description: 'Schwimmen im See' }]],
+      ['T', [{ id: 'T-1', title: 'Seeschwimmen' }]],
+    ])
+    expect(searchResources(two, 'schwimmen', { citations: cits }).map((h) => h.key)).toEqual(['T', 'D'])
   })
 })
 

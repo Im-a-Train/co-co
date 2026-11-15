@@ -150,7 +150,7 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
       const model = buildSelfCheckReport(
         facts,
         findingsHandle.findings.value,
-        js ? { valid: js.validDayCount, total: js.totalDayCount } : null,
+        js ? { valid: js.validDayCount, total: js.totalDayCount, required: findingsHandle.jsMinDays.value } : null,
         progress(),
         options,
         !settingsHandle.mappingConfirmed.value,

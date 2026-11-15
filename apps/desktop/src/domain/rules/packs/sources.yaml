@@ -8,7 +8,7 @@
   weight: binding
   pageConvention: printed
   partlyRead: ["Bilder S. 46–47 (Sicherheitsmanagement, Ampelschema)", "Abbildung Fig. 4"]
-  notes: "Seitenzahlen: PDF-Seite = gedruckte Seite. S. 21 sagt «auf mindestens zwei Tageszeiten verteilt», aber nicht «pro Lagertag». Abbildung 4 auf S. 21 ist der Kern."
+  notes: "Die Grundlage für die Tageszeiten-Regel im Lagersport/Trekking; die Abbildung zur Aufteilung ist der Kern."
   checkedOn: 2026-11-08
 - key: TOOL-V
   title: "J+S-Tool Modul «Lagersport/Trekking Vorgaben»"
@@ -54,7 +54,7 @@
   weight: binding-quote
   pageConvention: slide
   partlyRead: ["Folien 3, 13 und 15 (Grafik/Video)"]
-  notes: "Verbindlich nur dort, wo es J+S zitiert."
+  notes: "Gilt nur dort verbindlich, wo es J+S zitiert."
   checkedOn: 2026-11-08
 - key: EBB-C
   title: "Checkliste Ergänzende Bewegungsblöcke für Coachs"
@@ -96,7 +96,7 @@
   weight: outdated
   pageConvention: printed
   partlyRead: []
-  notes: "Modulnamen und SPORTdb-Verweise sind veraltet."
+  notes: "Gute Übersicht zum Lagerleben; Modulnamen und SPORTdb-Verweise sind veraltet."
   checkedOn: 2026-11-08
 - key: BERG
   title: "LS/T Berg (Broschüre)"
@@ -107,7 +107,7 @@
   weight: outdated
   pageConvention: printed
   partlyRead: []
-  notes: "Gedruckte Seite = PDF-Seite minus 2."
+  notes: "Praxishilfe für Bergaktivitäten im Lager."
   checkedOn: 2026-11-08
 - key: WASSER
   title: "LS/T Wasser (Broschüre)"
@@ -118,7 +118,7 @@
   weight: didactic
   pageConvention: printed
   partlyRead: []
-  notes: "S. 8: «Wildwasser I und II» ohne «nur»."
+  notes: "Praxishilfe für Wasseraktivitäten; bei Wildwasser gelten die Stufen I und II."
   checkedOn: 2026-11-08
 - key: WINTER
   title: "LS/T Winter (Broschüre)"
@@ -129,7 +129,7 @@
   weight: didactic
   pageConvention: printed
   partlyRead: []
-  notes: "Gedruckte Seite = PDF-Seite minus 2. Die Grundregeln sind heute über MB-UP S. 4 verbindlich."
+  notes: "Praxishilfe für Winteraktivitäten; die Grundregeln stehen heute im Merkblatt zur Unfallprävention."
   checkedOn: 2026-11-08
 - key: MB-UP
   title: "Unfallprävention und Sicherheitsanforderungen in Lagersport/Trekking"
@@ -142,7 +142,7 @@
   weight: binding
   pageConvention: printed
   partlyRead: []
-  notes: "6 Seiten, alle ausgewertet. LEITFADEN und WEB-L erklären es für verbindlich («müssen … unbedingt eingehalten werden»). Enthält keine Betreuungsschlüssel, Fristen, Programmregeln oder das Modell 2027."
+  notes: "Verbindliche Sicherheitsanforderungen; enthält keine Betreuungsschlüssel, Fristen oder Programmregeln."
   checkedOn: 2026-11-08
 - key: LEITFADEN
   title: "Leitfaden für J+S-Angebote aller J+S-Sportarten und Organisatoren"
@@ -154,7 +154,7 @@
   weight: binding
   pageConvention: section
   partlyRead: ["Kapitel «Gruppengrösse, Leitereinsatz … pro Sportart» (nur Teaser-Kacheln)"]
-  notes: "Zitiert SpoFöV und VSpoFöP. Der Text zu den freien Tagen und die Beispieltabelle widersprechen sich. Kein Modell 2027."
+  notes: "Rechtliche Grundlage für J+S-Angebote; bei den freien Tagen widerspricht sich der Text mit der Beispieltabelle."
   checkedOn: 2026-11-08
 - key: WEB-SICH
   title: "Webseite «Sicherheit in Lagersport/Trekking»"
@@ -165,7 +165,7 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Fast identisch mit MB-UP. Unterschiede: «Mobiltelefon» im Notfallset (nur Web), «Erfrieren» statt «Kälte», «Entscheidungshilfe» (jsle.ch/dTCd), «Hauptverantwortung … Lagerleitung»."
+  notes: "Online-Fassung der Sicherheitsanforderungen, fast gleich wie das Merkblatt, mit kleinen Ergänzungen."
   checkedOn: 2026-11-08
 - key: WEB-L
   title: "Webseite «Lager»"

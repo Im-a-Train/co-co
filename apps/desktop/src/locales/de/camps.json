@@ -130,12 +130,10 @@
         "general": "Lager",
         "participants": "Teilnehmende und Leitung",
         "rules": "Regelmodule und Lagerkontext",
-        "more": "Weitere Angaben",
-        "notes": "Notizen"
+        "more": "Weitere Angaben"
       },
       "fields": {
         "isJsCamp": "J+S-Lager",
-        "isJsCampHint": "Unbekannt gilt wie ja: J+S-Regeln werden angewendet.",
         "stufe": "Stufe",
         "winterSafeAccess": "Haus mit wintersicherer Zufahrt",
         "participantsCount": "Teilnehmende",

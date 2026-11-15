@@ -66,11 +66,14 @@ describe('reviewProgress', () => {
 })
 
 describe('isDocumentReviewed', () => {
-  it('needs docCheck, a manual finding or a link', () => {
-    expect(isDocumentReviewed({ docCheck: null, activityIris: [] }, 0)).toBe(false)
-    expect(isDocumentReviewed({ docCheck: {}, activityIris: [] }, 0)).toBe(true)
-    expect(isDocumentReviewed({ docCheck: null, activityIris: [] }, 1)).toBe(true)
-    expect(isDocumentReviewed({ docCheck: null, activityIris: ['x'] }, 0)).toBe(true)
+  it('needs a coach action: decision, confirmed item, manual finding or a link (not the automatic docCheck)', () => {
+    expect(isDocumentReviewed({ docCheck: {}, activityIris: [] } as never, 0)).toBe(false)
+    expect(isDocumentReviewed({ safetyConcept: null, docCheckConfirmed: [], activityIris: [] }, 0)).toBe(false)
+    expect(isDocumentReviewed({ safetyConcept: false, activityIris: [] }, 0)).toBe(true)
+    expect(isDocumentReviewed({ safetyConcept: true, activityIris: [] }, 0)).toBe(true)
+    expect(isDocumentReviewed({ docCheckConfirmed: ['emergencyNumbers'], activityIris: [] }, 0)).toBe(true)
+    expect(isDocumentReviewed({ activityIris: [] }, 1)).toBe(true)
+    expect(isDocumentReviewed({ activityIris: ['x'] }, 0)).toBe(true)
   })
 })
 

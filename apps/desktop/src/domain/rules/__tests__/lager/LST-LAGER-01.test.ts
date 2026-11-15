@@ -38,6 +38,12 @@ describe('LST-LAGER-01', () => {
     expect(msg(hits[0])).toContain('Krisenkontakt')
     expect(msg(hits[0])).not.toContain('Notrufnummern')
   })
+  it('items the coach confirmed with «Ist vorhanden» are not listed as missing', () => {
+    const base = { id: 'k1', name: 'Sicherheitskonzept.pdf', docCheck: docCheck(ALL_CHECKS.filter((k) => k !== 'hospital')) }
+    expect(p['LST-LAGER-01'](makeCtx(f, { documents: [makeDoc({ ...base, docCheckConfirmed: ['hospital'] })] }))).toEqual([])
+    const hits = p['LST-LAGER-01'](makeCtx(f, { documents: [makeDoc({ ...base, docCheckConfirmed: ['firstAid'] })] }))
+    expect(msg(hits[0])).toBe('Im Sicherheitskonzept fehlen: Spital.')
+  })
   it('complete concept -> none', () => {
     expect(p['LST-LAGER-01'](makeCtx(f, { documents: [makeDoc({ docCheck: docCheck(ALL_CHECKS) })] }))).toEqual([])
   })

@@ -77,6 +77,7 @@ export function validateRuleMeta(meta: RuleMeta): string[] {
   need(!!meta?.description?.trim(), 'description fehlt')
   need(!!meta?.message?.trim(), 'message fehlt')
   need(meta?.feedbackText === undefined || typeof meta.feedbackText === 'string', 'feedbackText muss ein Text sein')
+  need(meta?.feedbackTextGroup === undefined || typeof meta.feedbackTextGroup === 'string', 'feedbackTextGroup muss ein Text sein')
   need(SEVERITIES.includes(meta?.severity), 'severity ungültig')
   need(CONFIDENCES.includes(meta?.confidence), 'confidence ungültig')
   need(SCOPES.includes(meta?.scope), 'scope ungültig')
@@ -127,8 +128,8 @@ export function renderMessage(meta: RuleMeta, hit: RuleHit): string {
 }
 
 /** Coach feedback text of a hit (rule `feedbackText` with the same placeholders filled), or undefined. */
-export function renderFeedbackText(meta: RuleMeta, hit: RuleHit): string | undefined {
-  const tpl = meta.feedbackText?.trim()
+export function renderFeedbackText(meta: RuleMeta, hit: RuleHit, field: 'feedbackText' | 'feedbackTextGroup' = 'feedbackText'): string | undefined {
+  const tpl = meta[field]?.trim()
   if (!tpl) return undefined
   const params: Record<string, string | number> = { ...(hit.params ?? {}) }
   for (const [name, parts] of Object.entries(hit.fragments ?? {})) {
@@ -209,6 +210,8 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campD
     const evidence: Evidence[] = hit.evidence ?? []
     const message = renderMessage(meta, hit)
     const feedbackText = hit.needsInput ? undefined : renderFeedbackText(meta, hit)
+    // {n} and {dates} stay open (fillTemplate keeps unknown placeholders): itemFromFindingGroup fills them.
+    const feedbackTextGroup = hit.needsInput ? undefined : renderFeedbackText(meta, hit, 'feedbackTextGroup')
     const outcome = hitOutcome(meta, hit, moduleState)
     // Red-derived facts (hit.redKeys) also count as red where tags are used: add the source tag unless present.
     const tags = [
@@ -234,6 +237,7 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campD
       message,
       // Coach homework (needsInput) never goes to the leaders, so it carries no leader-facing text.
       ...(feedbackText ? { feedbackText } : {}),
+      ...(feedbackTextGroup ? { feedbackTextGroup } : {}),
       scope: meta.scope,
       targets,
       evidence,

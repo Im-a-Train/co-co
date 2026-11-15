@@ -162,11 +162,27 @@ function snippetAround(text: string, norm: string, words: string[]): string {
   return `${start > 0 ? '… ' : ''}${body}${end < text.length ? ' …' : ''}`
 }
 
+/** Best citation for all words: a match in the rule id/title outranks one in the description, which outranks the page. */
+function bestCitation(list: readonly ResourceCitation[] | undefined, words: string[]): { c: ResourceCitation; score: number } | null {
+  let best: { c: ResourceCitation; score: number } | null = null
+  for (const c of list ?? []) {
+    const head = normalizeText(`${c.id} ${c.title}`)
+    const desc = normalizeText(c.description ?? '')
+    const page = normalizeText(c.page ?? '')
+    if (!words.every((w) => head.includes(w) || desc.includes(w) || page.includes(w))) continue
+    let score = 0
+    for (const w of words) score += head.includes(w) ? 100 : desc.includes(w) ? 40 : 10
+    if (!best || score > best.score) best = { c, score }
+  }
+  return best
+}
+
 /** Full-text search over title, summary, notes, edition and content. Words AND-ed, umlaut/case-insensitive. */
 export function searchResources(records: readonly ResourceRecord[], query: string, opts?: SearchOptions): ResourceHit[] {
   const words = normalizeText(query).split(/\s+/).filter(Boolean)
   if (!words.length) return []
   const hits: ResourceHit[] = []
+  const notesOnlyHits = new Set<ResourceHit>()
   for (const r of records) {
     const title = normalizeText(r.title)
     const key = normalizeText(r.key)
@@ -177,16 +193,17 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
     const meta = `${key}\n${title}\n${summary}\n${notes}\n${rest}`
     const inMeta = words.every((w) => meta.includes(w))
     const inAll = inMeta || words.every((w) => `${meta}\n${content}`.includes(w))
-    if (!inAll) {
-      const cite = opts?.citations?.get(r.key)?.find((c) => {
-        const hay = normalizeText(`${c.id} ${c.title} ${c.description ?? ''} ${c.page ?? ''}`)
-        return words.every((w) => hay.includes(w))
-      })
+    // Matches only in the maintainer notes rank below citation hits (the notes do not answer the coach's question).
+    const nonNotes = `${key}\n${title}\n${summary}\n${rest}`
+    const notesOnly = inMeta && !words.every((w) => nonNotes.includes(w)) && words.every((w) => `${nonNotes}\n${notes}`.includes(w))
+    if (!inAll || notesOnly) {
+      const cite = bestCitation(opts?.citations?.get(r.key), words)
       if (cite) {
-        const snippet = opts?.citationSnippet ? opts.citationSnippet(cite) : `${cite.id} ${cite.title}`
-        hits.push({ key: r.key, title: r.title, url: r.url, snippet, score: 0, in: 'citation' })
+        const snippet = opts?.citationSnippet ? opts.citationSnippet(cite.c) : `${cite.c.id} ${cite.c.title}`
+        hits.push({ key: r.key, title: r.title, url: r.url, snippet, score: cite.score, in: 'citation' })
+        continue
       }
-      continue
+      if (!inAll) continue
     }
     let score = 0
     for (const w of words) {
@@ -217,10 +234,13 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
       where = 'content'
       snippet = snippetAround(r.content ?? '', content, words)
     }
-    hits.push({ key: r.key, title: r.title, url: r.url, snippet, score, in: where })
+    const hit: ResourceHit = { key: r.key, title: r.title, url: r.url, snippet, score, in: where }
+    if (notesOnly) notesOnlyHits.add(hit)
+    hits.push(hit)
   }
-  const tier = { meta: 0, content: 1, citation: 2 } as const
-  hits.sort((a, b) => (a.in === b.in ? b.score - a.score : tier[a.in] - tier[b.in]) || a.key.localeCompare(b.key))
+  // content → title/summary → citation → notes-only
+  const tierOf = (h: ResourceHit): number => (notesOnlyHits.has(h) ? 3 : h.in === 'content' ? 0 : h.in === 'meta' ? 1 : 2)
+  hits.sort((a, b) => tierOf(a) - tierOf(b) || b.score - a.score || a.key.localeCompare(b.key))
   return opts?.limit ? hits.slice(0, opts.limit) : hits
 }
 

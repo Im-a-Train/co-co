@@ -34,6 +34,8 @@ export interface RenderContext {
   facts?: CampFacts | null
   /** Documents (names for document items, first linked activity for placement). */
   documents?: Pick<DocumentRecord, 'id' | 'name' | 'activityIris'>[]
+  /** Number of activities already commented directly in eCamp (posted items): one line tells the leaders. */
+  postedCount?: number
 }
 
 export interface RenderedFeedback {
@@ -193,8 +195,16 @@ function collapseBlankLines(s: string): string {
 
 const ITEMS_TOKEN = '\u0000ITEMS\u0000'
 
+/** One line for the leaders: some points were commented directly in eCamp. Empty when there are none. */
+export function postedLine(count: number): string {
+  if (!(count > 0)) return ''
+  return count === 1 ? tr('feedback.postedLineOne') : tr('feedback.postedLineMany', { n: count })
+}
+
 export function renderFeedback(items: FeedbackItem[], channel: FeedbackChannel, ctx: RenderContext): RenderedFeedback {
-  const itemsBlock = renderItemsBlock(items, channel, ctx)
+  const line = postedLine(ctx.postedCount ?? 0)
+  const withLine = (block: string): string => (line ? (block ? `${block}\n\n${line}` : line) : block)
+  const itemsBlock = withLine(renderItemsBlock(items, channel, ctx))
   const tpl = ctx.template ?? (ctx.templateId ? safeTemplate(ctx.templateId) : null)
   const campName = ctx.campTitle || tr('feedback.campFallback')
   const vars = { camp: campName, coach: ctx.coachName ?? '', items: itemsBlock }
@@ -202,6 +212,7 @@ export function renderFeedback(items: FeedbackItem[], channel: FeedbackChannel, 
   let body: string
   let htmlBody: string | null = null
   const itemsHtml = channel !== 'whatsapp' && ctx.includeLinks !== false ? renderItemsHtml(items, ctx) : null
+  if (itemsHtml?.linked && line) itemsHtml.html = `${itemsHtml.html}<br><br>${htmlText(line)}`
   if (tpl) {
     const parts = splitTemplate(tpl)
     subject = parts.subject !== null ? fillTemplate(parts.subject, vars).trim() : null
@@ -353,14 +364,14 @@ export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new 
  * `itemFromFinding` with an optional extra sentence (group dates): it goes after the message and before
  * the template's closing question, or at the end of the rule's own feedbackText.
  */
-function ruleItem(finding: Finding, campIri: Iri, now: Date, extra: string | null): FeedbackItem {
+function ruleItem(finding: Finding, campIri: Iri, now: Date, extra: string | null, ownText?: string): FeedbackItem {
   if (finding.origin === 'manual') return itemFromManualFinding(finding, campIri, now)
   const isMust = finding.severity === 'must'
   // Rule messages often lack final punctuation (also after a closing «)»); a sentence may follow.
   const message = finding.message.trim()
   const sentence = /[.!?…:]$/.test(message) ? message : `${message}.`
   const params = { title: finding.title, message: extra ? `${sentence} ${extra}` : sentence }
-  const own = finding.feedbackText?.trim()
+  const own = ownText ?? finding.feedbackText?.trim()
   const text = own
     ? (extra ? `${own} ${extra}` : own)
     : tr(isMust ? 'feedback.fromFinding.must' : 'feedback.fromFinding.other', params)
@@ -428,6 +439,14 @@ export function itemFromFindingGroup(
   if (!first) throw new Error('itemFromFindingGroup: empty group')
   if (!rest.length) return itemFromFinding(first, campIri, now)
   const anyMust = group.findings.some((f) => f.severity === 'must')
+  const groupText = first.feedbackTextGroup?.trim()
+  if (groupText) {
+    // The rule's own group wording names the days itself: no extra «Das betrifft …» sentence.
+    const text = groupText.replace(/\{n\}/g, String(group.findings.length)).replace(/\{dates\}/g, datesLabel).replace(/\.\.$/, '.')
+    const item = ruleItem(anyMust ? { ...first, severity: 'must' } : first, campIri, now, null, text)
+    item.findingIds = group.findings.map((f) => f.id)
+    return item
+  }
   // Date labels like «24.01.» already end with a dot: don't double it.
   const sentence = tr('feedback.fromFinding.groupDays', { count: group.findings.length, dates: datesLabel }).replace(/\.\.$/, '.')
   const item = ruleItem(anyMust ? { ...first, severity: 'must' } : first, campIri, now, sentence)

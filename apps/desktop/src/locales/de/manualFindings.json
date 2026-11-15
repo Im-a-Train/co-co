@@ -25,6 +25,12 @@
       "cancel": "Abbrechen",
       "saveFailed": "Der Coach-Befund konnte nicht gespeichert werden: {error}",
       "empty": "Noch keine Coach-Befunde.",
+      "mcp": {
+        "add": "Coach-Befund hinzufügen (Lager «{camp}»)",
+        "update": "Coach-Befund ändern (Lager «{camp}»)",
+        "delete": "Coach-Befund löschen (Lager «{camp}»)",
+        "linked": "Coach-Befund: {text}"
+      },
       "category": {
         "positive": "Positiv",
         "safety": "Sicherheit",
@@ -40,9 +46,7 @@
   },
   "activities": {
     "manual": {
-      "add": "Coach-Befund erfassen",
-      "count": "{count} Coach-Befunde",
-      "column": "Coach"
+      "count": "{count} Coach-Befunde"
     }
   },
   "cockpit": {

@@ -304,7 +304,7 @@ async function confirmReset() {
               <tr v-if="row.r.date"><th scope="row">{{ t('resources.detail.date') }}</th><td>{{ fmt(row.r.date) }}</td></tr>
               <tr v-if="row.r.checkedOn"><th scope="row">{{ t('resources.detail.checkedOn') }}</th><td>{{ fmt(row.r.checkedOn) }}</td></tr>
               <tr v-if="row.r.partlyRead.length"><th scope="row">{{ t('resources.detail.partlyRead') }}</th><td>{{ row.r.partlyRead.join('; ') }}</td></tr>
-              <tr v-if="row.r.notes"><th scope="row">{{ t('resources.detail.notes') }}</th><td>{{ row.r.notes }}</td></tr>
+              <tr v-if="row.r.notes && (row.r.origin === 'custom' || row.r.modified)"><th scope="row">{{ t('resources.detail.notes') }}</th><td>{{ row.r.notes }}</td></tr>
               <tr>
                 <th scope="row">{{ t('resources.detail.file') }}</th>
                 <td>

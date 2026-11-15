@@ -72,6 +72,16 @@ describe('renderFeedback', () => {
     expect(r.body).not.toContain('{{')
     expect(r.body).not.toContain('Betreff:')
   })
+  it('adds one line about the eCamp comments in every channel, before the closing', () => {
+    expect(renderFeedback(items, 'whatsapp', { ...ctx, postedCount: 0 }).body).not.toContain('direkt in eCamp')
+    const wa = renderFeedback(items, 'whatsapp', { ...ctx, postedCount: 1 })
+    expect(wa.body.endsWith('Zu einer Aktivität habe ich direkt in eCamp kommentiert.')).toBe(true)
+    const plain = renderFeedback(items, 'plain', { ...ctx, postedCount: 3 })
+    expect(plain.body).toContain('Zu 3 Aktivitäten habe ich direkt in eCamp kommentiert.')
+    const mail = renderFeedback(items, 'email', { ...ctx, templateId: 'auflagen', postedCount: 2 })
+    expect(mail.body.indexOf('Zu 2 Aktivitäten')).toBeGreaterThan(mail.body.indexOf('Bitte Sicherheit ergänzen.'))
+    expect(mail.body.indexOf('Zu 2 Aktivitäten')).toBeLessThan(mail.body.indexOf('Gebt mir kurz Bescheid'))
+  })
   it('plain without template lists sections only', () => {
     const r = renderFeedback(items, 'plain', ctx)
     expect(r.subject).toBeNull()
@@ -227,6 +237,14 @@ describe('itemFromFindingGroup', () => {
     const it2 = itemFromFindingGroup(group([withText(1), withText(2)]), '/api/camps/c1', 'Fr 24.01. – Sa 25.01.')
     expect(it2.text).toBe('Tragt ihr die Fixpunkte noch ein? Das betrifft 2 Tage: Fr 24.01. – Sa 25.01.')
     expect(it2.kind).toBe('suggestion')
+  })
+  it('uses the rule group text with {n} and {dates} filled and no extra «Das betrifft» sentence', () => {
+    const withGroup = (n: number) =>
+      ({ ...mk(n), feedbackText: 'Am 24.01.2031 reicht es nicht.', feedbackTextGroup: 'An {n} Tagen ({dates}) reicht das Programm nicht. Wie wollt ihr es anpassen?' }) as Finding
+    const it2 = itemFromFindingGroup(group([withGroup(1), withGroup(2), withGroup(3)]), '/api/camps/c1', '25.–27.01.2031')
+    expect(it2.text).toBe('An 3 Tagen (25.–27.01.2031) reicht das Programm nicht. Wie wollt ihr es anpassen?')
+    expect(it2.text).not.toContain('Das betrifft')
+    expect(it2.findingIds).toHaveLength(3)
   })
   it('a group of one equals itemFromFinding (no findingIds)', () => {
     const it2 = itemFromFindingGroup(group([mk(1)]), '/api/camps/c1', 'x')

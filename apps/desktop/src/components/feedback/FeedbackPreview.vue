@@ -38,11 +38,13 @@ watch(
 
 const shown = computed(() => previewItems(props.items, { includeSent: includeSent.value }))
 const postedCount = computed(() => postedItems(props.items).length)
+// Distinct activities commented directly in eCamp (the leaders get one line about them).
+const postedActivityCount = computed(() => new Set(postedItems(props.items).map((i) => i.activityIri ?? i.id)).size)
 const sentCount = computed(() => props.items.filter((i) => i.status === 'sent').length)
 const draftIds = computed(() => shown.value.filter((i) => i.status === 'draft').map((i) => i.id))
 
 const rendered = computed(() =>
-  renderFeedback(shown.value, channel.value, { ...props.context, templateId: templateId.value ?? undefined, includeLinks: includeLinks.value }),
+  renderFeedback(shown.value, channel.value, { ...props.context, postedCount: postedActivityCount.value, templateId: templateId.value ?? undefined, includeLinks: includeLinks.value }),
 )
 const lengthText = computed(() =>
   t('feedback.previewLength', {

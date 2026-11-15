@@ -8,6 +8,7 @@ message: "{date} zählt nicht als J+S-Tag ({minutes} min J+S-Aktivität in {unit
 messageVariants:
   bwz: "{date} zählt nicht als J+S-Tag: {minutes} min J+S-Aktivität in {units} Einheit(en) genügen, aber die Bewegungszeit beträgt nur {bwz} min (nötig {minBwz} min). Er gilt als trainingsfreier Tag."
 feedbackText: "Am {date} reicht das Programm noch nicht für einen J+S-Tag. Wie wollt ihr es anpassen?"
+feedbackTextGroup: "An {n} Tagen ({dates}) reicht das Programm noch nicht für einen J+S-Tag. Wie wollt ihr es anpassen?"
 severity: should
 confidence: verified
 scope: day

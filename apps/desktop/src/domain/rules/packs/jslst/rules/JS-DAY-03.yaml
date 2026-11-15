@@ -6,6 +6,7 @@ title: "Sozialzeit zwischen J+S-Einheiten"
 description: "Zwischen zwei aufeinanderfolgenden J+S-Einheiten eines Tages liegen mindestens 30 Minuten Sozialzeit."
 message: "Tag {day}: {count} Pause(n) zwischen J+S-Einheiten kürzer als {min} Min. (kürzeste: {minutes} Min.)"
 feedbackText: "Am Tag {day} sind Pausen zwischen den J+S-Einheiten kürzer als {min} Minuten. Könnt ihr mehr Zeit dazwischen einplanen?"
+feedbackTextGroup: "An {n} Tagen ({dates}) sind Pausen zwischen den J+S-Einheiten kürzer als {min} Minuten. Könnt ihr mehr Zeit dazwischen einplanen?"
 severity: must
 confidence: verified
 scope: day

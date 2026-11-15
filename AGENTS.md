@@ -38,16 +38,16 @@ Every `campId` accepts the short id or the IRI.
 | `list_resources` | read | List resources (Hilfsmittel auflisten) | Green (public Hilfsmittel). |
 | `search_resources` | read | Search resources (Hilfsmittel durchsuchen) | Green (public Hilfsmittel). |
 | `get_resource` | read | Get resource (Hilfsmittel lesen) | Green, paged (max 20000 chars). |
-| `list_manual_findings` | read | List manual findings (Eigene Befunde auflisten) | Comments redacted; comments quoting MiData/NDS are dropped. |
+| `list_manual_findings` | read | List manual findings (Coach-Befunde auflisten) | Comments redacted; comments quoting MiData/NDS are dropped. |
 | `get_feedback_structure` | read | Feedback structure (Feedback-Struktur lesen) | Redacted; red-derived items filtered like `list_feedback`. |
 | `list_general_feedback_points` | read | List general feedback points (Allgemeine Feedback-Punkte auflisten) | Static German reference text plus used state. |
 | `get_camp_progress` | read | Camp review progress (Prüffortschritt lesen) | Counts and German labels only. |
-| `list_documents` | read | List documents (Dokumente auflisten) | Metadata only: never the file path, never red-zone documents, names redacted. |
+| `list_documents` | read | List documents (Dokumente auflisten) | Metadata only: never the file path, never red-zone documents, names redacted. `docCheck` (safety-concept audit: `missing` without the coach's «Ist vorhanden» items, `confirmed`) only for documents that count as safety concept; `safetyConcept` is the coach's decision (true/false/null). |
 | `get_document_text` | read | Get document text (Dokumenttext lesen) | Only if the document is `aiAllowed`; redacted, paged (max 20000 chars); never red zone. |
 | `get_review_guidance` | read | Get review guidance (Prüf-Leitfaden lesen) | Green (public rule texts); modules off and disabled rules are left out. |
-| `add_manual_finding` | write | Add manual finding (Eigenen Befund hinzufügen) | Text de-redacted locally; MiData/NDS markers refused; anchor needs a document of the camp. |
-| `update_manual_finding` | write | Update manual finding (Eigenen Befund ändern) | Text de-redacted locally; MiData/NDS markers refused. |
-| `delete_manual_finding` | write | Delete manual finding (Eigenen Befund löschen) | Irreversible; confirmation shows the finding. |
+| `add_manual_finding` | write | Add manual finding (Coach-Befund hinzufügen) | Text de-redacted locally; MiData/NDS markers refused; anchor needs a document of the camp. |
+| `update_manual_finding` | write | Update manual finding (Coach-Befund ändern) | Text de-redacted locally; MiData/NDS markers refused. |
+| `delete_manual_finding` | write | Delete manual finding (Coach-Befund löschen) | Irreversible; confirmation shows the finding. |
 | `add_feedback` | write | Add feedback draft (Feedback-Entwurf hinzufügen) | Text de-redacted locally; `documentId`/`generalPointId`/`manualFindingId` are validated against the camp. |
 | `update_feedback` | write | Update feedback draft (Feedback-Entwurf ändern) | Drafts only; same link validation as `add_feedback`. |
 | `ignore_finding` | write | Ignore finding (Befund ignorieren) | Reason de-redacted locally. |

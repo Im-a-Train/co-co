@@ -7,6 +7,7 @@
  * CONTRACT (M8): the types live in `../types` (mirror coco-core/src/nds.rs) and are re-exported here.
  * The helpers below are filled in by the domain implementer.
  */
+import { tr } from '../feedback/i18n'
 import type { CoachInputs, IsoDateTime, NdsAggregate, NdsField } from '../types'
 
 export type {
@@ -43,30 +44,15 @@ export interface NdsFieldDiff {
 
 
 /**
- * Single table state code -> German label. Only observed codes are listed; everything else is shown raw.
- * (offerState, offerItemState, activityState, activityType and orderState share one table.)
+ * German label of a state code, from the locale table `nds.state.<CODE>` (offerState, offerItemState,
+ * activityState, activityType and orderState share one table). Only observed codes are listed; unknown
+ * codes are returned raw (null -> empty string).
  */
-export const NDS_STATE_LABELS: Readonly<Record<string, string>> = {
-  WAITING_FOR_ASSESSMENT: 'Wartet auf Abrechnungsprüfung',
-  PAYED_CH: 'Ausbezahlt',
-  PARTIALLY_PAYED: 'Teilweise ausbezahlt',
-  UNFINISHED_BY_BATCH: 'Unvollständig abgeschlossen (automatisch)',
-  ATTENDANCE_CHECKED: 'Präsenzkontrolle erledigt',
-  ATTENDANCE_OPEN: 'Präsenzkontrolle offen',
-  CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES: 'Lagertag mit J+S-Aktivitäten',
-  FIRST_CAMP_DAY: 'Erster Lagertag',
-  LAST_CAMP_DAY: 'Letzter Lagertag',
-  FINISHED: 'Abgeschlossen',
-  // involvementType / targetAudienceGroup (observed in captures)
-  INSTRUCTOR: 'Leitende',
-  ASSISTANT_INSTRUCTOR: 'Hilfsleitende',
-  YOUTH_TRAINING: 'J+S-Kinder und -Jugendsport',
-}
-
-/** German label of a state code; unknown codes are returned raw (null -> empty string). */
 export function ndsStateLabel(code: string | null): string {
   if (!code) return ''
-  return NDS_STATE_LABELS[code] ?? code
+  const key = `nds.state.${code}`
+  const label = tr(key)
+  return label === key ? code : label
 }
 
 /** True for observed states that count as closed. Unknown/null never do. */

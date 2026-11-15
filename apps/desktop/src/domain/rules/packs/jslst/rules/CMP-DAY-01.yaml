@@ -6,6 +6,7 @@ title: "Tag ohne Tagesverantwortung"
 description: "Jeder Lagertag hat eine verantwortliche Person."
 message: "Für den {date} ist keine Tagesverantwortung eingetragen"
 feedbackText: "Für den {date} ist noch niemand als Tagesverantwortliche/r eingetragen. Wer übernimmt diesen Tag?"
+feedbackTextGroup: "Für {n} Tage ({dates}) ist noch niemand als Tagesverantwortliche/r eingetragen. Wer übernimmt diese Tage?"
 severity: hint
 confidence: unverified
 scope: day

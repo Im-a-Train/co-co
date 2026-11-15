@@ -21,9 +21,7 @@
       "location": "Ort",
       "responsibles": "Verantwortliche",
       "progress": "Fortschritt",
-      "findings": "Befunde",
-      "documents": "Dokumente",
-      "documentsShort": "Dok."
+      "findings": "Befunde"
     },
     "entryDay": "Tag {n}",
     "moreEntries": "+{count}",

@@ -37,7 +37,13 @@ async function openEcamp(url: string) {
       <v-chip :color="model.counts.must > 0 ? 'error' : undefined" variant="tonal" size="small">{{ t('selfCheck.kpi.must') }} {{ model.counts.must }}</v-chip>
       <v-chip :color="model.counts.should > 0 ? 'warning' : undefined" variant="tonal" size="small">{{ t('selfCheck.kpi.should') }} {{ model.counts.should }}</v-chip>
       <v-chip variant="tonal" size="small">{{ t('selfCheck.kpi.hint') }} {{ model.counts.hint }}</v-chip>
-      <v-chip v-if="model.jsDays" variant="tonal" size="small">{{ t('selfCheck.report.jsDaysChip', model.jsDays) }}</v-chip>
+      <v-chip
+        v-if="model.jsDays"
+        :color="model.jsDays.required === undefined ? undefined : model.jsDays.valid < model.jsDays.required ? 'warning' : 'success'"
+        variant="tonal"
+        size="small"
+        data-testid="selfcheck-report-jsdays"
+      >{{ t('selfCheck.report.jsDaysChip', { valid: model.jsDays.valid, total: model.jsDays.total }) }}</v-chip>
     </div>
     <v-alert v-if="openError" type="error" variant="tonal" density="compact" class="mb-2">{{ openError }}</v-alert>
 

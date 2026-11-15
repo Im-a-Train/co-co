@@ -87,7 +87,6 @@
       "nds": "NDS"
     },
     "connections": {
-      "ecamp": "eCamp",
       "midata": "MiData",
       "nds": "NDS"
     }

@@ -4,11 +4,26 @@
       "label": "NDS",
       "tooltip": "Aus der NDS übernommen, Stand {date}"
     },
+    "state": {
+      "WAITING_FOR_ASSESSMENT": "Wartet auf Abrechnungsprüfung",
+      "PAYED_CH": "Ausbezahlt",
+      "PARTIALLY_PAYED": "Teilweise ausbezahlt",
+      "UNFINISHED_BY_BATCH": "Unvollständig abgeschlossen (automatisch)",
+      "ATTENDANCE_CHECKED": "Präsenzkontrolle erledigt",
+      "ATTENDANCE_OPEN": "Präsenzkontrolle offen",
+      "CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES": "Lagertag mit J+S-Aktivitäten",
+      "FIRST_CAMP_DAY": "Erster Lagertag",
+      "LAST_CAMP_DAY": "Letzter Lagertag",
+      "FINISHED": "Abgeschlossen",
+      "INSTRUCTOR": "Leitende",
+      "ASSISTANT_INSTRUCTOR": "Hilfsleitende",
+      "YOUTH_TRAINING": "J+S-Kinder und -Jugendsport"
+    },
     "redZone": "Rote Zone · nur Zahlen",
     "settings": {
       "title": "NDS (Nationale Datenbank Sport)",
       "intro": "Die NDS des Bundesamts für Sport wird nur lesend angefragt, nur auf deinen Wunsch und nur über die App, nie über den Browser.",
-      "redZoneText": "Rote Zone: Daten aus der NDS bleiben auf diesem Gerät und gehen nie an die KI. co-co speichert davon nur Zahlen, Daten und Status. Namen und Geburtsdaten siehst du nur im Tab «Personen», nur im Arbeitsspeicher und nur nach Klick auf «Laden». AHV-Nummern nur maskiert.",
+      "redZoneText": "Rote Zone: Daten aus der NDS bleiben auf diesem Gerät und gehen nie an die KI. co-co speichert davon nur Zahlen, Daten und Status. Namen und Geburtsdaten siehst du nur im Tab «Personen», nur im Arbeitsspeicher und nur nach Klick auf «Personen laden». AHV-Nummern nur maskiert.",
       "unofficial": "Die NDS hat keine öffentliche Schnittstelle. co-co nutzt dieselbe Web-Schnittstelle wie die NDS-Webseite. Sie kann sich ohne Vorankündigung ändern; dann zeigt die Diagnose, welche Felder fehlen.",
       "enable": "NDS-Anbindung verwenden",
       "status": {
@@ -24,7 +39,6 @@
       "logout": "Abmelden",
       "notInApp": "Nur in der Desktop-App verfügbar.",
       "diag": {
-        "title": "Diagnose",
         "intro": "Prüft, was die NDS für ein Lager preisgibt. Es werden nur Statuscodes und Feldnamen angezeigt.",
         "campId": "NDS-Lager-ID",
         "run": "Prüfen",

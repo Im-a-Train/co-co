@@ -124,7 +124,7 @@
       "pickActivity": "Zu welcher Aktivität gehört diese Route?"
     },
     "viewer": {
-      "addFinding": "Befund erfassen",
+      "addFinding": "Coach-Befund erfassen",
       "anchorAt": "Stelle: {where}",
       "findings": "Befunde zu diesem Dokument ({n})",
       "jump": "Zur Stelle im Dokument springen",

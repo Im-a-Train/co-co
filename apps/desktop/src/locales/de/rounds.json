@@ -1,6 +1,5 @@
 {
   "rounds": {
-    "title": "Runden",
     "intro": "Jede Runde hält den Stand des Lagers in eCamp fest. So siehst du bei der nächsten Runde, was sich geändert hat.",
     "approve": {
       "title": "Lager wirklich bewilligen?",
@@ -10,7 +9,7 @@
       "untriaged": "{n} Befund nicht gesichtet | {n} Befunde nicht gesichtet",
       "unsentMust": "{n} Auflage nicht gesendet | {n} Auflagen nicht gesendet",
       "unsentDrafts": "{n} Feedback-Punkt nicht gesendet | {n} Feedback-Punkte nicht gesendet",
-      "jsDays": "Nur {valid} von {required} J+S-Tagen gültig",
+      "jsDays": "Nur {valid} J+S-Tage gültig, nötig sind mindestens {required}",
       "noteRequired": "Begründung (Pflicht, solange ein Muss-Befund offen ist)",
       "noteOptional": "Notiz (optional)",
       "noteHint": "Die Begründung wird im Verlauf des Review-Status gespeichert.",

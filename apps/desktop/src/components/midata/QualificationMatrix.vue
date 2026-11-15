@@ -135,7 +135,7 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
           </li>
         </ul>
       </div>
-      <p v-if="matrix.rows.length > 0 && !compact" class="text-caption text-medium-emphasis mb-2" data-testid="qual-legend">{{ t('midata.matrix.legend') }}</p>
+      <p v-if="matrix.rows.length > 0" class="text-caption text-medium-emphasis mb-2" data-testid="qual-legend">{{ t('midata.matrix.legend') }}</p>
       <div v-if="matrix.rows.length === 0" class="text-medium-emphasis">{{ t('midata.matrix.noLeaders') }}</div>
       <div v-else class="table-wrap">
         <v-table density="compact">
@@ -179,7 +179,7 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
                   :aria-label="t('midata.matrix.unknownCell')"
                   data-testid="qual-cell-unknown"
                 />
-                <v-icon v-else icon="mdi-close" color="error" size="small" :aria-label="t('midata.matrix.hasNot')" />
+                <v-icon v-else icon="mdi-close" size="small" class="text-medium-emphasis" :aria-label="t('midata.matrix.hasNot')" />
               </td>
             </tr>
             <tr class="font-weight-medium">

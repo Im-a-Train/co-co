@@ -106,6 +106,33 @@ describe('leader-facing feedbackText of the bundled rules', () => {
   })
 })
 
+describe('feedbackTextGroup of the hard day-scope rules', () => {
+  const GROUP_IDS = ['CMP-DAY-01', 'JS-DAY-01', 'JS-DAY-03', 'JS-DAY-06', 'JS-PROG-01', 'JS-PROG-02', 'BP-REST-01', 'BP-SLEEP-01']
+  it('exists for the grouped day rules, names {n} and {dates}, and only uses placeholders of the message otherwise', () => {
+    for (const id of GROUP_IDS) {
+      const t = ruleMeta(id).feedbackTextGroup
+      expect(t, id).toBeTruthy()
+      expect(t, id).toContain('{n}')
+      expect(t, id).toContain('{dates}')
+      expect(t, id).not.toContain('ß')
+      expect(t, id).not.toMatch(COACH_ONLY)
+      expect(hasNextStep(t!), id).toBe(true)
+      for (const ph of placeholders(t!)) {
+        if (ph === 'n' || ph === 'dates') continue
+        expect(placeholders(ruleMeta(id).message), `${id} {${ph}}`).toContain(ph)
+      }
+    }
+  })
+
+  it('the engine fills the hit params and leaves {n} and {dates} open; needsInput hits get none', () => {
+    const meta = ruleMeta('JS-DAY-03')
+    const hit = { targets: ['/api/days/d1'], params: { day: 2, min: 15, count: 1, minutes: 5 } } as unknown as RuleHit
+    expect(renderFeedbackText(meta, hit, 'feedbackTextGroup')).toBe(
+      'An {n} Tagen ({dates}) sind Pausen zwischen den J+S-Einheiten kürzer als 15 Minuten. Könnt ihr mehr Zeit dazwischen einplanen?',
+    )
+  })
+})
+
 // --- rendered texts of real predicate hits ---------------------------------------------------------
 
 /** Rendered feedbackText of every hit of `id` in `ctx` (at least one hit, none of them coach homework). */

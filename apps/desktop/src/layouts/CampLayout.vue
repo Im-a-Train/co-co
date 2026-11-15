@@ -96,6 +96,10 @@ watch(campIri, () => void load(), { immediate: true })
   z-index: 5;
   background: rgb(var(--v-theme-surface));
 }
+/* Short tabs (GP/DP) must not be padded to 90px: otherwise the bar never leaves overflow mode (arrows) after the drawer closed. */
+.camp-tabs :deep(.v-tab) {
+  min-width: 0;
+}
 </style>
 
 <style>

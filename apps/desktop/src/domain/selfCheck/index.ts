@@ -50,9 +50,12 @@ function openRuleFindings(findings: Finding[]): Finding[] {
   return findings.filter((f) => !f.override && f.origin === 'rule')
 }
 
-/** Open findings (no override, origin 'rule') as SelfCheckFinding; redDerived from tags midata / nds-quelle. */
+/**
+ * Open findings (no override, origin 'rule') as SelfCheckFinding; redDerived from tags midata / nds-quelle.
+ * Coach homework (needsInput) is left out: the self-check is the leaders' view and they cannot act on it.
+ */
 export function toSelfCheckFindings(findings: Finding[]): SelfCheckFinding[] {
-  return openRuleFindings(findings).map((f) => ({
+  return openRuleFindings(findings).filter((f) => !f.needsInput).map((f) => ({
     id: f.id,
     ruleId: f.ruleId,
     severity: f.severity,
@@ -121,7 +124,9 @@ export function compareWithRun(previous: SelfCheckRun | null, current: Finding[]
   if (!previous) return { fixed: [], remaining: [], added: now, changed: {} }
   const nowIds = new Set(now.map((f) => f.id))
   const prevIds = new Set(previous.findings.map((f) => f.id))
-  const fixed = previous.findings.filter((f) => !nowIds.has(f.id))
+  // Runs stored before needsInput was excluded may still hold coach homework: still open, never «fixed».
+  const homeworkIds = new Set(openRuleFindings(current).filter((f) => f.needsInput).map((f) => f.id))
+  const fixed = previous.findings.filter((f) => !nowIds.has(f.id) && !homeworkIds.has(f.id))
   const added = now.filter((f) => !prevIds.has(f.id))
   const remaining = now.filter((f) => prevIds.has(f.id))
   const changed: Record<string, SelfCheckChange> = {}
@@ -289,10 +294,18 @@ export interface SelfCheckReportGroup {
   items: SelfCheckReportItem[]
 }
 
+/** J+S days of the report; `required` (minimum) colours the chip like the Übersicht tile. */
+export interface SelfCheckJsDays {
+  valid: number
+  total: number
+  required?: number
+}
+
 export interface SelfCheckReportModel {
   heading: string
   counts: { must: number; should: number; hint: number }
-  jsDays: { valid: number; total: number } | null
+  /** Null while the category mapping is unconfirmed (provisional) or without data. */
+  jsDays: SelfCheckJsDays | null
   groups: SelfCheckReportGroup[]
   /** «Behoben seit letztem Selbstcheck»: title plus the old message. */
   fixed: { id: string; title: string; message: string }[]
@@ -304,7 +317,7 @@ export interface SelfCheckReportModel {
 export function buildSelfCheckReport(
   facts: CampFacts,
   findings: Finding[],
-  jsDays: { valid: number; total: number } | null,
+  jsDays: SelfCheckJsDays | null,
   progress: SelfCheckProgress | null,
   opts: SelfCheckReportOptions,
   provisional = false,
@@ -360,11 +373,22 @@ export function buildSelfCheckReport(
         : tr(topics === 1 ? 'selfCheck.report.groupCountOne' : 'selfCheck.report.groupCount', { label, topics, places })
     groups.push({ severity, header, topics, places, items })
   }
-  const fixed = progress ? progress.fixed.filter((f) => include || !f.redDerived).map((f) => ({ id: f.id, title: f.title, message: f.message })) : []
+  // Fixed day findings of one rule merge like the open ones: one entry per topic («an 7 Tagen (…)»).
+  // fixedHeading {n} counts these entries (topics), like the topic count of the group headers.
+  const fixed = progress
+    ? groupSelfCheckFindings(
+        progress.fixed.filter((f) => include || !f.redDerived),
+        facts,
+      ).map((g) => {
+        const first = g.items[0]!
+        return { id: first.id, title: g.title, message: g.merged ? daysLabel(g.dates) : first.message }
+      })
+    : []
   return {
     heading: tr('selfCheck.report.heading', { camp: facts.camp.title, date: formatDate(opts.now) }),
     counts: { must: count('must'), should: count('should'), hint: count('hint') },
-    jsDays,
+    // Provisional: the day count would contradict «nicht geprüft».
+    jsDays: provisional ? null : jsDays,
     groups,
     fixed,
     provisional,
@@ -381,7 +405,7 @@ function fixedText(f: { title: string; message: string }): string {
   return f.message ? `${f.title} – ${f.message}` : f.title
 }
 function jsDaysLine(m: SelfCheckReportModel): string | null {
-  return m.jsDays ? tr('selfCheck.report.jsDays', m.jsDays) : null
+  return m.jsDays ? tr('selfCheck.report.jsDays', { valid: m.jsDays.valid, total: m.jsDays.total }) : null
 }
 
 /** Plain-text report (German) from the model; the eCamp URL follows the activity label in parentheses. */
@@ -436,7 +460,7 @@ export function renderSelfCheckReportHtml(m: SelfCheckReportModel): string {
 export function renderSelfCheckReport(
   facts: CampFacts,
   findings: Finding[],
-  jsDays: { valid: number; total: number } | null,
+  jsDays: SelfCheckJsDays | null,
   progress: SelfCheckProgress | null,
   opts: SelfCheckReportOptions,
   provisional = false,
