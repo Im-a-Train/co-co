@@ -103,7 +103,6 @@
       }
     },
     "grid": {
-      "title": "Grobprogramm (GP)",
       "day": "Tag {n}",
       "jsMinutes": "J+S {time}",
       "jsMinutesPreview": "≈ {time} (Vorschlag)",
@@ -126,7 +125,6 @@
       "legendExcluded": "nicht geprüft",
       "legendColor": "Farbe = Kategorie",
       "empty": "Keine Tage oder Programmpunkte vorhanden.",
-      "mappingSection": "Kategorien",
       "mappingTitle": "Kategorien zuordnen",
       "mappingDone": "Kategorien zugeordnet am {date}",
       "mappingEdit": "Ändern",

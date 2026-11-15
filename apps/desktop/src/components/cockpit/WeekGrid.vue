@@ -115,7 +115,8 @@ function blockFindingsTitle(b: GridBlock): string {
     .join(', ')
 }
 const anyFindings = computed(() => props.grid.days.some((d) => d.blocks.some((b) => blockTotal(b) > 0)))
-const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tabs-height, 48px) + ${props.stickyOffset ?? 0}px)`)
+// Right under the sticky camp tabs (CampLayout, density comfortable = 44px) and any bar above the grid.
+const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tabs-height, 44px) + ${props.stickyOffset ?? 0}px)`)
 </script>
 
 <template>
@@ -269,10 +270,13 @@ const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tab
 </template>
 
 <style scoped>
+/*
+ * No min-width and no overflow-x container: a scroll container would break the sticky head, and a fixed minimum
+ * pushed the last days under the (non-modal) activity drawer. The day columns shrink instead.
+ */
 .wg-head,
 .wg-body {
   display: flex;
-  min-width: 720px;
 }
 .wg-head {
   position: sticky;
@@ -287,6 +291,7 @@ const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tab
 .wg-colhead {
   flex: 1 1 0;
   min-width: 0;
+  overflow-wrap: break-word;
   text-align: center;
   padding: 4px 4px 8px;
   border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));

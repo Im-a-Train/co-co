@@ -162,8 +162,6 @@
       "intro": "Ordne jede eCamp-Kategorie einer J+S-Klasse zu. Nur Lagersport (LS) und Lageraktivität (LA) zählen für J+S.",
       "inactiveTitle": "Noch nicht bestätigt",
       "inactiveText": "Die J+S-Tagesregeln laufen erst, wenn du die Zuordnung bestätigt hast. Prüfe die Vorschläge und bestätige sie einmal.",
-      "confirmedTitle": "Zuordnung bestätigt",
-      "confirmedText": "Bestätigt am {date}. Änderungen musst du erneut bestätigen.",
       "dirtyTitle": "Nicht bestätigte Änderung",
       "dirtyText": "Die Änderung gilt erst, wenn du sie bestätigst.",
       "effect": "Mit dieser Zuordnung: {valid} von {total} J+S-Tagen gültig",

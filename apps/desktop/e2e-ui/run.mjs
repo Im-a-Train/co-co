@@ -251,15 +251,22 @@ async function main() {
     await page.getByTestId('grid-summary').waitFor({ timeout: 8000 })
     if (!/\d+ von \d+ J\+S-Tagen gültig/.test(await page.getByTestId('grid-summary').innerText())) throw new Error('summary text')
     if (!(await page.getByTestId('grid-legend').count())) throw new Error('legend missing')
+    if (!(await page.getByTestId('grid-invalid-why').count())) throw new Error('no short reason under a failing day')
     const pos = await page.evaluate(() => getComputedStyle(document.querySelector('.wg-head')).position)
     if (pos !== 'sticky') throw new Error(`wg-head not sticky (${pos})`)
+    await shot(page, 'flow-grid-days')
+    // ?tag=<dayIri> (from a day finding): no drawer, that day outlined as «Dieser Tag» (Tag 3 of the dev camp)
+    await go('raster?tag=/api/days/5dc6586312e0', 'flow-grid-tag')
+    await page.getByTestId('grid-focus-day').first().waitFor({ timeout: 8000 })
+    const focus = await page.getByTestId('grid-focus-day').allInnerTexts()
+    if (focus.length !== 1 || !/Dieser Tag/.test(focus[0]) || !/Tag 3/.test(focus[0])) throw new Error('focus day: ' + JSON.stringify(focus))
+    if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('?tag opened the activity drawer')
+    await shot(page, 'flow-grid-tag')
+    // a failing day's title opens its finding
     const dayLink = page.locator('.wg-daylink').first()
-    if (await dayLink.count()) {
-      const iri = await page.evaluate(() => null)
-      void iri
-      await dayLink.click()
-      await page.waitForURL(/befunde\?.*befund=/, { timeout: 5000 })
-    }
+    if (!(await dayLink.count())) throw new Error('no day title links to its finding')
+    await dayLink.click()
+    await page.waitForURL(/befunde\?.*befund=/, { timeout: 5000 })
   })
 
   await step('flow: activities list filter and drawer', async () => {

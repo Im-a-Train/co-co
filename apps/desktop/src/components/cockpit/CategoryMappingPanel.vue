@@ -168,7 +168,7 @@ async function setChecked(iri: Iri, on: boolean): Promise<void> {
               <strong>{{ r.short }}</strong> {{ r.name }}
               <div
                 class="text-caption ml-5"
-                :class="r.confidence === 'low' ? 'text-warning' : 'text-medium-emphasis'"
+                :class="r.confidence === 'low' && !confirmed ? 'text-warning' : 'text-medium-emphasis'"
                 data-testid="mapping-reason"
               >
                 {{ t(`camps.mapping.reason.${r.reason ?? 'none'}`) }}
@@ -204,7 +204,8 @@ async function setChecked(iri: Iri, on: boolean): Promise<void> {
       </v-table>
       <div v-if="findingsHandle" class="text-caption text-medium-emphasis mt-1">{{ t('camps.mapping.checkCaption') }}</div>
 
-      <div class="d-flex align-center flex-wrap ga-3 mt-3">
+      <!-- A confirmed mapping without changes has nothing to confirm: the actions appear with the first change. -->
+      <div v-if="!confirmed || pendingChange" class="d-flex align-center flex-wrap ga-3 mt-3">
         <v-btn
           color="primary"
           variant="flat"
@@ -218,7 +219,7 @@ async function setChecked(iri: Iri, on: boolean): Promise<void> {
         <v-btn v-if="pendingChange" variant="text" data-testid="mapping-discard" @click="discard">
           {{ t('camps.mapping.discard') }}
         </v-btn>
-        <span v-if="effect && (!confirmed || pendingChange)" class="text-body-2" data-testid="mapping-effect">
+        <span v-if="effect" class="text-body-2" data-testid="mapping-effect">
           {{ t('camps.mapping.effect', effect) }}
         </span>
       </div>

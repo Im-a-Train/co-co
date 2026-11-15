@@ -22,7 +22,8 @@ const route = useRoute()
 const excludedAll = computed(() => findingsHandle.categoryExclusions.value.filter((e) => e.ruleId === null))
 const grid = computed(() => {
   if (!facts.value) return null
-  const preview = !settings.mappingConfirmed.value && !!findingsHandle.previewJsDays.value
+  // Unconfirmed mapping: always the grey preview (never validity or findings), even before the guessed report exists.
+  const preview = !settings.mappingConfirmed.value
   return buildGrid(facts.value, settings.classOf, preview ? findingsHandle.previewJsDays.value : findingsHandle.jsDays.value, {
     preview,
     // Findings only exist with a confirmed mapping (the preview never shows findings).
@@ -102,6 +103,21 @@ const originContext = computed(() =>
   originFinding.value ? { ruleId: originFinding.value.ruleId, title: originFinding.value.title } : null,
 )
 
+// The bar sticks right under the camp tabs; the grid's day heads stick right under the bar (its height can wrap).
+const barEl = ref<HTMLElement | null>(null)
+const barHeight = ref(54)
+let barObserver: ResizeObserver | null = null
+watch(barEl, (el) => {
+  barObserver?.disconnect()
+  barObserver = null
+  if (!el || typeof ResizeObserver === 'undefined') return
+  barObserver = new ResizeObserver(() => {
+    if (el.offsetHeight) barHeight.value = el.offsetHeight
+  })
+  barObserver.observe(el)
+})
+onBeforeUnmount(() => barObserver?.disconnect())
+
 function backToFinding() {
   const o = origin.value
   if (!o) return
@@ -174,7 +190,7 @@ function showFindings(iri: Iri) {
 
 <template>
   <div>
-    <div v-if="origin" class="back-to-finding d-flex align-center flex-wrap ga-3 mb-3 pa-2 rounded" data-testid="back-to-finding-bar">
+    <div v-if="origin" ref="barEl" class="back-to-finding d-flex align-center flex-wrap ga-3 mb-3 pa-2 rounded" data-testid="back-to-finding-bar">
       <v-btn
         color="primary"
         variant="flat"
@@ -253,7 +269,7 @@ function showFindings(iri: Iri) {
       :grid="grid"
       :selected="selected"
       :focus-days="focusDays"
-      :sticky-offset="origin ? 64 : 0"
+      :sticky-offset="origin ? barHeight : 0"
       @select="select"
       @open-finding="openDayFinding"
     />
@@ -284,7 +300,8 @@ function showFindings(iri: Iri) {
 }
 .back-to-finding {
   position: sticky;
-  top: calc(var(--v-layout-top, 0px) + 4px);
+  /* below the sticky camp tabs (CampLayout, density comfortable = 44px), not over them */
+  top: calc(var(--v-layout-top, 0px) + var(--camp-tabs-height, 44px));
   z-index: 5;
   background: rgb(var(--v-theme-surface));
   border: 1px solid rgb(var(--v-theme-primary));

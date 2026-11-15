@@ -38,9 +38,6 @@ export function mappingReasonKey(reason: string | null | undefined): MappingReas
   }
 }
 
-/** Classes that count as J+S units. */
-export const MAPPING_JS_CLASSES: readonly CategoryClass[] = ['LS', 'LA'] as const
-
 export function buildMappingRows(
   categories: CategoryFact[],
   activities: ActivityFact[],

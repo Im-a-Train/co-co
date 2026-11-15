@@ -14,7 +14,16 @@ export async function exclusionFlows({ page, step, go, shot, BASE }) {
     if (!/Kategorien nicht prüfen/.test(await page.locator('[data-testid="category-exclusion-open"]').innerText())) throw new Error('button label')
     await page.locator('[data-testid="category-exclusion-open"]').click()
     await page.waitForURL(/raster\?.*zuordnung=1/, { timeout: 5000 })
+    await page.getByTestId('mapping-table').waitFor({ timeout: 8000 })
+    await page.waitForTimeout(500)
     await shot(page, 'flow-exclusion-grid')
+    // «Regeln prüfen» off for a category: its blocks carry the eye-off marker; on again removes it
+    const sw = page.getByTestId('mapping-check').first().locator('input')
+    await sw.click({ force: true })
+    await page.waitForSelector('[data-testid="grid-block-excluded"]', { timeout: 5000 })
+    await shot(page, 'flow-exclusion-grid-off')
+    await sw.click({ force: true })
+    await page.waitForFunction(() => !document.querySelector('[data-testid="grid-block-excluded"]'), null, { timeout: 5000 })
   })
 
   await step('flow: exclude a category for one rule from the finding, restore in the dialog', async () => {
