@@ -14,6 +14,8 @@ const expanded = ref(!!props.open)
 const first = computed(() => props.group.findings[0]!)
 const label = computed(() => groupLabel(t, first.value.title, props.group.findings.length, props.group.dates))
 const allIgnored = computed(() => props.group.findings.every((f) => !!f.override))
+/** «Alle n ignorieren» counts what it ignores (the ones not ignored yet, shown with «Ignorierte anzeigen»). */
+const notIgnored = computed(() => props.group.findings.filter((f) => !f.override).length)
 </script>
 
 <template>
@@ -29,7 +31,14 @@ const allIgnored = computed(() => props.group.findings.every((f) => !!f.override
       <div class="text-subtitle-1">{{ label }}</div>
       <div class="text-body-2">{{ first.message }}</div>
       <div class="d-flex align-center flex-wrap ga-2 mt-2">
-        <v-btn size="small" variant="text" :append-icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" data-testid="finding-group-toggle" @click="expanded = !expanded">
+        <v-btn
+          size="small"
+          variant="text"
+          :append-icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          :aria-expanded="expanded"
+          data-testid="finding-group-toggle"
+          @click="expanded = !expanded"
+        >
           {{ expanded ? t('findings.group.collapse') : t('findings.group.expand') }}
         </v-btn>
         <v-spacer />
@@ -38,7 +47,7 @@ const allIgnored = computed(() => props.group.findings.every((f) => !!f.override
           size="small"
           variant="text"
           prepend-icon="mdi-eye-off-outline"
-          :text="t('findings.group.ignoreAll', { count: group.findings.length })"
+          :text="t('findings.group.ignoreAll', { count: notIgnored })"
           data-testid="finding-group-ignore"
           @click="emit('override', group)"
         />

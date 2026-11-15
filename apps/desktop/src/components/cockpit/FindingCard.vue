@@ -71,7 +71,8 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         <template v-else>
           <!-- The rule id lives under «Warum?» (explain panel); only findings without one keep a chip. -->
           <v-chip v-if="!finding.explain" size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
-          <v-chip v-if="needsConfidenceNote" size="x-small" label color="warning" variant="tonal" data-testid="finding-unsure">
+          <!-- neutral: orange means an open Soll (colour = state) -->
+          <v-chip v-if="needsConfidenceNote" size="x-small" label variant="outlined" prepend-icon="mdi-help-circle-outline" data-testid="finding-unsure">
             {{ t('findings.unsure') }}
           </v-chip>
         </template>

@@ -114,7 +114,7 @@ async function excludeForRule(f: Finding) {
   if (!cat) return
   const c = facts.value?.categories.find((x) => x.iri === cat)
   error.value = await tryAction(() => findingsHandle.excludeCategory(cat, f.ruleId))
-  if (!error.value) notice.value = t('findings.categoryExclusion.forRuleDone', { category: c ? `${c.short} ${c.name}`.trim() : cat, ruleId: f.ruleId })
+  if (!error.value) notice.value = t('findings.categoryExclusion.forRuleDone', { category: c ? `${c.short} ${c.name}`.trim() : cat, rule: f.title })
 }
 
 // ---- triage / list mode ----------------------------------------------------------------------------
@@ -238,8 +238,11 @@ async function feedback(f: Finding) {
 }
 /** One feedback item for a whole group, then jump to the feedback tab (like «Feedback erstellen» on a single finding). */
 async function feedbackGroup(g: FindingGroupEntry) {
+  // Ignored days (visible with «Ignorierte anzeigen») stay out of the item.
+  const open = g.findings.some((f) => f.override) ? groupFindings(g.findings.filter((f) => !f.override), facts.value)[0] : g
+  if (!open) return
   error.value = await tryAction(async () => {
-    const item = itemFromFindingGroup(g, campIri.value, formatDateList(g.dates))
+    const item = itemFromFindingGroup(open, campIri.value, formatDateList(open.dates))
     await saveFeedback(JSON.parse(JSON.stringify(item)))
     await router.push({ name: 'camp-feedback', params: { campId: campIdFromIri(campIri.value) }, query: { item: item.id } })
   })

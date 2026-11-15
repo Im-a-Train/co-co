@@ -50,7 +50,9 @@ const rows = computed(() =>
         <h3 class="text-subtitle-1 mb-1">{{ t('findings.categoryExclusion.listTitle') }}</h3>
         <div v-if="!rows.length" class="text-body-2 text-medium-emphasis">{{ t('findings.categoryExclusion.listNone') }}</div>
         <v-list v-else density="compact" data-testid="per-rule-list">
-          <v-list-item v-for="r in rows" :key="r.key" :title="r.label" class="text-wrap">
+          <v-list-item v-for="r in rows" :key="r.key">
+            <!-- long rule titles wrap instead of being cut off -->
+            <v-list-item-title class="text-wrap">{{ r.label }}</v-list-item-title>
             <template #append>
               <v-btn
                 size="small"

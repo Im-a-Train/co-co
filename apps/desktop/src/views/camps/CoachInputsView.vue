@@ -196,18 +196,22 @@ const badgeOf = (key: string): string | null => draft.value.midataFields?.[key a
 
 type CountKey = 'participantsCount' | 'participantsJsAgeCount' | 'minAge' | 'maxAge' | 'leadersCount' | 'jsLeadersCount' | 'slrgCount'
 function setNum(key: CountKey, v: string | number | null): void {
+  stick()
   draft.value = { ...draft.value, [key]: parseCount(v), midataFields: withoutBadge(key), ...withoutNdsBadge(key) }
 }
 function setField<K extends keyof CoachInputs>(key: K, v: CoachInputs[K]): void {
+  stick()
   draft.value = { ...draft.value, [key]: v, midataFields: withoutBadge(key), ...withoutNdsBadge(key) }
 }
 const setTri = (key: 'isJsCamp' | 'lagerleiterAttested') => (v: string | null) => setField(key, fromTri(v as TriState | null))
 
 function onAdopt(fields: MidataField[], agg: MidataAggregate): void {
+  stick()
   draft.value = adoptFields(draft.value, agg, fields, new Date().toISOString())
   void save(fields)
 }
 function onAdoptNds(fields: NdsField[], agg: NdsAggregate): void {
+  stick()
   draft.value = adoptNdsFields(draft.value, agg, fields, new Date().toISOString())
   void save(undefined, fields)
 }
@@ -215,18 +219,33 @@ function onAdoptNds(fields: NdsField[], agg: NdsAggregate): void {
 // ---- «Fehlt noch für die Prüfung» -----------------------------------------------------------------
 
 const missingNow = computed<MissingInputKey[]>(() => missingInputKeys(findingsHandle.findings.value))
-/** Inputs shown in the first card. They stay while the coach types, even after their finding is gone. */
-const shownMissing = ref<MissingInputKey[]>([])
+/**
+ * Inputs shown in the first card, per camp. Until the coach edits something it follows the open findings
+ * (so a field resolved while data is still loading never shows up); from the first edit on, fields stay
+ * after their finding is gone (marked «erledigt»), so nothing jumps away under the cursor. Keyed by camp: a
+ * camp switch starts a fresh list no matter in which order the watchers run.
+ */
+const shown = ref<{ camp: Iri; keys: MissingInputKey[]; sticky: boolean }>({ camp: campIri.value, keys: [], sticky: false })
 watch(
-  missingNow,
-  (keys) => {
-    const add = keys.filter((k) => !shownMissing.value.includes(k))
-    if (add.length) shownMissing.value = [...shownMissing.value, ...add]
+  [missingNow, campIri],
+  ([keys, camp]) => {
+    const same = shown.value.camp === camp
+    const sticky = same && shown.value.sticky
+    const prev = same ? shown.value.keys : []
+    const kept = sticky ? prev : prev.filter((k) => keys.includes(k))
+    const add = keys.filter((k) => !kept.includes(k))
+    if (!same || add.length || kept.length !== prev.length) shown.value = { camp, keys: [...kept, ...add], sticky }
   },
   { immediate: true },
 )
+/** Called on every edit of the coach: from now on the card keeps its fields. */
+function stick(): void {
+  if (shown.value.camp === campIri.value && !shown.value.sticky) shown.value = { ...shown.value, sticky: true }
+}
+const shownMissing = computed<MissingInputKey[]>(() => (shown.value.camp === campIri.value ? shown.value.keys : []))
 const missingCount = computed(() => shownMissing.value.filter((k) => missingNow.value.includes(k)).length)
 const isShownMissing = (k: MissingInputKey): boolean => shownMissing.value.includes(k)
+const isResolved = (k: MissingInputKey): boolean => !missingNow.value.includes(k)
 
 const countFields: Array<{ key: CountKey }> = [
   { key: 'participantsCount' },
@@ -238,16 +257,35 @@ const countFields: Array<{ key: CountKey }> = [
 const moreCountFields: Array<{ key: CountKey }> = [{ key: 'minAge' }, { key: 'maxAge' }]
 const panelCount = computed(() => countFields.filter((f) => !isShownMissing(f.key)))
 
-// ---- Panels (collapsed; `#teilnehmende` / `#regelmodule` in the URL open one) -------------------------
+// ---- Panels (collapsed; `#teilnehmende` / `#regelmodule` / `#weitere` in the URL open one) --------------
 
+const PANEL_OF_HASH: Record<string, string> = { teilnehmende: 'participants', regelmodule: 'rules', weitere: 'more' }
 const panels = ref<string[]>([])
+function openPanel(id: string): void {
+  if (!panels.value.includes(id)) panels.value = [...panels.value, id]
+}
+/** Opens the panel named by the hash and scrolls to it once the form is rendered (the router has no scrollBehavior). */
 function openPanelFromHash(): void {
   const h = route.hash.replace('#', '')
-  const map: Record<string, string> = { teilnehmende: 'participants', regelmodule: 'rules', weitere: 'more' }
-  const id = map[h]
-  if (id && !panels.value.includes(id)) panels.value = [...panels.value, id]
+  const id = PANEL_OF_HASH[h]
+  if (!id) return
+  openPanel(id)
+  if (ready.value) void nextTick(() => setTimeout(() => document.getElementById(h)?.scrollIntoView({ block: 'start' }), 150))
 }
-watch(() => route.hash, openPanelFromHash, { immediate: true })
+watch([() => route.hash, ready], openPanelFromHash, { immediate: true })
+
+/** A validation error inside a collapsed panel opens that panel, so «bitte Angaben prüfen» never points at hidden fields. */
+function panelOfField(field: keyof CoachInputs): string | null {
+  if (moreCountFields.some((f) => f.key === field)) return 'more'
+  if (countFields.some((f) => f.key === field) && !isShownMissing(field)) return 'participants'
+  return null
+}
+watch(errors, (errs) => {
+  for (const e of errs) for (const field of ERROR_FIELDS[e] ?? []) {
+    const id = panelOfField(field)
+    if (id) openPanel(id)
+  }
+})
 
 const ndsOn = computed(() => nds.enabled.value)
 const winterTri = computed(() => {
@@ -255,6 +293,7 @@ const winterTri = computed(() => {
   return v === true ? 'yes' : v === false ? 'no' : 'unset'
 })
 function setWinterSafeAccess(v: string | null): void {
+  stick()
   void rc.setCamp({ winterSafeAccess: v === 'yes' ? true : v === 'no' ? false : null })
 }
 </script>
@@ -265,13 +304,14 @@ function setWinterSafeAccess(v: string | null): void {
       <h1 class="text-h5">{{ t('camps.inputs.title') }}</h1>
       <span
         class="text-body-2 inputs-status"
-        :class="status === 'invalid' ? 'text-warning' : status === 'saved' ? 'text-success' : 'text-medium-emphasis'"
+        :class="status === 'invalid' || status === 'failed' ? 'text-warning' : status === 'saved' ? 'text-success' : 'text-medium-emphasis'"
         :data-state="status"
         role="status"
         data-testid="inputs-status"
       >
         <template v-if="status === 'saving'">{{ t('camps.inputs.status.saving') }}</template>
         <template v-else-if="status === 'invalid'">{{ t('camps.inputs.status.invalid') }}</template>
+        <template v-else-if="status === 'failed'">{{ t('camps.inputs.status.failed') }}</template>
         <template v-else-if="status === 'saved'">{{ t('camps.inputs.status.saved') }}</template>
       </span>
     </div>
@@ -283,14 +323,12 @@ function setWinterSafeAccess(v: string | null): void {
     </div>
 
     <v-form v-else @submit.prevent>
-      <MidataCard :camp-iri="campIri" :inputs="draft" @adopt="onAdopt" />
-
       <v-card v-if="shownMissing.length" variant="outlined" class="mb-4" data-testid="inputs-missing">
         <v-card-title class="text-subtitle-1">
           {{ missingCount > 0 ? t('camps.inputs.missingTitle', { n: missingCount }) : t('camps.inputs.missingDone') }}
         </v-card-title>
         <v-card-text>
-          <p class="text-body-2 text-medium-emphasis mb-3">{{ t('camps.inputs.missingHint') }}</p>
+          <p v-if="missingCount > 0" class="text-body-2 text-medium-emphasis mb-3">{{ t('camps.inputs.missingHint') }}</p>
           <v-row>
             <template v-for="k in shownMissing" :key="k">
               <v-col v-if="k === 'winterSafeAccess'" cols="12" sm="6">
@@ -301,6 +339,7 @@ function setWinterSafeAccess(v: string | null): void {
                   :model-value="winterTri"
                   :items="configTriItems"
                   test-id="missing-winterSafeAccess"
+                  :done="isResolved('winterSafeAccess')"
                   :rule-ids="['LST-WINTER-01']"
                   :rule-titles="ruleTitles"
                   @update:model-value="setWinterSafeAccess"
@@ -314,6 +353,7 @@ function setWinterSafeAccess(v: string | null): void {
                   :items="triItems"
                   :midata-since="badgeOf('lagerleiterAttested')"
                   test-id="input-lagerleiterAttested"
+                  :done="isResolved('lagerleiterAttested')"
                   :rule-ids="rulesOf('lagerleiterAttested')"
                   :rule-titles="ruleTitles"
                   @update:model-value="setTri('lagerleiterAttested')"
@@ -327,6 +367,7 @@ function setWinterSafeAccess(v: string | null): void {
                   :midata-since="badgeOf(k)"
                   :error-messages="errorsOf(k as CountKey)"
                   :test-id="`input-${k}`"
+                  :done="isResolved(k)"
                   :rule-ids="rulesOf(k as CountKey)"
                   :rule-titles="ruleTitles"
                   @update:model-value="(v) => setNum(k as CountKey, v)"
@@ -337,6 +378,7 @@ function setWinterSafeAccess(v: string | null): void {
         </v-card-text>
       </v-card>
 
+      <MidataCard :camp-iri="campIri" :inputs="draft" @adopt="onAdopt" />
       <NdsCard v-if="ndsOn" :camp-iri="campIri" :inputs="draft" @adopt="onAdoptNds" />
 
       <v-card variant="outlined" class="mb-4">
@@ -373,7 +415,7 @@ function setWinterSafeAccess(v: string | null): void {
       </v-card>
 
       <v-expansion-panels v-model="panels" multiple variant="accordion" class="mb-4">
-        <v-expansion-panel value="participants" eager data-testid="inputs-panel-participants">
+        <v-expansion-panel id="teilnehmende" value="participants" eager data-testid="inputs-panel-participants">
           <v-expansion-panel-title class="text-subtitle-1">{{ t('camps.inputs.sections.participants') }}</v-expansion-panel-title>
           <v-expansion-panel-text>
             <v-row class="pt-2">
@@ -407,14 +449,14 @@ function setWinterSafeAccess(v: string | null): void {
           </v-expansion-panel-text>
         </v-expansion-panel>
 
-        <v-expansion-panel value="rules" eager data-testid="inputs-panel-rules">
+        <v-expansion-panel id="regelmodule" value="rules" eager data-testid="inputs-panel-rules">
           <v-expansion-panel-title class="text-subtitle-1">{{ t('camps.inputs.sections.rules') }}</v-expansion-panel-title>
           <v-expansion-panel-text>
             <RuleModulesCard :camp-iri="campIri" embedded />
           </v-expansion-panel-text>
         </v-expansion-panel>
 
-        <v-expansion-panel value="more" eager data-testid="inputs-panel-more">
+        <v-expansion-panel id="weitere" value="more" eager data-testid="inputs-panel-more">
           <v-expansion-panel-title class="text-subtitle-1">{{ t('camps.inputs.sections.more') }}</v-expansion-panel-title>
           <v-expansion-panel-text>
             <v-row class="pt-2">
@@ -450,5 +492,22 @@ function setWinterSafeAccess(v: string | null): void {
 
       <v-alert v-if="saveError" type="error" variant="tonal" class="mb-2">{{ t('camps.inputs.saveFailed') }}: {{ saveError }}</v-alert>
     </v-form>
+
+    <v-dialog
+      :model-value="leaveDialog"
+      max-width="480"
+      :close-on-back="false"
+      @update:model-value="(v: boolean) => !v && answerLeave(false)"
+    >
+      <v-card data-testid="inputs-leave-dialog">
+        <v-card-title class="text-h6">{{ t('camps.inputs.leave.title') }}</v-card-title>
+        <v-card-text>{{ status === 'failed' ? t('camps.inputs.leave.textFailed') : t('camps.inputs.leave.text') }}</v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" data-testid="inputs-leave-discard" @click="answerLeave(true)">{{ t('camps.inputs.leave.discard') }}</v-btn>
+          <v-btn variant="flat" color="primary" data-testid="inputs-leave-stay" @click="answerLeave(false)">{{ t('camps.inputs.leave.stay') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>

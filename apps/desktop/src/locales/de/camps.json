@@ -86,11 +86,20 @@
       "status": {
         "saving": "Wird gespeichert …",
         "saved": "Gespeichert",
-        "invalid": "Nicht gespeichert: bitte Angaben prüfen"
+        "invalid": "Nicht gespeichert: bitte Angaben prüfen",
+        "failed": "Nicht gespeichert: Speichern fehlgeschlagen"
+      },
+      "leave": {
+        "title": "Änderung nicht gespeichert",
+        "text": "Eine Angabe passt nicht zu den anderen, darum ist deine letzte Änderung nicht gespeichert. Wenn du die Seite jetzt verlässt, geht sie verloren.",
+        "textFailed": "Deine letzte Änderung konnte nicht gespeichert werden. Wenn du die Seite jetzt verlässt, geht sie verloren.",
+        "stay": "Zurück zu den Angaben",
+        "discard": "Verwerfen"
       },
       "missingTitle": "Fehlt noch für die Prüfung ({n})",
       "missingDone": "Für die Prüfung angegeben",
       "missingHint": "Offene Befunde warten auf diese Angaben. Sobald du sie ausfüllst, prüfen die Regeln.",
+      "missingResolved": "erledigt",
       "rulesLink": "{n} Regel | {n} Regeln",
       "rulesLinkTitle": "Regeln, die diese Angabe verwenden",
       "purpose": {

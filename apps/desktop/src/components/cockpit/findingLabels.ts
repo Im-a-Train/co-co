@@ -37,9 +37,9 @@ export function compactDateList(dates: readonly IsoDate[]): string {
   return years.size === 1 ? list.replace(/\.\d{4}$/, '.') : list
 }
 
-/** «Fixpunkte (Mahlzeiten) fehlen · 7 Tage (24.–30.01.)». */
+/** «Fixpunkte (Mahlzeiten) fehlen · 7 Tage (24.–30.01.)». A date range never breaks after its dash (word joiner). */
 export function groupLabel(t: Translate, title: string, count: number, dates: readonly IsoDate[]): string {
-  const list = compactDateList(dates)
+  const list = compactDateList(dates).replace(/–/g, '–\u2060')
   return list
     ? t('findings.group.label', { title, count, dates: list })
     : t('findings.group.labelNoDates', { title, count })

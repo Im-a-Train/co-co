@@ -1,28 +1,34 @@
 <script setup lang="ts">
 /**
  * «Zuerst für dich (n)»: findings that only report a missing input of the coach. They are never feedback
- * for the leaders; each row leads to the place where the input is given.
+ * for the leaders; each row leads to the place where the input is given. Folded, the block keeps its hint and
+ * one button per kind of input on a single line (the triage starts folded so its decision stays in view).
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { severityColor } from '@/domain/cockpit'
 import { campIdFromIri } from '@/domain/iri'
 import type { Finding, Iri } from '@/domain/types'
 
-const props = defineProps<{ findings: Finding[]; campIri: Iri }>()
+// A missing Boolean prop is cast to false, so the default must be explicit.
+const props = withDefaults(defineProps<{ findings: Finding[]; campIri: Iri; startOpen?: boolean }>(), { startOpen: true })
 const { t } = useI18n()
 const router = useRouter()
-const open = ref(true)
+const open = ref(props.startOpen)
 
-function actionKey(f: Finding): 'mapping' | 'inputs' | 'midata' {
+type ActionKey = 'mapping' | 'inputs' | 'midata'
+const ACTION_ORDER: readonly ActionKey[] = ['mapping', 'inputs', 'midata']
+
+function actionKey(f: Finding): ActionKey {
   if (f.needsInput === 'mapping') return 'mapping'
   if (f.needsInput === 'midata') return 'midata'
   return 'inputs'
 }
-function go(f: Finding) {
+/** One button per kind of input for the folded block. */
+const actions = computed(() => ACTION_ORDER.filter((k) => props.findings.some((f) => actionKey(f) === k)))
+function go(key: ActionKey) {
   const params = { campId: campIdFromIri(props.campIri) }
-  const key = actionKey(f)
   if (key === 'mapping') void router.push({ name: 'camp-grid', params, query: { zuordnung: '1' } })
   else if (key === 'midata') void router.push({ name: 'settings', hash: '#midata' })
   else void router.push({ name: 'camp-inputs', params })
@@ -30,23 +36,35 @@ function go(f: Finding) {
 </script>
 
 <template>
-  <v-card v-if="findings.length" variant="outlined" class="mb-3" data-testid="coach-todo">
+  <v-card v-if="findings.length" variant="outlined" class="mb-3" data-testid="coach-todo" :data-open="open ? 'true' : 'false'">
     <v-card-text class="py-3">
-      <div class="d-flex align-center ga-2">
+      <div class="d-flex align-center flex-wrap ga-2">
         <div class="text-subtitle-1 font-weight-medium">{{ t('findings.triage.coachTodo.title', { count: findings.length }) }}</div>
-        <v-spacer />
+        <div class="coach-todo-hint text-body-2 text-medium-emphasis">{{ t('findings.triage.coachTodo.hint') }}</div>
+        <template v-if="!open">
+          <v-btn
+            v-for="k in actions"
+            :key="k"
+            size="small"
+            variant="tonal"
+            :text="t(`findings.triage.coachTodo.${k}`)"
+            :data-testid="`coach-todo-${k}`"
+            @click="go(k)"
+          />
+        </template>
         <v-btn
           size="small"
           variant="text"
           density="comfortable"
           :icon="open ? 'mdi-chevron-up' : 'mdi-chevron-down'"
           :aria-label="open ? t('findings.triage.coachTodo.collapse') : t('findings.triage.coachTodo.expand')"
+          :title="open ? t('findings.triage.coachTodo.collapse') : t('findings.triage.coachTodo.expand')"
+          :aria-expanded="open"
           data-testid="coach-todo-toggle"
           @click="open = !open"
         />
       </div>
-      <template v-if="open">
-        <div class="text-body-2 text-medium-emphasis mb-1">{{ t('findings.triage.coachTodo.hint') }}</div>
+      <div v-if="open" class="mt-1">
         <div
           v-for="f in findings"
           :key="f.id"
@@ -65,15 +83,19 @@ function go(f: Finding) {
             class="flex-shrink-0"
             :text="t(`findings.triage.coachTodo.${actionKey(f)}`)"
             :data-testid="`coach-todo-${actionKey(f)}`"
-            @click="go(f)"
+            @click="go(actionKey(f))"
           />
         </div>
-      </template>
+      </div>
     </v-card-text>
   </v-card>
 </template>
 
 <style scoped>
+.coach-todo-hint {
+  flex: 1 1 260px;
+  min-width: 0;
+}
 .coach-todo-row {
   border-left: 4px solid transparent;
   padding-left: 10px;

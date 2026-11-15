@@ -66,7 +66,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 // ---- entries (topics) and rows ---------------------------------------------------------------------
-const todos = computed(() => props.findings.filter(isCoachTodo))
+const todos = computed(() => props.findings.filter((f) => isCoachTodo(f) && !f.override))
 const topicFindings = computed(() => props.findings.filter((f) => !isCoachTodo(f)))
 const entries = computed(() => groupFindings(topicFindings.value, props.facts))
 
@@ -119,7 +119,9 @@ const isGroup = computed(() => (current.value?.findings.length ?? 0) > 1)
 const currentStatus = computed<FindingStatus | null>(() => statuses.value[index.value] ?? null)
 const openMembers = computed(() => current.value?.findings.filter((f) => statusOf(f) === 'open') ?? [])
 const hasMust = computed(() => openMembers.value.some((f) => f.severity === 'must'))
-const existingFeedback = computed(() => (rep.value ? feedbackForFinding(rep.value, props.feedbackItems) : null))
+const existingFeedback = computed(
+  () => current.value?.findings.map((f) => feedbackForFinding(f, props.feedbackItems)).find((x) => !!x) ?? null,
+)
 const activityIri = computed(() => (rep.value ? activityIriOfFinding(rep.value, props.facts) : null))
 const dayIri = computed(() => {
   const t0 = rep.value ? findingTarget(rep.value, props.facts) : null
@@ -221,7 +223,11 @@ function step(dir: 1 | -1) {
   go(stepIndex(units.value.length, index.value, dir))
 }
 function advance() {
-  const next = nextOpenIndex(statuses.value, index.value)
+  const handled = new Set(current.value?.findings.map((f) => f.id) ?? [])
+  const list = statuses.value.map((s, i): FindingStatus =>
+    units.value[i]?.entry.findings.some((f) => handled.has(f.id)) ? 'feedback' : s,
+  )
+  const next = nextOpenIndex(list, index.value)
   if (next >= 0) go(next)
 }
 function toggleExpand() {
@@ -316,7 +322,8 @@ function openGrid() {
 <template>
   <div v-if="!findings.length" class="text-body-2 text-medium-emphasis">{{ t('findings.triage.none') }}</div>
   <div v-else class="triage">
-    <CoachTodoBlock :findings="todos" :camp-iri="campIri" />
+    <CoachTodoBlock :findings="todos" :camp-iri="campIri" :start-open="!entries.length" />
+    <div v-if="!entries.length" class="text-body-2 text-medium-emphasis">{{ t('findings.triage.none') }}</div>
 
     <div v-if="entries.length" class="d-flex align-center flex-wrap ga-3 mb-3">
       <div class="text-subtitle-1 font-weight-medium" data-testid="triage-progress">
@@ -327,9 +334,21 @@ function openGrid() {
         {{ t('findings.counter.topics', { count: entries.length }, entries.length) }} ·
         {{ t('findings.counter.findings', { count: topicFindings.length }, topicFindings.length) }}
       </span>
-      <v-spacer />
-      <span class="text-caption text-medium-emphasis">{{ t('findings.triage.hint') }}</span>
     </div>
+
+    <v-alert v-if="entries.length && !progress.open" type="success" variant="tonal" density="compact" class="mb-3" data-testid="triage-all-done">
+      {{ t('findings.triage.allDone') }}
+      <template #append>
+        <v-btn
+          color="primary"
+          variant="flat"
+          size="small"
+          data-testid="triage-to-feedback"
+          :text="feedbackCount ? t('findings.triage.toFeedbackCount', { count: feedbackCount }, feedbackCount) : t('findings.triage.toFeedback')"
+          @click="emit('toFeedback')"
+        />
+      </template>
+    </v-alert>
 
     <div v-if="entries.length" class="triage-panes">
       <div ref="listEl" class="triage-list" role="listbox" :aria-label="t('findings.triage.listLabel')">
@@ -428,7 +447,7 @@ function openGrid() {
                 class="mb-3"
                 data-testid="triage-text"
               />
-              <div class="d-flex flex-wrap ga-2 mb-3">
+              <div class="d-flex flex-wrap ga-2 mb-1">
                 <v-btn
                   color="primary"
                   variant="flat"
@@ -441,7 +460,8 @@ function openGrid() {
                 <v-btn variant="tonal" prepend-icon="mdi-eye-off-outline" :text="t('findings.triage.ignoreNext')" data-testid="triage-ignore" @click="ignore" />
                 <v-btn variant="text" prepend-icon="mdi-skip-next" :text="t('findings.triage.skip')" data-testid="triage-skip" @click="skip" />
               </div>
-              <div class="d-flex flex-wrap ga-2">
+              <div class="text-caption text-medium-emphasis mb-3" data-testid="triage-keys">{{ t('findings.triage.hint') }}</div>
+              <div class="d-flex flex-wrap align-start ga-2">
                 <v-select
                   v-model="draft.kind"
                   :items="KIND_ORDER.map((k) => ({ title: t(`feedback.kind.${k}`), value: k }))"
@@ -499,20 +519,6 @@ function openGrid() {
         </v-card>
 
         <RuleEditDialog v-if="canEditRule" v-model="ruleEditOpen" :rule-id="rep.ruleId" />
-
-        <v-alert v-if="!progress.open" type="success" variant="tonal" density="compact" class="mt-3" data-testid="triage-all-done">
-          {{ t('findings.triage.allDone') }}
-          <template #append>
-            <v-btn
-              color="primary"
-              variant="flat"
-              size="small"
-              data-testid="triage-to-feedback"
-              :text="feedbackCount ? t('findings.triage.toFeedbackCount', { count: feedbackCount }, feedbackCount) : t('findings.triage.toFeedback')"
-              @click="emit('toFeedback')"
-            />
-          </template>
-        </v-alert>
       </div>
     </div>
   </div>

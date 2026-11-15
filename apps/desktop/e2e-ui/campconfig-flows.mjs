@@ -31,6 +31,28 @@ export async function campConfigFlows({ page, step, go, shot }) {
     if (val !== '27') throw new Error('participantsCount not kept after leaving: ' + val)
   })
 
+  await step('flow: an unsaveable (invalid) Angaben change is not dropped silently on leave', async () => {
+    await go('angaben', 'flow-angaben-leave')
+    await openAngabenPanel(page, 'more')
+    const min = page.getByTestId('input-minAge').locator('input')
+    const max = page.getByTestId('input-maxAge').locator('input')
+    const [minBefore, maxBefore] = [await min.inputValue(), await max.inputValue()]
+    await min.fill('15')
+    await max.fill('10')
+    await page.waitForFunction(() => document.querySelector('[data-testid="inputs-status"]')?.getAttribute('data-state') === 'invalid', null, { timeout: 5000 })
+    if (!/Höchstalter/.test(await page.getByTestId('input-maxAge').innerText())) throw new Error('age error not shown at the field')
+    await page.locator('.camp-tabs').getByText('Übersicht', { exact: true }).click()
+    await page.getByTestId('inputs-leave-dialog').waitFor({ timeout: 5000 })
+    await shot(page, 'flow-angaben-leave')
+    await page.getByTestId('inputs-leave-stay').click()
+    await page.waitForTimeout(400)
+    if (!/\/angaben/.test(page.url())) throw new Error('«Zurück zu den Angaben» left the page: ' + page.url())
+    // fix it again (restores a valid state for later flows)
+    await min.fill(minBefore)
+    await max.fill(maxBefore)
+    await page.waitForFunction(() => ['saved', 'idle'].includes(document.querySelector('[data-testid="inputs-status"]')?.getAttribute('data-state')), null, { timeout: 5000 })
+  })
+
   await step('flow: switching a module to «an» is saved and shown as effective state', async () => {
     await go('angaben', 'flow-regelmodule-toggle')
     await openAngabenPanel(page, 'rules')

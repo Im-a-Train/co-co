@@ -35,8 +35,7 @@
       "reason": "Grund (optional)",
       "confirm": "Ignorieren",
       "textMust": "Der Befund bleibt gespeichert, zählt aber nicht mehr in den Kennzahlen. Bei einem Muss-Befund ist ein Grund Pflicht.",
-      "reasonMust": "Grund (bei Muss-Befunden Pflicht)",
-      "reasonRequired": "Bei Muss-Befunden ist ein Grund nötig."
+      "reasonMust": "Grund (bei Muss-Befunden Pflicht)"
     },
     "ai": {
       "title": "KI-Sicherheitsprüfung (optional)"
@@ -106,11 +105,11 @@
     "categoryExclusion": {
       "button": "Kategorien nicht prüfen",
       "forRule": "Kategorie für diese Regel nicht prüfen",
-      "forRuleDone": "{category} bei Regel {ruleId} wird nicht mehr geprüft.",
+      "forRuleDone": "{category} wird bei «{rule}» nicht mehr geprüft.",
       "info": "{count} Befund wegen nicht geprüfter Kategorien ausgeblendet | {count} Befunde wegen nicht geprüfter Kategorien ausgeblendet",
       "manage": "Ausschlüsse verwalten",
       "title": "Kategorien nicht prüfen",
-      "intro": "Diese Kategorien werden bei den genannten Regeln nicht geprüft. Befunde zum ganzen Lager oder zu einem Tag bleiben bestehen. Kategorien ganz aus der Prüfung nehmen kannst du im GP unter «Kategorien».",
+      "intro": "Diese Kategorien werden bei den genannten Regeln nicht geprüft. Befunde zum ganzen Lager oder zu einem Tag bleiben bestehen. Für alle Regeln schaltest du eine Kategorie im GP unter «Regeln prüfen» aus.",
       "noCategories": "In diesem Lager gibt es keine Kategorien.",
       "ruleLabel": "{category} bei «{rule}» nicht prüfen",
       "remove": "Ausschluss entfernen",
@@ -260,8 +259,7 @@
       "labelNoDates": "{title} · {count} Tage",
       "expand": "Einzeln anzeigen",
       "collapse": "Einzeln ausblenden",
-      "ignoreAll": "Alle {count} ignorieren",
-      "members": "Einzelne Tage"
+      "ignoreAll": "Alle {count} ignorieren"
     },
     "unsure": "Unsicher – bitte selbst prüfen"
   }

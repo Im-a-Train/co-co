@@ -38,7 +38,14 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     const bt = await block.innerText()
     if (!/Zuerst für dich \(\d+\)/.test(bt)) throw new Error('title: ' + bt)
     if (!/Sie gehen nicht ans Lagerteam/.test(bt)) throw new Error('hint missing')
+    // the triage starts with the block folded: hint and one button per kind of input, no rows
+    if ((await block.getAttribute('data-open')) !== 'false') throw new Error('block is not folded in the triage')
+    if (!(await block.locator('[data-testid^="coach-todo-"]:not([data-testid="coach-todo-toggle"])').count())) throw new Error('folded block has no action button')
+    await shot(page, 'flow-coach-todo-folded')
+    await page.locator('[data-testid="coach-todo-toggle"]').click()
+    await page.waitForTimeout(300)
     const ids = await block.locator('[data-testid="coach-todo-row"]').evaluateAll((els) => els.map((e) => e.getAttribute('data-finding-id')))
+    if (!ids.length) throw new Error('expanded block shows no rows')
     for (const id of ids) {
       if (await page.locator(`.triage-item[data-finding-id="${id}"]`).count()) throw new Error('coach todo is also in the triage list: ' + id)
     }
@@ -72,11 +79,9 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
   await step('flow: decision sits right under the finding, buttons inside the viewport', async () => {
     await go('befunde', 'flow-decision-layout')
     await page.waitForSelector('[data-testid="triage-save"]', { timeout: 8000 })
-    // the homework block above is expanded by default; fold it away for the measurement (the coach does it first)
-    if (await page.locator('[data-testid="coach-todo-toggle"]').count()) {
-      await page.locator('[data-testid="coach-todo-toggle"]').click()
-      await page.waitForTimeout(300)
-    }
+    // the homework block above starts folded in the triage, so it does not push the decision down
+    const todo = page.locator('[data-testid="coach-todo"]')
+    if ((await todo.count()) && (await todo.getAttribute('data-open')) !== 'false') throw new Error('coach todo block is not folded on arrival')
     await page.evaluate(() => window.scrollTo(0, 0))
     const vp = page.viewportSize()
     const box = await page.locator('[data-testid="triage-save"]').boundingBox()
