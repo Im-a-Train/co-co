@@ -21,7 +21,7 @@ export async function storageFlows({ page, step, shot, BASE }) {
   }
 
   async function passwordLogin() {
-    await page.getByText('Passwort-Login (Fallback)').click()
+    await page.getByText('Mit E-Mail und Passwort anmelden').click()
     await page.getByLabel('E-Mail').fill('coach@example.ch')
     await page.getByLabel('Passwort', { exact: true }).fill('geheim')
     await page.getByRole('button', { name: 'Anmelden', exact: true }).click()
@@ -33,9 +33,9 @@ export async function storageFlows({ page, step, shot, BASE }) {
     // Only the eCamp login is shown on start; the data store card appears only on errors (key lost).
     await page.getByTestId('login-instance-line').waitFor({ timeout: 5000 })
     if ((await page.getByTestId('datastore-status').count()) !== 0) throw new Error('data store card shown on a normal locked start')
-    // nav entries other than «Verbindung» are disabled
-    const disabled = await page.locator('.v-navigation-drawer .v-list-item--disabled').count()
-    if (disabled < 4) throw new Error(`expected 4 disabled nav items, got ${disabled}`)
+    // logged out: no navigation drawer at all (FIRST-08), welcome heading instead
+    if ((await page.locator('.v-navigation-drawer').count()) !== 0) throw new Error('navigation drawer shown while logged out')
+    if (!/Willkommen bei co-co/.test(await text())) throw new Error('welcome heading missing')
     await shot(page, 'storage-locked')
   })
 
@@ -52,7 +52,7 @@ export async function storageFlows({ page, step, shot, BASE }) {
 
   await step('flow: storage unlocks after login and /fristen opens', async () => {
     await passwordLogin()
-    await page.waitForFunction(() => /entsperrt/.test(document.body.innerText), null, { timeout: 8000 })
+    await page.waitForFunction(() => /eCamp-Konto|Du bist angemeldet/.test(document.body.innerText), null, { timeout: 8000 })
     await settle(800)
     // After login the redirect query of the earlier blocked navigation (/einstellungen) is honoured.
     await shot(page, 'storage-unlocked')
@@ -95,6 +95,8 @@ export async function storageFlows({ page, step, shot, BASE }) {
     await shot(page, 'storage-key-lost')
     // never automatic: the dialog stays until the coach decides
     await settle(800)
+    await page.getByTestId('reset-later').waitFor({ timeout: 3000 })
+    if (await page.getByText('Du bist angemeldet').count()) throw new Error('logged-in banner shown while the key-lost dialog is open')
     await page.getByTestId('reset-only').click()
     const confirm = page.getByTestId('reset-confirm')
     if (!(await confirm.isDisabled())) throw new Error('confirm button enabled without checkbox')

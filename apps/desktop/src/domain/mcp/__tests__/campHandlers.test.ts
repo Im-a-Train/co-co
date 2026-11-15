@@ -111,7 +111,7 @@ describe('get_camp_progress', () => {
     const v = value as { percent: number; steps: { key: string; label: string; done: boolean; value: number; total: number; hint: string | null }[] }
     expect(v.percent).toBeGreaterThan(0)
     expect(v.steps.map((s) => s.key)).toEqual(['mapping', 'inputs', 'triage', 'documents', 'checklist', 'feedback', 'status'])
-    expect(v.steps.find((s) => s.key === 'mapping')!.label).toBe('Zuordnung bestätigt')
+    expect(v.steps.find((s) => s.key === 'mapping')!.label).toBe('Lager einrichten')
     expect(v.steps.find((s) => s.key === 'inputs')!.done).toBe(true)
     expect(v.steps.find((s) => s.key === 'checklist')).toMatchObject({ value: 1, total: 2 })
     expect(v.steps.find((s) => s.key === 'documents')).toMatchObject({ value: 1, total: 1 })

@@ -86,6 +86,58 @@ export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' |
   }
 }
 
+/**
+ * The inline date a deadline row offers in the checklist: `done` kinds (NDS) show «angemeldet am» once
+ * ticked; `delivery` kinds (Leihmaterial, Landeskarten) always show the «Lieferdatum» anchor that moves
+ * the order deadline (never prefilled, not tied to the tick); other kinds have none.
+ */
+export type DeadlineDateField = 'done' | 'delivery' | null
+
+export function deadlineDateField(kind: Deadline['kind']): DeadlineDateField {
+  if (kind === 'nds-registration' || kind === 'nds-closing') return 'done'
+  if (kind === 'leihmaterial' || kind === 'landeskarten') return 'delivery'
+  return null
+}
+
+/** Current value of the inline date of a deadline kind (null: empty or none for this kind). */
+export function deadlineDateValue(inputs: CoachInputs | null | undefined, kind: Deadline['kind']): IsoDate | null {
+  if (!inputs) return null
+  switch (kind) {
+    case 'nds-registration':
+      return inputs.ndsRegisteredOn ?? null
+    case 'nds-closing':
+      return inputs.ndsClosedOn ?? null
+    case 'leihmaterial':
+      return inputs.leihmaterialDeliveryDate ?? null
+    case 'landeskarten':
+      return inputs.landeskartenDeliveryDate ?? null
+    default:
+      return null
+  }
+}
+
+/** CoachInputs with the inline date of a deadline kind set (empty string / null clears it). Returns a new object. */
+export function withDeadlineDate(inputs: CoachInputs, kind: Deadline['kind'], date: IsoDate | null): CoachInputs {
+  const value = date && date.length > 0 ? date : null
+  switch (kind) {
+    case 'nds-registration':
+      return { ...inputs, ndsRegisteredOn: value }
+    case 'nds-closing':
+      return { ...inputs, ndsClosedOn: value }
+    case 'leihmaterial':
+      return { ...inputs, leihmaterialDeliveryDate: value }
+    case 'landeskarten':
+      return { ...inputs, landeskartenDeliveryDate: value }
+    default:
+      return inputs
+  }
+}
+
+/** A status chip only for soon / overdue / done; «Offen» repeats the empty checkbox and gets none. */
+export function showStatusChip(status: DeadlineStatus | null | undefined): status is Exclude<DeadlineStatus, 'open'> {
+  return status !== null && status !== undefined && status !== 'open'
+}
+
 /** Key identifying a deadline in `hiddenChecklist`: its kind, plus the milestone id for milestones. */
 export function deadlineKey(d: Pick<Deadline, 'kind' | 'milestoneId'>): string {
   return d.milestoneId ? `${d.kind}:${d.milestoneId}` : d.kind

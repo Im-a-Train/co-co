@@ -2,7 +2,6 @@
   "cockpit": {
     "waiting": "Lagerdaten werden geladen …",
     "overview": {
-      "title": "Übersicht",
       "noFacts": "Noch keine Lagerdaten geladen.",
       "kpi": {
         "must": "Muss-Befunde",
@@ -13,26 +12,36 @@
         "validDaysOf": "{valid} von {total}",
         "validDaysMissing": "J+S-Tage nicht berechenbar",
         "changes": "Änderungen seit letzter Runde",
-        "changesNone": "Keine Runde gestartet",
+        "changesNoneSince": "Keine Änderungen seit Runde {n}",
         "changesDetail": "{added} neu, {changed} geändert, {removed} entfernt",
-        "changesSince": "Seit Runde {n}: +{added} ~{changed} −{removed}",
-        "mapping": "Kategorien-Zuordnung",
-        "mappingConfirmed": "{mapped} von {total} bestätigt",
-        "mappingUnconfirmed": "{mapped} von {total} vorgeschlagen, noch nicht bestätigt",
-        "mappingOpen": "Jetzt prüfen"
+        "provisional": "Vorläufig – J+S-Tagesregeln laufen erst nach bestätigter Zuordnung",
+        "validDaysPending": "Zuordnung fehlt",
+        "validDaysNeeded": "nötig: mind. {min} · Warum? im GP",
+        "validDaysOk": "nötig: mind. {min}"
       },
       "jsTime": {
         "title": "J+S-Zeit pro Tag",
         "threshold": "4-Stunden-Linie",
         "day": "Tag {n}",
-        "valid": "gültig",
-        "invalid": "nicht gültig",
-        "empty": "Keine J+S-Zeit berechnet. Bitte Kategorien zuordnen."
+        "empty": "Keine J+S-Zeit berechnet. Bitte Kategorien zuordnen.",
+        "pending": "Wird nach Bestätigung der Zuordnung berechnet",
+        "tooltip": "{day}: {time} – zählt nicht ({reasons})",
+        "tooltipInvalid": "{day}: {time} – zählt nicht",
+        "tooltipValid": "{day}: {time} – zählt",
+        "why": {
+          "fewUnits": "{units} Einheit, nötig {required} | {units} Einheiten, nötig {required}",
+          "tooShort": "{time} J+S-Zeit, nötig {required}",
+          "shortUnit": "Einheit {start}–{end} nur {minutes} min, nötig {required} min",
+          "gap": "Sozialzeit {start}–{end} nur {minutes} min, nötig {required} min",
+          "combinedOnly": "nur zusammen mit An-/Abreisetag",
+          "bwz": "Bewegungszeit {bwz} von {required} min",
+          "bwzMissing": "keine Bewegungszeit, nötig {required} min"
+        }
       },
       "progress": {
         "title": "Fortschritt der Prüfung",
         "step": {
-          "mapping": "Zuordnung bestätigt",
+          "mapping": "Lager einrichten",
           "inputs": "Angaben erfasst",
           "triage": "Befunde gesichtet",
           "documents": "Dokumente geprüft",
@@ -41,13 +50,31 @@
           "status": "Review-Status"
         },
         "hint": {
-          "mapping": "Als Nächstes: Kategorien-Zuordnung prüfen und bestätigen.",
+          "mapping": "Als Nächstes: Kategorien-Zuordnung bestätigen und Regelmodule festlegen.",
           "inputs": "Als Nächstes: Lager-Angaben erfassen.",
           "triage": "Als Nächstes: offene Befunde sichten.",
           "documents": "Als Nächstes: Dokumente prüfen oder Programmpunkten zuordnen.",
           "checklist": "Als Nächstes: Checkliste abarbeiten.",
           "feedback": "Als Nächstes: Feedback zum Lager erstellen.",
-          "status": "Als Nächstes: Review-Status der Runde setzen."
+          "status": "Als Nächstes: Review-Status der Runde setzen.",
+          "modules": "Als Nächstes: vorgeschlagene Regelmodule übernehmen oder einzeln prüfen."
+        },
+        "inputsChip": "Angaben {n} offen",
+        "cta": {
+          "mapping": "Zuordnung bestätigen",
+          "modules": "Regelmodule prüfen",
+          "inputs": "Angaben ergänzen",
+          "triage": "Befunde durchgehen ({n} offen)",
+          "triageDone": "Befunde durchgehen",
+          "documents": "Dokumente prüfen",
+          "checklist": "Checkliste abarbeiten",
+          "feedback": "Feedback schreiben",
+          "status": "Review-Status setzen"
+        },
+        "suggested": {
+          "text": "{n} Regelmodul vorgeschlagen: {names} | {n} Regelmodule vorgeschlagen: {names}",
+          "acceptAll": "Alle übernehmen",
+          "review": "Einzeln ansehen"
         }
       },
       "sources": {
@@ -60,28 +87,59 @@
         "regaSupervisors": "Leitende {done} von {total}",
         "regaNone": "Keine Rega-Daten"
       },
-      "mappingBanner": "Die Kategorien-Zuordnung ist noch nicht bestätigt. Die J+S-Auswertung ist bis dahin nur ein Vorschlag.",
-      "inputsBanner": "Lager-Angaben fehlen (Teilnehmende, Stufe, NDS-Status). Einige Regeln brauchen sie."
+      "verdict": {
+        "blocked": "{parts} – so noch nicht bewilligungsfähig.",
+        "ready": "Keine offenen Muss-Befunde – bereit für deinen Entscheid.",
+        "approved": "Bewilligt am {date}.",
+        "approvedNoDate": "Bewilligt.",
+        "waiting": "Änderungen angefragt – du wartest auf die Lagerleitung.",
+        "part": {
+          "openMust": "{n} Muss-Befund offen | {n} Muss-Befunde offen",
+          "untriaged": "{n} Befund noch nicht gesichtet | {n} Befunde noch nicht gesichtet",
+          "unsent": "{n} Feedback-Punkt nicht gesendet | {n} Feedback-Punkte nicht gesendet",
+          "jsDays": "{valid} von mind. {required} J+S-Tagen gültig",
+          "mapping": "Zuordnung nicht bestätigt"
+        }
+      }
     },
     "grid": {
       "title": "Grobprogramm (GP)",
-      "intro": "Tage als Spalten, Stunden passen sich den Programmpunkten an (mindestens 07 bis 23 Uhr). Farbe = Kategorie, gestreift = Sozialzeit unter 30 Minuten zwischen zwei J+S-Einheiten.",
       "day": "Tag {n}",
       "jsMinutes": "J+S {time}",
+      "jsMinutesPreview": "≈ {time} (Vorschlag)",
       "jsMeter": "J+S-Zeit dieses Tages, Linie bei 4 Stunden",
       "valid": "J+S-Tag gültig",
       "invalid": "J+S-Tag nicht gültig",
+      "summary": "{valid} von {total} J+S-Tagen gültig",
+      "previewNote": "Die J+S-Zeiten sind ein Vorschlag, solange du die Zuordnung nicht bestätigt hast. Es gibt noch keine Befunde dazu.",
+      "endPair": "An- und Abreisetag zählen zusammen",
+      "thisDay": "Dieser Tag",
+      "openDayFinding": "Befund zu diesem Tag öffnen",
+      "highlightFindings": "Nur Aktivitäten mit Befunden hervorheben",
       "calcMissing": "J+S-Berechnung nicht verfügbar",
       "hidden": "{count} Eintrag ausserhalb der Anzeige | {count} Einträge ausserhalb der Anzeige",
       "gap": "Sozialzeit nur {minutes} min",
       "legend": "Legende",
-      "legendGap": "Sozialzeit < 30 min",
-      "legendNotJs": "Gestrichelt = zählt nicht als J+S-Einheit",
+      "legendGap": "gestreift = Sozialzeit unter 30 min",
+      "legendNotJs": "gestrichelt = zählt nicht als J+S-Einheit",
+      "legendPreview": "gepunktet = Vorschlag",
+      "legendExcluded": "nicht geprüft",
+      "legendColor": "Farbe = Kategorie",
       "empty": "Keine Tage oder Programmpunkte vorhanden.",
-      "mappingHint": "Zuordnung noch nicht bestätigt: die J+S-Zeit ist ein Vorschlag.",
-      "mappingCheck": "Zuordnung prüfen",
-      "mappingSection": "Zuordnung der Aktivitätstypen",
-      "whyInvalid": "Warum?",
+      "mappingSection": "Kategorien",
+      "mappingTitle": "Kategorien zuordnen",
+      "mappingDone": "Kategorien zugeordnet am {date}",
+      "mappingEdit": "Ändern",
+      "mappingClose": "Zuklappen",
+      "reasonShort": {
+        "fewUnits": "{units} von {required} Einheiten",
+        "tooShort": "{time} von {required}",
+        "shortUnit": "Einheit nur {minutes} min",
+        "gap": "Sozialzeit {minutes} min ({required} nötig)",
+        "bwz": "Bewegungszeit {bwz} von {required} min",
+        "bwzMissing": "Bewegungszeit fehlt",
+        "combinedOnly": "zählt nur im Paar"
+      },
       "invalidReasons": {
         "fewUnits": "Nur {units} J+S-Einheit(en), mindestens {required} nötig",
         "tooShort": "Nur {time} J+S-Zeit, mindestens {required} nötig",
@@ -104,10 +162,26 @@
       "documents": "Verknüpfte Dokumente",
       "noDocuments": "Keine Dokumente verknüpft",
       "openDocuments": "Zu den Dokumenten",
-      "findings": "Befunde zu dieser Aktivität",
+      "findings": "Befunde",
       "noFindings": "Keine Befunde",
       "createFeedback": "Feedback erstellen",
-      "allFindings": "In Befunden anzeigen"
+      "allFindings": "In Befunden anzeigen",
+      "openInEcamp": "In eCamp öffnen",
+      "dates": "{count} Termine: {days}",
+      "dateLine": "{day} · {time}{number}",
+      "dayFindings": "Zu den Tagen dieser Aktivität",
+      "dayFindingsHint": "Tagesbefunde, die diese Aktivität betreffen.",
+      "showAll": "Ganzen Ablauf anzeigen",
+      "showLess": "Kürzer anzeigen",
+      "noSafety": "Keine Sicherheitsüberlegungen erfasst",
+      "noStoryboard": "Kein Ablauf erfasst",
+      "more": "Markierungen und Dokumente",
+      "prev": "Vorherige Aktivität",
+      "next": "Nächste Aktivität",
+      "linkDocument": "Dokument verknüpfen …",
+      "linkNone": "Keine weiteren Dokumente im Lager",
+      "linkFailed": "Dokument konnte nicht verknüpft werden",
+      "openFinding": "Befund öffnen"
     }
   }
 }

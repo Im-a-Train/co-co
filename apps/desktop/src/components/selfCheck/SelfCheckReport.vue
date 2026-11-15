@@ -30,10 +30,13 @@ async function openEcamp(url: string) {
 <template>
   <div data-testid="selfcheck-report">
     <div class="text-subtitle-1 mb-2">{{ model.heading }}</div>
+    <v-alert v-if="model.provisional" type="warning" variant="tonal" density="compact" class="mb-3" data-testid="selfcheck-provisional">
+      {{ t('selfCheck.report.provisional') }}
+    </v-alert>
     <div class="d-flex flex-wrap ga-2 mb-3">
-      <v-chip color="error" variant="tonal" size="small">{{ t('selfCheck.kpi.must') }} {{ model.counts.must }}</v-chip>
-      <v-chip color="warning" variant="tonal" size="small">{{ t('selfCheck.kpi.should') }} {{ model.counts.should }}</v-chip>
-      <v-chip color="info" variant="tonal" size="small">{{ t('selfCheck.kpi.hint') }} {{ model.counts.hint }}</v-chip>
+      <v-chip :color="model.counts.must > 0 ? 'error' : undefined" variant="tonal" size="small">{{ t('selfCheck.kpi.must') }} {{ model.counts.must }}</v-chip>
+      <v-chip :color="model.counts.should > 0 ? 'warning' : undefined" variant="tonal" size="small">{{ t('selfCheck.kpi.should') }} {{ model.counts.should }}</v-chip>
+      <v-chip variant="tonal" size="small">{{ t('selfCheck.kpi.hint') }} {{ model.counts.hint }}</v-chip>
       <v-chip v-if="model.jsDays" variant="tonal" size="small">{{ t('selfCheck.report.jsDaysChip', model.jsDays) }}</v-chip>
     </div>
     <v-alert v-if="openError" type="error" variant="tonal" density="compact" class="mb-2">{{ openError }}</v-alert>
@@ -42,7 +45,7 @@ async function openEcamp(url: string) {
     <section v-for="g in model.groups" :key="g.severity" class="mb-3" :data-testid="`selfcheck-report-${g.severity}`">
       <div class="text-subtitle-2 d-flex align-center ga-2">
         <v-icon :icon="SEV[g.severity].icon" :color="SEV[g.severity].color" size="small" />
-        {{ t(`selfCheck.report.group.${g.severity}`, { n: g.items.length }) }}
+        {{ g.header }}
       </div>
       <v-list density="compact" class="py-0">
         <v-list-item v-for="it in g.items" :key="it.findingId" data-testid="selfcheck-report-item">
@@ -80,7 +83,7 @@ async function openEcamp(url: string) {
         {{ t('selfCheck.report.fixedHeading', { n: model.fixed.length }) }}
       </div>
       <ul class="text-body-2 text-medium-emphasis pl-6">
-        <li v-for="f in model.fixed" :key="f.id">{{ f.title }}</li>
+        <li v-for="f in model.fixed" :key="f.id">{{ f.message ? `${f.title} – ${f.message}` : f.title }}</li>
       </ul>
     </div>
   </div>

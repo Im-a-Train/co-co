@@ -8,8 +8,6 @@
       "must": "Muss",
       "should": "Soll",
       "hint": "Hinweis",
-      "jsDays": "J+S-Tage",
-      "jsDaysValue": "{valid} von {total}",
       "changed": "Änderungen in eCamp seit der Entwurfsrunde",
       "changedNone": "Noch kein Selbstcheck"
     },

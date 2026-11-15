@@ -4,7 +4,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DiffView from '@/components/rounds/DiffView.vue'
 import ReviewStatusStepper from '@/components/rounds/ReviewStatusStepper.vue'
+import ApprovalCheckDialog from '@/components/rounds/ApprovalCheckDialog.vue'
 import RoundTimeline from '@/components/rounds/RoundTimeline.vue'
+import { useApprovalGuard } from '@/composables/useApprovalGuard'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useRounds } from '@/composables/useRounds'
@@ -12,7 +14,7 @@ import { RoundsError } from '@/domain/rounds'
 import type { CampFacts, Diff, Iri, ReviewStatus } from '@/domain/types'
 
 const { t } = useI18n()
-const { campIri } = useCampRoute()
+const { campId, campIri } = useCampRoute()
 const { facts } = useCampFacts(campIri)
 const r = useRounds(campIri)
 
@@ -57,13 +59,16 @@ watch(selectedId, async (id) => {
   selectedFacts.value = (await r.snapshotOf(id))?.facts ?? null
 })
 
-async function setStatus(status: ReviewStatus, n: string | null) {
+async function applyStatus(status: ReviewStatus, n: string | null) {
   try {
     await r.setStatus(status, n)
   } catch {
     // shown via r.error
   }
 }
+// Approving with open blockers goes through ApprovalCheckDialog (same as the header menu).
+const guard = useApprovalGuard(campIri, applyStatus)
+const setStatus = (status: ReviewStatus, n: string | null) => guard.request(status, n)
 async function start() {
   busy.value = true
   try {
@@ -89,14 +94,12 @@ async function close(id: string) {
 <template>
   <div>
     <div class="d-flex align-center mb-2">
-      <h1 class="text-h5">{{ t('rounds.title') }}</h1>
+      <p class="text-body-2 text-medium-emphasis mb-0 mr-4">{{ t('rounds.intro') }}</p>
       <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" density="comfortable" @click="dialog = true">
+      <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" density="comfortable" class="flex-shrink-0" @click="dialog = true">
         {{ t('rounds.start.button') }}
       </v-btn>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">{{ t('rounds.intro') }}</p>
-
     <v-alert v-if="errorText" type="error" variant="tonal" density="compact" class="mb-4" :text="errorText" />
 
     <v-row>
@@ -120,11 +123,21 @@ async function close(id: string) {
           <DiffView :diff="selectedDiff" :title-of="selectedTitleOf" />
         </template>
         <template v-else-if="latest && r.diffSinceLastRound.value">
-          <h2 class="text-subtitle-1 mb-2">{{ t('rounds.diff.sinceLast', { n: latest.number }) }}</h2>
-          <DiffView :diff="r.diffSinceLastRound.value" :title-of="liveTitleOf" />
+          <h2 v-if="r.diffSinceLastRound.value.entries.length" class="text-subtitle-1 mb-2">{{ t('rounds.diff.sinceLast', { n: latest.number }) }}</h2>
+          <DiffView :diff="r.diffSinceLastRound.value" :title-of="liveTitleOf" :empty-text="t('rounds.diff.noneSince', { n: latest.number })" />
         </template>
       </v-col>
     </v-row>
+
+    <ApprovalCheckDialog
+      v-if="guard.pending.value && guard.blockers.value"
+      v-model="guard.open.value"
+      :camp-id="campId"
+      :blockers="guard.blockers.value"
+      :target="guard.pending.value.status"
+      :initial-note="guard.pending.value.note"
+      @confirm="guard.confirm"
+    />
 
     <v-dialog v-model="dialog" max-width="480">
       <v-card>

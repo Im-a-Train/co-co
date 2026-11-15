@@ -172,14 +172,43 @@ async function main() {
     await page.waitForURL(/\/lager\/[^/]+\/uebersicht/, { timeout: 5000 })
   })
 
+  await step('flow: camp list switch, sorting and next-step column', async () => {
+    await page.goto(`${BASE}#/lager`)
+    await page.waitForSelector('[data-testid="camps-table"]', { timeout: 8000 })
+    await page.waitForTimeout(800)
+    const hidden = await page.locator('tbody tr').count()
+    const sw = page.getByTestId('camps-show-ended').locator('input')
+    if (!(await sw.count())) throw new Error('ended switch missing')
+    await shot(page, 'flow-camps-default')
+    await sw.check({ force: true })
+    await page.waitForTimeout(500)
+    const all = await page.locator('tbody tr').count()
+    if (all <= hidden) throw new Error(`switch did not show ended camps (${hidden} -> ${all})`)
+    if (!(await page.getByTestId('camp-next').count())) throw new Error('next-step column missing')
+    if (await page.getByTestId('camps-refresh').innerText().then((t) => /Aktualisieren/.test(t))) throw new Error('refresh still a text button')
+    await shot(page, 'flow-camps-with-ended')
+    await sw.uncheck({ force: true })
+    await page.waitForTimeout(300)
+  })
+
   await step('flow: confirm category mapping', async () => {
-    await go('raster?zuordnung=1', 'flow-mapping') // mapping lives in the GP view (collapsible panel)
-    const btn = page.getByRole('button', { name: /bestätigen/i }).first()
+    await go('raster', 'flow-mapping') // unconfirmed: the mapping is the first card of the GP view
+    const btn = page.getByTestId('mapping-confirm')
+    await btn.waitFor({ timeout: 8000 })
+    const box = await btn.boundingBox()
+    const vh = page.viewportSize()?.height ?? 860
+    if (!box || box.y + box.height > vh) throw new Error(`«Zuordnung bestätigen» not visible without scrolling (y=${box?.y})`)
+    if (await page.getByTestId('grid-mapping-link').count()) throw new Error('old mapping banner still there')
     await btn.click()
     await page.waitForTimeout(800)
     await shot(page, 'flow-mapping-confirmed')
     const txt = await page.evaluate(() => document.body.innerText)
-    if (!/Änderung bestätigen|bestätigt/i.test(txt)) throw new Error('no confirmed state visible')
+    if (!/Kategorien zugeordnet am/.test(txt)) throw new Error('no confirmed line visible')
+    if (!(await page.getByTestId('mapping-next').count())) throw new Error('«Weiter: Befunde durchgehen» missing after confirming')
+    await page.getByTestId('grid-mapping-edit').click()
+    await page.waitForTimeout(300)
+    await shot(page, 'flow-mapping-edit')
+    await page.getByTestId('grid-mapping-edit').click()
   })
 
   await step('flow: open activity drawer in grid', async () => {
@@ -190,6 +219,47 @@ async function main() {
     await shot(page, 'flow-grid-drawer')
     if (!(await page.locator('.v-navigation-drawer--right').count()))
       throw new Error('drawer not open')
+    await page.getByTestId('drawer-title').waitFor({ timeout: 5000 })
+    if (await page.locator('.v-navigation-drawer__scrim').count()) throw new Error('drawer is modal (scrim shown)')
+    if (!(await page.getByTestId('drawer-open-ecamp').count())) throw new Error('«In eCamp öffnen» missing')
+    // non-modal: another block swaps the content in place, ←/→ step, Esc closes
+    const first = await page.getByTestId('drawer-title').innerText()
+    const other = page.locator('.wg-block').filter({ hasNotText: first })
+    if (await other.count()) {
+      await other.first().click({ timeout: 5000 })
+      await page.waitForTimeout(500)
+      if ((await page.getByTestId('drawer-title').innerText()) === first) throw new Error('drawer content did not swap on block click')
+    }
+    const before = await page.getByTestId('drawer-title').innerText()
+    await page.keyboard.press('ArrowRight')
+    await page.waitForTimeout(400)
+    if ((await page.getByTestId('drawer-title').innerText()) === before) {
+      // last activity: step back instead
+      await page.keyboard.press('ArrowLeft')
+      await page.waitForTimeout(400)
+    }
+    const after = await page.getByTestId('drawer-title').innerText()
+    console.log('grid drawer step', JSON.stringify({ before, after }))
+    if (after === before) throw new Error('←/→ did not step to another activity')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('Esc did not close the drawer')
+  })
+
+  await step('flow: grid summary, day reasons, sticky head, ?tag focus', async () => {
+    await go('raster', 'flow-grid-days')
+    await page.getByTestId('grid-summary').waitFor({ timeout: 8000 })
+    if (!/\d+ von \d+ J\+S-Tagen gültig/.test(await page.getByTestId('grid-summary').innerText())) throw new Error('summary text')
+    if (!(await page.getByTestId('grid-legend').count())) throw new Error('legend missing')
+    const pos = await page.evaluate(() => getComputedStyle(document.querySelector('.wg-head')).position)
+    if (pos !== 'sticky') throw new Error(`wg-head not sticky (${pos})`)
+    const dayLink = page.locator('.wg-daylink').first()
+    if (await dayLink.count()) {
+      const iri = await page.evaluate(() => null)
+      void iri
+      await dayLink.click()
+      await page.waitForURL(/befunde\?.*befund=/, { timeout: 5000 })
+    }
   })
 
   await step('flow: activities list filter and drawer', async () => {
@@ -206,6 +276,32 @@ async function main() {
     await page.waitForTimeout(800)
     await shot(page, 'flow-activities-drawer')
     if (!(await page.locator('.v-navigation-drawer--right').count())) throw new Error('drawer not open')
+    await page.getByTestId('drawer-title').waitFor({ timeout: 5000 })
+    // DP columns: findings right after the title, no Aktionen column
+    const heads = (await page.locator('.activities-table thead th').allInnerTexts()).map((h) => h.trim())
+    console.log('dp columns', heads.join(' | '))
+    if (heads.join('|') !== ['Nr.', 'Titel', 'Befunde', 'Tag / Zeit', 'Kategorie', 'Verantwortliche', 'Fortschritt', 'Ort', 'Dauer'].join('|'))
+      throw new Error('DP columns wrong: ' + heads.join(' | '))
+    if (await page.locator('.v-navigation-drawer__scrim').count()) throw new Error('drawer is modal (scrim shown)')
+    // non-modal: a click on another row swaps the content, ↓ steps, Esc closes
+    const first = await page.getByTestId('drawer-title').innerText()
+    const rowsAll = page.locator('.activities-table tbody tr')
+    if ((await rowsAll.count()) > 1) {
+      await rowsAll.nth(1).click({ timeout: 5000 })
+      await page.waitForTimeout(500)
+      const second = await page.getByTestId('drawer-title').innerText()
+      if (second === first) throw new Error('drawer content did not swap on row click')
+      await page.keyboard.press('ArrowDown')
+      await page.waitForTimeout(400)
+      if ((await page.getByTestId('drawer-title').innerText()) === second) {
+        await page.keyboard.press('ArrowUp')
+        await page.waitForTimeout(400)
+      }
+      if ((await page.getByTestId('drawer-title').innerText()) === second) throw new Error('↑/↓ did not step to another activity')
+    }
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('Esc did not close the drawer')
   })
 
   await triageFlows({ page, step, go, shot, BASE })

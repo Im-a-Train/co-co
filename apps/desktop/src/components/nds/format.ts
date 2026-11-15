@@ -1,11 +1,18 @@
 /** Display helpers of the NDS UI. */
 import { ndsStateLabel } from '@/domain/nds'
 import type { NdsFieldValue } from '@/domain/nds'
+import { germanRoleLabel, roleLabelKey } from '@/domain/persons/roleLabels'
 
-/** code -> count record as sorted rows; labels via the state table (unknown codes stay raw). */
-export function countEntries(rec: Record<string, number>): { code: string; label: string; n: number }[] {
+/**
+ * code -> count record as sorted rows. Labels: the role mapping Personen uses (when `t` is given), then the
+ * state table; unknown codes stay raw.
+ */
+export function countEntries(
+  rec: Record<string, number>,
+  t?: (key: string) => string,
+): { code: string; label: string; n: number }[] {
   return Object.entries(rec)
-    .map(([code, n]) => ({ code, label: ndsStateLabel(code), n }))
+    .map(([code, n]) => ({ code, label: t && roleLabelKey(code) ? germanRoleLabel(code, t) : ndsStateLabel(code), n }))
     .sort((a, b) => b.n - a.n || a.code.localeCompare(b.code))
 }
 

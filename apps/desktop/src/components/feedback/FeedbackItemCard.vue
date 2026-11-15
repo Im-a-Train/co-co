@@ -15,6 +15,8 @@ const props = defineProps<{
   lint: FeedbackLint[]
   facts: CampFacts | null
   posting: boolean
+  /** Post is queued (5 s undo window). */
+  queued?: boolean
   focused: boolean
 }>()
 const emit = defineEmits<{
@@ -40,7 +42,8 @@ watch(
   },
 )
 
-const KIND_COLOR: Record<FeedbackKind, string> = { kudos: 'success', must: 'error', suggestion: 'warning', question: 'info' }
+// Colour = state: only Auflagen (block approval) are red, Kudos are green, the rest stays neutral.
+const KIND_COLOR: Record<FeedbackKind, string | undefined> = { kudos: 'success', must: 'error', suggestion: undefined, question: undefined }
 const STATUS_COLOR = { draft: undefined, posted: 'primary', sent: 'success' } as const
 const kindColor = computed(() => KIND_COLOR[props.item.kind])
 const canPost = computed(() => props.item.scope === 'activity' && !!props.item.activityIri)
@@ -71,11 +74,11 @@ function save() {
   <v-card variant="outlined" density="compact" :class="{ 'border-primary': focused }" :data-item-id="item.id" data-testid="feedback-item" :data-status="item.status">
     <v-card-text class="pb-2">
       <div class="d-flex flex-wrap align-center ga-2 mb-2">
-        <v-chip size="small" :color="kindColor" variant="flat">{{ t(`feedback.kind.${item.kind}`) }}</v-chip>
+        <v-chip size="small" :color="kindColor" variant="outlined">{{ t(`feedback.kind.${item.kind}`) }}</v-chip>
         <v-chip size="small" variant="outlined" :title="activityUrl">
           {{ t(`feedback.scope.${item.scope}`) }}<template v-if="activityTitle">: {{ activityTitle }}</template>
         </v-chip>
-        <v-chip v-if="item.ruleId" size="small" variant="text">{{ item.ruleId === MANUAL_RULE_ID ? t('findings.manual.tag') : item.ruleId }}</v-chip>
+        <v-chip v-if="item.ruleId === MANUAL_RULE_ID" size="small" variant="text">{{ t('findings.manual.tag') }}</v-chip>
         <v-chip size="small" :color="STATUS_COLOR[item.status]" variant="tonal">{{ t(`feedback.status.${item.status}`) }}</v-chip>
       </div>
 
@@ -98,13 +101,20 @@ function save() {
       <template v-if="!editing">
         <v-btn size="small" variant="text" prepend-icon="mdi-pencil" @click="startEdit">{{ t('feedback.edit') }}</v-btn>
         <AiRephraseButton :item="item" :facts="facts" @rephrased="(txt: string) => emit('save', { text: txt, kind: item.kind })" />
-        <v-btn v-if="canPost && item.status === 'draft'" size="small" variant="tonal" color="primary" prepend-icon="mdi-comment-arrow-right"
-          :loading="posting" @click="emit('post')">{{ t('feedback.post') }}</v-btn>
-        <v-btn v-if="item.status !== 'sent'" size="small" variant="text" prepend-icon="mdi-check" @click="emit('mark-sent', true)">{{ t('feedback.markSent') }}</v-btn>
-        <v-btn v-else size="small" variant="text" @click="emit('mark-sent', false)">{{ t('feedback.markDraft') }}</v-btn>
-        <v-btn v-if="activityUrl" size="small" variant="text" prepend-icon="mdi-open-in-new" data-test="open-ecamp" @click="openInEcamp">{{ t('feedback.openInEcamp') }}</v-btn>
         <v-spacer />
-        <v-btn size="small" variant="text" color="error" icon="mdi-delete" :aria-label="t('feedback.delete')" @click="emit('remove')" />
+        <v-menu>
+          <template #activator="{ props: menu }">
+            <v-btn v-bind="menu" size="small" variant="text" icon="mdi-dots-vertical" :aria-label="t('feedback.more')" data-testid="feedback-more" />
+          </template>
+          <v-list density="compact">
+            <v-list-item v-if="item.status !== 'sent'" prepend-icon="mdi-check" :title="t('feedback.markSent')" @click="emit('mark-sent', true)" />
+            <v-list-item v-else prepend-icon="mdi-undo" :title="t('feedback.markDraft')" @click="emit('mark-sent', false)" />
+            <v-list-item v-if="activityUrl" prepend-icon="mdi-open-in-new" :title="t('feedback.openInEcamp')" data-test="open-ecamp" @click="openInEcamp" />
+            <v-list-item prepend-icon="mdi-delete" base-color="error" :title="t('feedback.delete')" @click="emit('remove')" />
+          </v-list>
+        </v-menu>
+        <v-btn v-if="canPost && item.status === 'draft'" size="small" variant="tonal" color="primary" prepend-icon="mdi-comment-arrow-right"
+          :loading="posting || queued" :disabled="queued" data-testid="feedback-post" @click="emit('post')">{{ queued || posting ? t('feedback.posting') : t('feedback.post') }}</v-btn>
       </template>
       <template v-else>
         <v-spacer />

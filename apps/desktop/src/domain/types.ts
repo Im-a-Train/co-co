@@ -551,12 +551,22 @@ export interface NdsStatus {
 /** Coach inputs that «Aus NDS übernehmen» can fill. */
 export type NdsField = 'ndsRegistered' | 'ndsRegisteredOn' | 'ndsClosed'
 
+/** NDS ids the camp is linked to plus display extras copied from the picked camp (optional: older links have none). */
+export interface NdsLink {
+  offerBusinessId: string
+  campBusinessId: string
+  groupName?: string | null
+  offerNumber?: string | null
+  start?: IsoDate | null
+  end?: IsoDate | null
+}
+
 /** Dexie table `nds` (one per camp). Tagged red-derived: AI gateway refuses it; backup may omit it. */
 export interface NdsRecord {
   campIri: Iri
   zone: 'red-derived'
   /** NDS ids the camp is linked to (null = not linked yet). */
-  link: { offerBusinessId: string; campBusinessId: string } | null
+  link: NdsLink | null
   aggregate: NdsAggregate | null
   fetchedAt: IsoDateTime | null
   updatedAt: IsoDateTime
@@ -1236,6 +1246,8 @@ export interface Deadline {
   audience?: Audience
   /** Computed, never stored: the camp ended more than a month ago, so the deadline counts as done. */
   archived?: boolean
+  /** Milestones: skipped twins (`sameAs`) of other lists, shown as «Auch genannt: …». */
+  alsoNamed?: { id: string; source: string; due: IsoDate }[]
 }
 
 // ---------------------------------------------------------------------------------------------

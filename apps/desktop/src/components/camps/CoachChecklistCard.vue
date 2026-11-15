@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
 import { safeExternalUrl } from '@/domain/cockpit'
 import type { ChecklistItem, ChecklistKind } from '@/domain/rules/lib/checklist'
-import type { ChecklistRow, CustomRow } from '@/domain/rules/lib/checklistSync'
+import { showStatusChip, type ChecklistRow, type CustomRow } from '@/domain/rules/lib/checklistSync'
 import DeadlineStatusChip from '@/components/rules/DeadlineStatusChip.vue'
 import { getSourceRegistry } from '@/domain/rules/packs/registry'
 import { MODULE_IDS, type Iri } from '@/domain/types'
@@ -65,6 +65,9 @@ function relative(left: number): string {
   return left > 0 ? t('rules.deadlines.relative.in', { n: left }) : t('rules.deadlines.relative.ago', { n: -left })
 }
 
+/** «verbindlich» is the default and gets no chip; only exceptions («Empfehlung», «Quelle 2014») do. */
+const exceptionKinds = (item: ChecklistItem): ChecklistKind[] => item.kinds.filter((k) => k !== 'B')
+
 const KIND_COLOR: Record<ChecklistKind, string> = { B: 'primary', E: 'info', '2014': 'grey' }
 
 function sourcesOf(item: ChecklistItem) {
@@ -100,6 +103,120 @@ const noteOpen = (id: string): boolean => openNotes.value[id] === true || noteOf
       <p class="text-body-2 text-medium-emphasis mb-3">{{ t('campConfig.checklist.intro') }}</p>
       <div v-if="!groups.length && !(customRows ?? []).length" class="text-body-2 text-medium-emphasis">{{ t('campConfig.checklist.empty') }}</div>
 
+      <section v-for="g in groups" :key="g.module" class="mb-4" :data-testid="`checklist-group-${g.module}`">
+        <h3 class="text-subtitle-2 mb-1">{{ t(`rules.catalog.module.${g.module}`) }}</h3>
+        <div
+          v-for="row in g.rows"
+          :key="row.item.id"
+          class="cl-item py-1"
+          :class="{ 'text-disabled': hiddenIds.has(row.item.id) }"
+          :data-testid="`checklist-${row.item.id}`"
+        >
+          <div class="d-flex align-start ga-2">
+            <v-checkbox-btn
+              class="flex-grow-0"
+              :model-value="row.done"
+              density="compact"
+              :aria-label="t('campConfig.checklist.done')"
+              @update:model-value="(v: boolean | null) => emit('toggle', row, v === true)"
+            />
+            <div class="flex-grow-1">
+              <div class="text-body-2" :class="{ 'text-medium-emphasis': row.done }">
+                {{ row.item.text }}
+                <v-chip
+                  v-for="k in exceptionKinds(row.item)"
+                  :key="k"
+                  size="x-small"
+                  label
+                  variant="tonal"
+                  class="ml-1"
+                  :color="KIND_COLOR[k]"
+                  :title="t(`campConfig.checklist.kindHint.${k}`)"
+                  data-testid="checklist-kind"
+                >
+                  {{ t(`campConfig.checklist.kind.${k}`) }}
+                </v-chip>
+              </div>
+              <div v-if="row.deadline && row.status" class="d-flex flex-wrap align-center ga-2 mt-1" data-testid="checklist-deadline">
+                <v-icon size="x-small" icon="mdi-link-variant" />
+                <span class="text-caption">{{ t('campConfig.checklist.dueOn', { date: fmt(row.deadline.due) }) }}</span>
+                <DeadlineStatusChip v-if="showStatusChip(row.status)" :status="row.status" />
+              </div>
+              <v-text-field
+                v-if="noteOpen(row.item.id)"
+                :model-value="noteOf(row.item.id)"
+                :label="t('campConfig.checklist.note')"
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="mt-1"
+                @blur="(e: FocusEvent) => saveNote(row.item.id, (e.target as HTMLInputElement).value)"
+              />
+            </div>
+            <v-menu location="bottom end" :close-on-content-click="false">
+              <template #activator="{ props: menuProps }">
+                <v-btn
+                  v-bind="menuProps"
+                  icon="mdi-information-outline"
+                  size="x-small"
+                  variant="text"
+                  :title="t('campConfig.checklist.sourceMenu')"
+                  :aria-label="t('campConfig.checklist.sourceMenu')"
+                  data-testid="checklist-source-btn"
+                />
+              </template>
+              <v-card min-width="260" max-width="420" data-testid="checklist-source-menu">
+                <v-card-title class="text-subtitle-2">{{ t('campConfig.checklist.sourceMenu') }}</v-card-title>
+                <v-card-text class="pt-0">
+                  <code class="text-caption text-medium-emphasis d-block mb-1">{{ row.item.id }}</code>
+                  <div v-for="k in row.item.kinds" :key="k" class="text-caption mb-1">{{ t(`campConfig.checklist.kind.${k}`) }}: {{ t(`campConfig.checklist.kindHint.${k}`) }}</div>
+                  <div v-for="s in sourcesOf(row.item)" :key="`${s.key}${s.page}`" class="text-caption">
+                    <a v-if="s.url" :href="s.url" target="_blank" rel="noopener noreferrer">{{ s.title }}<template v-if="s.page">, {{ s.page }}</template></a>
+                    <span v-else>{{ s.title }}<template v-if="s.page">, {{ s.page }}</template></span>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-menu>
+            <v-menu location="bottom end">
+              <template #activator="{ props: menuProps }">
+                <v-btn
+                  v-bind="menuProps"
+                  icon="mdi-dots-vertical"
+                  size="x-small"
+                  variant="text"
+                  :title="t('campConfig.checklist.moreActions')"
+                  :aria-label="t('campConfig.checklist.moreActions')"
+                  data-testid="checklist-more"
+                />
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  v-if="!noteOpen(row.item.id)"
+                  prepend-icon="mdi-note-plus-outline"
+                  :title="t('campConfig.checklist.noteAdd')"
+                  data-testid="checklist-note-add"
+                  @click="openNotes = { ...openNotes, [row.item.id]: true }"
+                />
+                <v-list-item
+                  v-if="!hiddenIds.has(row.item.id)"
+                  prepend-icon="mdi-eye-off-outline"
+                  :title="t('campConfig.checklist.hide')"
+                  data-testid="checklist-hide"
+                  @click="setHidden(row.item.id, true)"
+                />
+                <v-list-item
+                  v-else
+                  prepend-icon="mdi-eye-outline"
+                  :title="t('campConfig.checklist.restore')"
+                  data-testid="checklist-restore"
+                  @click="setHidden(row.item.id, false)"
+                />
+              </v-list>
+            </v-menu>
+          </div>
+        </div>
+      </section>
+
       <section class="mb-4" data-testid="checklist-custom">
         <h3 class="text-subtitle-2 mb-1">{{ t('campConfig.checklist.customTitle') }}</h3>
         <div v-for="cr in customRows ?? []" :key="cr.item.id" class="cl-item py-1" :data-testid="`checklist-${cr.item.id}`">
@@ -115,7 +232,7 @@ const noteOpen = (id: string): boolean => openNotes.value[id] === true || noteOf
               <div class="text-body-2" :class="{ 'text-medium-emphasis': cr.done }">{{ cr.item.text }}</div>
               <div v-if="cr.item.due && cr.status && cr.left !== null" class="d-flex flex-wrap align-center ga-2 mt-1" data-testid="custom-deadline">
                 <span class="text-caption">{{ t('campConfig.checklist.dueOn', { date: fmt(cr.item.due) }) }} · {{ relative(cr.left) }}</span>
-                <DeadlineStatusChip :status="cr.status" />
+                <DeadlineStatusChip v-if="showStatusChip(cr.status)" :status="cr.status" />
               </div>
             </div>
             <v-btn
@@ -159,93 +276,6 @@ const noteOpen = (id: string): boolean => openNotes.value[id] === true || noteOf
         <v-btn v-else size="small" variant="tonal" prepend-icon="mdi-plus" class="mt-1" data-testid="custom-open" @click="adding = true">
           {{ t('campConfig.checklist.customNew') }}
         </v-btn>
-      </section>
-
-      <section v-for="g in groups" :key="g.module" class="mb-4" :data-testid="`checklist-group-${g.module}`">
-        <h3 class="text-subtitle-2 mb-1">{{ t(`rules.catalog.module.${g.module}`) }}</h3>
-        <div
-          v-for="row in g.rows"
-          :key="row.item.id"
-          class="cl-item py-1"
-          :class="{ 'text-disabled': hiddenIds.has(row.item.id) }"
-          :data-testid="`checklist-${row.item.id}`"
-        >
-          <div class="d-flex align-start ga-2">
-            <v-checkbox-btn
-              class="flex-grow-0"
-              :model-value="row.done"
-              density="compact"
-              :aria-label="t('campConfig.checklist.done')"
-              @update:model-value="(v: boolean | null) => emit('toggle', row, v === true)"
-            />
-            <div class="flex-grow-1">
-              <div class="text-body-2" :class="{ 'text-medium-emphasis': row.done }">{{ row.item.text }}</div>
-              <div v-if="row.deadline && row.status" class="d-flex flex-wrap align-center ga-2 mt-1" data-testid="checklist-deadline">
-                <v-icon size="x-small" icon="mdi-link-variant" />
-                <span class="text-caption">{{ t('campConfig.checklist.dueOn', { date: fmt(row.deadline.due) }) }}</span>
-                <DeadlineStatusChip :status="row.status" />
-              </div>
-              <div class="d-flex flex-wrap align-center ga-1 mt-1">
-                <code class="text-caption text-medium-emphasis">{{ row.item.id }}</code>
-                <v-chip
-                  v-for="k in row.item.kinds"
-                  :key="k"
-                  size="x-small"
-                  label
-                  variant="tonal"
-                  :color="KIND_COLOR[k]"
-                  :title="t(`campConfig.checklist.kindHint.${k}`)"
-                >
-                  {{ t(`campConfig.checklist.kind.${k}`) }}
-                </v-chip>
-                <template v-for="s in sourcesOf(row.item)" :key="`${s.key}${s.page}`">
-                  <a v-if="s.url" :href="s.url" target="_blank" rel="noopener noreferrer" class="text-caption">
-                    {{ t('campConfig.checklist.source') }}: {{ s.title }}<template v-if="s.page">, {{ s.page }}</template>
-                  </a>
-                  <span v-else class="text-caption text-medium-emphasis">
-                    {{ t('campConfig.checklist.source') }}: {{ s.title }}<template v-if="s.page">, {{ s.page }}</template>
-                  </span>
-                </template>
-                <v-btn
-                  v-if="!noteOpen(row.item.id)"
-                  size="x-small"
-                  variant="text"
-                  prepend-icon="mdi-note-plus-outline"
-                  :text="t('campConfig.checklist.noteAdd')"
-                  @click="openNotes = { ...openNotes, [row.item.id]: true }"
-                />
-                <v-btn
-                  v-if="!hiddenIds.has(row.item.id)"
-                  size="x-small"
-                  variant="text"
-                  prepend-icon="mdi-eye-off-outline"
-                  :text="t('campConfig.checklist.hide')"
-                  data-testid="checklist-hide"
-                  @click="setHidden(row.item.id, true)"
-                />
-                <v-btn
-                  v-else
-                  size="x-small"
-                  variant="text"
-                  prepend-icon="mdi-eye-outline"
-                  :text="t('campConfig.checklist.restore')"
-                  data-testid="checklist-restore"
-                  @click="setHidden(row.item.id, false)"
-                />
-              </div>
-              <v-text-field
-                v-if="noteOpen(row.item.id)"
-                :model-value="noteOf(row.item.id)"
-                :label="t('campConfig.checklist.note')"
-                density="compact"
-                variant="outlined"
-                hide-details
-                class="mt-1"
-                @blur="(e: FocusEvent) => saveNote(row.item.id, (e.target as HTMLInputElement).value)"
-              />
-            </div>
-          </div>
-        </div>
       </section>
 
       <v-alert v-if="saveError || noteError" type="error" variant="tonal" density="compact" data-testid="checklist-save-error">

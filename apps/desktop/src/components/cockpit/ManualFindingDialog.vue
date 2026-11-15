@@ -15,6 +15,10 @@ const props = defineProps<{
   anchor?: DocumentAnchor
   editId?: string
   title?: string
+  /** Category preselected for a new finding; default: «Dokumente» for document scope, else «Programm». */
+  defaultCategory?: ManualFindingCategory
+  /** Prefilled comment for a new finding (the coach edits it before saving). */
+  initialComment?: string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; saved: [finding: ManualFinding] }>()
 const { t } = useI18n()
@@ -49,8 +53,8 @@ watch(
     error.value = null
     saving.value = false
     const cur = existing.value
-    category.value = cur?.category ?? 'program'
-    comment.value = cur?.comment ?? ''
+    category.value = cur?.category ?? props.defaultCategory ?? (props.scope === 'document' ? 'documents' : 'program')
+    comment.value = cur?.comment ?? props.initialComment ?? ''
   },
   { immediate: true },
 )

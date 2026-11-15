@@ -1,19 +1,35 @@
 <script setup lang="ts">
-/** /lager: Meine Lager (role, dates, review status, finding counts, next deadline). */
+/** /lager: Meine Lager (dates, review status, finding counts, next deadline, next step). */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { buildCampRows, campPhase, filterCampRows, filterCampsByPhase, formatIsoDate, sortCampRows, type CampRow } from '@/components/camps/campRows'
+import { useDisplay } from 'vuetify'
+import {
+  approvedWithOpenMust,
+  buildCampRows,
+  campNext,
+  campPhase,
+  endedCount,
+  filterCampRows,
+  filterCampsByPhase,
+  findingsText,
+  formatIsoDate,
+  sortCampRows,
+  type CampRow,
+} from '@/components/camps/campRows'
 import { useCampList } from '@/composables/useCampList'
 import { isLeaderRole } from '@/domain/selfCheck'
 import { listCoachInputs } from '@/domain/campFacts/store'
 import { daysBetween, deadlineStatus } from '@/domain/rules/lib/deadlines'
 import { listCampSummaries } from '@/domain/rules/store'
+import { reviewStatusColor } from '@/domain/rounds'
 import { listAllRounds, listReviews } from '@/domain/rounds/store'
 import type { CampRowSources } from '@/components/camps/campRows'
 
 const { t } = useI18n()
 const router = useRouter()
+// Below lg the table is tight: «Weiter prüfen» becomes an icon button so no column is pushed off-screen.
+const { lgAndUp } = useDisplay()
 const { camps, loading, error, load } = useCampList()
 
 const query = ref('')
@@ -29,7 +45,7 @@ async function loadSources(): Promise<void> {
     ])
     sources.value = { summaries, reviews, rounds, inputs }
   } catch {
-    // Local data is optional for the list: columns fall back to '–'.
+    // Local data is optional for the list: columns fall back to «Noch nicht geprüft».
   }
 }
 
@@ -42,40 +58,35 @@ watch(
   () => void loadSources(),
 )
 
-const rows = computed(() => sortCampRows(buildCampRows(camps.value, sources.value)))
 const today = new Date().toISOString().slice(0, 10)
+const rows = computed(() => sortCampRows(buildCampRows(camps.value, sources.value, today), today))
 
 const PHASE_KEY = 'co-co.camps.phaseFilter'
-function readPhase(): { showEnded: boolean; showOld: boolean } {
+function readShowEnded(): boolean {
   try {
-    const raw = JSON.parse(localStorage.getItem(PHASE_KEY) ?? 'null') as { showEnded?: unknown; showOld?: unknown } | null
-    return { showEnded: raw?.showEnded === true, showOld: raw?.showOld === true }
+    const raw = JSON.parse(localStorage.getItem(PHASE_KEY) ?? 'null') as { showEnded?: unknown } | null
+    return raw?.showEnded === true
   } catch {
-    return { showEnded: false, showOld: false }
+    return false
   }
 }
-const initialPhase = readPhase()
-const showEnded = ref(initialPhase.showEnded)
-const showOld = ref(initialPhase.showOld)
-watch([showEnded, showOld], () => {
+const showEnded = ref(readShowEnded())
+watch(showEnded, () => {
   try {
-    localStorage.setItem(PHASE_KEY, JSON.stringify({ showEnded: showEnded.value, showOld: showOld.value }))
+    localStorage.setItem(PHASE_KEY, JSON.stringify({ showEnded: showEnded.value }))
   } catch {
-    /* storage unavailable: the toggles just are not remembered */
+    /* storage unavailable: the switch just is not remembered */
   }
 })
 
 // Search applies first; the phase filter then hides finished camps by default.
 const searched = computed(() => filterCampRows(rows.value, query.value))
-const visible = computed(() => filterCampsByPhase(searched.value, { showEnded: showEnded.value, showOld: showOld.value }, today))
+const visible = computed(() => filterCampsByPhase(searched.value, { showEnded: showEnded.value }, today))
 const hiddenCount = computed(() => searched.value.length - visible.value.length)
-function showHidden(): void {
-  showEnded.value = true
-  showOld.value = true
-}
+const endedTotal = computed(() => endedCount(searched.value, today))
 function phaseLabel(r: CampRow): string | null {
   const p = campPhase(r, today)
-  return p === 'ended' ? t('camps.campsView.phaseEnded') : p === 'old' ? t('camps.campsView.phaseOld') : null
+  return p === 'ended' || p === 'old' ? t('camps.campsView.phaseEnded') : null
 }
 
 function open(r: CampRow): void {
@@ -85,22 +96,38 @@ function openSelfCheck(r: CampRow): void {
   void router.push(`/lager/${r.id}/selbstcheck`)
 }
 function dates(r: CampRow): string {
-  return r.start ? `${formatIsoDate(r.start)} – ${formatIsoDate(r.end ?? r.start)}` : t('camps.campsView.noDates')
+  // Non-breaking space before the dash: a narrow column breaks after «–», never between it and the start date.
+  return r.start ? `${formatIsoDate(r.start)}\u00a0– ${formatIsoDate(r.end ?? r.start)}` : t('camps.campsView.noDates')
 }
 function roleColor(role: string | null): string {
-  return role === 'manager' ? 'primary' : role === 'member' ? 'secondary' : 'default'
+  return role === 'manager' ? 'primary' : 'secondary'
 }
-function reviewColor(s: string): string {
-  return s === 'bewilligt' ? 'success' : s === 'neu' ? 'default' : 'warning'
+/** Same colours as the status pill in the camp header; approved with an open Muss is a warning. */
+function reviewColor(r: CampRow): string | undefined {
+  if (approvedWithOpenMust(r) > 0) return 'warning'
+  // «Neu» stays a plain chip (the shared 'grey' reads as disabled in a tonal chip).
+  return r.review === 'neu' ? undefined : reviewStatusColor(r.review)
+}
+function reviewText(r: CampRow): string {
+  const must = approvedWithOpenMust(r)
+  return must > 0 ? t('camps.campsView.approvedMust', { n: must }) : t(`reviewStatus.${r.review}`)
+}
+function findingsClass(r: CampRow): string {
+  const f = findingsText(r.counts)
+  return f?.tone === 'error' ? 'text-error font-weight-medium' : f?.tone === 'warning' ? 'text-warning font-weight-medium' : ''
+}
+function nextText(r: CampRow): string {
+  const n = campNext(r)
+  return t(`camps.campsView.next.${n.key}`, n.params)
 }
 function deadlineText(r: CampRow): string {
   const d = r.nextDeadline
   if (!d) return t('camps.campsView.deadline.none')
   return `${t(`camps.campsView.deadline.kind.${d.kind}`)} ${formatIsoDate(d.due)}`
 }
-function deadlineColor(r: CampRow): string {
+function deadlineColor(r: CampRow): string | undefined {
   const s = r.nextDeadline ? deadlineStatus(r.nextDeadline, today) : 'done'
-  return s === 'overdue' ? 'error' : s === 'soon' ? 'warning' : 'default'
+  return s === 'overdue' ? 'error' : s === 'soon' ? 'warning' : undefined
 }
 function overdueDays(r: CampRow): number {
   return r.nextDeadline ? Math.max(0, daysBetween(r.nextDeadline.due, today)) : 0
@@ -123,32 +150,30 @@ function overdueDays(r: CampRow): number {
         data-testid="camps-search"
       />
       <v-btn
-        prepend-icon="mdi-refresh"
+        icon="mdi-refresh"
         variant="tonal"
         :loading="loading"
+        :aria-label="t('camps.campsView.refresh')"
         data-testid="camps-refresh"
         @click="refresh(true)"
       >
-        {{ t('camps.campsView.refresh') }}
+        <v-icon icon="mdi-refresh" />
+        <v-tooltip activator="parent" location="bottom">{{ t('camps.campsView.refresh') }}</v-tooltip>
       </v-btn>
     </div>
 
-    <div class="d-flex align-center flex-wrap ga-2 mb-3" data-testid="camps-phase-filter">
-      <v-chip
-        filter
-        variant="outlined"
-        :model-value="showEnded"
+    <div v-if="endedTotal > 0 || showEnded" class="d-flex align-center flex-wrap ga-3 mb-2" data-testid="camps-phase-filter">
+      <v-switch
+        v-model="showEnded"
+        :label="t('camps.campsView.showEnded', { n: endedTotal })"
+        color="primary"
+        density="compact"
+        hide-details
         data-testid="camps-show-ended"
-        @click="showEnded = !showEnded"
-      >
-        {{ t('camps.campsView.showEnded') }}
-      </v-chip>
-      <v-chip filter variant="outlined" :model-value="showOld" data-testid="camps-show-old" @click="showOld = !showOld">
-        {{ t('camps.campsView.showOld') }}
-      </v-chip>
+      />
       <span v-if="hiddenCount > 0" class="text-caption text-medium-emphasis" data-testid="camps-hidden-hint">
         {{ t('camps.campsView.hiddenHint', { n: hiddenCount }) }}
-        <v-btn size="x-small" variant="text" data-testid="camps-show-hidden" @click="showHidden">{{ t('camps.campsView.showHidden') }}</v-btn>
+        <v-btn size="x-small" variant="text" data-testid="camps-show-hidden" @click="showEnded = true">{{ t('camps.campsView.showHidden') }}</v-btn>
       </span>
     </div>
 
@@ -180,11 +205,11 @@ function overdueDays(r: CampRow): number {
         <tr>
           <th>{{ t('camps.campsView.columns.camp') }}</th>
           <th>{{ t('camps.campsView.columns.dates') }}</th>
-          <th>{{ t('camps.campsView.columns.role') }}</th>
           <th>{{ t('camps.campsView.columns.review') }}</th>
           <th>{{ t('camps.campsView.columns.findings') }}</th>
           <th>{{ t('camps.campsView.columns.deadline') }}</th>
-          <th>{{ t('camps.campsView.columns.changes') }}</th>
+          <th>{{ t('camps.campsView.columns.next') }}</th>
+          <th />
         </tr>
       </thead>
       <tbody>
@@ -198,43 +223,58 @@ function overdueDays(r: CampRow): number {
           @click="open(r)"
           @keydown.enter="open(r)"
         >
-          <td>
+          <td style="min-width: 12rem">
             <div class="font-weight-medium">
               {{ r.title }}
               <v-chip v-if="r.isPrototype" size="x-small" class="ml-1">{{ t('camps.campsView.prototype') }}</v-chip>
               <v-chip v-if="phaseLabel(r)" size="x-small" variant="tonal" class="ml-1">{{ phaseLabel(r) }}</v-chip>
+              <v-chip
+                v-if="r.role && isLeaderRole(r.role)"
+                size="x-small"
+                :color="roleColor(r.role)"
+                variant="tonal"
+                class="ml-1"
+                data-testid="camp-role-chip"
+              >
+                {{ t(`camps.campsView.roleChip.${r.role}`) }}
+              </v-chip>
+              <v-btn
+                v-if="isLeaderRole(r.role)"
+                size="x-small"
+                variant="text"
+                class="ml-1"
+                prepend-icon="mdi-clipboard-check-outline"
+                data-testid="camp-selfcheck-link"
+                @click.stop="openSelfCheck(r)"
+                @keydown.enter.stop
+              >
+                {{ t('selfCheck.campsLink') }}
+              </v-btn>
             </div>
             <div v-if="r.motto" class="text-caption text-medium-emphasis">{{ r.motto }}</div>
           </td>
-          <td class="text-no-wrap">{{ dates(r) }}</td>
+          <td :class="{ 'text-no-wrap': lgAndUp }">{{ dates(r) }}</td>
           <td>
-            <v-chip v-if="r.role" size="small" :color="roleColor(r.role)" variant="tonal">
-              {{ t(`camps.campsView.role.${r.role}`) }}
-            </v-chip>
-            <span v-else>–</span>
-            <v-btn
-              v-if="isLeaderRole(r.role)"
-              size="x-small"
-              variant="text"
-              class="ml-1"
-              prepend-icon="mdi-clipboard-check-outline"
-              data-testid="camp-selfcheck-link"
-              @click.stop="openSelfCheck(r)"
-              @keydown.enter.stop
-            >
-              {{ t('selfCheck.campsLink') }}
-            </v-btn>
+            <v-chip size="small" :color="reviewColor(r)" variant="tonal">{{ reviewText(r) }}</v-chip>
           </td>
-          <td>
-            <v-chip size="small" :color="reviewColor(r.review)" variant="tonal">{{ t(`reviewStatus.${r.review}`) }}</v-chip>
-          </td>
-          <td class="text-no-wrap">
-            <template v-if="r.counts">
-              <v-chip size="small" color="error" variant="tonal" class="mr-1" :title="t('camps.campsView.findings.must', { n: r.counts.must })">{{ r.counts.must }}</v-chip>
-              <v-chip size="small" color="warning" variant="tonal" class="mr-1" :title="t('camps.campsView.findings.should', { n: r.counts.should })">{{ r.counts.should }}</v-chip>
-              <v-chip size="small" color="info" variant="tonal" :title="t('camps.campsView.findings.hint', { n: r.counts.hint })">{{ r.counts.hint }}</v-chip>
-            </template>
-            <span v-else :title="t('camps.campsView.findings.neverEvaluated')">–</span>
+          <td data-testid="camp-findings-text">
+            <span v-if="r.counts && findingsText(r.counts)" :class="findingsClass(r)">
+              <template v-if="r.counts.must + r.counts.should + r.counts.hint === 0">{{ t('camps.campsView.findings.text.none') }}</template>
+              <template v-else>
+                {{
+                  [
+                    r.counts.must > 0 ? t('camps.campsView.findings.text.must', { n: r.counts.must }) : null,
+                    r.counts.should > 0 ? t('camps.campsView.findings.text.should', { n: r.counts.should }) : null,
+                    r.counts.hint > 0 ? t('camps.campsView.findings.text.hint', { n: r.counts.hint }, r.counts.hint) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                }}
+              </template>
+            </span>
+            <span v-else class="text-medium-emphasis" :title="t('camps.campsView.findings.neverEvaluated')">
+              {{ t('camps.campsView.findings.text.notChecked') }}
+            </span>
           </td>
           <td>
             <v-chip v-if="r.nextDeadline" size="small" :color="deadlineColor(r)" variant="tonal">
@@ -243,8 +283,30 @@ function overdueDays(r: CampRow): number {
             </v-chip>
             <span v-else class="text-medium-emphasis">{{ t('camps.campsView.deadline.none') }}</span>
           </td>
-          <td class="text-no-wrap">
-            {{ r.lastRoundAt ? t('camps.campsView.round.since', { date: formatIsoDate(r.lastRoundAt) }) : t('camps.campsView.round.none') }}
+          <td data-testid="camp-next">{{ nextText(r) }}</td>
+          <td class="text-no-wrap text-right">
+            <v-btn
+              v-if="lgAndUp"
+              size="small"
+              variant="text"
+              append-icon="mdi-chevron-right"
+              data-testid="camp-continue"
+              @click.stop="open(r)"
+              @keydown.enter.stop
+            >
+              {{ t('camps.campsView.continue') }}
+            </v-btn>
+            <v-btn
+              v-else
+              size="small"
+              variant="text"
+              icon="mdi-chevron-right"
+              :aria-label="t('camps.campsView.continue')"
+              :title="t('camps.campsView.continue')"
+              data-testid="camp-continue"
+              @click.stop="open(r)"
+              @keydown.enter.stop
+            />
           </td>
         </tr>
       </tbody>

@@ -45,4 +45,61 @@ export async function feedbackFlows({ page, step, go, shot }) {
     // Leave no overlay (snackbar) open: the next flow navigates by hash and Vuetify aborts that while one is active.
     await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 10000 }).catch(() => {})
   })
+
+  async function addActivityItem(body) {
+    await page.getByRole('button', { name: 'Aktivitäts-Punkt' }).click({ timeout: 5000 })
+    await page.locator('.v-select').first().click()
+    await page.locator('.v-overlay--active .v-list-item').first().click()
+    await page.locator('.v-card textarea').first().fill(body)
+    await page.getByRole('button', { name: 'Speichern', exact: true }).click()
+    await settle(500)
+    return page.getByTestId('feedback-item').filter({ hasText: body })
+  }
+
+  await step('flow: «In eCamp posten» can be undone within 5 s', async () => {
+    await go('feedback', 'flow-fb-undo')
+    const card = await addActivityItem('Undo-Test: Bitte Material ergänzen.')
+    await card.getByTestId('feedback-post').click({ timeout: 5000 })
+    await page.getByTestId('feedback-post-undo').click({ timeout: 3000 })
+    await settle(6500)
+    if ((await card.getAttribute('data-status')) !== 'draft') throw new Error('item was posted despite undo')
+    await shot(page, 'flow-fb-undone')
+  })
+
+  await step('flow: approval asks before «Bewilligt» with open blockers and needs a note for a Muss', async () => {
+    await go('runden', 'flow-fb-approve')
+    await page.getByRole('button', { name: 'Bewilligt', exact: true }).first().click({ timeout: 5000 })
+    await page.getByTestId('approval-dialog').waitFor({ timeout: 5000 })
+    await shot(page, 'flow-fb-approval-dialog')
+    const blockers = await page.getByTestId('approval-blockers').innerText()
+    if (!/offen|nicht/i.test(blockers)) throw new Error('no blockers listed: ' + blockers)
+    if (/Muss-Befund/.test(blockers)) {
+      if (await page.getByTestId('approval-force').isEnabled()) throw new Error('«Trotzdem bewilligen» enabled without note while a Muss is open')
+      await page.getByTestId('approval-note').locator('textarea').first().fill('Mit Leitenden besprochen.')
+    }
+    await page.getByTestId('approval-force').click()
+    await settle(800)
+    const chip = await page.locator('[data-mark="current"]').first().innerText()
+    if (!/Bewilligt/.test(chip)) throw new Error('status not approved: ' + chip)
+    await shot(page, 'flow-fb-approved')
+    // back to «In Prüfung» so later flows start from the usual state
+    await page.getByRole('button', { name: 'In Prüfung', exact: true }).first().click({ timeout: 5000 })
+    await settle(500)
+  })
+
+  await step('flow: copying the preview offers «Ja, gesendet» that marks drafts and requests changes', async () => {
+    await go('feedback', 'flow-fb-sent')
+    await page.getByTestId('preview-copy').click({ timeout: 5000 })
+    await page.getByTestId('sent-bar').waitFor({ timeout: 4000 })
+    await shot(page, 'flow-fb-sent-bar')
+    await page.getByTestId('sent-bar-confirm').click()
+    await settle(1500)
+    if (await page.locator('[data-testid="feedback-item"][data-status="draft"]').count()) throw new Error('drafts remain after «Ja, gesendet»')
+    await page.getByTestId('preview-include-sent').waitFor({ timeout: 3000 })
+    await shot(page, 'flow-fb-sent-done')
+    await go('runden', 'flow-fb-status-after-sent')
+    if (!/Änderungen angefragt/.test(await page.evaluate(() => document.body.innerText))) throw new Error('status «Änderungen angefragt» missing')
+    await page.getByRole('button', { name: 'In Prüfung', exact: true }).first().click({ timeout: 5000 })
+    await settle(500)
+  })
 }

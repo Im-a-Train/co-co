@@ -4,11 +4,13 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatBirthDate, maskBirthDate } from '@/domain/persons/age'
 import { germanRoleLabel } from '@/domain/persons/roleLabels'
-import type { PersonViewRow } from '@/domain/persons/view'
+import { stateRank, type PersonViewRow } from '@/domain/persons/view'
+import type { MidataQualKey } from '@/domain/types'
 import NdsStateChip from './NdsStateChip.vue'
-import QualDots from './QualDots.vue'
 
-defineProps<{ rows: PersonViewRow[]; qualificationsReadable: boolean }>()
+defineProps<{ rows: PersonViewRow[]; qualificationsReadable: boolean; qualColumns: MidataQualKey[] }>()
+const QUAL_COLOR = { valid: 'success', invalid: 'warning', none: 'error' } as const
+const QUAL_MARK = { valid: '✓', invalid: '!', none: '✗' } as const
 const { t } = useI18n()
 function roleText(_item: PersonViewRow, r: string): string {
   return germanRoleLabel(r, t)
@@ -23,8 +25,7 @@ const headers = [
   { title: t('persons.table.age'), key: 'age' },
   { title: t('persons.table.jsAge'), key: 'jsAge' },
   { title: t('persons.table.quals'), key: 'quals', sortable: false },
-  { title: t('persons.table.state'), key: 'state' },
-  { title: t('persons.table.ndsNumber'), key: 'ndsNumber' },
+  { title: t('persons.table.state'), key: 'state', sort: (a: string, b: string) => stateRank(a as never) - stateRank(b as never) },
   { title: t('persons.table.rega'), key: 'rega' },
 ]
 </script>
@@ -71,25 +72,37 @@ const headers = [
         <td>{{ item.age ?? '–' }}</td>
         <td>
           <v-chip
-            v-if="item.age !== null"
+            v-if="item.kind === 'participant' && item.age !== null && !item.jsAge"
             size="x-small"
             label
-            :color="item.jsAge ? 'success' : 'grey'"
+            color="warning"
             variant="tonal"
             data-testid="persons-jsage"
           >
-            {{ item.jsAge ? t('persons.jsAge.yes') : t('persons.jsAge.no') }}
+            {{ t('persons.jsAge.no') }}
           </v-chip>
           <span v-else>–</span>
         </td>
         <td>
-          <QualDots v-if="item.kind === 'leader' && qualificationsReadable" :quals="item.qualifications" />
+          <div v-if="item.kind === 'leader' && qualificationsReadable" class="d-flex flex-wrap ga-1" data-testid="qual-chips">
+            <v-chip
+              v-for="k in qualColumns"
+              :key="k"
+              size="x-small"
+              label
+              variant="tonal"
+              :color="QUAL_COLOR[item.qualifications[k] ?? 'none']"
+              :title="`${t(`persons.qualKey.${k}`)}: ${t(`persons.qual.${item.qualifications[k] ?? 'none'}`)}`"
+              data-testid="qual-chip"
+            >
+              {{ t(`persons.qualShort.${k}`) }} {{ QUAL_MARK[item.qualifications[k] ?? 'none'] }}
+            </v-chip>
+          </div>
           <v-tooltip v-else-if="item.kind === 'leader'" location="top" :text="t('persons.qual.unreadable')">
             <template #activator="{ props: tip }"><span v-bind="tip">–</span></template>
           </v-tooltip>
         </td>
         <td><NdsStateChip :row="item" :reveal="reveal" /></td>
-        <td>{{ item.ndsNumber ?? '–' }}</td>
         <td>
           <v-chip
             v-if="item.rega !== null || (item.kind === 'participant' && item.ndsNumber !== null)"

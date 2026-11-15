@@ -6,6 +6,13 @@
     "status": {
       "loggedIn": "Angemeldet",
       "loggedOut": "Nicht angemeldet"
+    },
+    "account": {
+      "testInstance": "Test",
+      "expired": "Sitzung abgelaufen",
+      "settings": "Konto und Verbindungen",
+      "signOut": "Abmelden",
+      "fallbackName": "Angemeldet"
     }
   },
   "common": {
@@ -57,6 +64,8 @@
   },
   "campLayout": {
     "backToList": "Zurück zu Meine Lager",
+    "reloadTooltip": "Aus eCamp neu laden",
+    "loadedAt": "Stand {time}",
     "loadFailed": "Lager konnte nicht geladen werden"
   },
   "severity": {
@@ -80,7 +89,7 @@
   },
   "reviewStatus": {
     "neu": "Neu",
-    "in_review": "In Review",
+    "in_review": "In Prüfung",
     "aenderungen_angefragt": "Änderungen angefragt",
     "bewilligt": "Bewilligt",
     "bewilligt_mit_auflagen": "Bewilligt mit Auflagen"

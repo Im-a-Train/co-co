@@ -4,7 +4,7 @@ export async function selfCheckFlows({ page, step, go, shot, BASE }) {
   void BASE
   const text = () => page.evaluate(() => document.body.innerText)
 
-  await step('flow: selfcheck tab shows intro, KPIs and empty history', async () => {
+  await step('flow: selfcheck tab shows intro, report and empty history', async () => {
     await go('selbstcheck', 'flow-selfcheck')
     await page.waitForSelector('[data-testid="selfcheck-start"]', { timeout: 8000 })
     const t = await text()

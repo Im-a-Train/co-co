@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { parseGpxText, gpxNames } from '../extract'
 import {
   buildSearchIndex,
+  activityOptions,
+  checkCounts,
   checkSafetyConcept,
+  isConceptGuess,
+  isSafetyConcept,
+  looksLikeSafetyConcept,
   compareGpxToSlot,
   detectKind,
   documentFactsFrom,
@@ -183,6 +188,20 @@ Erste Hilfe: Apotheke im Zelt, verantwortlich Anna. Lageradresse: Waldweg 5, Ber
     const r = checkSafetyConcept('Tel 031 1144 55, Preis 1445')
     expect(r.items.find((i) => i.key === 'emergencyNumbers')!.snippets).toHaveLength(0)
   })
+  it('recognises natural bad-weather wording', () => {
+    const bw = (t: string) => checkSafetyConcept(t).items.find((i) => i.key === 'badWeather')!.found
+    expect(bw('Alternativprogramm bei schlechtem Wetter')).toBe(true)
+    expect(bw('Bei Regenwetter gehen wir ins Haus')).toBe(true)
+    expect(bw('Bei Regen drinnen')).toBe(true)
+    expect(bw('Sonnige Tage')).toBe(false)
+  })
+  it('reports partial emergency numbers', () => {
+    const item = checkSafetyConcept('Rega 1414, Sanität 144').items.find((i) => i.key === 'emergencyNumbers')!
+    expect(item.found).toBe(false)
+    expect(item.partial).toEqual({ present: ['144', '1414'], min: 3 })
+    const none = checkSafetyConcept('nichts').items.find((i) => i.key === 'emergencyNumbers')!
+    expect(none.partial).toBeUndefined()
+  })
   it('detects camp address from facts and coordinates', () => {
     expect(checkSafetyConcept('Treffpunkt Pfadiheim Eiche', facts()).items.find((i) => i.key === 'campAddress')!.found).toBe(true)
     expect(checkSafetyConcept('Position 46.9481, 7.4474').items.find((i) => i.key === 'campAddress')!.found).toBe(true)
@@ -317,5 +336,35 @@ describe('ingestDocument', () => {
     const { record } = await ingestDocument(input('bild.png', 'x'), null, ctx)
     expect(record.extractError).toBeTruthy()
     expect(record.zone).toBe('yellow')
+  })
+})
+
+describe('safety concept guess', () => {
+  it('guesses from the file name until the coach decides', () => {
+    expect(looksLikeSafetyConcept('Sicherheitskonzept_SoLa.pdf')).toBe(true)
+    expect(looksLikeSafetyConcept('programm.pdf')).toBe(false)
+    expect(isSafetyConcept({ name: 'sicherheitskonzept.txt', safetyConcept: null })).toBe(true)
+    expect(isConceptGuess({ name: 'sicherheitskonzept.txt', safetyConcept: null })).toBe(true)
+    expect(isSafetyConcept({ name: 'sicherheitskonzept.txt', safetyConcept: false })).toBe(false)
+    expect(isSafetyConcept({ name: 'materialliste.xlsx', safetyConcept: true })).toBe(true)
+    expect(isConceptGuess({ name: 'materialliste.xlsx', safetyConcept: true })).toBe(false)
+  })
+})
+
+describe('activityOptions', () => {
+  it('lists activities in programme order with day and time', () => {
+    const opts = activityOptions(facts())
+    expect(opts.length).toBeGreaterThan(0)
+    for (const o of opts) expect(o.time === null || /^\d{2}:\d{2}$/.test(o.time)).toBe(true)
+    expect(activityOptions(null)).toEqual([])
+  })
+})
+
+describe('checkCounts', () => {
+  it('counts coach confirmations as present', () => {
+    const r = checkSafetyConcept('Notfall 144')
+    const base = checkCounts(r)
+    expect(base.total).toBe(8)
+    expect(checkCounts(r, ['hospital']).found).toBe(base.found + 1)
   })
 })

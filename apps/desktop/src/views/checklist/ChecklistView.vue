@@ -6,7 +6,6 @@
  */
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink } from 'vue-router'
 import CoachChecklistCard from '@/components/camps/CoachChecklistCard.vue'
 import DeadlineStatusChip from '@/components/rules/DeadlineStatusChip.vue'
 import { useCampFacts } from '@/composables/useCampFacts'
@@ -19,10 +18,14 @@ import {
   buildChecklistRows,
   buildCustomRows,
   coachDeadlines,
+  deadlineDateField,
+  deadlineDateValue,
   deadlineKey,
   planItemToggle,
   planMilestoneToggle,
+  showStatusChip,
   splitHidden,
+  withDeadlineDate,
   withDeadlineDone,
   type ChecklistRow,
   type SyncPlan,
@@ -33,7 +36,7 @@ import { listCampSummaries } from '@/domain/rules/store'
 import type { CoachInputs, Deadline } from '@/domain/types'
 
 const { t } = useI18n()
-const { campId, campIri } = useCampRoute()
+const { campIri } = useCampRoute()
 const { facts, load: loadFacts } = useCampFacts(campIri)
 const settings = useCampSettings(campIri)
 const rc = useCampRuleConfig(campIri)
@@ -143,6 +146,19 @@ async function run(plan: SyncPlan, deadline: Pick<Deadline, 'kind' | 'milestoneI
   }
 }
 
+/** Inline date of a deadline row: NDS «angemeldet/abgeschlossen am», Leih-/Landeskarten «Lieferdatum». */
+async function setDeadlineDate(d: Deadline, value: string): Promise<void> {
+  saveError.value = null
+  try {
+    const stored = settings.coachInputs.value
+    const current: CoachInputs = stored ? JSON.parse(JSON.stringify(stored)) : emptyCoachInputs(campIri.value)
+    await settings.saveCoachInputs(withDeadlineDate(current, d.kind, value || null))
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+const dateValueOf = (d: Deadline): string => deadlineDateValue(settings.coachInputs.value, d.kind) ?? ''
+
 function toggleDeadline(d: Deadline, done: boolean): Promise<void> {
   if (d.kind === 'pbs-milestone' && d.milestoneId) return run(planMilestoneToggle(d.milestoneId, done, loadBundledChecklist()), d, done)
   // Other kinds have their own flag in CoachInputs (the same one «Angaben» edits) and no checklist twin.
@@ -161,6 +177,7 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
     <p class="text-body-2 text-medium-emphasis mb-1">{{ t('campConfig.checklist.tabIntro') }}</p>
     <p class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">{{ t('campConfig.checklist.leadersCaption') }}</p>
     <v-switch
+      v-if="hiddenCount > 0"
       v-model="showHidden"
       :label="t('campConfig.checklist.showHidden', { n: hiddenCount })"
       density="compact"
@@ -194,10 +211,47 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
             @update:model-value="(v: boolean | null) => toggleDeadline(r.d, v === true)"
           />
           <div class="flex-grow-1">
-            <div class="text-body-2" :class="{ 'text-medium-emphasis': r.d.done }">{{ r.title }}</div>
+            <div class="text-body-2" :class="{ 'text-medium-emphasis': r.d.done }">
+              {{ r.title }}
+              <v-chip
+                v-if="r.d.kind === 'pbs-milestone' && r.d.confidence === 'unverified'"
+                size="x-small"
+                label
+                color="warning"
+                variant="tonal"
+                class="ml-1"
+                :title="t('campConfig.checklist.unconfirmedHint')"
+                data-testid="unverified-badge"
+              >
+                {{ t('campConfig.checklist.unconfirmed') }}
+              </v-chip>
+            </div>
             <div class="text-caption text-medium-emphasis">{{ fmt(r.d.due) }} · {{ relative(r.left) }}</div>
+            <div v-if="deadlineDateField(r.d.kind) === 'done' && r.d.done" class="d-flex align-center flex-wrap ga-2 mt-1" data-testid="deadline-done-date">
+              <span class="text-caption">{{ t(`campConfig.checklist.doneOn.${r.d.kind}`, { date: dateValueOf(r.d) ? fmt(dateValueOf(r.d)) : '–' }) }}</span>
+              <input
+                type="date"
+                class="cl-date"
+                :value="dateValueOf(r.d)"
+                :aria-label="t('campConfig.checklist.doneDateAria')"
+                data-testid="deadline-done-date-input"
+                @change="(e: Event) => setDeadlineDate(r.d, (e.target as HTMLInputElement).value)"
+              />
+            </div>
+            <div v-else-if="deadlineDateField(r.d.kind) === 'delivery'" class="d-flex align-center flex-wrap ga-2 mt-1" data-testid="deadline-delivery">
+              <label class="text-caption" :for="`delivery-${r.key}`">{{ t('campConfig.checklist.deliveryLabel') }}</label>
+              <input
+                :id="`delivery-${r.key}`"
+                type="date"
+                class="cl-date"
+                :value="dateValueOf(r.d)"
+                :title="t('campConfig.checklist.deliveryHint')"
+                data-testid="deadline-delivery-input"
+                @change="(e: Event) => setDeadlineDate(r.d, (e.target as HTMLInputElement).value)"
+              />
+            </div>
           </div>
-          <DeadlineStatusChip :status="r.status" />
+          <DeadlineStatusChip v-if="showStatusChip(r.status)" :status="r.status" />
           <v-btn
             v-if="!isHidden(r.key)"
             icon="mdi-eye-off-outline"
@@ -210,10 +264,6 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
           />
           <v-btn v-else size="x-small" variant="text" data-testid="deadline-restore" @click="setHidden(r.key, false)">{{ t('campConfig.checklist.restore') }}</v-btn>
         </div>
-        <p class="text-caption text-medium-emphasis mt-2 mb-0">
-          {{ t('campConfig.checklist.deadlinesHint') }}
-          <RouterLink :to="`/lager/${campId}/angaben`">{{ t('campConfig.checklist.toInputs') }}</RouterLink>
-        </p>
       </v-card-text>
     </v-card>
 
@@ -227,3 +277,14 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
     />
   </div>
 </template>
+
+<style scoped>
+.cl-date {
+  border: 1px solid rgba(var(--v-border-color), 0.4);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.8125rem;
+  color: inherit;
+  background: transparent;
+}
+</style>

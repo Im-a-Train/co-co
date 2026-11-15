@@ -11,7 +11,7 @@ import type { NewFeedback } from '@/composables/useFeedback'
 import { itemFromFinding, KIND_ORDER } from '@/domain/feedback'
 import { groupFeedback, type FeedbackStructure } from '@/domain/feedback/structure'
 import { manualToFinding } from '@/domain/manualFindings'
-import { findingStatus } from '@/domain/triage'
+import { findingStatus, isCoachTodo } from '@/domain/triage'
 import type { CampFacts, DocumentRecord, FeedbackItem, FeedbackKind, Finding, Iri, ManualFindingCategory } from '@/domain/types'
 
 type DocLike = Pick<DocumentRecord, 'id' | 'name' | 'activityIris'>
@@ -60,7 +60,7 @@ const manualRows = computed<Row[]>(() =>
 const autoRows = computed<Row[]>(() =>
   toRows(
     findingsHandle.findings.value.filter(
-      (f) => f.origin !== 'manual' && findingStatus(f, props.feedbackItems) === 'open',
+      (f) => f.origin !== 'manual' && !isCoachTodo(f) && findingStatus(f, props.feedbackItems) === 'open',
     ),
   ),
 )

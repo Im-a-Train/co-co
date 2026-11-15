@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** /lager/:campId/befunde: triage ("Befunde durchgehen") or the grouped list with filters, ignore and Feedback erstellen. */
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -11,7 +11,19 @@ import {
   type FindingFilter,
 } from '@/domain/cockpit'
 import { campIdFromIri } from '@/domain/iri'
-import { activityIriOfFinding, gridLocationFromFinding, recallPosition, rememberPosition, statusesOf } from '@/domain/triage'
+import {
+  activityIriOfFinding,
+  groupFindings,
+  gridLocationFromFinding,
+  isCoachTodo,
+  recallPosition,
+  rememberPosition,
+  statusesOf,
+  type FindingGroupEntry,
+} from '@/domain/triage'
+import { itemFromFindingGroup } from '@/domain/feedback'
+import { saveFeedback } from '@/domain/feedback/store'
+import { formatDateList } from '@/domain/selfCheck'
 import { useFeedback } from '@/composables/useFeedback'
 import type { ActivityFact, Finding, Iri, RuleGroup } from '@/domain/types'
 import { loadBundledPacks, modulesOf } from '@/domain/rules/packs'
@@ -20,7 +32,9 @@ import { useRuleEdits } from '@/composables/useRuleEdits'
 import AiCampReviewButton from '@/components/ai/AiCampReviewButton.vue'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
 import { createFeedbackFromFinding } from '@/components/cockpit/feedbackAction'
+import CoachTodoBlock from '@/components/cockpit/CoachTodoBlock.vue'
 import FindingCard from '@/components/cockpit/FindingCard.vue'
+import FindingGroupCard from '@/components/cockpit/FindingGroupCard.vue'
 import FindingTriage, { type FeedbackDraft } from '@/components/cockpit/FindingTriage.vue'
 import CategoryExclusionDialog from '@/components/cockpit/CategoryExclusionDialog.vue'
 import OverrideDialog from '@/components/cockpit/OverrideDialog.vue'
@@ -54,14 +68,27 @@ const groupOptions: RuleGroup[] = (() => {
 })()
 
 const visible = computed(() => filterFindings(findings.value, filter))
-const groups = computed(() => groupBySeverity(visible.value))
+/** Findings that wait for an input of the coach: shown on top, never grouped or turned into feedback. */
+const todoFindings = computed(() => visible.value.filter(isCoachTodo))
+const groups = computed(() =>
+  groupBySeverity(visible.value.filter((f) => !isCoachTodo(f))).map((g) => ({
+    ...g,
+    // Same-rule day findings form one entry (coach findings stay single).
+    entries: (g.key === 'coach' ? g.findings.map((f): FindingGroupEntry => ({ key: f.id, ruleId: f.ruleId, severity: f.severity, findings: [f], dates: [] })) : groupFindings(g.findings, facts.value)),
+  })),
+)
+const topicCount = computed(() => groups.value.reduce((n, g) => n + g.entries.length, 0))
+const findingCount = computed(() => groups.value.reduce((n, g) => n + g.findings.length, 0))
 const activityTitle = computed(() => (facts.value && filter.activityIri ? activityLabel(facts.value, filter.activityIri) : ''))
 
 const error = ref<string | null>(null)
-const overrideTarget = ref<Finding | null>(null)
+const overrideTargets = shallowRef<Finding[]>([])
 const overrideOpen = ref(false)
 const disabledDialog = ref(false)
 const exclusionDialog = ref(false)
+function openCategoryMapping() {
+  void router.push({ name: 'camp-grid', params: { campId: campIdFromIri(campIri.value) }, query: { zuordnung: '1' } })
+}
 const notice = ref<string | null>(null)
 const ruleEdits = useRuleEdits()
 const editRuleId = ref<string | null>(null)
@@ -122,7 +149,7 @@ const triageFindings = computed(() => {
 })
 const triageKey = computed<string | null>({
   get() {
-    const list = triageFindings.value
+    const list = triageFindings.value.filter((f) => !isCoachTodo(f))
     const k = requestedKey.value ?? recallPosition(campIri.value)
     if (k && list.some((f) => f.id === k)) return k
     const firstOpen = list.findIndex((f) => statusesOf([f], feedbackHandle.items.value)[0] === 'open')
@@ -146,18 +173,35 @@ watch(
   },
 )
 
-async function triageSave(f: Finding, draft: FeedbackDraft) {
-  const activityIri = draft.scope === 'activity' ? (activityIriOfFinding(f, facts.value) ?? undefined) : undefined
-  error.value = await tryAction(() =>
-    feedbackHandle.add({
-      scope: activityIri ? 'activity' : 'camp',
-      kind: draft.kind,
-      text: draft.text.trim(),
-      activityIri,
-      ruleId: f.ruleId,
-      findingId: f.id,
-    }),
-  )
+async function triageSave(group: FindingGroupEntry, draft: FeedbackDraft) {
+  const first = group.findings[0]
+  if (!first) return
+  const activityIri = draft.scope === 'activity' ? (activityIriOfFinding(first, facts.value) ?? undefined) : undefined
+  if (group.findings.length === 1) {
+    error.value = await tryAction(() =>
+      feedbackHandle.add({
+        scope: activityIri ? 'activity' : 'camp',
+        kind: draft.kind,
+        text: draft.text.trim(),
+        activityIri,
+        ruleId: first.ruleId,
+        findingId: first.id,
+      }),
+    )
+    return
+  }
+  // One item for the whole group (FeedbackItem.findingIds).
+  error.value = await tryAction(async () => {
+    const item = itemFromFindingGroup(group, campIri.value, formatDateList(group.dates))
+    item.kind = draft.kind
+    item.text = draft.text.trim()
+    if (activityIri) {
+      item.scope = 'activity'
+      item.activityIri = activityIri
+    } else item.scope = 'camp'
+    await saveFeedback(JSON.parse(JSON.stringify(item)))
+    await feedbackHandle.reload()
+  })
 }
 function openFeedbackItem(id: string) {
   void router.push({ name: 'camp-feedback', params: { campId: campIdFromIri(campIri.value) }, query: { item: id } })
@@ -169,19 +213,56 @@ const aiActivityFact = computed<ActivityFact | null>(
 )
 
 function askOverride(f: Finding) {
-  overrideTarget.value = f
+  overrideTargets.value = [f]
   overrideOpen.value = true
 }
-async function doOverride(f: Finding, reason: string) {
-  error.value = await tryAction(() => findingsHandle.override(f, reason))
+function askOverrideGroup(g: FindingGroupEntry) {
+  overrideTargets.value = g.findings.filter((f) => !f.override)
+  overrideOpen.value = true
+}
+async function doOverride(list: Finding[], reason: string) {
+  error.value = await tryAction(async () => {
+    for (const f of list) await findingsHandle.override(f, reason)
+  })
 }
 async function undoOverride(f: Finding) {
   error.value = await tryAction(() => findingsHandle.removeOverride(f))
 }
+async function undoOverrides(list: Finding[]) {
+  error.value = await tryAction(async () => {
+    for (const f of list) if (f.override) await findingsHandle.removeOverride(f)
+  })
+}
 async function feedback(f: Finding) {
   error.value = await createFeedbackFromFinding(router, campIri.value, f)
 }
-/** Jump to the grid; the origin is carried along so the grid can offer «Zurück zum Befund». */
+/** One feedback item for a whole group, then jump to the feedback tab (like «Feedback erstellen» on a single finding). */
+async function feedbackGroup(g: FindingGroupEntry) {
+  error.value = await tryAction(async () => {
+    const item = itemFromFindingGroup(g, campIri.value, formatDateList(g.dates))
+    await saveFeedback(JSON.parse(JSON.stringify(item)))
+    await router.push({ name: 'camp-feedback', params: { campId: campIdFromIri(campIri.value) }, query: { item: item.id } })
+  })
+}
+function toFeedback() {
+  void router.push({ name: 'camp-feedback', params: { campId: campIdFromIri(campIri.value) } })
+}
+/** Jump to the grid; the origin is carried along so the grid can offer «Zurück zum Befund». A day finding passes its day (`tag`). */
+function openGrid(target: { activityIri: Iri | null; dayIri: Iri | null }) {
+  const id = triageKey.value
+  if (id) rememberPosition(campIri.value, id)
+  if (!id) {
+    void router.push({ name: 'camp-grid', params: { campId: campIdFromIri(campIri.value) }, query: target.dayIri ? { tag: target.dayIri } : target.activityIri ? { activity: target.activityIri } : {} })
+    return
+  }
+  void router.push(
+    gridLocationFromFinding(campIri.value, id, target.activityIri, {
+      list: mode.value === 'list',
+      filterActivity: filter.activityIri,
+      dayIri: target.dayIri,
+    }),
+  )
+}
 function openActivity(iri: Iri, findingId?: string) {
   const id = findingId ?? triageKey.value
   if (id) rememberPosition(campIri.value, id)
@@ -238,7 +319,7 @@ function addAi(list: Finding[]) {
         prepend-icon="mdi-filter-remove-outline"
         :text="t('findings.categoryExclusion.button')"
         data-testid="category-exclusion-open"
-        @click="exclusionDialog = true"
+        @click="openCategoryMapping"
       />
       <v-chip
         v-if="disabledRules.length"
@@ -302,13 +383,17 @@ function addAi(list: Finding[]) {
       :focus-editor="triageKey === focusEditorKey"
       @save-feedback="triageSave"
       @ignore="doOverride"
-      @unignore="undoOverride"
+      @unignore="undoOverrides"
+      @open-grid="openGrid"
       @open-activity="(iri: string) => openActivity(iri)"
       @open-feedback="openFeedbackItem"
       @exclude-category="excludeForRule"
+      @to-feedback="toFeedback"
     />
 
     <template v-else>
+      <CoachTodoBlock :findings="todoFindings" :camp-iri="campIri" />
+
       <div class="d-flex flex-wrap align-center ga-3 mb-3">
         <v-text-field
           v-model="filter.search"
@@ -347,7 +432,12 @@ function addAi(list: Finding[]) {
         <AiSafetyReviewButton :activity="aiActivityFact" :facts="facts" @findings="addAi" />
       </div>
 
-      <v-alert v-if="!groups.length && !evaluating" type="info" variant="tonal" density="compact">
+      <div v-if="groups.length" class="text-body-2 text-medium-emphasis mb-3" data-testid="findings-counter">
+        {{ t('findings.counter.topics', { count: topicCount }, topicCount) }} ·
+        {{ t('findings.counter.findings', { count: findingCount }, findingCount) }}
+      </div>
+
+      <v-alert v-if="!groups.length && !todoFindings.length && !evaluating" type="info" variant="tonal" density="compact">
         {{ findings.length ? t('findings.empty') : t('findings.emptyAll') }}
       </v-alert>
 
@@ -359,21 +449,45 @@ function addAi(list: Finding[]) {
           <SeverityChip v-else-if="g.severity" :severity="g.severity" :count="g.findings.length" />
         </h2>
         <div class="d-flex flex-column ga-2">
-          <FindingCard
-            v-for="f in g.findings"
-            :key="f.id"
-            :finding="f"
-            :data-finding-id="f.id"
-            tabindex="-1"
-            class="finding-card"
-            @feedback="feedback"
-            @override="askOverride"
-            :can-exclude-category="canExclude(f)"
-            @exclude-category="excludeForRule"
-            @edit-rule="editRule"
-            @remove-override="undoOverride"
-            @open-activity="(iri: string) => openActivity(iri, f.id)"
-          />
+          <template v-for="e in g.entries" :key="e.key">
+            <FindingGroupCard
+              v-if="e.findings.length > 1"
+              :group="e"
+              :open="!!listTarget && e.findings.some((x) => x.id === listTarget)"
+              @feedback="feedbackGroup"
+              @override="askOverrideGroup"
+            >
+              <FindingCard
+                v-for="f in e.findings"
+                :key="f.id"
+                :finding="f"
+                :data-finding-id="f.id"
+                tabindex="-1"
+                class="finding-card"
+                @feedback="feedback"
+                @override="askOverride"
+                :can-exclude-category="canExclude(f)"
+                @exclude-category="excludeForRule"
+                @edit-rule="editRule"
+                @remove-override="undoOverride"
+                @open-activity="(iri: string) => openActivity(iri, f.id)"
+              />
+            </FindingGroupCard>
+            <FindingCard
+              v-else
+              :finding="e.findings[0]!"
+              :data-finding-id="e.findings[0]!.id"
+              tabindex="-1"
+              class="finding-card"
+              @feedback="feedback"
+              @override="askOverride"
+              :can-exclude-category="canExclude(e.findings[0]!)"
+              @exclude-category="excludeForRule"
+              @edit-rule="editRule"
+              @remove-override="undoOverride"
+              @open-activity="(iri: string) => openActivity(iri, e.findings[0]!.id)"
+            />
+          </template>
         </div>
       </section>
     </template>
@@ -385,12 +499,12 @@ function addAi(list: Finding[]) {
       :categories="facts?.categories ?? []"
       :exclusions="categoryExclusions"
       :rules="allRules"
-      @exclude="(cat: string, ruleId: string | null) => findingsHandle.excludeCategory(cat, ruleId)"
+      @open-grid="openCategoryMapping"
       @include="(cat: string, ruleId: string | null) => findingsHandle.includeCategory(cat, ruleId)"
     />
     <v-snackbar :model-value="!!notice" timeout="4000" @update:model-value="notice = null">{{ notice }}</v-snackbar>
 
-    <OverrideDialog v-model="overrideOpen" :finding="overrideTarget" @confirm="doOverride" />
+    <OverrideDialog v-model="overrideOpen" :findings="overrideTargets" @confirm="doOverride" />
 
     <v-dialog v-model="disabledDialog" max-width="520">
       <v-card :title="t('findings.disabledDialog.title')">

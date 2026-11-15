@@ -22,7 +22,7 @@ import {
   saveDocument,
   saveWatchedFolder,
 } from '@/domain/documents/store'
-import type { DocumentRecord, DocumentSource, Iri, WatchedFolder } from '@/domain/types'
+import type { DocumentRecord, DocumentSource, Iri, SafetyCheckKey, WatchedFolder } from '@/domain/types'
 import { useCampFacts } from './useCampFacts'
 
 export const DOCUMENT_FILTERS = [{ name: 'Dokumente', extensions: ['pdf', 'docx', 'xlsx', 'gpx', 'txt', 'md'] }]
@@ -213,6 +213,17 @@ export function useDocuments(campIri: MaybeRefOrGetter<Iri>) {
     await persist({ ...d, linkSuggestions: d.linkSuggestions.filter((s) => s.activityIri !== activityIri) })
   }
 
+  /** Local decision: is this file the camp's safety concept (null = not decided, name guess applies). */
+  const setSafetyConcept = (id: string, safetyConcept: boolean | null) => update(id, { safetyConcept })
+
+  /** Coach confirms (or withdraws) that a checklist item is present although co-co did not find it. */
+  async function setDocCheckConfirmed(id: string, key: SafetyCheckKey, value: boolean) {
+    const d = documents.value.find((x) => x.id === id)
+    if (!d) return
+    const rest = (d.docCheckConfirmed ?? []).filter((k) => k !== key)
+    await update(id, { docCheckConfirmed: value ? [...rest, key] : rest })
+  }
+
   const setAiAllowed = (id: string, aiAllowed: boolean) => update(id, { aiAllowed, ...(aiAllowed ? {} : { aiSummary: null }) })
   const setAiSummary = (id: string, aiSummary: string) => update(id, { aiSummary })
 
@@ -280,5 +291,7 @@ export function useDocuments(campIri: MaybeRefOrGetter<Iri>) {
     rejectSuggestion,
     setAiAllowed,
     setAiSummary,
+    setSafetyConcept,
+    setDocCheckConfirmed,
   }
 }

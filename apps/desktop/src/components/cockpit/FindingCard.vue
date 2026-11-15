@@ -28,6 +28,8 @@ const moduleNote = computed(() => {
   const note = t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason })
   return reason ? note : note.replace(' ()', '')
 })
+/** Confidence is only shown when the coach has to act on it. */
+const needsConfidenceNote = computed(() => props.finding.confidence === 'unverified' || props.finding.confidence === 'conflict')
 const url = computed(() => safeExternalUrl(props.finding.source?.url))
 /** Hilfsmittel key of the primary source (the cited source whose URL is the finding's source URL). */
 const sourceKey = computed(() => {
@@ -67,8 +69,11 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.manual.tag') }}
         </v-chip>
         <template v-else>
-          <v-chip size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
-          <v-chip size="x-small" label variant="text">{{ t(`confidence.${finding.confidence}`) }}</v-chip>
+          <!-- The rule id lives under «Warum?» (explain panel); only findings without one keep a chip. -->
+          <v-chip v-if="!finding.explain" size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
+          <v-chip v-if="needsConfidenceNote" size="x-small" label color="warning" variant="tonal" data-testid="finding-unsure">
+            {{ t('findings.unsure') }}
+          </v-chip>
         </template>
         <v-chip v-if="finding.origin === 'ai'" size="x-small" color="secondary" label>
           {{ t('findings.aiTag') }}

@@ -4,14 +4,17 @@
  * and by `clear()` (which also wipes the copy held in Rust).
  */
 import { computed, ref, shallowRef, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
+import { makeAreaOf, makeKeywordsOf } from '@/components/midata/areas'
+import { buildQualificationMatrix, type QualificationMatrix } from '@/domain/midata'
+import { getAreaOverrides, type CampAreaOverrides } from '@/domain/midata/areaOverrides'
 import { summarizePersons, toViewRows, type PersonsSummary } from '@/domain/persons/view'
 import { diffPersons } from '@/domain/persons/diff'
 import type { MidataPersonsResult, NdsPersonsResult, PersonDiffRow } from '@/domain/persons/types'
 import type { Iri } from '@/domain/types'
 import { commands, errorMessage } from '@/lib/tauri'
 import { useCampFacts } from './useCampFacts'
-import { useCampMidata } from './useMidata'
-import { useCampNds } from './useNds'
+import { useCampMidata, useMidata, type CampMidataHandle } from './useMidata'
+import { useCampNds, useNds, type CampNdsHandle } from './useNds'
 import { useSession } from './useSession'
 import { onDataStoreLocked } from './useDataStore'
 
@@ -52,12 +55,26 @@ export interface PersonsHandle {
   summary: ComputedRef<PersonsSummary>
   midataLinked: ComputedRef<boolean>
   ndsLinked: ComputedRef<boolean>
+  /** NDS is switched on in the settings (a link alone is not enough to load). */
+  ndsEnabled: ComputedRef<boolean>
+  midataConnected: ComputedRef<boolean>
+  ndsConnected: ComputedRef<boolean>
+  /** Link + picker state of the sources (the pickers are the same as on «Angaben»). */
+  midataCamp: CampMidataHandle
+  ndsCamp: CampNdsHandle
+  /** Qualification matrix from the stored MiData aggregate (not from the in-memory person list). */
+  qualMatrix: ComputedRef<QualificationMatrix | null>
+  /** At least one linked, usable source. */
+  canLoad: ComputedRef<boolean>
+  loading: ComputedRef<boolean>
   loadingMidata: typeof loadingMidata
   loadingNds: typeof loadingNds
   midataError: typeof midataError
   ndsError: typeof ndsError
   loadMidata(): Promise<void>
   loadNds(): Promise<void>
+  /** One click: loads every linked source in parallel (still an explicit action, ADR 0009). */
+  loadAll(): Promise<void>
   clear(): Promise<void>
 }
 
@@ -65,8 +82,21 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
   const { facts } = useCampFacts(campIri)
   const mdCamp = useCampMidata(campIri, facts)
   const ndsCamp = useCampNds(campIri, facts)
+  const md = useMidata()
+  const ndsSettings = useNds()
+  void md.init()
+  void ndsSettings.init()
   void mdCamp.load()
   void ndsCamp.load()
+
+  const dismissed = ref<CampAreaOverrides>({})
+  async function loadDismissed(iri: Iri): Promise<void> {
+    try {
+      dismissed.value = await getAreaOverrides(iri)
+    } catch {
+      dismissed.value = {}
+    }
+  }
 
   if (!watchingSession) {
     watchingSession = true
@@ -84,6 +114,7 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
     (iri) => {
       if (currentCamp !== null && currentCamp !== iri) void wipeAll()
       currentCamp = iri
+      void loadDismissed(iri)
     },
     { immediate: true },
   )
@@ -93,6 +124,16 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
 
   const compared = computed(() => midata.value !== null && nds.value !== null)
   const summary = computed(() => summarizePersons(toViewRows(rows.value, campStart.value, compared.value)))
+
+  const qualMatrix = computed(() => {
+    const agg = mdCamp.record.value?.aggregate ?? null
+    const f = facts.value
+    return agg && f ? buildQualificationMatrix(agg, f, makeAreaOf(f.activities, dismissed.value), makeKeywordsOf(f.activities)) : null
+  })
+  const midataLinked = computed(() => mdCamp.link.value !== null)
+  const ndsLinked = computed(() => ndsCamp.link.value !== null)
+  const ndsUsable = computed(() => ndsLinked.value && ndsSettings.enabled.value)
+  const canLoad = computed(() => midataLinked.value || ndsUsable.value)
 
   async function loadMidata(): Promise<void> {
     const l = mdCamp.link.value
@@ -123,6 +164,10 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
     }
   }
 
+  async function loadAll(): Promise<void> {
+    await Promise.all([midataLinked.value ? loadMidata() : Promise.resolve(), ndsUsable.value ? loadNds() : Promise.resolve()])
+  }
+
   return {
     midata,
     nds,
@@ -130,14 +175,23 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
     compared,
     campStart,
     summary,
-    midataLinked: computed(() => mdCamp.link.value !== null),
-    ndsLinked: computed(() => ndsCamp.link.value !== null),
+    midataLinked,
+    ndsLinked,
+    ndsEnabled: computed(() => ndsSettings.enabled.value),
+    midataConnected: computed(() => md.connected.value),
+    ndsConnected: computed(() => ndsSettings.connected.value),
+    midataCamp: mdCamp,
+    ndsCamp,
+    qualMatrix,
+    canLoad,
+    loading: computed(() => loadingMidata.value || loadingNds.value),
     loadingMidata,
     loadingNds,
     midataError,
     ndsError,
     loadMidata,
     loadNds,
+    loadAll,
     clear: wipeAll,
   }
 }

@@ -6,7 +6,7 @@ import { computed, ref, shallowRef, toValue, type ComputedRef, type MaybeRefOrGe
 import { ndsSuggestions, NDS_FIELDS } from '@/domain/nds'
 import { clearNds, getNdsRecord, saveNdsAggregate, saveNdsLink } from '@/domain/nds/store'
 import { getAppSettings, updateAppSettings } from '@/domain/storage/settings'
-import type { CampFacts, CoachInputs, Iri, NdsAggregate, NdsCampSummary, NdsField, NdsProbe, NdsRecord, NdsStatus } from '@/domain/types'
+import type { CampFacts, CoachInputs, Iri, NdsAggregate, NdsCampSummary, NdsField, NdsLink, NdsProbe, NdsRecord, NdsStatus } from '@/domain/types'
 import { commands, errorMessage, isTauri, onNdsStatus } from '@/lib/tauri'
 import i18n from '@/plugins/i18n'
 import { bumpNds } from './ndsSignal'
@@ -115,6 +115,11 @@ export function useNds(): NdsHandle {
       await guard(async () => {
         await updateAppSettings({ nds: { enabled: on } })
         enabled.value = on
+        // Switched off means off: end a surviving NDS session so the UI never shows «aus» and «verbunden» together.
+        if (!on && status.value.connected) {
+          await commands.ndsLogout()
+          status.value = { ...NO_STATUS }
+        }
       })
     },
     async connectWithLogin() {
@@ -146,7 +151,7 @@ function patch<T>(r: { value: Record<Iri, T> }, key: Iri, value: T): void {
 
 export interface CampNdsHandle {
   record: ComputedRef<NdsRecord | null>
-  link: ComputedRef<{ offerBusinessId: string; campBusinessId: string } | null>
+  link: ComputedRef<NdsLink | null>
   loading: ComputedRef<boolean>
   error: ComputedRef<string | null>
   camps: ReturnType<typeof ref<NdsCampSummary[]>>
@@ -197,7 +202,14 @@ export function useCampNds(campIri: MaybeRefOrGetter<Iri>, facts: MaybeRefOrGett
   async function pickCamp(c: NdsCampSummary): Promise<void> {
     const iri = toValue(campIri)
     try {
-      patch(records, iri, await saveNdsLink(iri, { offerBusinessId: c.offerBusinessId, campBusinessId: c.campBusinessId }))
+      patch(records, iri, await saveNdsLink(iri, {
+          offerBusinessId: c.offerBusinessId,
+          campBusinessId: c.campBusinessId,
+          groupName: c.groupName,
+          offerNumber: c.offerNumber,
+          start: c.start,
+          end: c.end,
+        }))
       bumpNds()
     } catch (e) {
       patch(errorMap, iri, errorMessage(e))

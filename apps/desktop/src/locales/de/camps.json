@@ -17,7 +17,6 @@
     "campsView": {
       "title": "Meine Lager",
       "search": "Lager suchen",
-      "refresh": "Aktualisieren",
       "loading": "Lager werden geladen …",
       "emptyTitle": "Keine Lager gefunden",
       "emptyText": "Du bist in keinem eCamp-Lager als Mitarbeitende:r eingetragen.",
@@ -25,31 +24,26 @@
       "prototype": "Prototyp",
       "open": "Lager öffnen",
       "noDates": "Keine Daten",
-      "showEnded": "Abgeschlossene anzeigen",
-      "showOld": "Ältere anzeigen",
       "hiddenHint": "{n} abgeschlossene Lager ausgeblendet",
       "showHidden": "Anzeigen",
       "phaseEnded": "abgeschlossen",
-      "phaseOld": "älter",
       "columns": {
         "camp": "Lager",
         "dates": "Zeitraum",
-        "role": "Meine Rolle",
         "review": "Review",
         "findings": "Befunde",
         "deadline": "Nächste Frist",
-        "changes": "Letzte Runde"
-      },
-      "role": {
-        "guest": "Gast",
-        "member": "Mitarbeit",
-        "manager": "Lagerleitung"
+        "next": "Als Nächstes"
       },
       "findings": {
-        "must": "{n} Muss-Befunde",
-        "should": "{n} Soll-Befunde",
-        "hint": "{n} Hinweise",
-        "neverEvaluated": "Noch nicht ausgewertet. Öffne das Lager, um es zu prüfen."
+        "neverEvaluated": "Noch nicht ausgewertet. Öffne das Lager, um es zu prüfen.",
+        "text": {
+          "must": "{n} Muss",
+          "should": "{n} Soll",
+          "hint": "{n} Hinweis | {n} Hinweise",
+          "none": "Keine Befunde",
+          "notChecked": "Noch nicht geprüft"
+        }
       },
       "deadline": {
         "none": "Keine offene Frist",
@@ -62,22 +56,58 @@
           "lagerbewilligung": "Lagerbewilligung"
         }
       },
-      "round": {
-        "since": "seit {date}",
-        "none": "Noch keine Runde"
+      "refresh": "Aus eCamp neu laden",
+      "showEnded": "Abgeschlossene Lager anzeigen ({n})",
+      "roleChip": {
+        "member": "Du leitest mit",
+        "manager": "Du leitest"
+      },
+      "continue": "Weiter prüfen",
+      "approvedMust": "Bewilligt · {n} Muss offen",
+      "next": {
+        "mapping": "Lager einrichten",
+        "inputs": "Lager-Angaben erfassen",
+        "triage": "Befunde sichten ({n} offen)",
+        "documents": "Dokumente prüfen",
+        "checklist": "Checkliste abarbeiten",
+        "feedback": "Feedback erstellen",
+        "status": "Review-Status setzen",
+        "done": "Prüfung abgeschlossen",
+        "never": "Lager öffnen und prüfen",
+        "waiting": "Warten auf Lagerleitung",
+        "waitingSince": "Warten auf Lagerleitung · Runde {n} seit {date}"
       }
     },
     "inputs": {
       "title": "Lager-Angaben",
       "intro": "Angaben, die nicht in eCamp stehen. Sie fliessen in die Regeln und Fristen ein und bleiben auf diesem Gerät.",
       "loading": "Angaben werden geladen …",
-      "usedBy": "Verwendet von",
-      "usedByNone": "Keine Regel verwendet diese Angabe direkt (Information für dich).",
-      "save": "Angaben speichern",
-      "saved": "Angaben gespeichert.",
       "saveFailed": "Speichern fehlgeschlagen",
-      "reset": "Änderungen verwerfen",
-      "unsaved": "Nicht gespeicherte Änderungen",
+      "status": {
+        "saving": "Wird gespeichert …",
+        "saved": "Gespeichert",
+        "invalid": "Nicht gespeichert: bitte Angaben prüfen"
+      },
+      "missingTitle": "Fehlt noch für die Prüfung ({n})",
+      "missingDone": "Für die Prüfung angegeben",
+      "missingHint": "Offene Befunde warten auf diese Angaben. Sobald du sie ausfüllst, prüfen die Regeln.",
+      "rulesLink": "{n} Regel | {n} Regeln",
+      "rulesLinkTitle": "Regeln, die diese Angabe verwenden",
+      "purpose": {
+        "isJsCamp": "Entscheidet, ob die J+S-Regeln und -Fristen gelten. Unbekannt gilt wie ja.",
+        "stufe": "Für Schlafenszeiten und den Betreuungsschlüssel bei Wölfen.",
+        "participantsCount": "Für Mindestgrösse, Leitungsschlüssel und Wasseraktivitäten.",
+        "participantsJsAgeCount": "Für die J+S-Mindestgrösse von Teilnehmenden zwischen 5 und 20 Jahren.",
+        "minAge": "Information zum Lager; wird auch aus MiData übernommen.",
+        "maxAge": "Information zum Lager; wird auch aus MiData übernommen.",
+        "leadersCount": "Für den Betreuungsschlüssel der Wölfe.",
+        "jsLeadersCount": "Für die Mindestzahl J+S-Leitender und die beitragsrelevante Gruppengrösse.",
+        "slrgCount": "Für die Aufsicht bei Wasseraktivitäten.",
+        "lagerleiterAttested": "Für die Anforderung an die Lagerleitung.",
+        "lagerbewilligungDone": "Erledigt-Status der Frist «Lagerbewilligung» (im Tab «Checkliste»).",
+        "winterSafeAccess": "Für die Winterlager-Regel zur Zufahrt zum Haus.",
+        "notes": "Nur für dich. Notizen verlassen dieses Gerät nicht."
+      },
       "tri": {
         "yes": "ja",
         "no": "nein",
@@ -90,13 +120,15 @@
       "sections": {
         "general": "Lager",
         "participants": "Teilnehmende und Leitung",
-        "deadlines": "Fristen und Bestellungen",
+        "rules": "Regelmodule und Lagerkontext",
+        "more": "Weitere Angaben",
         "notes": "Notizen"
       },
       "fields": {
         "isJsCamp": "J+S-Lager",
         "isJsCampHint": "Unbekannt gilt wie ja: J+S-Regeln werden angewendet.",
         "stufe": "Stufe",
+        "winterSafeAccess": "Haus mit wintersicherer Zufahrt",
         "participantsCount": "Teilnehmende",
         "participantsJsAgeCount": "Teilnehmende im J+S-Alter (5–20)",
         "minAge": "Jüngstes Alter",
@@ -127,35 +159,46 @@
     },
     "mapping": {
       "title": "Kategorien-Zuordnung",
-      "intro": "Ordne jede eCamp-Kategorie einer J+S-Klasse zu. Nur Lagersport (LS) und Lageraktivität (LA) zählen als J+S-Einheiten.",
-      "inactiveTitle": "J+S-Tagesregeln sind noch inaktiv",
-      "inactiveText": "Solange du die Zuordnung nicht bestätigt hast, laufen die J+S-Tagesregeln nicht. Prüfe die Vorschläge und bestätige sie einmal.",
+      "intro": "Ordne jede eCamp-Kategorie einer J+S-Klasse zu. Nur Lagersport (LS) und Lageraktivität (LA) zählen für J+S.",
+      "inactiveTitle": "Noch nicht bestätigt",
+      "inactiveText": "Die J+S-Tagesregeln laufen erst, wenn du die Zuordnung bestätigt hast. Prüfe die Vorschläge und bestätige sie einmal.",
       "confirmedTitle": "Zuordnung bestätigt",
       "confirmedText": "Bestätigt am {date}. Änderungen musst du erneut bestätigen.",
+      "dirtyTitle": "Nicht bestätigte Änderung",
+      "dirtyText": "Die Änderung gilt erst, wenn du sie bestätigst.",
+      "effect": "Mit dieser Zuordnung: {valid} von {total} J+S-Tagen gültig",
       "loading": "Kategorien werden geladen …",
       "empty": "Dieses Lager hat keine Kategorien.",
       "failed": "Lager konnte nicht geladen werden",
       "columns": {
         "category": "Kategorie",
         "activities": "Aktivitäten",
-        "guess": "Vorschlag",
-        "class": "Zuordnung"
+        "class": "Zuordnung",
+        "check": "Regeln prüfen"
       },
-      "confidence": {
-        "high": "sicher",
-        "low": "unsicher"
+      "checkCaption": "Aus: keine Befunde zu diesen Aktivitäten, Tagesrechnung bleibt",
+      "checkOn": "Regeln prüfen: {name}",
+      "reason": {
+        "short": "Vorschlag: aus dem Kürzel erkannt",
+        "nameJs": "Vorschlag: Name nennt die J+S-Klasse",
+        "nameSport": "Vorschlag: Name klingt nach Sport, bitte prüfen",
+        "nameFree": "Vorschlag: Name klingt nach Freizeit oder Reise, bitte prüfen",
+        "nameActivity": "Vorschlag: Name klingt nach Programm, bitte prüfen",
+        "ys": "Vorschlag: Die Aktivitäten haben J+S-Angaben, bitte prüfen",
+        "default": "Kein Hinweis im Namen: als Lagerprogramm vorgeschlagen, bitte prüfen",
+        "none": "Kein Vorschlag"
       },
-      "noGuess": "kein Vorschlag",
       "confirm": "Zuordnung bestätigen",
       "confirmChanges": "Änderung bestätigen",
-      "confirmed": "Zuordnung bestätigt.",
+      "discard": "Verwerfen",
+      "next": "Weiter: Befunde durchgehen",
       "saveFailed": "Speichern fehlgeschlagen",
       "class": {
-        "LS": "LS Lagersport",
-        "LA": "LA Lageraktivität",
-        "LP": "LP Lagerprogramm",
-        "ES": "ES Essen",
-        "NONE": "NONE ignorieren"
+        "LS": "Lagersport (LS) · zählt für J+S",
+        "LA": "Lageraktivität (LA) · zählt für J+S",
+        "LP": "Lagerprogramm (LP) · zählt nicht",
+        "ES": "Essen (ES) · zählt nicht",
+        "NONE": "Nicht berücksichtigen · zählt nicht"
       }
     }
   }

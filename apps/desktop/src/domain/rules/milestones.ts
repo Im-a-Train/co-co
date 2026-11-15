@@ -38,6 +38,11 @@ export interface Milestone {
   module?: ModuleId
   source: Source
   confidence: Confidence
+  /**
+   * Ids of milestones (other lists) that name the same step. When one of them is active in the camp,
+   * this entry is skipped (the YAML decides which entry is primary); an old tick of this entry carries over.
+   */
+  sameAs?: string[]
 }
 
 export interface MilestoneList {
@@ -77,8 +82,8 @@ function sourceOf(m: Record<string, unknown>, label: string, registry: SourceReg
   return { title: String(src.title ?? ''), url: String(src.url ?? '') }
 }
 
-/** Parses + validates a milestone YAML (throws with readable German errors). */
-export function parseMilestonesYaml(text: string, registry: SourceRegistry = getSourceRegistry()): MilestoneList {
+/** Parses + validates a milestone YAML (throws with readable German errors). `knownIds`: ids of other lists that `sameAs` may point to. */
+export function parseMilestonesYaml(text: string, registry: SourceRegistry = getSourceRegistry(), knownIds: ReadonlySet<string> = new Set()): MilestoneList {
   let raw: unknown
   try {
     raw = parse(text)
@@ -112,6 +117,11 @@ export function parseMilestonesYaml(text: string, registry: SourceRegistry = get
     if (!CONFIDENCES.includes(m.confidence as Confidence)) errors.push(`${label}: «confidence» ungültig`)
     if (!AUDIENCES.includes(m.audience as Audience)) errors.push(`${label}: «audience» muss coach oder leaders sein`)
     const source = sourceOf(m, label, registry, errors)
+    let sameAs: string[] | undefined
+    if (m.sameAs !== undefined) {
+      if (!Array.isArray(m.sameAs) || m.sameAs.length === 0 || !m.sameAs.every(nonEmpty)) errors.push(`${label}: «sameAs» muss eine Liste von Meilenstein-IDs sein`)
+      else sameAs = m.sameAs.map(String)
+    }
     milestones.push({
       id: String(m.id ?? ''),
       title: String(m.title ?? ''),
@@ -125,7 +135,14 @@ export function parseMilestonesYaml(text: string, registry: SourceRegistry = get
       ...(m.module !== undefined ? { module: m.module as ModuleId } : {}),
       source,
       confidence: m.confidence as Confidence,
+      ...(sameAs ? { sameAs } : {}),
     })
+  }
+  for (const m of milestones) {
+    for (const id of m.sameAs ?? []) {
+      if (id === m.id) errors.push(`Meilenstein ${m.id}: «sameAs» verweist auf sich selbst`)
+      else if (!seen.has(id) && !knownIds.has(id)) errors.push(`Meilenstein ${m.id}: «sameAs» verweist auf unbekannte ID «${id}»`)
+    }
   }
   if (errors.length) throw new Error(`Meilenstein-Liste ungültig: ${errors.join('; ')}`)
   return { id: String(raw.id), name: String(raw.name), version: String(raw.version), milestones }
@@ -137,7 +154,14 @@ const milestoneFiles = import.meta.glob('./packs/*/milestones.yaml', { query: '?
 export function loadBundledMilestoneLists(): MilestoneList[] {
   const entries = Object.entries(milestoneFiles).sort(([a], [b]) => a.localeCompare(b))
   if (entries.length === 0) throw new Error('Gebündelte Meilenstein-Listen «packs/*/milestones.yaml» nicht gefunden')
-  return entries.map(([, text]) => parseMilestonesYaml(text))
+  // sameAs may point into another pack's list: collect all ids first.
+  const knownIds = new Set<string>()
+  for (const [, text] of entries) {
+    const raw: unknown = parse(text)
+    const ms = isRecord(raw) && Array.isArray(raw.milestones) ? raw.milestones : []
+    for (const m of ms) if (isRecord(m) && nonEmpty(m.id)) knownIds.add(m.id)
+  }
+  return entries.map(([, text]) => parseMilestonesYaml(text, getSourceRegistry(), knownIds))
 }
 
 /** All bundled milestones (all packs) as one list; ids are unique across packs. */
@@ -200,6 +224,8 @@ export function computeMilestoneDeadlines(
   const done = inputs?.milestonesDone ?? {}
   const active = ctx.isModuleActive ?? ((m: ModuleId) => DEFAULT_ON_MODULES.includes(m))
   const out: Deadline[] = []
+  const byId = new Map<string, Deadline>()
+  const twins: { m: Milestone; d: Deadline }[] = []
   for (const m of list.milestones) {
     if (m.module && !active(m.module)) continue
     // J+S milestones make no sense for a camp the coach marked as non-J+S.
@@ -207,7 +233,7 @@ export function computeMilestoneDeadlines(
     const base = anchorDate(m, { ...camp, start }, inputs, ctx)
     if (!base) continue
     const summer = m.summerMonths?.includes(Number(start.slice(5, 7))) && m.summerOffsetDays !== undefined
-    out.push({
+    const d: Deadline = {
       campIri: camp.iri,
       campTitle: camp.title,
       kind: 'pbs-milestone' as const,
@@ -219,9 +245,23 @@ export function computeMilestoneDeadlines(
       title: m.title,
       confidence: m.confidence,
       audience: m.audience,
-    })
+    }
+    byId.set(m.id, d)
+    if (m.sameAs?.length) twins.push({ m, d })
+    out.push(d)
   }
-  return out
+  // sameAs: a twin whose target is active in this camp is skipped; its old tick carries over to the target(s).
+  const skipped = new Set<Deadline>()
+  for (const { m, d } of twins) {
+    const targets = (m.sameAs ?? []).map((id) => byId.get(id)).filter((t): t is Deadline => !!t && !skipped.has(t))
+    if (!targets.length) continue
+    skipped.add(d)
+    for (const t of targets) {
+      if (d.done) t.done = true
+      t.alsoNamed = [...(t.alsoNamed ?? []), { id: m.id, source: d.source?.title ?? '', due: d.due }]
+    }
+  }
+  return out.filter((d) => !skipped.has(d))
 }
 
 /** Radar buckets relative to today: overdue, this week (0-7), next 4 weeks (8-28), later (>28), done. */

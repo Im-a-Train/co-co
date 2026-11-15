@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** /lager/:campId/feedback: feedback composer. Reads ?item=<id> to focus an item. */
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import FeedbackItemCard from '@/components/feedback/FeedbackItemCard.vue'
@@ -10,7 +10,9 @@ import RefineFindingsDialog from '@/components/feedback/RefineFindingsDialog.vue
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useFeedback, type NewFeedback } from '@/composables/useFeedback'
+import { useRounds } from '@/composables/useRounds'
 import { KIND_ORDER } from '@/domain/feedback'
+import { canTransition } from '@/domain/rounds'
 import { newReplies } from '@/domain/feedback/commentSync'
 import { generalPointById } from '@/domain/feedback/defaults'
 import { getHiddenGeneralPoints, hideGeneralPoint, restoreAllGeneralPoints } from '@/domain/feedback/generalPointsStore'
@@ -18,13 +20,16 @@ import { groupFeedback } from '@/domain/feedback/structure'
 import { listDocuments } from '@/domain/documents/store'
 import { lastMcpChange } from '@/composables/mcpChanges'
 import { activityBlockNumbers, activityShortUrlMap, activityUrlMap } from '@/domain/ecampLinks'
-import type { DocumentRecord, FeedbackKind, FeedbackScope } from '@/domain/types'
+import type { DocumentRecord, FeedbackKind, FeedbackScope, FeedbackTemplateId } from '@/domain/types'
 
 const { t } = useI18n()
 const route = useRoute()
 const { campIri } = useCampRoute()
 const { facts, load: loadFacts } = useCampFacts(campIri)
 const fb = useFeedback(campIri)
+const rounds = useRounds(campIri)
+onMounted(() => void rounds.load())
+watch(campIri, () => void rounds.load())
 
 const hiddenPoints = ref<string[]>([])
 async function loadHiddenPoints() {
@@ -134,9 +139,12 @@ async function onRefine(inputs: NewFeedback[]) {
   }
 }
 
-// Posting
+// Posting: the POST is delayed by POST_DELAY_MS so a stray click can be undone (eCamp comments cannot be taken back).
+const POST_DELAY_MS = 5000
 const postingId = ref<string | null>(null)
-const snack = ref<{ text: string; color: string } | null>(null)
+const queuedIds = ref<string[]>([])
+const queueTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const snack = ref<{ text: string; color: string; undoId?: string } | null>(null)
 async function post(id: string) {
   postingId.value = id
   try {
@@ -146,6 +154,56 @@ async function post(id: string) {
     snack.value = { text: `${t('feedback.postFailed')}: ${e instanceof Error ? e.message : String(e)}`, color: 'error' }
   } finally {
     postingId.value = null
+  }
+}
+function dequeue(id: string): boolean {
+  const timer = queueTimers.get(id)
+  if (timer === undefined) return false
+  clearTimeout(timer)
+  queueTimers.delete(id)
+  queuedIds.value = queuedIds.value.filter((x) => x !== id)
+  return true
+}
+async function flushPost(id: string) {
+  if (dequeue(id)) await post(id)
+}
+function queuePost(id: string) {
+  if (queueTimers.has(id)) return
+  queuedIds.value = [...queuedIds.value, id]
+  queueTimers.set(id, setTimeout(() => void flushPost(id), POST_DELAY_MS))
+  snack.value = { text: t('feedback.postPending', { n: POST_DELAY_MS / 1000 }), color: '', undoId: id }
+}
+function undoPost(id: string) {
+  dequeue(id)
+  snack.value = null
+}
+// Leaving the page must not lose a queued post.
+onBeforeUnmount(() => {
+  for (const id of [...queueTimers.keys()]) void flushPost(id)
+})
+
+// Preview: template follows the camp state; «Kopieren» can mark the copied points as sent and request changes.
+const reviewStatus = computed(() => rounds.review.value?.status ?? null)
+const suggestedTemplate = computed<FeedbackTemplateId | null>(() => {
+  if (!rounds.review.value) return null
+  if (reviewStatus.value === 'aenderungen_angefragt') return 'auflagen'
+  return rounds.rounds.value.length === 0 ? 'grobprogramm' : null
+})
+/** Not for approved camps: an approval is never downgraded by copying feedback. */
+const setsStatus = computed(
+  () => reviewStatus.value !== null && ['neu', 'in_review'].includes(reviewStatus.value),
+)
+async function confirmSent(ids: string[]) {
+  try {
+    const n = await fb.markSentMany(ids)
+    if (setsStatus.value) {
+      if (rounds.rounds.value.length === 0) await rounds.startRound()
+      const status = rounds.review.value?.status ?? 'neu'
+      if (canTransition(status, 'aenderungen_angefragt')) await rounds.setStatus('aenderungen_angefragt')
+    }
+    snack.value = { text: t('feedback.sentBar.done', { n }, n), color: 'success' }
+  } catch (e) {
+    snack.value = { text: `${t('feedback.sentBar.failed')}: ${e instanceof Error ? e.message : String(e)}`, color: 'error' }
   }
 }
 
@@ -215,7 +273,6 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
 
 <template>
   <div>
-    <h1 class="text-h5 mb-4">{{ t('feedback.title') }}</h1>
     <v-alert v-if="fb.error.value" type="error" variant="tonal" density="compact" class="mb-3" :text="`${t('feedback.loadFailed')}: ${fb.error.value}`" />
     <v-alert v-if="!facts" type="info" variant="tonal" density="compact" class="mb-3" :text="t('feedback.noFacts')" />
 
@@ -263,10 +320,11 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
               :lint="fb.lint.value.filter((l) => l.itemId === item.id)"
               :facts="facts"
               :posting="postingId === item.id"
+              :queued="queuedIds.includes(item.id)"
               :focused="focusId === item.id"
               @save="(patch) => fb.update(item.id, patch)"
               @remove="fb.remove(item.id)"
-              @post="post(item.id)"
+              @post="queuePost(item.id)"
               @mark-sent="(sent) => fb.markSent(item.id, sent)"
               @replies-seen="fb.markRepliesSeen(item.id)"
             />
@@ -301,10 +359,11 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
                     :lint="fb.lint.value.filter((l) => l.itemId === item.id)"
                     :facts="facts"
                     :posting="postingId === item.id"
+              :queued="queuedIds.includes(item.id)"
                     :focused="focusId === item.id"
                     @save="(patch) => fb.update(item.id, patch)"
                     @remove="fb.remove(item.id)"
-                    @post="post(item.id)"
+                    @post="queuePost(item.id)"
                     @mark-sent="(sent) => fb.markSent(item.id, sent)"
                     @replies-seen="fb.markRepliesSeen(item.id)"
                   />
@@ -315,7 +374,15 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
         </v-expansion-panels>
       </v-col>
       <v-col cols="12" md="5">
-        <FeedbackPreview :items="fb.items.value" :context="renderContext" />
+        <div class="feedback-sticky">
+          <FeedbackPreview
+            :items="fb.items.value"
+            :context="renderContext"
+            :suggested-template="suggestedTemplate"
+            :sets-status="setsStatus"
+            @confirm-sent="confirmSent"
+          />
+        </div>
       </v-col>
     </v-row>
 
@@ -323,6 +390,22 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
     <RefineFindingsDialog v-if="refineOpen" v-model="refineOpen" :camp-iri="campIri" :facts="facts" :feedback-items="fb.items.value" :documents="documents"
       @submit="onRefine" />
 
-    <v-snackbar v-model="snackOpen" :color="snack?.color" timeout="5000">{{ snack?.text }}</v-snackbar>
+    <v-snackbar v-model="snackOpen" :color="snack?.color || undefined" timeout="5000" data-testid="feedback-snack">
+      {{ snack?.text }}
+      <template v-if="snack?.undoId" #actions>
+        <v-btn variant="text" data-testid="feedback-post-undo" @click="undoPost(snack.undoId)">{{ t('feedback.postUndo') }}</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
+
+<style scoped>
+@media (min-width: 960px) {
+  .feedback-sticky {
+    position: sticky;
+    top: calc(var(--v-layout-top, 56px) + 56px);
+    max-height: calc(100vh - var(--v-layout-top, 56px) - 72px);
+    overflow-y: auto;
+  }
+}
+</style>

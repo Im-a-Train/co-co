@@ -2,6 +2,21 @@
   "rounds": {
     "title": "Runden",
     "intro": "Jede Runde hält den Stand des Lagers in eCamp fest. So siehst du bei der nächsten Runde, was sich geändert hat.",
+    "approve": {
+      "title": "Lager wirklich bewilligen?",
+      "lead": "Du setzt den Status auf «{status}». Noch offen:",
+      "openMust": "{n} Muss-Befund offen | {n} Muss-Befunde offen",
+      "mapping": "Kategorien-Zuordnung nicht bestätigt",
+      "untriaged": "{n} Befund nicht gesichtet | {n} Befunde nicht gesichtet",
+      "unsentMust": "{n} Auflage nicht gesendet | {n} Auflagen nicht gesendet",
+      "unsentDrafts": "{n} Feedback-Punkt nicht gesendet | {n} Feedback-Punkte nicht gesendet",
+      "jsDays": "Nur {valid} von {required} J+S-Tagen gültig",
+      "noteRequired": "Begründung (Pflicht, solange ein Muss-Befund offen ist)",
+      "noteOptional": "Notiz (optional)",
+      "noteHint": "Die Begründung wird im Verlauf des Review-Status gespeichert.",
+      "back": "Zurück zur Prüfung",
+      "anyway": "Trotzdem bewilligen"
+    },
     "status": {
       "title": "Review-Status",
       "setTo": "Setzen auf",
@@ -16,8 +31,9 @@
       "started": "Gestartet {date}",
       "closed": "Abgeschlossen {date}",
       "open": "Offen",
-      "exported": "Gesichert",
-      "notExported": "Nicht gesichert",
+      "exported": "Im Backup",
+      "notExported": "Noch nicht im Backup",
+      "toBackup": "Backup öffnen",
       "showChanges": "Änderungen anzeigen",
       "hideChanges": "Änderungen ausblenden"
     },
@@ -36,7 +52,8 @@
       "sinceLast": "Änderungen seit Runde {n}",
       "roundVs": "Änderungen in Runde {n}",
       "firstRound": "Erste Runde: alles gilt als neu.",
-      "empty": "Keine Änderungen seit der letzten Runde.",
+      "empty": "Keine Änderungen in dieser Runde.",
+      "noneSince": "Keine Änderungen seit Runde {n}",
       "general": "Lager, Tage und Kategorien",
       "unnamed": "(ohne Titel)",
       "counts": "{added} neu, {changed} geändert, {removed} entfernt",

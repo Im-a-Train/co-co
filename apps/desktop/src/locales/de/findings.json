@@ -33,7 +33,10 @@
       "title": "Befund ignorieren",
       "text": "Der Befund bleibt gespeichert, zählt aber nicht mehr in den Kennzahlen. Ein Grund ist freiwillig.",
       "reason": "Grund (optional)",
-      "confirm": "Ignorieren"
+      "confirm": "Ignorieren",
+      "textMust": "Der Befund bleibt gespeichert, zählt aber nicht mehr in den Kennzahlen. Bei einem Muss-Befund ist ein Grund Pflicht.",
+      "reasonMust": "Grund (bei Muss-Befunden Pflicht)",
+      "reasonRequired": "Bei Muss-Befunden ist ein Grund nötig."
     },
     "ai": {
       "title": "KI-Sicherheitsprüfung (optional)"
@@ -61,9 +64,9 @@
       "kind": "Art",
       "scope": "Bezug",
       "text": "Text",
-      "saveNext": "Feedback speichern & weiter",
-      "ignoreNext": "Ignorieren & weiter",
-      "skip": "Überspringen",
+      "saveNext": "Feedback speichern & weiter (F)",
+      "ignoreNext": "Ignorieren & weiter (I)",
+      "skip": "Überspringen (J)",
       "ignoreReason": "Grund (optional)",
       "openInGrid": "Im GP öffnen",
       "openFeedback": "Feedback ansehen",
@@ -71,7 +74,28 @@
       "isIgnored": "Dieser Befund ist ignoriert.",
       "allDone": "Alle Befunde sind bearbeitet.",
       "none": "Keine Befunde zum Durchgehen.",
-      "hint": "Tastatur: J oder ↓ weiter, K oder ↑ zurück, F Feedback speichern, I ignorieren, Esc Editor schliessen"
+      "hint": "Tastatur: J oder ↓ weiter, K oder ↑ zurück, F Feedback speichern, I ignorieren, Esc Editor schliessen",
+      "ignoreReasonMust": "Grund (bei Muss-Befunden Pflicht)",
+      "reasonRequired": "Bei Muss-Befunden ist ein Grund nötig.",
+      "more": "Weitere Aktionen",
+      "target": {
+        "camp": "Lager",
+        "document": "Dokument",
+        "activity": "{number} {title}",
+        "activityNoNumber": "{title}"
+      },
+      "coachTodo": {
+        "title": "Zuerst für dich ({count})",
+        "hint": "Diese Punkte brauchen zuerst eine Angabe von dir. Sie gehen nicht ans Lagerteam.",
+        "mapping": "Zuordnung prüfen",
+        "inputs": "Angaben erfassen",
+        "midata": "MiData verbinden",
+        "collapse": "Zuklappen",
+        "expand": "Aufklappen"
+      },
+      "toFeedback": "Weiter zum Feedback",
+      "toFeedbackCount": "Weiter zum Feedback ({count} Punkt) | Weiter zum Feedback ({count} Punkte)",
+      "groupHint": "Ein Feedback für alle {count} Tage."
     },
     "disablePrompt": {
       "text": "Du hast «{title}» schon {count}-mal ignoriert. Regel deaktivieren?",
@@ -80,24 +104,22 @@
       "no": "Nein, danke"
     },
     "categoryExclusion": {
-      "button": "Aktivitätstypen ausschliessen",
-      "forRule": "Aktivitätstyp für diese Regel ausschliessen",
+      "button": "Kategorien nicht prüfen",
+      "forRule": "Kategorie für diese Regel nicht prüfen",
       "forRuleDone": "{category} bei Regel {ruleId} wird nicht mehr geprüft.",
-      "info": "{count} Befund wegen ausgeschlossener Aktivitätstypen ausgeblendet | {count} Befunde wegen ausgeschlossener Aktivitätstypen ausgeblendet",
+      "info": "{count} Befund wegen nicht geprüfter Kategorien ausgeblendet | {count} Befunde wegen nicht geprüfter Kategorien ausgeblendet",
       "manage": "Ausschlüsse verwalten",
-      "title": "Aktivitätstypen ausschliessen",
-      "intro": "Ausgeschlossene Aktivitätstypen werden in diesem Lager nicht geprüft. Befunde zum ganzen Lager oder zu einem Tag bleiben bestehen.",
-      "allRules": "von allen Regeln ausschliessen",
-      "noCategories": "In diesem Lager gibt es keine Aktivitätstypen.",
-      "perRuleTitle": "Ausschlüsse pro Regel",
-      "perRuleNone": "Keine Ausschlüsse für einzelne Regeln.",
-      "ruleLabel": "{category} bei Regel {ruleId} nicht prüfen",
+      "title": "Kategorien nicht prüfen",
+      "intro": "Diese Kategorien werden bei den genannten Regeln nicht geprüft. Befunde zum ganzen Lager oder zu einem Tag bleiben bestehen. Kategorien ganz aus der Prüfung nehmen kannst du im GP unter «Kategorien».",
+      "noCategories": "In diesem Lager gibt es keine Kategorien.",
+      "ruleLabel": "{category} bei «{rule}» nicht prüfen",
       "remove": "Ausschluss entfernen",
-      "addTitle": "Ausschluss für eine Regel hinzufügen",
-      "rule": "Regel",
-      "category": "Aktivitätstyp",
-      "add": "Hinzufügen",
-      "close": "Schliessen"
+      "category": "Kategorie",
+      "close": "Schliessen",
+      "openGrid": "Kategorien im GP öffnen",
+      "allRulesLabel": "{category} bei allen Regeln nicht prüfen",
+      "listTitle": "Nicht geprüfte Kategorien",
+      "listNone": "Keine Ausschlüsse."
     },
     "disabledNote": "{count} Regel für dieses Lager deaktiviert | {count} Regeln für dieses Lager deaktiviert",
     "disabledManage": "Wieder aktivieren",
@@ -228,6 +250,19 @@
         "keywords": "Stichwörter",
         "count": "Anzahl"
       }
-    }
+    },
+    "counter": {
+      "topics": "{count} Thema | {count} Themen",
+      "findings": "{count} Befund | {count} Befunde"
+    },
+    "group": {
+      "label": "{title} · {count} Tage ({dates})",
+      "labelNoDates": "{title} · {count} Tage",
+      "expand": "Einzeln anzeigen",
+      "collapse": "Einzeln ausblenden",
+      "ignoreAll": "Alle {count} ignorieren",
+      "members": "Einzelne Tage"
+    },
+    "unsure": "Unsicher – bitte selbst prüfen"
   }
 }

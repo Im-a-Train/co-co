@@ -9,6 +9,12 @@ describe('nds format helpers', () => {
     expect(rows[0].n).toBe(3)
     expect(rows[0].label).toBeTruthy()
   })
+  it('countEntries uses the role mapping when t is given', () => {
+    const t = (k: string) => (k === 'persons.role.child' ? 'Kind' : k)
+    const rows = countEntries({ CHILD: 18, SOME_NEW_STATE: 1 }, t)
+    expect(rows.find((r) => r.code === 'CHILD')!.label).toBe('Kind')
+    expect(rows.find((r) => r.code === 'SOME_NEW_STATE')!.label).toBe('SOME_NEW_STATE')
+  })
   it('ndsValueKey', () => {
     expect(ndsValueKey(null)).toBeNull()
     expect(ndsValueKey(true)).toEqual({ key: 'yes' })

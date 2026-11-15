@@ -1,15 +1,14 @@
 <script setup lang="ts">
 /** /lager/:campId/aktivitaeten: all activities as a dense, sortable list with filters; row click opens the drawer. */
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { campIdFromIri } from '@/domain/iri'
-import { formatClock, formatDateShort, formatMinutes, severityColor, SEVERITIES } from '@/domain/cockpit'
+import { formatClock, formatDateShort, formatMinutes, SEVERITIES } from '@/domain/cockpit'
 import { listDocuments } from '@/domain/documents/store'
 import { triageLocation } from '@/domain/triage'
-import type { CategoryClass, DocumentRecord, Finding, Iri } from '@/domain/types'
+import type { CategoryClass, DocumentRecord, Finding, Iri, Severity } from '@/domain/types'
 import ActivityDrawer from '@/components/cockpit/ActivityDrawer.vue'
-import ManualFindingDialog from '@/components/cockpit/ManualFindingDialog.vue'
 import { useCockpit } from '@/components/cockpit/useCockpit'
 import {
   DEFAULT_ROW_FILTER,
@@ -28,26 +27,21 @@ const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const { campIri, factsHandle, settings, findingsHandle } = useCockpit()
+const mappingConfirmed = settings.mappingConfirmed
 const { facts } = factsHandle
 
 const state = reactive<ListState>(stateFromQuery(route.query))
 const documents = ref<DocumentRecord[]>([])
 const selected = ref<Iri | null>(null)
 const drawer = ref(false)
-const addFor = ref<ActivityRow | null>(null)
-const addOpen = ref(false)
-function addFinding(row: ActivityRow) {
-  addFor.value = row
-  addOpen.value = true
-}
-
-onMounted(async () => {
+async function loadDocuments() {
   try {
     documents.value = await listDocuments(campIri.value)
   } catch {
     documents.value = []
   }
-})
+}
+onMounted(loadDocuments)
 
 // Deep link from the central search: ?activity=<iri> opens that activity's drawer, then the param is dropped.
 function openFromQuery() {
@@ -69,12 +63,22 @@ watch(
   },
 )
 
+const excludedAll = computed(() => findingsHandle.categoryExclusions.value.filter((e) => e.ruleId === null))
 const allRows = computed(() =>
-  facts.value ? buildRows(facts.value, findingsHandle.findings.value, documents.value, settings.classOf) : [],
+  facts.value
+    ? buildRows(
+        facts.value,
+        findingsHandle.findings.value,
+        documents.value,
+        settings.classOf,
+        (categoryIri) => !!categoryIri && excludedAll.value.some((e) => e.categoryIri === categoryIri),
+      )
+    : [],
 )
 const rows = computed(() => sortRows(filterRows(allRows.value, state), state.sort, state.dir))
 
-const CLASS_ITEMS: CategoryClass[] = ['LS', 'LA', 'LP', 'ES']
+const CLASSES: CategoryClass[] = ['LS', 'LA', 'LP', 'ES']
+const classItems = computed(() => CLASSES.map((c) => ({ value: c, title: `${t(`categoryClass.${c}`)} (${c})` })))
 const dayItems = computed(() =>
   (facts.value?.days ?? [])
     .slice()
@@ -101,16 +105,13 @@ const headers = computed(() => {
   return [
     h('number', 'number', { width: 70 }),
     h('title', 'title'),
-    h('category', 'category'),
+    h('findings', 'findings'),
     h('time', 'time'),
-    h('duration', 'duration', { align: 'end' }),
-    h('location', 'location', { minWidth: 140 }),
+    h('category', 'category'),
     h('responsibles', 'responsibles'),
     h('progress', 'progress'),
-    h('findings', 'findings'),
-    { key: 'manual', title: t('activities.manual.column'), sortable: false, align: 'end' as const, width: 70 },
-    h('documents', 'documents', { align: 'end', title: t('activities.columns.documentsShort') }),
-    { key: 'actions', title: t('activities.columns.actions'), sortable: false, align: 'end' as const, width: 96 },
+    h('location', 'location', { minWidth: 120 }),
+    h('duration', 'duration', { align: 'end' }),
   ]
 })
 const sortBy = computed(() => [{ key: state.sort, order: state.dir }])
@@ -136,9 +137,31 @@ function select(iri: Iri) {
 function onRowClick(_e: Event, { item }: { item: ActivityRow }) {
   select(item.iri)
 }
-function feedback(f: Finding) {
-  void router.push(triageLocation(campIri.value, f.id, { editor: true }))
+/** Stepping from the drawer (↑/↓, buttons): swap the content and keep the row visible. */
+function step(iri: Iri) {
+  select(iri)
+  void nextTick(() => document.querySelector(`[data-iri="${CSS.escape(iri)}"]`)?.scrollIntoView({ block: 'nearest' }))
 }
+const order = computed(() => rows.value.map((r) => r.iri))
+const rowProps = ({ item }: { item: ActivityRow }) => ({
+  'data-iri': item.iri,
+  class: drawer.value && selected.value === item.iri ? 'row-selected' : '',
+})
+function openFinding(f: Finding) {
+  void router.push(triageLocation(campIri.value, f.id))
+}
+function checkMapping() {
+  void router.push({ name: 'camp-grid', params: { campId: campIdFromIri(campIri.value) }, query: { zuordnung: '1' } })
+}
+// «Soll» / «Hinweis»: Muss red, Soll orange, Hinweis neutral (colour = state).
+const chipColor = (s: Severity) => (s === 'must' ? 'error' : s === 'should' ? 'warning' : undefined)
+const durationText = (r: ActivityRow) =>
+  r.durationRepeat
+    ? t('activities.durationRepeated', { count: r.durationRepeat.count, time: formatMinutes(r.durationRepeat.minutes) })
+    : r.durationMinutes
+      ? formatMinutes(r.durationMinutes)
+      : ''
+
 function openDocument(documentId: string | null) {
   void router.push({
     name: 'camp-documents',
@@ -156,12 +179,24 @@ function showInGrid(iri: Iri) {
 
 <template>
   <div class="activities-view">
-    <h1 class="text-h5 mb-1">{{ t('activities.title') }}</h1>
     <p class="text-body-2 text-medium-emphasis mb-3">{{ t('activities.intro') }}</p>
 
     <v-alert v-if="!facts" type="info" variant="tonal" density="compact" :text="t('cockpit.waiting')" />
     <v-alert v-else-if="!allRows.length" type="info" variant="tonal" density="compact" :text="t('activities.empty')" />
     <template v-else>
+      <v-alert
+        v-if="!mappingConfirmed"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="mb-3"
+        :text="t('activities.mappingPending')"
+        data-testid="activities-mapping-pending"
+      >
+        <template #append>
+          <v-btn variant="text" size="small" :text="t('activities.mappingCheck')" data-testid="activities-mapping-check" @click="checkMapping" />
+        </template>
+      </v-alert>
       <div class="d-flex flex-wrap align-center ga-3 mb-2">
         <v-text-field
           v-model="state.q"
@@ -176,7 +211,7 @@ function showInGrid(iri: Iri) {
         />
         <v-select
           v-model="state.categoryClass"
-          :items="CLASS_ITEMS"
+          :items="classItems"
           :label="t('activities.filters.class')"
           density="compact"
           variant="outlined"
@@ -226,7 +261,8 @@ function showInGrid(iri: Iri) {
         hide-default-footer
         must-sort
         :sort-by="sortBy"
-        :no-data-text="t('activities.noMatch')"
+        :no-data-text="state.onlyFindings && !mappingConfirmed ? t('activities.noFindingsYet') : t('activities.noMatch')"
+        :row-props="rowProps"
         hover
         @update:sort-by="onSort"
         @click:row="onRowClick"
@@ -241,14 +277,24 @@ function showInGrid(iri: Iri) {
           <div v-if="item.categoryShort" class="d-flex align-center ga-1 text-no-wrap">
             <span class="cat-dot" :style="{ backgroundColor: item.categoryColor ?? '#9e9e9e' }" />
             <span>{{ item.categoryShort }}</span>
+            <v-icon
+              v-if="item.categoryExcluded"
+              icon="mdi-eye-off"
+              size="x-small"
+              :title="t('activities.categoryExcluded')"
+              :aria-label="t('activities.categoryExcluded')"
+              data-testid="activity-category-excluded"
+            />
             <v-chip
               v-if="item.categoryClass !== 'NONE'"
               size="x-small"
               label
-              variant="flat"
-              class="text-white"
-              :style="{ backgroundColor: item.categoryColor ?? '#9e9e9e' }"
-              :text="item.categoryClass"
+              :variant="mappingConfirmed ? 'flat' : 'outlined'"
+              :class="mappingConfirmed ? 'text-white' : ''"
+              :style="mappingConfirmed ? { backgroundColor: item.categoryColor ?? '#9e9e9e' } : {}"
+              :text="mappingConfirmed ? item.categoryClass : `${item.categoryClass}?`"
+              :title="mappingConfirmed ? undefined : t('activities.classGuess')"
+              data-testid="activity-class-chip"
             />
           </div>
         </template>
@@ -265,72 +311,44 @@ function showInGrid(iri: Iri) {
           </div>
         </template>
         <template #[`item.duration`]="{ item }">
-          <span class="text-no-wrap">{{ item.durationMinutes ? formatMinutes(item.durationMinutes) : '' }}</span>
+          <span class="text-no-wrap">{{ durationText(item) }}</span>
         </template>
         <template #[`item.responsibles`]="{ item }">
           <span>{{ item.responsibles.join(', ') }}</span>
         </template>
         <template #[`item.findings`]="{ item }">
-          <div class="d-flex ga-1">
+          <div class="d-flex align-center ga-1 text-no-wrap">
             <template v-for="s in SEVERITIES" :key="s">
               <v-chip
                 v-if="item.findings[s]"
                 size="x-small"
                 label
                 variant="tonal"
-                :color="severityColor(s)"
-                :text="String(item.findings[s])"
-                :title="t(`severity.${s}`)"
+                :color="chipColor(s)"
+                :text="t('activities.findingsChip', { count: item.findings[s], severity: t(`severity.${s}`) })"
               />
             </template>
+            <span
+              v-if="item.manualCount"
+              class="count-icon text-primary"
+              :title="t('activities.manual.count', { count: item.manualCount })"
+              data-testid="activity-manual-count"
+            >
+              <v-icon icon="mdi-comment-text-outline" size="x-small" />{{ item.manualCount }}
+            </span>
+            <span
+              v-if="item.documentCount"
+              class="count-icon text-medium-emphasis"
+              :title="t('activities.documentCount', { count: item.documentCount })"
+              data-testid="activity-doc-count"
+            >
+              <v-icon icon="mdi-file-document-outline" size="x-small" />{{ item.documentCount }}
+            </span>
           </div>
-        </template>
-        <template #[`item.manual`]="{ item }">
-          <v-chip
-            v-if="item.manualCount"
-            size="x-small"
-            label
-            variant="tonal"
-            color="primary"
-            prepend-icon="mdi-comment-text-outline"
-            :text="String(item.manualCount)"
-            :title="t('activities.manual.count', { count: item.manualCount })"
-            data-testid="activity-manual-count"
-          />
-        </template>
-        <template #[`item.documents`]="{ item }">
-          <span>{{ item.documentCount || '' }}</span>
-        </template>
-        <template #[`item.actions`]="{ item }">
-          <v-btn
-            icon="mdi-comment-plus-outline"
-            size="x-small"
-            variant="text"
-            :title="t('activities.manual.add')"
-            :aria-label="t('activities.manual.add')"
-            data-testid="activity-add-finding"
-            @click.stop="addFinding(item)"
-          />
-          <v-btn
-            icon="mdi-calendar-week"
-            size="x-small"
-            variant="text"
-            :title="t('activities.showInGrid')"
-            :aria-label="t('activities.showInGrid')"
-            @click.stop="showInGrid(item.iri)"
-          />
         </template>
       </v-data-table>
     </template>
 
-    <ManualFindingDialog
-      v-if="addFor"
-      v-model="addOpen"
-      :camp-iri="campIri"
-      scope="activity"
-      :activity-iri="addFor.iri"
-      :title="addFor.title"
-    />
     <ActivityDrawer
       v-model="drawer"
       :activity-iri="selected"
@@ -338,10 +356,16 @@ function showInGrid(iri: Iri) {
       :facts="facts"
       :findings="findingsHandle.findings.value"
       :class-of="settings.classOf"
-      @feedback="feedback"
+      :order="order"
+      step-keys="vertical"
+      can-show-in-grid
+      @select="step"
+      @open-finding="openFinding"
       @show-findings="showFindings"
+      @show-in-grid="showInGrid"
       @open-document="openDocument"
       @ai-findings="findingsHandle.addAiFindings($event)"
+      @linked="loadDocuments"
     />
   </div>
 </template>
@@ -369,6 +393,15 @@ function showInGrid(iri: Iri) {
 }
 .activities-table :deep(td) {
   vertical-align: middle;
+}
+.activities-table :deep(tbody tr.row-selected) {
+  background: rgba(var(--v-theme-primary), 0.1);
+}
+.count-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
 }
 .cat-dot {
   display: inline-block;

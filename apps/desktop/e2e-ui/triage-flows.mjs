@@ -12,7 +12,6 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
   await step('flow: Übersicht progress card links to the triage', async () => {
     await go('uebersicht', 'flow-overview')
     await page.waitForSelector('[data-testid="overview-progress"]', { timeout: 5000 })
-    await page.waitForSelector('[data-testid="overview-datasources"]', { timeout: 5000 })
     await shot(page, 'flow-overview-progress')
     await page.locator('[data-testid="overview-progress-triage"]').first().click({ timeout: 5000 })
     await page.waitForURL(/\/befunde/, { timeout: 5000 })
@@ -27,6 +26,65 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     const t = await text()
     if (!/Befunde durchgehen/i.test(t)) throw new Error('mode toggle missing')
     if (/Übersteuer/i.test(t)) throw new Error('found Übersteuern in UI')
+    const counter = await page.locator('[data-testid="triage-counter"]').innerText()
+    if (!/\d+ Themen? · \d+ Befunden?/.test(counter) && !/\d+ Themen? · \d+ Befunde/.test(counter)) throw new Error('counter: ' + counter)
+  })
+
+  await step('flow: «Zuerst für dich» holds the coach homework, not part of the triage', async () => {
+    await go('befunde', 'flow-coach-todo')
+    await page.waitForSelector('.triage-item', { timeout: 8000 })
+    const block = page.locator('[data-testid="coach-todo"]')
+    if (!(await block.count())) throw new Error('coach todo block missing')
+    const bt = await block.innerText()
+    if (!/Zuerst für dich \(\d+\)/.test(bt)) throw new Error('title: ' + bt)
+    if (!/Sie gehen nicht ans Lagerteam/.test(bt)) throw new Error('hint missing')
+    const ids = await block.locator('[data-testid="coach-todo-row"]').evaluateAll((els) => els.map((e) => e.getAttribute('data-finding-id')))
+    for (const id of ids) {
+      if (await page.locator(`.triage-item[data-finding-id="${id}"]`).count()) throw new Error('coach todo is also in the triage list: ' + id)
+    }
+    await shot(page, 'flow-coach-todo-block')
+    await block.locator('[data-testid="coach-todo-inputs"]').first().click()
+    await page.waitForURL(/\/angaben/, { timeout: 5000 })
+  })
+
+  await step('flow: same-rule day findings are one entry with dates; «Einzeln anzeigen» expands', async () => {
+    await go('befunde', 'flow-group')
+    await page.waitForSelector('.triage-item', { timeout: 8000 })
+    const row = page.locator('.triage-item[data-group]').first()
+    if (!(await row.count())) throw new Error('no grouped entry in the list')
+    const title = await row.innerText()
+    if (!/ · \d+ Tage \(.+\)/.test(title)) throw new Error('group title: ' + title)
+    const before = await page.locator('.triage-item').count()
+    await row.click()
+    await page.waitForTimeout(300)
+    await page.locator('[data-testid="triage-expand"]').click()
+    await page.waitForTimeout(300)
+    const after = await page.locator('.triage-item').count()
+    if (after <= before) throw new Error(`expand did not add rows (${before} -> ${after})`)
+    const member = await page.locator('.triage-item.member').first().innerText()
+    if (!/\d{2}\.\d{2}\./.test(member)) throw new Error('member row has no date: ' + member)
+    await shot(page, 'flow-group-expanded')
+    await page.locator('[data-testid="triage-expand"]').click()
+    await page.waitForTimeout(300)
+    if ((await page.locator('.triage-item').count()) !== before) throw new Error('collapse did not restore the rows')
+  })
+
+  await step('flow: decision sits right under the finding, buttons inside the viewport', async () => {
+    await go('befunde', 'flow-decision-layout')
+    await page.waitForSelector('[data-testid="triage-save"]', { timeout: 8000 })
+    // the homework block above is expanded by default; fold it away for the measurement (the coach does it first)
+    if (await page.locator('[data-testid="coach-todo-toggle"]').count()) {
+      await page.locator('[data-testid="coach-todo-toggle"]').click()
+      await page.waitForTimeout(300)
+    }
+    await page.evaluate(() => window.scrollTo(0, 0))
+    const vp = page.viewportSize()
+    const box = await page.locator('[data-testid="triage-save"]').boundingBox()
+    if (!box || box.y + box.height > vp.height) throw new Error('save button below the fold: ' + JSON.stringify(box) + ' vs ' + vp.height)
+    const labels = await page.locator('[data-testid="triage-editor"]').innerText()
+    if (!/Feedback speichern & weiter \(F\)/i.test(labels) || !/Ignorieren & weiter \(I\)/i.test(labels) || !/Überspringen \(J\)/i.test(labels)) throw new Error('button labels: ' + labels)
+    if (!(await page.locator('[data-testid="triage-more"]').count())) throw new Error('more menu missing')
+    await shot(page, 'flow-decision-layout')
   })
 
   await step('flow: triage 3 findings by keyboard (save, ignore, skip)', async () => {
@@ -43,11 +101,20 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     if (st1 !== 'feedback') throw new Error('first finding status ' + st1)
     await page.keyboard.press('i')
     await page.waitForTimeout(700)
-    const afterIgnore = await currentId()
-    if (afterIgnore === afterSave) throw new Error('did not advance after ignore')
+    let afterIgnore = await currentId()
+    if (afterIgnore === afterSave) {
+      // A Muss needs a reason: «I» focuses the reason field instead of ignoring.
+      const msg = await page.locator('[data-testid="triage-reason"]').innerText()
+      if (!/Bei Muss-Befunden ist ein Grund nötig/.test(msg)) throw new Error('did not advance after ignore and no reason prompt: ' + msg)
+      await page.locator('[data-testid="triage-reason"] input').fill('Wird mit der Lagerleitung geklärt.')
+      await page.getByRole('button', { name: /Ignorieren & weiter/ }).click()
+      await page.waitForTimeout(700)
+      afterIgnore = await currentId()
+      if (afterIgnore === afterSave) throw new Error('did not advance after ignore with reason')
+    }
     const st2 = await statusOf(afterSave)
     if (st2 !== 'ignored') throw new Error('second finding status ' + st2)
-    await page.getByRole('button', { name: 'Überspringen' }).click()
+    await page.getByRole('button', { name: /Überspringen/ }).click()
     await page.waitForTimeout(500)
     const afterSkip = await currentId()
     if (afterSkip === afterIgnore) throw new Error('did not advance after skip')
@@ -71,6 +138,8 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     await page.locator('.v-overlay--active .v-list-item').first().click()
     await page.locator('textarea').first().fill('Bitte Sicherheitskonzept ergänzen.')
     await page.getByRole('button', { name: /^speichern$/i }).click()
+    // «In eCamp öffnen» lives in the card's ⋯ menu since the feedback card cleanup.
+    await page.getByTestId('feedback-item').filter({ hasText: 'Bitte Sicherheitskonzept ergänzen.' }).getByTestId('feedback-more').click({ timeout: 5000 })
     await page.waitForSelector('[data-test="open-ecamp"]', { timeout: 5000 })
     const body = await page.locator('.v-sheet').first().innerText().catch(() => '')
     if (!(await page.locator('[data-test="open-ecamp"]').count())) throw new Error('"In eCamp öffnen" button missing')
@@ -78,6 +147,8 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     if (/\/program\/activity\//.test(body) || /https?:\/\//.test(body)) throw new Error('whatsapp preview must not contain a link: ' + body.slice(0, 200))
     if (!/\*?\d+\.\d+(\/\d+\.\d+)* /.test(body)) throw new Error('whatsapp preview lacks block number: ' + body.slice(0, 200))
     await shot(page, 'flow-feedback-links')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(300)
     await page.locator('.v-tab', { hasText: /e-?mail/i }).first().click()
     await page.waitForSelector('[data-test="feedback-html"] a', { timeout: 5000 })
     const htmlSheet = page.locator('[data-test="feedback-html"]')
@@ -119,14 +190,19 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     for (let i = 0; i < n; i++) {
       await page.locator('.triage-item').nth(i).click()
       await page.waitForTimeout(250)
-      if (await page.getByRole('button', { name: /im gp öffnen/i }).count()) {
-        id = await currentId()
+      if (!(await page.getByRole('button', { name: /im gp öffnen/i }).count())) continue
+      const candidate = await currentId()
+      await page.getByRole('button', { name: /im gp öffnen/i }).first().click()
+      await page.waitForURL(/raster\?.*vonBefund=/, { timeout: 5000 })
+      if (/[?&]activity=/.test(page.url())) {
+        id = candidate
         break
       }
+      // a day finding opens the day (tag=), not an activity: back and try the next one
+      await page.goBack()
+      await page.waitForSelector('.triage-item', { timeout: 5000 })
     }
     if (!id) throw new Error('no finding with an activity found')
-    await page.getByRole('button', { name: /im gp öffnen/i }).first().click()
-    await page.waitForURL(/raster\?.*vonBefund=/, { timeout: 5000 })
     await page.waitForSelector('[data-testid="back-to-finding"]', { timeout: 5000 })
     await page.waitForSelector('[data-testid="drawer-back-to-finding"]', { timeout: 5000 })
     await page.waitForTimeout(500)
@@ -154,25 +230,61 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     if ((await currentId()) !== id) throw new Error('Alt+Left: not back on the same finding')
   })
 
-  await step('flow: ignore 3 of the same rule -> prompt -> only this camp', async () => {
+  await step('flow: a day finding opens the GP at its day (?tag=, no activity drawer)', async () => {
+    await go('befunde', 'flow-day-finding')
+    await page.waitForSelector('.triage-item')
+    const n = await page.locator('.triage-item').count()
+    let found = false
+    const seen = []
+    for (let i = 0; i < n; i++) {
+      await page.locator('.triage-item').nth(i).click()
+      await page.waitForTimeout(250)
+      if (!(await page.getByRole('button', { name: /im gp öffnen/i }).count())) continue
+      await page.getByRole('button', { name: /im gp öffnen/i }).first().click()
+      await page.waitForURL(/raster\?.*vonBefund=/, { timeout: 5000 })
+      seen.push(page.url().split('#')[1])
+      if (/[?&]tag=/.test(page.url())) {
+        found = true
+        break
+      }
+      await page.goBack()
+      await page.waitForSelector('.triage-item', { timeout: 5000 })
+    }
+    if (!found) throw new Error('no day finding opened the GP with tag=: ' + seen.join(' ; '))
+    await page.waitForSelector('[data-testid="back-to-finding"]', { timeout: 5000 })
+    await page.waitForTimeout(600)
+    if (await page.locator('[data-testid="drawer-back-to-finding"]').count()) throw new Error('a day finding must not open the activity drawer')
+    await shot(page, 'flow-day-finding-grid')
+    await page.locator('[data-testid="back-to-finding"]').click()
+    await page.waitForSelector('.triage-item.active', { timeout: 5000 })
+  })
+
+  await step('flow: ignoring a Muss asks for a reason first', async () => {
+    await go('befunde', 'flow-must-reason')
+    await page.waitForSelector('.triage-item', { timeout: 8000 })
+    const must = page.locator('.triage-item[data-severity="must"][data-status="open"]').first()
+    if (!(await must.count())) return // no open Muss in this camp state
+    await must.click()
+    await page.waitForTimeout(300)
+    await page.getByRole('button', { name: /Ignorieren & weiter/ }).click()
+    await page.waitForTimeout(400)
+    const msg = await page.locator('[data-testid="triage-reason"]').innerText()
+    if (!/Bei Muss-Befunden ist ein Grund nötig/.test(msg)) throw new Error('no reason prompt: ' + msg)
+    if ((await must.getAttribute('data-status')) !== 'open') throw new Error('Muss was ignored without a reason')
+    await shot(page, 'flow-must-reason')
+  })
+
+  await step('flow: ignore a group of the same rule -> prompt -> only this camp', async () => {
     await go('befunde', 'flow-disable')
     await page.waitForSelector('.triage-item')
-    const items = await page.locator('.triage-item').evaluateAll((els) =>
-      els.map((e) => ({ id: e.getAttribute('data-finding-id'), status: e.getAttribute('data-status') })),
-    )
-    const byRule = {}
-    for (const it of items) {
-      const rule = it.id.split(':')[0]
-      if (it.status === 'open') (byRule[rule] ??= []).push(it.id)
-    }
-    const rule = Object.keys(byRule).find((r) => byRule[r].length >= 3)
-    if (!rule) throw new Error('no rule with 3 open findings: ' + JSON.stringify(Object.fromEntries(Object.entries(byRule).map(([k, v]) => [k, v.length]))))
-    for (const id of byRule[rule].slice(0, 3)) {
-      await page.locator(`.triage-item[data-finding-id="${id}"]`).click()
-      await page.waitForTimeout(300)
-      await page.getByRole('button', { name: 'Ignorieren & weiter' }).click()
-      await page.waitForTimeout(600)
-    }
+    // one I ignores all days of a group: that is more than 3 ignores of the same rule
+    const row = page.locator('.triage-item[data-group][data-status="open"]:not([data-severity="must"])').first()
+    if (!(await row.count())) throw new Error('no open group of a non-Muss rule')
+    const first = await row.getAttribute('data-finding-id')
+    const rule = first.split(':')[0]
+    await row.click()
+    await page.waitForTimeout(300)
+    await page.getByRole('button', { name: /Ignorieren & weiter/ }).click()
     await page.waitForSelector('[data-testid="disable-prompt"]', { timeout: 4000 })
     await shot(page, 'flow-disable-prompt')
     const t = await text()

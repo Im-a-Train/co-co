@@ -26,7 +26,7 @@ import i18n from '@/plugins/i18n'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import type { RuleContextInput } from '@/domain/types'
 import type { JsDayModel, RuleContext } from '@/domain/types'
-import type { AppSettings, CampRuleConfig, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
+import type { AppSettings, CampRuleConfig, CategoryMapping, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
 import { getMidataRecord } from '@/domain/midata/store'
 import { midataVersion } from '@/composables/midataSignal'
 import { getNdsRecord } from '@/domain/nds/store'
@@ -44,6 +44,8 @@ export interface FindingsHandle {
   previewJsDays: ComputedRef<JsDayReport | null>
   /** Required number of J+S days (`js.minConsecutiveDays`). */
   jsMinDays: ComputedRef<number>
+  /** J+S day model of this camp for a hypothetical mapping (what-if for the mapping table); null when unavailable. */
+  jsModelFor(mapping: CategoryMapping): JsDayModel | null
   evaluating: ComputedRef<boolean>
   error: ComputedRef<string | null>
   refresh(): Promise<void>
@@ -333,6 +335,16 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     jsDays,
     previewJsDays,
     jsMinDays,
+    jsModelFor(mapping) {
+      const input = contextInput.value
+      if (!input) return null
+      try {
+        const model = completeContext(enabledPacks(appSettings.value), { ...input, mapping }).js
+        return model && model.status === 'ok' ? model : null
+      } catch {
+        return null
+      }
+    },
     evaluating: computed(() => factsHandle.loading.value),
     error: computed(() => result.value.error ?? evalError.value ?? factsHandle.error.value),
     async refresh() {

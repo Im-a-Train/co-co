@@ -180,3 +180,44 @@ describe('milestone audience', () => {
     expect(all.some((m) => m.audience === 'leaders')).toBe(true)
   })
 })
+
+describe('sameAs (twin milestones)', () => {
+  const LS = { title: 'LS/T Lager (Broschüre), S. 3', url: 'https://example.org/ls' }
+  const TWINS: MilestoneList = {
+    id: 'tw',
+    name: 'TW',
+    version: '1',
+    milestones: [
+      { id: 'M-LS', title: 'Grobprogramm an den Coach', description: '', anchor: 'start', audience: 'coach', offsetDays: -90, module: 'lst', source: LS, confidence: 'unverified' },
+      { id: 'pbs-g', title: 'Grobprogramm an den Coach', description: '', anchor: 'start', audience: 'coach', offsetDays: -75, module: 'pbs', source: SRC, confidence: 'unverified', sameAs: ['M-LS'] },
+    ],
+  }
+  it('skips the twin when its target is active and lists it as «auch genannt»', () => {
+    const d = computeMilestoneDeadlines(camp, null, TWINS)
+    expect(d.map((x) => x.milestoneId)).toEqual(['M-LS'])
+    expect(d[0].alsoNamed).toEqual([{ id: 'pbs-g', source: 'Hering', due: '2026-04-26' }])
+  })
+  it('keeps the twin when the target module is off', () => {
+    const ctx: MilestoneContext = { isModuleActive: (m) => m !== 'lst' }
+    expect(computeMilestoneDeadlines(camp, null, TWINS, ctx).map((x) => x.milestoneId)).toEqual(['pbs-g'])
+  })
+  it('carries an old tick of the skipped twin over to the target', () => {
+    const inputs = { milestonesDone: { 'pbs-g': '2026-05-01' } } as never
+    const d = computeMilestoneDeadlines(camp, inputs, TWINS)
+    expect(d).toHaveLength(1)
+    expect(d[0].done).toBe(true)
+  })
+  it('parseMilestonesYaml validates sameAs targets', () => {
+    const withSame = (ids: string) => VALID.replace('    confidence: unverified', `    sameAs: ${ids}\n    confidence: unverified`)
+    expect(parseMilestonesYaml(withSame('[other]'), undefined, new Set(['other'])).milestones[0].sameAs).toEqual(['other'])
+    expect(() => parseMilestonesYaml(withSame('[nope]'))).toThrow(/unbekannte ID/)
+    expect(() => parseMilestonesYaml(withSame('[m1]'))).toThrow(/sich selbst/)
+    expect(() => parseMilestonesYaml(withSame('foo'))).toThrow(/«sameAs»/)
+  })
+  it('bundled lists: the Hering twins of LS/T entries are skipped for a default PBS camp', () => {
+    const d = computeMilestoneDeadlines(camp, null, loadBundledMilestones())
+    const titles = d.filter((x) => x.title === 'Grobprogramm an den Coach')
+    expect(titles).toHaveLength(1)
+    expect(titles[0].milestoneId).toBe('M-LST-GROBPROGRAMM')
+  })
+})

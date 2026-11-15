@@ -2,7 +2,7 @@
 /** Review status workflow: stepper over the happy path + buttons for allowed transitions. */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { REVIEW_TRANSITIONS } from '@/domain/rounds'
+import { REVIEW_TRANSITIONS, reviewStepMarks } from '@/domain/rounds'
 import type { ReviewState, ReviewStatus } from '@/domain/types'
 
 const props = defineProps<{ review: ReviewState | null }>()
@@ -24,6 +24,8 @@ const activeIndex = computed(() => {
   const i = steps.value.indexOf(current.value)
   return i < 0 ? 0 : i
 })
+/** Check mark only for statuses that were really set; passed-over steps get a minus. */
+const marks = computed(() => reviewStepMarks(props.review?.history ?? [], current.value))
 
 function color(s: ReviewStatus): string {
   if (s === 'bewilligt') return 'success'
@@ -47,7 +49,8 @@ function setTo(s: ReviewStatus) {
           <v-chip
             :color="i === activeIndex ? color(s) : undefined"
             :variant="i === activeIndex ? 'flat' : 'outlined'"
-            :prepend-icon="i < activeIndex ? 'mdi-check' : undefined"
+            :prepend-icon="marks[s] === 'done' ? 'mdi-check' : marks[s] === 'skipped' ? 'mdi-minus' : undefined"
+            :data-mark="marks[s]"
             size="small"
           >
             {{ t(`reviewStatus.${s}`) }}

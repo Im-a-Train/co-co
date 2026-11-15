@@ -82,7 +82,7 @@ watch(
       scope="document"
       :document-id="doc.id"
       :anchor="anchor"
-      :title="t('documents.viewer.dialogTitle', { name: doc.name })"
+      :title="doc.name"
       @saved="emit('saved')"
     />
   </div>

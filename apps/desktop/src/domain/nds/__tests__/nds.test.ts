@@ -6,7 +6,9 @@ import {
   adoptNdsFields,
   dropEditedNdsFields,
   ndsDatesDiffer,
+  ndsDateRange,
   ndsFieldDiffs,
+  ndsLinkInfo,
   ndsStateLabel,
   ndsSuggestions,
   participantsDiffer,
@@ -130,5 +132,23 @@ describe('nds store', () => {
     await saveNdsAggregate(CAMP, agg('c1'), db)
     await clearNds(CAMP, db)
     expect(await getNdsRecord(CAMP, db)).toBeNull()
+  })
+})
+
+describe('ndsDateRange / ndsLinkInfo', () => {
+  it('formats ranges', () => {
+    expect(ndsDateRange('2031-01-24', '2031-01-30')).toBe('24.–30.01.2031')
+    expect(ndsDateRange('2031-01-30', '2031-02-03')).toBe('30.01. – 03.02.2031')
+    expect(ndsDateRange('2031-12-30', '2032-01-03')).toBe('30.12.2031 – 03.01.2032')
+    expect(ndsDateRange('2031-01-24', '2031-01-24')).toBe('24.01.2031')
+    expect(ndsDateRange(null, null)).toBe('')
+  })
+  it('falls back to the aggregate for links without extras', () => {
+    const info = ndsLinkInfo({}, { offerNumber: '999001', start: '2031-01-24', end: '2031-01-30' })
+    expect(info).toEqual({ groupName: null, offerNumber: '999001', dates: '24.–30.01.2031' })
+    expect(ndsLinkInfo({ groupName: 'Musterstufe', offerNumber: '1' }, null).groupName).toBe('Musterstufe')
+  })
+  it('knows ATTENDANCE_OPEN', () => {
+    expect(ndsStateLabel('ATTENDANCE_OPEN')).toBe('Präsenzkontrolle offen')
   })
 })

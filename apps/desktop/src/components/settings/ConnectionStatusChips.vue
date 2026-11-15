@@ -52,17 +52,16 @@ const chips = computed<Chip[]>(() => {
       ? { tooltip: t('connectionStatus.midataOk'), color: 'success', icon: OK }
       : { tooltip: t('connectionStatus.midataOff'), color: 'grey', icon: OFF }),
   }
+  // A switched-off NDS integration is a deliberate choice, not a problem: no chip at all (FIRST-04).
+  if (!nds.enabled.value) return [ecamp, md]
   const n: Chip = {
     key: 'nds',
     label: t('connectionStatus.nds'),
     hash: 'nds',
-    ...(!nds.enabled.value
-      ? { tooltip: t('connectionStatus.ndsDisabled'), color: 'grey', icon: 'mdi-power-plug-off-outline' }
-      : nds.connected.value
-        ? { tooltip: t('connectionStatus.ndsOk'), color: 'success', icon: OK }
-        : { tooltip: t('connectionStatus.ndsOff'), color: 'warning', icon: OFF }),
+    ...(nds.connected.value
+      ? { tooltip: t('connectionStatus.ndsOk'), color: 'success', icon: OK }
+      : { tooltip: t('connectionStatus.ndsOff'), color: 'warning', icon: OFF }),
   }
-  if (!nds.enabled.value) n.label = `${n.label} · ${t('connectionStatus.off')}`
   return [ecamp, md, n]
 })
 

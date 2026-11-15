@@ -39,6 +39,8 @@ export interface FeedbackHandle {
   /** Posts an activity item as eCamp comment(s). Rejects with a readable message on failure. */
   postAsComment(id: string): Promise<void>
   markSent(id: string, sent: boolean): Promise<void>
+  /** Marks several drafts as sent (bulk action after copying the preview). Posted items are left alone. */
+  markSentMany(ids: readonly string[]): Promise<number>
   /** Reads resolved/answered eCamp comments back into posted items (persists changed items). */
   syncComments(facts: CampFacts): Promise<CommentSyncSummary>
   /** Marks all current replies of an item as seen. */
@@ -155,6 +157,17 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     await update(id, { status: sent ? 'sent' : 'draft' })
   }
 
+  async function markSentMany(ids: readonly string[]): Promise<number> {
+    let n = 0
+    for (const id of ids) {
+      const item = items.value.find((i) => i.id === id)
+      if (!item || item.status !== 'draft') continue
+      await update(id, { status: 'sent' })
+      n++
+    }
+    return n
+  }
+
   async function syncComments(facts: CampFacts): Promise<CommentSyncSummary> {
     // Comments are fetched best-effort and facts carry no failure flag: an empty list is treated as
     // "not loaded" so a failed fetch never marks every posted item as deleted in eCamp.
@@ -187,6 +200,7 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     remove,
     postAsComment,
     markSent,
+    markSentMany,
     syncComments,
     markRepliesSeen,
   }

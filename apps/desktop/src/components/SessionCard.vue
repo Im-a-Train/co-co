@@ -5,6 +5,8 @@ import { useSession } from '@/composables/useSession'
 import { useSignOut } from '@/composables/useSignOut'
 import { formatDuration, normalizeEpochMs } from '@/lib/refresh'
 
+defineProps<{ compact?: boolean }>()
+
 const { t, d } = useI18n()
 const { session, user, userError, userLoading, busy, now, nextRefreshAt, secondsLeft, expired, refresh, loadUser } = useSession()
 const signOut = useSignOut()
@@ -15,16 +17,25 @@ const nextRefreshIn = computed(() =>
   nextRefreshAt.value != null ? Math.max(0, Math.round((nextRefreshAt.value - now.value) / 1000)) : null,
 )
 
+const instanceHost = computed(() => {
+  if (!session.value) return ''
+  try {
+    return new URL(session.value.baseUrl).host
+  } catch {
+    return session.value.baseUrl
+  }
+})
+
 async function doLogout(): Promise<void> {
   await signOut()
 }
 </script>
 
 <template>
-  <v-card class="h-100">
+  <v-card data-testid="session-card">
     <v-card-item prepend-icon="mdi-shield-key-outline">
-      <v-card-title>{{ t('session.title') }}</v-card-title>
-      <v-card-subtitle>{{ session ? session.baseUrl : t('session.none') }}</v-card-subtitle>
+      <v-card-title>{{ compact ? t('session.account.title') : t('session.title') }}</v-card-title>
+      <v-card-subtitle v-if="!compact">{{ session ? session.baseUrl : t('session.none') }}</v-card-subtitle>
       <template #append>
         <v-chip v-if="session" size="small" :color="expired ? 'error' : 'success'" variant="tonal">
           {{ expired ? t('session.expired') : t('session.active') }}
@@ -41,8 +52,29 @@ async function doLogout(): Promise<void> {
       />
     </v-card-text>
 
+    <v-card-text v-else-if="compact">
+      <v-list density="compact" class="py-0 bg-transparent" data-testid="session-account">
+        <v-list-item prepend-icon="mdi-account-circle-outline" :subtitle="t('session.account.name')">
+          <!-- #title slot (not a default-slot title) keeps «value above label» like the other rows -->
+          <template #title>
+            <v-progress-circular v-if="userLoading" indeterminate size="16" width="2" class="me-2" />
+            <template v-if="user">
+              {{ [user.firstname, user.surname].filter(Boolean).join(' ') || user.displayName || t('common.unknown') }}
+            </template>
+            <template v-else-if="!userLoading">{{ session.userIri ?? t('common.unknown') }}</template>
+          </template>
+          <div v-if="userError" class="text-caption text-error">
+            {{ t('session.userFailed') }}: {{ userError }}
+            <v-btn size="x-small" variant="text" @click="loadUser">{{ t('common.retry') }}</v-btn>
+          </div>
+        </v-list-item>
+        <v-list-item v-if="user?.email" prepend-icon="mdi-email-outline" :title="user.email" :subtitle="t('session.account.email')" />
+        <v-list-item prepend-icon="mdi-server-network" :title="instanceHost" :subtitle="t('session.account.instance')" />
+      </v-list>
+    </v-card-text>
+
     <v-card-text v-else>
-      <v-list density="compact" class="py-0">
+      <v-list density="compact" class="py-0 bg-transparent">
         <v-list-item prepend-icon="mdi-key-chain-variant" :title="t(`session.method.${session.method}`)" :subtitle="t('session.methodLabel')" />
         <v-list-item prepend-icon="mdi-account-circle-outline" :subtitle="t('session.user')">
           <v-list-item-title>
@@ -91,6 +123,7 @@ async function doLogout(): Promise<void> {
 
     <v-card-actions v-if="session" class="px-4 pb-4">
       <v-btn
+        v-if="!compact"
         color="primary"
         variant="tonal"
         prepend-icon="mdi-refresh"
@@ -100,11 +133,12 @@ async function doLogout(): Promise<void> {
       >
         {{ t('session.refresh') }}
       </v-btn>
-      <v-spacer />
+      <v-spacer v-if="!compact" />
       <v-btn
-        color="error"
-        variant="text"
+        v-if="compact"
+        variant="tonal"
         prepend-icon="mdi-logout"
+        data-testid="session-logout"
         :loading="busy === 'logout'"
         :disabled="busy !== null"
         @click="doLogout"

@@ -12,8 +12,9 @@ export async function commentSyncFlows({ page, step, go, shot }) {
     await page.waitForTimeout(500)
     const card = page.getByTestId('feedback-item').filter({ hasText: body })
     await card.getByRole('button', { name: 'In eCamp posten' }).click({ timeout: 5000 })
-    await card.locator('[data-status="posted"]').first().waitFor({ timeout: 5000 }).catch(() => {})
-    await page.waitForFunction((b) => [...document.querySelectorAll('[data-testid="feedback-item"]')].some((c) => c.textContent.includes(b) && c.getAttribute('data-status') === 'posted'), body, { timeout: 5000 })
+    // The POST is delayed by 5 s (undo window): the item shows «Wird gepostet …» meanwhile.
+    await card.getByText('Wird gepostet').first().waitFor({ timeout: 3000 })
+    await page.waitForFunction((b) => [...document.querySelectorAll('[data-testid="feedback-item"]')].some((c) => c.textContent.includes(b) && c.getAttribute('data-status') === 'posted'), body, { timeout: 15000 })
   }
 
   await step('flow: commentsync posts two items and syncs resolved + reply', async () => {

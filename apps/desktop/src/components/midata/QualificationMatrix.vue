@@ -6,12 +6,18 @@ import { germanRoleLabel } from '@/domain/persons/roleLabels'
 import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type QualMatrixRow } from '@/domain/midata'
 import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2, type MidataQualKey, type MidataQualKind } from '@/domain/types'
 
-const props = defineProps<{
-  matrix: QualificationMatrix
-  kinds: MidataQualKind[]
-  mapping: QualMapping
-  loading?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    matrix: QualificationMatrix
+    kinds?: MidataQualKind[]
+    mapping?: QualMapping
+    loading?: boolean
+    /** Read-only variant (Personen): own title, no intro, no kind mapping. */
+    title?: string
+    compact?: boolean
+  }>(),
+  { kinds: () => [], mapping: () => ({}), loading: false, title: undefined, compact: false },
+)
 const emit = defineEmits<{
   saveMapping: [next: QualMapping]
   reload: []
@@ -58,9 +64,9 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
 
 <template>
   <v-card variant="outlined" class="mb-4" data-testid="qual-matrix">
-    <v-card-title class="text-subtitle-1">{{ t('midata.matrix.title') }}</v-card-title>
+    <v-card-title class="text-subtitle-1">{{ title ?? t('midata.matrix.title') }}</v-card-title>
     <v-card-text>
-      <p class="text-medium-emphasis mb-3">{{ t('midata.matrix.intro') }}</p>
+      <p v-if="!compact" class="text-medium-emphasis mb-3">{{ t('midata.matrix.intro') }}</p>
       <v-alert
         v-if="!matrix.qualificationsReadable"
         type="warning"
@@ -71,7 +77,37 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
       >
         {{ t('midata.matrix.notReadable') }}
       </v-alert>
-      <p v-if="matrix.rows.length > 0" class="text-caption text-medium-emphasis mb-2" data-testid="qual-legend">{{ t('midata.matrix.legend') }}</p>
+      <div v-if="matrix.activities.length > 0" class="mb-4" data-testid="qual-activities">
+        <div class="text-subtitle-2 mb-1">{{ t('midata.matrix.activities.title') }}</div>
+        <ul class="activity-list">
+          <li v-for="a in matrix.activities" :key="`${a.activityIri}-${a.area}`" class="d-flex align-baseline ga-2" data-testid="qual-activity">
+            <v-icon
+              v-if="a.ok === true"
+              icon="mdi-check"
+              color="success"
+              size="small"
+              :aria-label="t('midata.matrix.activities.ok')"
+              data-testid="qual-activity-ok"
+            />
+            <v-icon
+              v-else-if="a.ok === false"
+              icon="mdi-close"
+              color="error"
+              size="small"
+              :aria-label="t('midata.matrix.activities.noQual')"
+              data-testid="qual-activity-bad"
+            />
+            <v-icon v-else icon="mdi-help" color="grey" size="small" :aria-label="t('midata.matrix.activities.unknown')" data-testid="qual-activity-unknown" />
+            <span>
+              {{ t('midata.matrix.activities.row', { activity: a.activityTitle, area: t(`midata.matrix.activities.area.${a.area}`) }) }}
+              {{ a.responsibles.length ? t('midata.matrix.activities.responsible', { names: a.responsibles.join(', ') }) : t('midata.matrix.activities.nobody') }}
+              <span v-if="a.ok === false" class="text-error">{{ t('midata.matrix.activities.noQual') }}</span>
+              <span v-else-if="a.ok === null" class="text-medium-emphasis">{{ t('midata.matrix.activities.unknown') }}</span>
+            </span>
+          </li>
+        </ul>
+      </div>
+      <p v-if="matrix.rows.length > 0 && !compact" class="text-caption text-medium-emphasis mb-2" data-testid="qual-legend">{{ t('midata.matrix.legend') }}</p>
       <div v-if="matrix.rows.length === 0" class="text-medium-emphasis">{{ t('midata.matrix.noLeaders') }}</div>
       <div v-else class="table-wrap">
         <v-table density="compact">
@@ -128,7 +164,7 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
         </v-table>
       </div>
 
-      <v-expansion-panels v-if="kinds.length" variant="accordion" class="mt-4">
+      <v-expansion-panels v-if="!compact && kinds.length" variant="accordion" class="mt-4">
         <v-expansion-panel data-testid="qual-kinds">
           <v-expansion-panel-title>
             {{ t('midata.matrix.kinds.title', { n: kinds.length }) }}
@@ -205,6 +241,13 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
 .select-cell {
   min-width: 260px;
   padding-block: 4px;
+}
+.activity-list {
+  list-style: none;
+  padding: 0;
+}
+.activity-list li {
+  padding-block: 2px;
 }
 .unmapped {
   background: rgba(var(--v-theme-warning), 0.08);

@@ -52,6 +52,7 @@ export const NDS_STATE_LABELS: Readonly<Record<string, string>> = {
   PARTIALLY_PAYED: 'Teilweise ausbezahlt',
   UNFINISHED_BY_BATCH: 'Unvollständig abgeschlossen (automatisch)',
   ATTENDANCE_CHECKED: 'Präsenzkontrolle erledigt',
+  ATTENDANCE_OPEN: 'Präsenzkontrolle offen',
   CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES: 'Lagertag mit J+S-Aktivitäten',
   FIRST_CAMP_DAY: 'Erster Lagertag',
   LAST_CAMP_DAY: 'Letzter Lagertag',
@@ -149,4 +150,39 @@ export function ndsDatesDiffer(agg: NdsAggregate, campStart: string | null, camp
 export function participantsDiffer(ndsPlanned: number | null, other: number | null, threshold = 0.2): boolean {
   if (!ndsPlanned || !other || ndsPlanned <= 0 || other <= 0) return false
   return Math.abs(ndsPlanned - other) / Math.max(ndsPlanned, other) > threshold
+}
+
+/** `dd.mm.yyyy` of an ISO date (or date-time). */
+function dmy(iso: string): { d: string; m: string; y: string } {
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return { d, m, y }
+}
+
+/** «24.–30.01.2031» within one month, «30.01. – 03.02.2031» within one year, else full dates; empty without start. */
+export function ndsDateRange(start: string | null | undefined, end: string | null | undefined): string {
+  if (!start) return ''
+  const a = dmy(start)
+  if (!end || end.slice(0, 10) === start.slice(0, 10)) return `${a.d}.${a.m}.${a.y}`
+  const b = dmy(end)
+  if (a.y === b.y && a.m === b.m) return `${a.d}.–${b.d}.${b.m}.${b.y}`
+  if (a.y === b.y) return `${a.d}.${a.m}. – ${b.d}.${b.m}.${b.y}`
+  return `${a.d}.${a.m}.${a.y} – ${b.d}.${b.m}.${b.y}`
+}
+
+/** What the link line shows: stored link extras, falling back to the loaded aggregate (links saved before the extras existed). */
+export interface NdsLinkInfo {
+  groupName: string | null
+  offerNumber: string | null
+  dates: string
+}
+
+export function ndsLinkInfo(
+  link: { groupName?: string | null; offerNumber?: string | null; start?: string | null; end?: string | null },
+  agg: { offerNumber: string | null; start: string | null; end: string | null } | null,
+): NdsLinkInfo {
+  return {
+    groupName: link.groupName ?? null,
+    offerNumber: link.offerNumber ?? agg?.offerNumber ?? null,
+    dates: ndsDateRange(link.start ?? agg?.start, link.end ?? agg?.end),
+  }
 }

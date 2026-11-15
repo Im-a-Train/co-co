@@ -2,6 +2,9 @@
 /** Review status chip for the camp header; the menu offers only the allowed transitions. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ApprovalCheckDialog from '@/components/rounds/ApprovalCheckDialog.vue'
+import { useApprovalGuard } from '@/composables/useApprovalGuard'
+import { useCampRoute } from '@/composables/useCampRoute'
 import { useRounds } from '@/composables/useRounds'
 import { allowedTransitions, reviewStatusColor } from '@/domain/rounds'
 import type { Iri, ReviewStatus } from '@/domain/types'
@@ -20,14 +23,18 @@ watch(
 const current = computed<ReviewStatus>(() => r.review.value?.status ?? 'neu')
 const options = computed(() => allowedTransitions(current.value))
 
-async function set(status: ReviewStatus) {
+const { campId } = useCampRoute()
+
+async function apply(status: ReviewStatus, note: string | null) {
   error.value = null
   try {
-    await r.setStatus(status)
+    await r.setStatus(status, note)
   } catch {
     error.value = t('rounds.errors.invalidTransition')
   }
 }
+const guard = useApprovalGuard(() => props.campIri, apply)
+const set = (status: ReviewStatus) => guard.request(status)
 </script>
 
 <template>
@@ -52,5 +59,14 @@ async function set(status: ReviewStatus) {
       </v-list>
     </v-menu>
     <span v-if="error" class="text-caption text-error">{{ error }}</span>
+    <ApprovalCheckDialog
+      v-if="guard.pending.value && guard.blockers.value"
+      v-model="guard.open.value"
+      :camp-id="campId"
+      :blockers="guard.blockers.value"
+      :target="guard.pending.value.status"
+      :initial-note="guard.pending.value.note"
+      @confirm="guard.confirm"
+    />
   </div>
 </template>

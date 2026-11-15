@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { formatDate, formatStand } from '@/components/midata/format'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampNds, useNds } from '@/composables/useNds'
-import { ndsFieldDiffs, ndsStateLabel } from '@/domain/nds'
+import { ndsFieldDiffs, ndsLinkInfo, ndsStateLabel } from '@/domain/nds'
 import type { CoachInputs, Iri, NdsAggregate, NdsCampSummary, NdsField } from '@/domain/types'
 import NdsAdoptDialog from './NdsAdoptDialog.vue'
 import NdsCampPicker from './NdsCampPicker.vue'
@@ -49,6 +49,14 @@ const counts = computed(() => {
   ]
   return rows.filter((r) => r.planned !== null || r.actual !== null)
 })
+const linkLabel = computed(() => {
+  const l = camp.link.value
+  if (!l) return ''
+  const info = ndsLinkInfo(l, agg.value)
+  const main = [info.groupName, info.offerNumber ? t('nds.card.link.offer', { n: info.offerNumber }) : ''].filter(Boolean).join(' · ')
+  if (!main && !info.dates) return l.campBusinessId
+  return info.dates ? `${main || l.campBusinessId} (${info.dates})` : main
+})
 const num = (n: number | null): string => (n === null ? '–' : String(n))
 const dates = computed(() => {
   const a = agg.value
@@ -89,7 +97,7 @@ function apply(fields: NdsField[]): void {
             <v-btn variant="tonal" size="small" to="/einstellungen" data-testid="nds-to-settings">{{ t('nds.card.toSettings') }}</v-btn>
           </div>
           <div class="d-flex align-center flex-wrap ga-3 mb-2">
-            <span v-if="camp.link.value" data-testid="nds-link">{{ t('nds.card.link.set', { id: camp.link.value.campBusinessId }) }}</span>
+            <span v-if="camp.link.value" data-testid="nds-link">{{ t('nds.card.link.set', { label: linkLabel }) }}</span>
             <span v-else class="text-medium-emphasis">{{ t('nds.card.link.none') }}</span>
             <v-btn v-if="ready" size="small" variant="tonal" data-testid="nds-pick" @click="openPicker">
               {{ camp.link.value ? t('nds.card.changeCamp') : t('nds.card.pick') }}
@@ -132,7 +140,6 @@ function apply(fields: NdsField[]): void {
             <div class="text-caption text-medium-emphasis mb-2">
               {{ t('nds.summary.dates') }}: {{ dates }}<template v-if="agg.offerNumber"> · {{ t('nds.summary.offerNumber') }}: {{ agg.offerNumber }}</template>
             </div>
-            <div v-if="agg.approvedOn" class="text-caption text-medium-emphasis mb-2">{{ t('nds.summary.approvedHint') }}</div>
 
             <v-table v-if="counts.length" density="compact" class="mb-3" data-testid="nds-counts">
               <thead>
@@ -152,16 +159,6 @@ function apply(fields: NdsField[]): void {
             </v-table>
 
             <div class="summary mb-3">
-              <div>
-                <div class="text-caption text-medium-emphasis">{{ t('nds.summary.participants') }}</div>
-                <div class="text-h6" data-testid="nds-participants">{{ agg.participantCount }}</div>
-                <div v-for="e in countEntries(agg.participantCountsByAudience)" :key="e.code" class="text-caption">{{ e.label }}: {{ e.n }}</div>
-              </div>
-              <div>
-                <div class="text-caption text-medium-emphasis">{{ t('nds.summary.supervisors') }}</div>
-                <div v-for="e in countEntries(agg.supervisorCounts)" :key="e.code" class="text-body-2">{{ e.label }}: {{ e.n }}</div>
-                <div v-if="Object.keys(agg.supervisorCounts).length === 0" class="text-h6">–</div>
-              </div>
               <div v-if="agg.rega" data-testid="nds-rega">
                 <div class="text-caption text-medium-emphasis">{{ t('nds.summary.rega.title') }}</div>
                 <div class="text-body-2">
@@ -174,7 +171,7 @@ function apply(fields: NdsField[]): void {
               <div data-testid="nds-activities">
                 <div class="text-caption text-medium-emphasis">{{ t('nds.summary.activities') }}</div>
                 <div class="text-h6">{{ agg.activities.total }}</div>
-                <div v-for="e in countEntries(agg.activities.byState)" :key="e.code" class="text-caption">{{ e.label }}: {{ e.n }}</div>
+                <div v-for="e in countEntries(agg.activities.byState, t)" :key="e.code" class="text-caption">{{ e.label }}: {{ e.n }}</div>
                 <div v-if="agg.activities.lastActivityDate" class="text-caption">
                   {{ t('nds.summary.lastActivity', { date: formatDate(agg.activities.lastActivityDate) }) }}
                 </div>

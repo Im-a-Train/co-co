@@ -138,6 +138,8 @@ const itemsFound = (d: DocumentRecord) => d.docCheck?.items.filter((i) => i.foun
 function conceptDoc(ctx: RuleContext): DocumentRecord | null {
   const checked = ctx.documents.filter((d) => d.docCheck)
   if (checked.length === 0) return null
+  const confirmed = checked.filter((d) => d.safetyConcept === true)
+  if (confirmed.length > 0) return [...confirmed].sort((a, b) => itemsFound(b) - itemsFound(a))[0]
   const named = checked.filter((d) => ctx.keywords.match('DOC_SICHERHEITSKONZEPT', d.name).length > 0)
   const pool = named.length > 0 ? named : checked
   return [...pool].sort((a, b) => itemsFound(b) - itemsFound(a))[0]

@@ -4,13 +4,14 @@
     "modules": {
       "title": "Regelmodule",
       "intro": "Welche Regelmodule für dieses Lager geprüft werden. «automatisch» schaltet ein Modul ein, sobald das Lager dazu passt; du kannst es jederzeit überstimmen.",
-      "jsHint": "Ob das Lager ein J+S-Lager ist, stellst du oben unter «Allgemein» ein.",
+      "jsHint": "Ob das Lager ein J+S-Lager ist, stellst du oben unter «Lager» ein.",
       "sport": {
         "label": "Sportart",
         "lst": "Lagersport/Trekking",
         "other": "andere Sportart"
       },
       "effective": "Aktuell",
+      "effectiveSuggested": "Vorgeschlagen – prüft nur als Hinweis",
       "reasonsTitle": "Gründe",
       "waiting": "Lagerdaten werden geladen, Gründe folgen.",
       "saveFailed": "Konnte nicht gespeichert werden"
@@ -73,19 +74,36 @@
       "none": "keine Bewilligung erfasst"
     },
     "tags": {
-      "title": "Markierungen",
-      "hint": "Deine Markierungen übersteuern die Stichwort-Erkennung der Regeln.",
+      "title": "Erkennung korrigieren",
+      "hint": "Co-co erkennt vieles aus den Texten. Hier korrigierst du die Erkennung für diese Aktivität; «Automatisch» heisst: co-co entscheidet selbst.",
       "label": "Markierungen dieser Aktivität",
-      "saveFailed": "Markierungen konnten nicht gespeichert werden"
+      "saveFailed": "Markierungen konnten nicht gespeichert werden",
+      "auto": "Automatisch",
+      "autoFromCategory": "Automatisch (aus Kategorie: {category})",
+      "group": {
+        "unternehmung": "Unternehmung",
+        "js": "J+S-Aktivität",
+        "sb": "Sicherheitsbereich",
+        "wasser": "Gewässer",
+        "ebb": "Ergänzender Bewegungsblock",
+        "ef": "Erscheinungsform",
+        "gesichert": "Gesicherter Bereich",
+        "aufsicht": "Externe Wasseraufsicht"
+      },
+      "opt": {
+        "yes": "Ja",
+        "no": "Nein",
+        "a": "A",
+        "b": "B",
+        "none": "Keiner"
+      }
     },
     "checklist": {
       "tabTitle": "Checkliste",
       "tabIntro": "Fristen dieses Lagers und deine Coach-Checkliste an einem Ort. Verknüpfte Punkte teilen sich den Stand mit der Frist.",
       "deadlinesTitle": "Fristen dieses Lagers",
       "deadlinesEmpty": "Keine Fristen: Das Lager hat noch kein Startdatum.",
-      "deadlinesHint": "Gleicher Stand wie unter «Fristen». Termine und Lieferdaten pflegst du unter",
       "toFristen": "Alle Fristen",
-      "toInputs": "Angaben",
       "dueOn": "Frist {date}",
       "movedHint": "Die Coach-Checkliste und die Fristen dieses Lagers findest du jetzt im Tab «Checkliste».",
       "movedLink": "Zur Checkliste",
@@ -109,7 +127,19 @@
       },
       "doneAt": "erledigt am {date}",
       "saveFailed": "Stand konnte nicht gespeichert werden",
-      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen und Punkte der Leitung findest du im Selbstcheck und im Fristen-Radar (Filter «Leitung»).",
+      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen der Leitung findest du im Fristen-Radar (Filter «Leitung»).",
+      "unconfirmed": "unbestätigt",
+      "unconfirmedHint": "Richtwert aus Hering (hering.scout.ch), von der PBS noch nicht bestätigt.",
+      "doneOn": {
+        "nds-registration": "angemeldet am {date}",
+        "nds-closing": "abgeschlossen am {date}"
+      },
+      "doneDateLabel": "Datum",
+      "doneDateAria": "Datum korrigieren",
+      "deliveryLabel": "Lieferdatum",
+      "deliveryHint": "Verschiebt die Bestellfrist",
+      "sourceMenu": "Quelle",
+      "moreActions": "Weitere Aktionen",
       "showHidden": "Ausgeblendete anzeigen ({n})",
       "hide": "Ausblenden",
       "restore": "Wieder einblenden",

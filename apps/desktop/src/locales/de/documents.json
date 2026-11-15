@@ -3,7 +3,7 @@
     "title": "Dokumente",
     "intro": "Dokumente bleiben auf deinem Computer. co-co speichert nur den extrahierten Text und die Metadaten im Browser-Speicher der App.",
     "drop": {
-      "title": "Dateien hierher ziehen",
+      "title": "Zieh Sicherheitskonzept, Routen (GPX) und Listen hierher",
       "hint": "PDF, DOCX, XLSX, GPX, TXT oder MD. Du kannst auch einen Ordner hierher ziehen, er wird dann überwacht.",
       "pickFiles": "Dateien wählen",
       "pickFolder": "Ordner überwachen",
@@ -13,15 +13,15 @@
       "title": "Überwachte Ordner",
       "empty": "Noch kein Ordner überwacht.",
       "remove": "Überwachung beenden",
-      "rescan": "Ordner neu einlesen"
+      "rescan": "Ordner neu einlesen",
+      "summary": "{n} Ordner überwacht · verwalten",
+      "hide": "Ordner ausblenden"
     },
     "list": {
       "title": "Dokumente dieses Lagers",
-      "empty": "Noch keine Dokumente. Ziehe Dateien in das Fenster oder wähle sie aus.",
       "remove": "Aus co-co entfernen",
       "collapse": "Liste einklappen",
       "expand": "Liste ausklappen",
-      "noLink": "Keine Aktivität verknüpft",
       "linkedTo": "Verknüpft mit",
       "confirmQuestion": "bestätigen?",
       "confirm": "Verknüpfung bestätigen",
@@ -38,37 +38,70 @@
         "md": "Markdown",
         "other": "Andere"
       },
-      "score": "Übereinstimmung {pct} %"
+      "score": "Übereinstimmung {pct} %",
+      "conceptChip": "Sicherheitskonzept",
+      "conceptQuestion": "Sicherheitskonzept?",
+      "conceptYes": "Als Sicherheitskonzept prüfen",
+      "conceptNo": "Nicht als Sicherheitskonzept",
+      "linkAction": "Aktivität verknüpfen …",
+      "linkLabel": "Aktivität wählen",
+      "linkDay": "Tag {n}",
+      "aiAllowed": "Für KI freigegeben",
+      "filter": "Dokumente filtern",
+      "filterEmpty": "Kein Dokument passt zum Filter."
     },
     "detail": {
       "title": "Details",
-      "tabView": "Ansicht",
-      "tabText": "Text & Prüfung",
-      "select": "Wähle ein Dokument aus der Liste.",
       "path": "Pfad",
       "size": "Grösse",
       "imported": "Eingelesen",
       "textLength": "{n} Zeichen Text",
       "noText": "Kein Text extrahiert",
-      "preview": "Textvorschau",
-      "zone": "Datenzone: gelb (nur lokal)"
+      "checkTitle": "Was co-co geprüft hat",
+      "extractedText": "Erkannter Text ({n} Zeichen)",
+      "notConcept": "Wird nicht als Sicherheitskonzept geprüft.",
+      "markConcept": "Als Sicherheitskonzept prüfen",
+      "unmarkConcept": "Nicht als Sicherheitskonzept prüfen",
+      "noCheck": "Für dieses Dokument gibt es keine automatische Prüfung.",
+      "conceptVerdict": "Sicherheitskonzept: {found} von {total} Punkten gefunden",
+      "zoneLocal": "Datenzone: gelb · nur lokal",
+      "zoneAi": "Datenzone: gelb · für KI freigegeben (anonymisiert)"
     },
     "ai": {
       "label": "KI darf dieses Dokument verwenden",
       "warning": "Achtung: Nur wenn du das aktivierst, darf die optionale KI-Funktion Inhalte dieses Dokuments (nach Anonymisierung und Vorschau) an einen externen Dienst senden. Lass es aus, wenn das Dokument Personendaten oder vertrauliche Angaben enthält.",
-      "summary": "KI-Zusammenfassung"
+      "summary": "KI-Zusammenfassung",
+      "notReady": "KI ist noch nicht eingerichtet.",
+      "toSettings": "Zu den Einstellungen"
     },
     "checklist": {
       "title": "Sicherheitskonzept: Checkliste",
       "complete": "Alle Punkte gefunden",
-      "incomplete": "{n} Punkt(e) fehlen",
+      "incomplete": "{found} von {total} gefunden",
       "notChecked": "Für dieses Dokument wurde keine Checkliste erstellt.",
       "found": "gefunden",
-      "missing": "fehlt",
+      "missing": "nicht gefunden",
       "items": {
         "emergencyNumbers": "Notrufnummern (144, 1414, 117, 118, 145)",
         "hospital": "Nächstes Spital",
         "crisisContact": "Krisenkontakt / Pfadi-Helpline",
+        "evacuation": "Evakuation / Notunterkunft",
+        "badWeather": "Schlechtwetterkonzept",
+        "threeByThree": "3x3-Lagebeurteilung",
+        "firstAid": "Erste-Hilfe-Material und Verantwortliche",
+        "campAddress": "Lageradresse / Koordinaten"
+      },
+      "hint": "co-co sucht nach Stichworten. «Nicht gefunden» heisst nicht, dass es fehlt – prüfe die Stelle kurz im Dokument.",
+      "partialNumbers": "teilweise: {present} gefunden – mindestens {min} Notrufnummern erwartet",
+      "confirm": "Ist vorhanden",
+      "confirmed": "von dir bestätigt",
+      "unconfirm": "Bestätigung zurücknehmen",
+      "toFinding": "Als Befund übernehmen",
+      "findingText": "Im Sicherheitskonzept nicht gefunden: {item}.",
+      "short": {
+        "emergencyNumbers": "Notrufnummern",
+        "hospital": "Nächstes Spital",
+        "crisisContact": "Krisenkontakt",
         "evacuation": "Evakuation / Notunterkunft",
         "badWeather": "Schlechtwetterkonzept",
         "threeByThree": "3x3-Lagebeurteilung",
@@ -93,13 +126,18 @@
       "slot": "Geplanter Zeitslot",
       "fits": "Passt in den Zeitslot",
       "tooLong": "Gehzeit übersteigt den Zeitslot um {min} min",
-      "noSlot": "Keine Aktivität mit Zeitslot verknüpft",
-      "points": "{n} Punkte"
+      "noSlot": "Die verknüpfte Aktivität hat keinen Zeitslot.",
+      "points": "{n} Punkte",
+      "lead": "Gehzeit ca. {time} ({lkm} Lkm bei {pace} Lkm/h)",
+      "stats": "{km} km · ↑ {up} m · ↓ {down} m",
+      "statsMax": " · max. {m} m",
+      "adjust": "Berechnung anpassen",
+      "paceFromInputs": "Tempo Wölfe (aus «Angaben»)",
+      "pickActivity": "Zu welcher Aktivität gehört diese Route?"
     },
     "viewer": {
       "addFinding": "Befund erfassen",
       "anchorAt": "Stelle: {where}",
-      "dialogTitle": "Befund zu {name}",
       "findings": "Befunde zu diesem Dokument ({n})",
       "jump": "Zur Stelle im Dokument springen",
       "page": "Seite",
@@ -126,12 +164,6 @@
       "gpxMapUnavailable": "Karte nicht verfügbar (offline?)",
       "gpxAttribution": "© swisstopo",
       "gpxPoint": "Kilometer {km}"
-    },
-    "search": {
-      "label": "In Dokumenten und eCamp-Inhalten suchen",
-      "empty": "Keine Treffer.",
-      "document": "Dokument",
-      "activity": "Aktivität"
     },
     "minutes": "{n} min",
     "hoursMinutes": "{h} h {m} min"

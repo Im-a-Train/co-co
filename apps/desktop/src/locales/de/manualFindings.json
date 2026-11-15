@@ -3,13 +3,13 @@
     "manual": {
       "tag": "Coach",
       "group": "Coach-Befunde ({n})",
-      "add": "Befund erfassen",
-      "edit": "Befund bearbeiten",
-      "delete": "Befund löschen",
+      "add": "Coach-Befund erfassen",
+      "edit": "Coach-Befund bearbeiten",
+      "delete": "Coach-Befund löschen",
       "deleteConfirm": "Nochmals klicken zum Löschen",
       "title": {
-        "new": "Befund erfassen",
-        "edit": "Befund bearbeiten"
+        "new": "Coach-Befund erfassen",
+        "edit": "Coach-Befund bearbeiten"
       },
       "forTarget": "Betrifft: {title}",
       "scope": {
@@ -19,12 +19,12 @@
       },
       "categoryLabel": "Kategorie",
       "comment": "Kommentar",
-      "commentHint": "Was ist dir aufgefallen? Kurz und konkret.",
+      "commentHint": "Was ist dir aufgefallen? Kurz und konkret. Ein Coach-Befund ist deine eigene Notiz und ändert kein Regelergebnis.",
       "anchor": "Stelle: {label}",
       "save": "Speichern",
       "cancel": "Abbrechen",
-      "saveFailed": "Der Befund konnte nicht gespeichert werden: {error}",
-      "empty": "Noch keine eigenen Befunde.",
+      "saveFailed": "Der Coach-Befund konnte nicht gespeichert werden: {error}",
+      "empty": "Noch keine Coach-Befunde.",
       "category": {
         "positive": "Positiv",
         "safety": "Sicherheit",
@@ -40,15 +40,15 @@
   },
   "activities": {
     "manual": {
-      "add": "Befund erfassen",
-      "count": "{count} eigene Befunde",
-      "column": "Eigene"
+      "add": "Coach-Befund erfassen",
+      "count": "{count} Coach-Befunde",
+      "column": "Coach"
     }
   },
   "cockpit": {
     "drawer": {
       "manual": {
-        "title": "Meine Befunde"
+        "title": "Coach-Befunde"
       }
     }
   }

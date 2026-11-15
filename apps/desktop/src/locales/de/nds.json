@@ -8,7 +8,7 @@
     "settings": {
       "title": "NDS (Nationale Datenbank Sport)",
       "intro": "Die NDS des Bundesamts für Sport wird nur lesend angefragt, nur auf deinen Wunsch und nur über die App, nie über den Browser.",
-      "redZoneText": "Rote Zone: Die Daten aus der NDS bleiben auf diesem Gerät. Nur Zahlen, Daten und Status gelangen in co-co, nie an die KI. Namen, Geburtsdaten, AHV-Nummern und Adressen verlassen die App-Schicht nicht.",
+      "redZoneText": "Rote Zone: Daten aus der NDS bleiben auf diesem Gerät und gehen nie an die KI. co-co speichert davon nur Zahlen, Daten und Status. Namen und Geburtsdaten siehst du nur im Tab «Personen», nur im Arbeitsspeicher und nur nach Klick auf «Laden». AHV-Nummern nur maskiert.",
       "unofficial": "Die NDS hat keine öffentliche Schnittstelle. co-co nutzt dieselbe Web-Schnittstelle wie die NDS-Webseite. Sie kann sich ohne Vorankündigung ändern; dann zeigt die Diagnose, welche Felder fehlen.",
       "enable": "NDS-Anbindung verwenden",
       "status": {
@@ -18,6 +18,8 @@
         "cookies": "Cookies: {names}"
       },
       "login": "Bei der NDS anmelden",
+      "relogin": "Erneut anmelden",
+      "staleSession": "Es besteht noch eine NDS-Sitzung.",
       "loginHint": "Öffnet ein Anmeldefenster (AGOV). Das Passwort sieht nur AGOV.",
       "logout": "Abmelden",
       "notInApp": "Nur in der Desktop-App verfügbar.",
@@ -40,7 +42,8 @@
       "toSettings": "Zu den Einstellungen",
       "noFacts": "Lager wird noch geladen …",
       "link": {
-        "set": "Verknüpft mit NDS-Lager {id}",
+        "set": "Verknüpft mit NDS-Lager {label}",
+        "offer": "Angebot {n}",
         "none": "Noch kein NDS-Lager gewählt."
       },
       "pick": "Lager wählen",
@@ -70,8 +73,7 @@
       },
       "offerState": "Angebot",
       "campState": "Lager",
-      "approvedOn": "bewilligt am {date}",
-      "approvedHint": "Die Anmeldung erfolgte am oder vor diesem Datum.",
+      "approvedOn": "bewilligt am {date} (angemeldet spätestens an diesem Tag)",
       "agendaYes": "Lagerprogramm hochgeladen",
       "agendaNo": "Lagerprogramm fehlt",
       "contributionYes": "Coach beitragsberechtigt",
@@ -90,8 +92,6 @@
         "campDays": "Lagertage",
         "totalActivities": "Aktivitäten"
       },
-      "participants": "Teilnehmende",
-      "supervisors": "Leitende",
       "activities": "Aktivitäten",
       "lastActivity": "Letzte am {date}",
       "awkOpen": "{n} Aktivität(en) mit offener Anwesenheitskontrolle (AWK). Nach dem Lager in der NDS abschliessen.",

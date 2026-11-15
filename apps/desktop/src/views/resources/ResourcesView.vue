@@ -9,7 +9,7 @@ import { safeExternalUrl } from '@/domain/cockpit'
 import { MAX_DOCUMENT_BYTES, detectKind } from '@/domain/documents'
 import { extractText } from '@/domain/documents/extract'
 import { sha256Hex } from '@/domain/documents/ingest'
-import { RESOURCE_WEIGHTS, highlightSegments, wordCount, type NewResourceInput, type ResourcePatch } from '@/domain/resources'
+import { formatDateDe, highlightSegments, searchResources, sortResourcesByWeight, wordCount, type NewResourceInput, type ResourceCitation, type ResourceHit, type ResourcePatch } from '@/domain/resources'
 import { useRuleEdits } from '@/composables/useRuleEdits'
 import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import { getSourceRegistry } from '@/domain/rules/packs/registry'
@@ -23,10 +23,17 @@ const store = useResources()
 const ruleEdits = useRuleEdits()
 
 const FILE_FILTERS = [{ name: 'Dokumente', extensions: ['pdf', 'docx', 'txt', 'md'] }]
-const WEIGHT_COLOR: Record<SourceWeight, string> = { binding: 'error', 'binding-quote': 'warning', didactic: 'primary', outdated: 'grey', pbs: 'success', info: 'info' }
+/** A document attribute is not an alarm: neutral/primary tones only (colour = state). */
+const WEIGHT_COLOR: Record<SourceWeight, string | undefined> = { binding: 'primary', 'binding-quote': 'primary', didactic: undefined, outdated: 'grey', pbs: 'secondary', info: undefined }
+type WeightFilter = 'all' | 'binding' | 'pbs' | 'other'
+const FILTER_OF: Record<SourceWeight, Exclude<WeightFilter, 'all'>> = { binding: 'binding', 'binding-quote': 'binding', pbs: 'pbs', didactic: 'other', info: 'other', outdated: 'other' }
 
 const query = ref('')
-const weight = ref<SourceWeight | 'all'>('all')
+const weight = ref<WeightFilter>('all')
+/** «Veraltete Unterlagen» group: collapsed unless the coach opens it (or a search / deep link needs it). */
+const outdatedOpen = ref(false)
+/** Entry highlighted for a moment after a deep link. */
+const highlightKey = ref<string | null>(null)
 const opened = ref<string[]>([])
 const busyKey = ref<string | null>(null)
 const error = ref<string | null>(null)
@@ -36,16 +43,22 @@ const notice = ref<string | null>(null)
 const citedBy = computed(() => {
   void store.version.value
   void ruleEdits.version.value
-  const map = new Map<string, Array<{ id: string; title: string }>>()
+  const map = new Map<string, ResourceCitation[]>()
   try {
     const reg = getSourceRegistry()
     for (const pack of loadEffectivePacks()) {
       for (const rule of pack.rules) {
-        const keys = new Set((rule.meta.sources ?? []).map((s) => reg.get(s.key)?.key ?? s.key))
-        for (const k of keys) {
-          const list = map.get(k) ?? []
-          list.push({ id: rule.meta.id, title: rule.meta.title })
-          map.set(k, list)
+        const pages = new Map<string, string[]>()
+        for (const s of rule.meta.sources ?? []) {
+          const k = reg.get(s.key)?.key ?? s.key
+          const list = pages.get(k) ?? []
+          if (s.page && !list.includes(s.page)) list.push(s.page)
+          pages.set(k, list)
+        }
+        for (const [k, list] of pages) {
+          const arr = map.get(k) ?? []
+          arr.push({ id: rule.meta.id, title: rule.meta.title, description: rule.meta.description, ...(list.length ? { page: list.join(', ') } : {}) })
+          map.set(k, arr)
         }
       }
     }
@@ -56,20 +69,39 @@ const citedBy = computed(() => {
 })
 
 // ---- list, search, filter ------------------------------------------------------------------
-const hits = computed(() => (query.value.trim() ? new Map(store.search(query.value).map((h, i) => [h.key, { ...h, rank: i }])) : null))
-const visible = computed<ResourceRecord[]>(() => {
-  let list = store.resources.value.filter((r) => weight.value === 'all' || r.weight === weight.value)
+function citationSnippet(c: ResourceCitation): string {
+  return c.page ? t('resources.snippetCitedBy', { id: c.id, title: c.title, page: c.page }) : t('resources.snippetCitedByNoPage', { id: c.id, title: c.title })
+}
+const hits = computed(() => {
+  const q = query.value.trim()
+  if (!q) return null
+  const found: ResourceHit[] = searchResources(store.resources.value, q, { citations: citedBy.value, citationSnippet })
+  return new Map(found.map((h, i) => [h.key, { ...h, rank: i }]))
+})
+const filtered = computed<ResourceRecord[]>(() => {
+  let list = store.resources.value.filter((r) => weight.value === 'all' || FILTER_OF[r.weight] === weight.value)
   const h = hits.value
   if (h) list = list.filter((r) => h.has(r.key)).sort((a, b) => h.get(a.key)!.rank - h.get(b.key)!.rank)
+  else list = sortResourcesByWeight(list)
   return list
 })
-const weightsPresent = computed(() => RESOURCE_WEIGHTS.filter((w) => store.resources.value.some((r) => r.weight === w)))
+/** Current documents first (binding, PBS, didactic, info), outdated ones in their own collapsed group. */
+const visible = computed(() => filtered.value.filter((r) => r.weight !== 'outdated'))
+const outdated = computed(() => filtered.value.filter((r) => r.weight === 'outdated'))
+const outdatedShown = computed(() => outdatedOpen.value || !!query.value.trim() || opened.value.some((k) => outdated.value.some((r) => r.key === k)))
+const filtersPresent = computed<Array<Exclude<WeightFilter, 'all'>>>(() => (['binding', 'pbs', 'other'] as const).filter((f) => store.resources.value.some((r) => FILTER_OF[r.weight] === f)))
+type Row = { kind: 'item'; r: ResourceRecord } | { kind: 'group' }
+const rows = computed<Row[]>(() => {
+  const out: Row[] = visible.value.map((r) => ({ kind: 'item', r }))
+  if (outdated.value.length) {
+    out.push({ kind: 'group' })
+    if (outdatedShown.value) for (const r of outdated.value) out.push({ kind: 'item', r })
+  }
+  return out
+})
+const noHits = computed(() => store.loaded.value && !!query.value.trim() && !filtered.value.length)
 
-function fmt(iso: string | undefined): string {
-  if (!iso) return ''
-  const [y, m, d] = iso.slice(0, 10).split('-')
-  return `${d}.${m}.${y}`
-}
+const fmt = formatDateDe
 function link(r: ResourceRecord): string | null {
   return safeExternalUrl(r.url)
 }
@@ -86,8 +118,15 @@ async function openFromRoute() {
   query.value = ''
   weight.value = 'all'
   opened.value = [rec.key]
+  if (rec.weight === 'outdated') outdatedOpen.value = true
   await nextTick()
-  setTimeout(() => document.getElementById(`res-${rec.key}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150)
+  setTimeout(() => {
+    document.getElementById(`res-${rec.key}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    highlightKey.value = rec.key
+    setTimeout(() => {
+      if (highlightKey.value === rec.key) highlightKey.value = null
+    }, 2000)
+  }, 150)
 }
 onMounted(() => void openFromRoute())
 watch(() => [route.query.key, store.loaded.value], () => void openFromRoute())
@@ -179,6 +218,7 @@ async function confirmReset() {
       <v-text-field
         v-model="query"
         :label="t('resources.search')"
+        :placeholder="t('resources.searchPlaceholder')"
         prepend-inner-icon="mdi-magnify"
         density="compact"
         variant="outlined"
@@ -189,34 +229,55 @@ async function confirmReset() {
       />
       <v-chip-group v-model="weight" mandatory selected-class="text-primary">
         <v-chip value="all" size="small" filter>{{ t('resources.allWeights') }}</v-chip>
-        <v-chip v-for="w in weightsPresent" :key="w" :value="w" size="small" filter>{{ t(`resources.weight.${w}`) }}</v-chip>
+        <v-chip v-for="f in filtersPresent" :key="f" :value="f" size="small" filter :data-testid="`weight-filter-${f}`">{{ t(`resources.filter.${f}`) }}</v-chip>
       </v-chip-group>
       <v-spacer />
       <v-btn color="primary" variant="tonal" prepend-icon="mdi-plus" :text="t('resources.add')" data-testid="resource-add" @click="openEdit(null)" />
     </div>
 
     <div v-if="!store.loaded.value && !store.error.value" class="text-body-2 text-medium-emphasis">{{ t('resources.loading') }}</div>
-    <v-alert v-else-if="!visible.length" type="info" variant="tonal" density="compact" :text="t('resources.empty')" />
+    <v-alert v-else-if="!filtered.length" type="info" variant="tonal" density="compact" data-testid="resources-empty">
+      {{ t('resources.empty') }}
+      <v-btn v-if="noHits" class="ml-2" size="small" variant="tonal" prepend-icon="mdi-book-search-outline" :to="{ name: 'rules', query: { q: query.trim() } }" :text="t('resources.emptySearchRules')" data-testid="resources-search-rules" />
+    </v-alert>
 
     <v-expansion-panels v-model="opened" multiple variant="accordion" data-testid="resources-list">
-      <v-expansion-panel v-for="r in visible" :id="`res-${r.key}`" :key="r.key" :value="r.key" data-testid="resource-item">
+      <template v-for="row in rows" :key="row.kind === 'group' ? 'outdated-group' : row.r.key">
+      <div v-if="row.kind === 'group'" class="outdated-group" data-testid="resources-outdated-group">
+        <v-btn variant="text" size="small" :prepend-icon="outdatedShown ? 'mdi-chevron-down' : 'mdi-chevron-right'" :text="t('resources.outdatedGroup', { count: outdated.length })" :disabled="!!query.trim()" data-testid="resources-outdated-toggle" @click="outdatedOpen = !outdatedOpen" />
+      </div>
+      <v-expansion-panel v-else :id="`res-${row.r.key}`" :value="row.r.key" :class="{ 'res-highlight': highlightKey === row.r.key }" data-testid="resource-item">
         <v-expansion-panel-title>
           <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
             <div class="d-flex flex-wrap align-center ga-2">
-              <code class="text-caption flex-shrink-0">{{ r.key }}</code>
-              <span class="text-body-2 font-weight-medium">{{ r.title }}</span>
-              <v-chip size="x-small" label variant="flat" :color="WEIGHT_COLOR[r.weight]">{{ t(`resources.weight.${r.weight}`) }}</v-chip>
-              <v-chip v-if="r.modified" size="x-small" label variant="tonal" color="warning" data-testid="resource-modified">{{ t('resources.chip.modified') }}</v-chip>
-              <v-chip v-if="r.origin === 'custom'" size="x-small" label variant="tonal" color="secondary" data-testid="resource-custom">{{ t('resources.chip.custom') }}</v-chip>
-              <v-chip v-if="r.content" size="x-small" label variant="tonal" prepend-icon="mdi-text-box-search-outline">{{ t('resources.chip.content') }}</v-chip>
+              <span class="text-body-2 font-weight-medium">{{ row.r.title }}</span>
+              <v-chip size="x-small" label variant="tonal" :color="WEIGHT_COLOR[row.r.weight]">{{ t(`resources.weight.${row.r.weight}`) }}</v-chip>
+              <v-chip v-if="row.r.modified" size="x-small" label variant="tonal" color="warning" data-testid="resource-modified">{{ t('resources.chip.modified') }}</v-chip>
+              <v-chip v-if="row.r.origin === 'custom'" size="x-small" label variant="tonal" color="secondary" data-testid="resource-custom">{{ t('resources.chip.custom') }}</v-chip>
+              <v-chip v-if="row.r.content" size="x-small" label variant="tonal" prepend-icon="mdi-text-box-search-outline">{{ t('resources.chip.content') }}</v-chip>
+              <v-spacer />
+              <v-btn
+                v-if="link(row.r)"
+                icon="mdi-open-in-new"
+                size="x-small"
+                variant="text"
+                :href="link(row.r)!"
+                target="_blank"
+                rel="noopener noreferrer"
+                :title="t('resources.detail.openLink')"
+                :aria-label="t('resources.detail.openLink')"
+                data-testid="resource-open-original"
+                @click.stop
+              />
+              <code class="text-caption text-disabled flex-shrink-0">{{ row.r.key }}</code>
             </div>
             <div class="text-caption text-medium-emphasis">
-              <span v-if="r.publisher">{{ r.publisher }}</span>
-              <span v-if="r.publisher && r.edition"> · </span>
-              <span>{{ r.edition }}</span>
+              <span v-if="row.r.publisher">{{ row.r.publisher }}</span>
+              <span v-if="row.r.publisher && row.r.edition"> · </span>
+              <span>{{ row.r.edition }}</span>
             </div>
-            <div v-if="hits?.get(r.key)" class="text-caption mt-1 snippet" data-testid="resource-snippet">
-              <template v-for="(seg, i) in highlightSegments(hits.get(r.key)!.snippet, query)" :key="i">
+            <div v-if="hits?.get(row.r.key)" class="text-caption mt-1 snippet" data-testid="resource-snippet">
+              <template v-for="(seg, i) in highlightSegments(hits.get(row.r.key)!.snippet, query)" :key="i">
                 <mark v-if="seg.hit">{{ seg.text }}</mark>
                 <span v-else>{{ seg.text }}</span>
               </template>
@@ -224,37 +285,37 @@ async function confirmReset() {
           </div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <p v-if="r.summary" class="text-body-2 mb-3">{{ r.summary }}</p>
+          <p v-if="row.r.summary" class="text-body-2 mb-3">{{ row.r.summary }}</p>
 
           <div class="d-flex flex-wrap align-center ga-2 mb-3">
-            <v-btn v-if="link(r)" size="small" variant="tonal" prepend-icon="mdi-open-in-new" :href="link(r)!" target="_blank" rel="noopener noreferrer" :text="t('resources.detail.openLink')" />
+            <v-btn v-if="link(row.r)" size="small" variant="tonal" prepend-icon="mdi-open-in-new" :href="link(row.r)!" target="_blank" rel="noopener noreferrer" :text="t('resources.detail.openLink')" />
             <span v-else class="text-caption text-medium-emphasis">{{ t('resources.detail.noUrl') }}</span>
           </div>
 
           <v-table density="compact" class="res-meta mb-3">
             <tbody>
-              <tr v-if="r.publisher"><th scope="row">{{ t('resources.detail.publisher') }}</th><td>{{ r.publisher }}</td></tr>
-              <tr><th scope="row">{{ t('resources.detail.edition') }}</th><td>{{ r.edition }}</td></tr>
-              <tr v-if="r.date"><th scope="row">{{ t('resources.detail.date') }}</th><td>{{ fmt(r.date) }}</td></tr>
-              <tr v-if="r.checkedOn"><th scope="row">{{ t('resources.detail.checkedOn') }}</th><td>{{ fmt(r.checkedOn) }}</td></tr>
-              <tr v-if="r.partlyRead.length"><th scope="row">{{ t('resources.detail.partlyRead') }}</th><td>{{ r.partlyRead.join('; ') }}</td></tr>
-              <tr v-if="r.notes"><th scope="row">{{ t('resources.detail.notes') }}</th><td>{{ r.notes }}</td></tr>
+              <tr v-if="row.r.publisher"><th scope="row">{{ t('resources.detail.publisher') }}</th><td>{{ row.r.publisher }}</td></tr>
+              <tr><th scope="row">{{ t('resources.detail.edition') }}</th><td>{{ row.r.edition }}</td></tr>
+              <tr v-if="row.r.date"><th scope="row">{{ t('resources.detail.date') }}</th><td>{{ fmt(row.r.date) }}</td></tr>
+              <tr v-if="row.r.checkedOn"><th scope="row">{{ t('resources.detail.checkedOn') }}</th><td>{{ fmt(row.r.checkedOn) }}</td></tr>
+              <tr v-if="row.r.partlyRead.length"><th scope="row">{{ t('resources.detail.partlyRead') }}</th><td>{{ row.r.partlyRead.join('; ') }}</td></tr>
+              <tr v-if="row.r.notes"><th scope="row">{{ t('resources.detail.notes') }}</th><td>{{ row.r.notes }}</td></tr>
               <tr>
                 <th scope="row">{{ t('resources.detail.file') }}</th>
                 <td>
-                  <template v-if="r.content">
-                    <span v-if="r.fileName">{{ r.fileName }} · </span>{{ t('resources.detail.contentStats', { words: wordCount(r.content), kb: kb(r.content) }) }}
+                  <template v-if="row.r.content">
+                    <span v-if="row.r.fileName">{{ row.r.fileName }} · </span>{{ t('resources.detail.contentStats', { words: wordCount(row.r.content), kb: kb(row.r.content) }) }}
                   </template>
                   <span v-else class="text-medium-emphasis">{{ t('resources.detail.noContent') }}</span>
                 </td>
               </tr>
               <tr>
-                <th scope="row">{{ t('resources.detail.citedBy', { count: citedBy.get(r.key)?.length ?? 0 }) }}</th>
+                <th scope="row">{{ t('resources.detail.citedBy', { count: citedBy.get(row.r.key)?.length ?? 0 }, citedBy.get(row.r.key)?.length ?? 0) }}</th>
                 <td>
-                  <ul v-if="citedBy.get(r.key)?.length" class="plain-list" data-testid="resource-cited-by">
-                    <li v-for="rule in citedBy.get(r.key)" :key="rule.id">
+                  <ul v-if="citedBy.get(row.r.key)?.length" class="plain-list" data-testid="resource-cited-by">
+                    <li v-for="rule in citedBy.get(row.r.key)" :key="rule.id">
                       <router-link :to="{ name: 'rules', query: { rule: rule.id } }"><code>{{ rule.id }}</code></router-link>
-                      {{ rule.title }}
+                      {{ rule.title }}<span v-if="rule.page" class="text-medium-emphasis"> · {{ rule.page }}</span>
                     </li>
                   </ul>
                   <span v-else class="text-medium-emphasis">{{ t('resources.detail.citedNone') }}</span>
@@ -264,33 +325,34 @@ async function confirmReset() {
           </v-table>
 
           <div class="d-flex flex-wrap ga-2 mb-3">
-            <v-btn size="small" variant="text" prepend-icon="mdi-pencil-outline" :text="t('resources.action.edit')" data-testid="resource-edit" @click="openEdit(r)" />
-            <v-btn size="small" variant="text" prepend-icon="mdi-file-replace-outline" :loading="busyKey === r.key" :text="t('resources.action.attach')" data-testid="resource-attach" @click="attachFile(r)" />
-            <v-btn size="small" variant="text" prepend-icon="mdi-text-box-plus-outline" :text="t('resources.action.paste')" data-testid="resource-paste" @click="openPaste(r)" />
+            <v-btn size="small" variant="text" prepend-icon="mdi-pencil-outline" :text="t('resources.action.edit')" data-testid="resource-edit" @click="openEdit(row.r)" />
+            <v-btn size="small" variant="text" prepend-icon="mdi-file-replace-outline" :loading="busyKey === row.r.key" :text="t('resources.action.attach')" data-testid="resource-attach" @click="attachFile(row.r)" />
+            <v-btn size="small" variant="text" prepend-icon="mdi-text-box-plus-outline" :text="t('resources.action.paste')" data-testid="resource-paste" @click="openPaste(row.r)" />
             <v-btn
-              v-if="r.origin === 'bundled'"
+              v-if="row.r.origin === 'bundled'"
               size="small"
               variant="text"
               prepend-icon="mdi-backup-restore"
-              :disabled="!r.modified && !r.content"
+              :disabled="!row.r.modified && !row.r.content"
               :text="t('resources.action.reset')"
               data-testid="resource-reset"
-              @click="confirmFor = r"
+              @click="confirmFor = row.r"
             />
-            <v-btn v-else size="small" variant="text" color="error" prepend-icon="mdi-delete-outline" :text="t('resources.action.delete')" data-testid="resource-delete" @click="confirmFor = r" />
+            <v-btn v-else size="small" variant="text" color="error" prepend-icon="mdi-delete-outline" :text="t('resources.action.delete')" data-testid="resource-delete" @click="confirmFor = row.r" />
           </div>
 
-          <div class="text-caption text-medium-emphasis">
-            {{ t('resources.detail.updated', { date: fmt(r.updatedAt), by: t(`resources.origin.${r.updatedBy}`) }) }}
+          <div v-if="row.r.modified || row.r.origin === 'custom'" class="text-caption text-medium-emphasis" data-testid="resource-updated">
+            {{ t('resources.detail.updated', { date: fmt(row.r.updatedAt), by: t(`resources.origin.${row.r.updatedBy}`) }) }}
           </div>
-          <div v-if="r.history?.length" class="mt-2">
+          <div v-if="row.r.history?.length" class="mt-2">
             <div class="text-caption font-weight-medium">{{ t('resources.detail.history') }}</div>
             <ul class="plain-list text-caption text-medium-emphasis" data-testid="resource-history">
-              <li v-for="h in r.history" :key="h.replacedAt">{{ t('resources.detail.historyEntry', { date: fmt(h.replacedAt), title: h.title, edition: h.edition }) }}</li>
+              <li v-for="h in row.r.history" :key="h.replacedAt">{{ t('resources.detail.historyEntry', { date: fmt(h.replacedAt), title: h.title, edition: h.edition }) }}</li>
             </ul>
           </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
+      </template>
     </v-expansion-panels>
 
     <ResourceEditDialog v-model="editOpen" :resource="editing" @save="onSave" />
@@ -342,6 +404,22 @@ async function confirmReset() {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+.outdated-group {
+  padding: 4px 0;
+  border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.res-highlight {
+  animation: res-flash 2s ease-out;
+}
+@keyframes res-flash {
+  0%,
+  70% {
+    background: rgba(var(--v-theme-primary), 0.12);
+  }
+  100% {
+    background: transparent;
+  }
 }
 .snippet mark {
   background: rgba(var(--v-theme-warning), 0.35);

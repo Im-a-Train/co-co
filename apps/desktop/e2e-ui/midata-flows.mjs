@@ -1,4 +1,5 @@
 /** MiData flows of the UI harness (imported by run.mjs). Mock IPC returns an invented aggregate. */
+import { openAngabenPanel } from './angaben-helpers.mjs'
 
 export async function midataFlows({ page, step, go, shot, BASE }) {
   const text = () => page.evaluate(() => document.body.innerText)
@@ -24,7 +25,8 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
   })
 
   await step('flow: diagnosis expander shows probe result', async () => {
-    await page.locator('[data-testid="midata-diag"] .v-expansion-panel-title').click()
+    await page.getByTestId('settings-diagnostics-toggle').click()
+    await page.waitForSelector('[data-testid="midata-diag"]', { timeout: 5000 })
     await page.locator('[data-testid="midata-diag"] input').first().fill('4101')
     await page.getByTestId('midata-probe').click()
     await page.waitForSelector('[data-testid="midata-probe-result"]', { timeout: 5000 })
@@ -61,6 +63,7 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
     const check = page.getByTestId('adopt-check-participantsCount').locator('input')
     if (!(await check.isChecked())) await check.check()
     await page.getByTestId('adopt-apply').click()
+    await openAngabenPanel(page, 'participants')
     await page.waitForSelector('[data-testid="midata-badge"]', { timeout: 5000 })
     await page.waitForTimeout(600)
     await shot(page, 'flow-midata-adopted')
@@ -106,13 +109,14 @@ export async function midataFlows({ page, step, go, shot, BASE }) {
   })
 
   await step('flow: manual edit removes the MiData badge', async () => {
+    await openAngabenPanel(page, 'participants')
     const input = page.getByTestId('input-participantsCount').locator('input')
     await input.fill('25')
     await page.waitForTimeout(300)
     const badges = await page.locator('.v-field [data-testid="midata-badge"]').count()
     const inField = await page.getByTestId('input-participantsCount').locator('[data-testid="midata-badge"]').count()
     if (inField !== 0) throw new Error(`badge still next to edited field (${badges} badges total)`)
-    await page.getByTestId('inputs-save').click()
-    await page.waitForTimeout(600)
+    // Autosave: the quiet status turns «Gespeichert» once the debounced save went through.
+    await page.waitForFunction(() => document.querySelector('[data-testid="inputs-status"]')?.getAttribute('data-state') === 'saved', null, { timeout: 5000 })
   })
 }
