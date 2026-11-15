@@ -57,14 +57,6 @@ export function progressOf(statuses: readonly FindingStatus[]): TriageProgress {
   return { done: statuses.length - open, total: statuses.length, open }
 }
 
-/** Index of the finding with `key`, or a clamped fallback when it vanished; -1 for an empty list. */
-export function resolveIndex(findings: readonly Finding[], key: string | null | undefined, fallbackIndex = 0): number {
-  if (!findings.length) return -1
-  const i = key ? findings.findIndex((f) => f.id === key) : -1
-  if (i >= 0) return i
-  return Math.min(Math.max(fallbackIndex, 0), findings.length - 1)
-}
-
 /** Route location that opens the triage of a camp at a finding (used by Übersicht and Raster). */
 export function triageLocation(campIri: Iri, findingId: string, opts: { editor?: boolean } = {}) {
   return {

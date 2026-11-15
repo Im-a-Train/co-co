@@ -123,8 +123,8 @@
       },
       "doneAt": "erledigt am {date}",
       "saveFailed": "Stand konnte nicht gespeichert werden",
-      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen der Leitung findest du im Fristen-Radar (Filter «Leitung»).",
-      "unconfirmed": "unbestätigt",
+      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen der Lagerleitung findest du unter {link} mit «Mit Lagerleitung».",
+      "leadersCaptionLink": "Fristen",
       "doneOn": {
         "nds-registration": "angemeldet am",
         "nds-closing": "abgeschlossen am"

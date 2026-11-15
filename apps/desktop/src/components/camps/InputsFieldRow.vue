@@ -18,8 +18,6 @@ const props = defineProps<{
   /** Items of a `select`. */
   items?: Item[]
   clearable?: boolean
-  /** Purpose sentence key suffix (camps.inputs.purpose.<purposeKey>), defaults to the field key. */
-  purposeKey?: string
   ruleIds?: readonly string[]
   ruleTitles?: ReadonlyMap<string, string>
   midataSince?: string | null
@@ -34,7 +32,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
 const { t } = useI18n()
 
 const label = computed(() => t(`camps.inputs.fields.${props.labelKey ?? props.fieldKey}`))
-const purpose = computed(() => t(`camps.inputs.purpose.${props.purposeKey ?? props.fieldKey}`))
+const purpose = computed(() => t(`camps.inputs.purpose.${props.fieldKey}`))
 const rules = computed(() => (props.ruleIds ?? []).map((id) => ({ id, title: props.ruleTitles?.get(id) ?? id })))
 </script>
 

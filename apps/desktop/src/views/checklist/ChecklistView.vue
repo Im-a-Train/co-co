@@ -7,6 +7,7 @@
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CoachChecklistCard from '@/components/camps/CoachChecklistCard.vue'
+import NdsBadge from '@/components/nds/NdsBadge.vue'
 import DeadlineStatusChip from '@/components/rules/DeadlineStatusChip.vue'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
@@ -92,6 +93,7 @@ const allDeadlineRows = computed(() =>
 )
 
 const deadlineSplit = computed(() => splitHidden(allDeadlineRows.value, (r) => r.key, hiddenKeys.value))
+const legendVisible = computed(() => deadlineRows.value.some((r) => isUnconfirmed(r.d)))
 const isUnconfirmed = (d: Deadline): boolean => d.kind === 'pbs-milestone' && d.confidence === 'unverified'
 /** «Auch genannt: Hering, 10.11.2030» for a milestone that also stands for de-duplicated twins of another pack. */
 const alsoNamedOf = (d: Deadline): string[] => (d.alsoNamed ?? []).map((a) => t('rules.deadlines.alsoNamed', { source: a.source, date: fmt(a.due) }))
@@ -164,6 +166,17 @@ async function setDeadlineDate(d: Deadline, value: string): Promise<void> {
     saveError.value = e instanceof Error ? e.message : String(e)
   }
 }
+/** NDS-derived values keep their «NDS» badge until the coach changes them (ADR 0007). */
+function ndsSince(d: Deadline): string | null {
+  const f = settings.coachInputs.value?.ndsFields
+  if (!f) return null
+  if (d.kind === 'nds-registration') return f.ndsRegisteredOn ?? f.ndsRegistered ?? null
+  if (d.kind === 'nds-closing') return f.ndsClosed ?? null
+  return null
+}
+/** «bewilligt am» when the registration date came from NDS, otherwise «angemeldet/abgeschlossen am». */
+const doneLabel = (d: Deadline): string =>
+  d.kind === 'nds-registration' && settings.coachInputs.value?.ndsFields?.ndsRegisteredOn ? t('nds.adopt.registeredOnHint') : t(`campConfig.checklist.doneOn.${d.kind}`)
 const dateValueOf = (d: Deadline): string => deadlineDateValue(settings.coachInputs.value, d.kind) ?? ''
 /**
  * Saves the inline date on blur / Enter only: Chromium fires `change` on every keystroke of the year
@@ -189,7 +202,11 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
 <template>
   <div data-testid="checklist-view">
     <p class="text-body-2 text-medium-emphasis mb-1">{{ t('campConfig.checklist.tabIntro') }}</p>
-    <p class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">{{ t('campConfig.checklist.leadersCaption') }}</p>
+    <i18n-t keypath="campConfig.checklist.leadersCaption" tag="p" class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">
+      <template #link>
+        <RouterLink to="/fristen">{{ t('campConfig.checklist.leadersCaptionLink') }}</RouterLink>
+      </template>
+    </i18n-t>
     <v-switch
       v-if="hiddenCount > 0"
       v-model="showHidden"
@@ -227,24 +244,20 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
           <div class="flex-grow-1">
             <div class="text-body-2" :class="{ 'text-medium-emphasis': r.d.done }">
               {{ r.title }}
-              <v-chip
-                v-if="isUnconfirmed(r.d)"
-                size="x-small"
-                label
-                variant="tonal"
-                class="ml-1"
-                :title="t('rules.deadlines.unconfirmedHint', { source: r.d.source?.title ?? '' })"
-                data-testid="unverified-badge"
-              >
-                {{ t('campConfig.checklist.unconfirmed') }}
-              </v-chip>
             </div>
             <div class="text-caption text-medium-emphasis">
-              {{ fmt(r.d.due) }} · {{ relative(r.left) }}
+              {{ fmt(r.d.due)
+              }}<span
+                v-if="isUnconfirmed(r.d)"
+                :title="t('rules.deadlines.unconfirmedHint', { source: r.d.source?.title ?? '' })"
+                data-testid="unverified-badge"
+                >*</span
+              >
+              · {{ relative(r.left) }}
               <span v-for="a in alsoNamedOf(r.d)" :key="a" data-testid="deadline-also-named"> · {{ a }}</span>
             </div>
             <div v-if="deadlineDateField(r.d.kind) === 'done' && r.d.done" class="d-flex align-center flex-wrap ga-2 mt-1" data-testid="deadline-done-date">
-              <label class="text-caption" :for="`done-${r.key}`">{{ t(`campConfig.checklist.doneOn.${r.d.kind}`) }}</label>
+              <label class="text-caption" :for="`done-${r.key}`">{{ doneLabel(r.d) }}</label>
               <input
                 :id="`done-${r.key}`"
                 type="date"
@@ -254,6 +267,7 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
                 @blur="(e: Event) => commitDate(r.d, e)"
                 @keydown.enter="(e: Event) => commitDate(r.d, e)"
               />
+              <NdsBadge v-if="ndsSince(r.d)" :since="ndsSince(r.d) as string" />
             </div>
             <div v-else-if="deadlineDateField(r.d.kind) === 'delivery'" class="d-flex align-center flex-wrap ga-2 mt-1" data-testid="deadline-delivery">
               <label class="text-caption" :for="`delivery-${r.key}`">{{ t('campConfig.checklist.deliveryLabel') }}</label>
@@ -282,6 +296,7 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
           />
           <v-btn v-else size="x-small" variant="text" data-testid="deadline-restore" @click="setHidden(r.key, false)">{{ t('campConfig.checklist.restore') }}</v-btn>
         </div>
+        <p v-if="legendVisible" class="text-caption text-medium-emphasis mt-2 mb-0" data-testid="legend-unconfirmed">{{ t('rules.deadlines.legendUnconfirmed') }}</p>
       </v-card-text>
     </v-card>
 

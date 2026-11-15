@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { severityColor } from '@/domain/cockpit'
 import type { FindingGroupEntry } from '@/domain/triage'
-import { groupLabel } from './findingLabels'
+import { groupLabel, weekdayDate } from './findingLabels'
 
 const props = defineProps<{ group: FindingGroupEntry; open?: boolean }>()
 const emit = defineEmits<{ feedback: [group: FindingGroupEntry]; override: [group: FindingGroupEntry] }>()
@@ -29,7 +29,7 @@ const notIgnored = computed(() => props.group.findings.filter((f) => !f.override
   >
     <v-card-text class="py-3">
       <div class="text-subtitle-1">{{ label }}</div>
-      <div class="text-body-2">{{ first.message }}</div>
+      <div class="text-body-2" data-testid="finding-group-days">{{ t('findings.group.days', { count: group.findings.length, days: group.dates.map(weekdayDate).join(', ') }) }}</div>
       <div class="d-flex align-center flex-wrap ga-2 mt-2">
         <v-btn
           size="small"

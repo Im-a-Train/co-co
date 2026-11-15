@@ -94,6 +94,7 @@ describe('buildGrid findings', () => {
     finding('f2b', 'X-2', [a1.iri, e1.iri], { severity: 'must' }),
     finding('f3', 'X-3', [a1.iri], { severity: 'hint', override: { id: 'o', campIri: '', findingId: 'f3', ruleId: 'X-3', reason: '', createdAt: '' } as Finding['override'] }),
     finding('day-ignored', 'JS-DAY-01', [d1, b.dayIri(2)], { scope: 'day', override: { id: 'o2', campIri: '', findingId: 'day-ignored', ruleId: 'JS-DAY-01', reason: '', createdAt: '' } as Finding['override'] }),
+    finding('coach', 'X-9', [a1.iri], { severity: 'hint', origin: 'manual' }),
     finding('day', 'JS-DAY-01', [d1], { scope: 'day' }),
     finding('prog', 'JS-PROG-02', [d1], { scope: 'day' }),
   ]
@@ -103,7 +104,7 @@ describe('buildGrid findings', () => {
     isExcluded: (act) => act === a2.iri,
   })
 
-  it('counts open findings on the activity or its entries, once, without day findings', () => {
+  it('counts open findings on the activity or its entries, once, without day findings and coach findings (like the DP chips)', () => {
     expect(grid.days[0].blocks[0].findings).toEqual({ must: 2, should: 1, hint: 0 })
     expect(grid.days[1].blocks[0].findings).toEqual({ must: 0, should: 0, hint: 0 })
   })

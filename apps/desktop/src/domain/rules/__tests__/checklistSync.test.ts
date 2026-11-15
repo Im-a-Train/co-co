@@ -111,7 +111,31 @@ describe('withDeadlineDone', () => {
     const d = { kind: 'pbs-milestone' as const, milestoneId: 'M-A', alsoNamed: [{ id: 'M-TWIN', source: 'Hering', due: '2026-03-10' }] }
     const ticked = { ...base, milestonesDone: { 'M-TWIN': '2026-01-01', 'M-OTHER': '2026-01-02' } }
     expect(withDeadlineDone(ticked, d, false, '2026-03-01').milestonesDone).toEqual({ 'M-OTHER': '2026-01-02' })
-    expect(withDeadlineDone(base, d, true, '2026-03-01').milestonesDone).toEqual({ 'M-A': '2026-03-01', 'M-TWIN': '2026-03-01' })
+    expect(withDeadlineDone(base, d, true, '2026-03-01').milestonesDone).toEqual({ 'M-A': '2026-03-01' })
+  })
+  it('ticking one target of a twin with several sameAs targets leaves the other one open, and the reverse', () => {
+    const list = loadBundledMilestones()
+    const twin = list.milestones.find((m) => (m.sameAs?.length ?? 0) > 1)
+    expect(twin).toBeDefined()
+    const camp = { iri: CAMP, title: 'L', start: '2031-07-10', end: '2031-07-20', lastJsDate: null, lastActivityDate: null }
+    const ctx = { isModuleActive: () => true }
+    const [a, b] = twin!.sameAs!
+    let inputs = base
+    const find = (i: typeof base, id: string) => computeMilestoneDeadlines(camp, i, list, ctx).find((x) => x.milestoneId === id)!
+    inputs = withDeadlineDone(inputs, find(inputs, a), true, '2031-02-01')
+    expect(find(inputs, a).done).toBe(true)
+    expect(find(inputs, b).done).toBe(false)
+    inputs = withDeadlineDone(base, find(base, b), true, '2031-02-01')
+    expect(find(inputs, b).done).toBe(true)
+    expect(find(inputs, a).done).toBe(false)
+  })
+  it('NDS rows drop the NDS badge of the values they change (ADR 0007)', () => {
+    const nds = { ...base, ndsRegistered: true, ndsRegisteredOn: '2031-01-05', ndsClosed: true, ndsFields: { ndsRegistered: 'x', ndsRegisteredOn: 'x', ndsClosed: 'x' } }
+    expect(withDeadlineDone(nds, { kind: 'nds-registration' }, false, 'd').ndsFields).toEqual({ ndsClosed: 'x' })
+    expect(withDeadlineDone(nds, { kind: 'nds-closing' }, false, 'd').ndsFields).toEqual({ ndsRegistered: 'x', ndsRegisteredOn: 'x' })
+    expect(withDeadlineDate(nds, 'nds-registration', '2031-01-09').ndsFields).toEqual({ ndsRegistered: 'x', ndsClosed: 'x' })
+    expect(withDeadlineDate(nds, 'nds-closing', null).ndsFields).toEqual({ ndsRegistered: 'x', ndsRegisteredOn: 'x', ndsClosed: 'x' })
+    expect(withDeadlineDone(base, { kind: 'nds-registration' }, true, 'd').ndsFields).toBeUndefined()
   })
   it('unticking a de-duplicated bundled milestone sticks after recomputing the deadlines', () => {
     const list = loadBundledMilestones()

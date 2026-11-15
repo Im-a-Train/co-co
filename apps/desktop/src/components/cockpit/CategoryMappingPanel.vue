@@ -13,6 +13,9 @@ import type { FindingsHandle } from '@/composables/useFindings'
 import { guessCategories } from '@/domain/campFacts'
 import type { CategoryClass, Iri } from '@/domain/types'
 
+/** Unconfirmed edits of a confirmed mapping per camp (in memory only): they survive switching tabs, not a restart. */
+const pendingDrafts = new Map<string, Record<Iri, CategoryClass>>()
+
 const props = defineProps<{ findingsHandle?: FindingsHandle }>()
 const emit = defineEmits<{ confirmed: []; dirty: [value: boolean] }>()
 
@@ -36,7 +39,7 @@ watch(campIri, () => void init())
 watch(
   () => settings.mapping.value,
   (m) => {
-    draft.value = { ...(m?.entries ?? {}) }
+    draft.value = { ...(m ? (pendingDrafts.get(campIri.value) ?? m.entries) : {}) }
   },
   { immediate: true },
 )
@@ -49,6 +52,12 @@ const dirty = computed(() => mappingDirty(settings.mapping.value, draft.value))
 const confirmed = computed(() => settings.mappingConfirmed.value)
 /** An edit of a confirmed mapping that is not yet confirmed. */
 const pendingChange = computed(() => confirmed.value && dirty.value)
+// Remember the pending edit (once the stored mapping is loaded), forget it as soon as nothing is pending.
+watch([pendingChange, draft], () => {
+  if (!settings.mapping.value) return
+  if (pendingChange.value) pendingDrafts.set(campIri.value, { ...draft.value })
+  else pendingDrafts.delete(campIri.value)
+})
 watch(pendingChange, (v) => emit('dirty', v), { immediate: true })
 const canConfirm = computed(() => rows.value.length > 0 && (!confirmed.value || dirty.value))
 const options = MAPPING_CLASSES.map((c) => ({ value: c, title: t(`camps.mapping.class.${c}`) }))
@@ -58,6 +67,7 @@ function setClass(iri: Iri, c: CategoryClass): void {
 }
 
 function discard(): void {
+  pendingDrafts.delete(campIri.value)
   draft.value = { ...(settings.mapping.value?.entries ?? {}) }
 }
 
@@ -71,6 +81,7 @@ async function confirm(): Promise<void> {
   saving.value = true
   saveError.value = null
   try {
+    pendingDrafts.delete(campIri.value)
     await settings.saveMapping({ ...m, entries: currentEntries(), confirmed: true, confirmedAt: new Date().toISOString() })
     emit('confirmed')
   } catch (e) {

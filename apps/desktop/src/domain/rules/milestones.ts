@@ -257,7 +257,8 @@ export function computeMilestoneDeadlines(
     if (!targets.length) continue
     skipped.add(d)
     for (const t of targets) {
-      if (d.done) t.done = true
+      // An old twin tick carries over only when the twin has a single target; otherwise it would tick unrelated rows.
+      if (d.done && targets.length === 1 && m.sameAs?.length === 1) t.done = true
       t.alsoNamed = [...(t.alsoNamed ?? []), { id: m.id, source: d.source?.title ?? '', due: d.due }]
     }
   }

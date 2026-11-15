@@ -9,7 +9,14 @@ import { useManualFindings } from '@/composables/useManualFindings'
 import FindingExplainPanel from './FindingExplainPanel.vue'
 import ManualFindingDialog from './ManualFindingDialog.vue'
 
-const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean; canExcludeCategory?: boolean }>()
+const props = defineProps<{
+  finding: Finding
+  hideActions?: boolean
+  canExcludeCategory?: boolean
+  /** Day group (triage): title of the group and its days line replace the first member's message and activity. */
+  groupTitle?: string
+  groupDays?: string
+}>()
 const emit = defineEmits<{
   feedback: [finding: Finding]
   override: [finding: Finding]
@@ -80,9 +87,11 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.aiTag') }}
         </v-chip>
         <v-chip v-if="finding.override" size="x-small" color="grey" label>{{ t('findings.overridden') }}</v-chip>
+        <slot name="meta" />
       </div>
-      <div class="text-subtitle-1">{{ finding.title }}</div>
-      <div class="text-body-2">{{ finding.message }}</div>
+      <div class="text-subtitle-1">{{ groupTitle ?? finding.title }}</div>
+      <div v-if="groupDays" class="text-body-2" data-testid="finding-group-days">{{ groupDays }}</div>
+      <div v-else class="text-body-2">{{ finding.message }}</div>
 
       <div v-if="moduleNote" class="text-caption text-warning mt-1" data-testid="finding-module-note">
         <v-icon icon="mdi-lightbulb-on-outline" size="x-small" /> {{ moduleNote }}
@@ -96,7 +105,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         {{ t('findings.overrideReason', { reason: finding.override.reason }) }}
       </div>
 
-      <div v-if="!compact && finding.evidence.length" class="d-flex align-center flex-wrap ga-1 mt-2">
+      <div v-if="finding.evidence.length && !groupDays" class="d-flex align-center flex-wrap ga-1 mt-2">
         <span class="text-caption text-medium-emphasis">{{ t('findings.evidence') }}:</span>
         <v-chip
           v-for="(e, i) in activityEvidence"
@@ -118,9 +127,18 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         />
       </div>
 
-      <FindingExplainPanel v-if="!compact && finding.explain" :finding="finding" />
+      <FindingExplainPanel v-if="finding.explain" :finding="finding">
+        <template v-if="hideActions" #extra>
+          <div class="mb-2" data-testid="finding-source-in-why">
+            <router-link v-if="sourceKey" :to="{ name: 'resources', query: { key: sourceKey } }" class="text-body-2" data-testid="finding-source-link">
+              {{ t('findings.source') }}: {{ finding.source?.title }}
+            </router-link>
+            <a v-else-if="url" :href="url" target="_blank" rel="noopener noreferrer" class="text-body-2">{{ t('findings.source') }}: {{ finding.source?.title }}</a>
+          </div>
+        </template>
+      </FindingExplainPanel>
 
-      <div class="d-flex align-center flex-wrap ga-2 mt-2">
+      <div v-if="!(hideActions && finding.explain)" class="d-flex align-center flex-wrap ga-2 mt-2">
         <template v-if="sourceKey">
           <router-link :to="{ name: 'resources', query: { key: sourceKey } }" class="text-body-2" data-testid="finding-source-link">
             {{ t('findings.source') }}: {{ finding.source?.title }}
@@ -134,7 +152,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.source') }}: {{ finding.source?.title }}
         </a>
         <v-spacer />
-        <template v-if="isManual && !compact && !hideActions && manualRecord">
+        <template v-if="isManual && !hideActions && manualRecord">
           <v-btn
             size="small"
             variant="text"
@@ -154,7 +172,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
             @blur="confirmDelete = false"
           />
         </template>
-        <template v-else-if="!compact && !hideActions && !isManual">
+        <template v-else-if="!hideActions && !isManual">
           <v-btn
             v-if="canExcludeCategory"
             size="small"

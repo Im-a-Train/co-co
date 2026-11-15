@@ -264,6 +264,24 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     await page.waitForSelector('.triage-item.active', { timeout: 5000 })
   })
 
+  await step('flow: a grouped day entry outlines all of its days in the GP', async () => {
+    await go('befunde', 'flow-group-grid')
+    await page.waitForSelector('.triage-item', { timeout: 8000 })
+    const row = page.locator('.triage-item[data-group]:not(.member)').first()
+    if (!(await row.count())) throw new Error('no grouped entry in the list')
+    const count = Number(await row.getAttribute('data-group'))
+    await row.click()
+    await page.waitForTimeout(300)
+    const days = await page.locator('[data-testid="finding-group-days"]').innerText()
+    if (!/Betrifft \d+ Tage: /.test(days)) throw new Error('group days line: ' + days)
+    await page.getByRole('button', { name: /im gp öffnen/i }).first().click()
+    await page.waitForURL(/raster\?.*vonBefund=/, { timeout: 5000 })
+    await page.waitForSelector('[data-testid="grid-focus-day"]', { timeout: 5000 })
+    const outlined = await page.locator('[data-testid="grid-focus-day"]').count()
+    if (outlined !== count) throw new Error(`group of ${count} days outlines ${outlined}`)
+    await shot(page, 'flow-group-grid')
+  })
+
   await step('flow: ignoring a Muss asks for a reason first', async () => {
     await go('befunde', 'flow-must-reason')
     await page.waitForSelector('.triage-item', { timeout: 8000 })

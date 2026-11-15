@@ -7,7 +7,7 @@
  * side yields a plan of writes (milestone first, then checklist state) that the caller runs sequentially
  * (Dexie wrapper is not atomic), so a failure on the second write never leaves the deadline stale.
  */
-import type { CampRuleConfig, CoachInputs, CustomChecklistItem, Deadline, IsoDate } from '../../types'
+import type { CampRuleConfig, CoachInputs, NdsField, CustomChecklistItem, Deadline, IsoDate } from '../../types'
 import { daysBetween, deadlineStatus, type DeadlineStatus } from './deadlines'
 import type { ChecklistItem } from './checklist'
 
@@ -66,6 +66,14 @@ export function withMilestoneDone(done: Record<string, IsoDate> | undefined, id:
   return next
 }
 
+/** `ndsFields` without the given keys: a value the coach changes is no longer the NDS value (ADR 0007). */
+function withoutNdsKeys(inputs: CoachInputs, keys: NdsField[]): Pick<CoachInputs, 'ndsFields'> {
+  if (!inputs.ndsFields) return {}
+  const rest = { ...inputs.ndsFields }
+  for (const k of keys) delete rest[k]
+  return { ndsFields: rest }
+}
+
 /**
  * CoachInputs with one deadline marked done/undone, in the storage the deadline radar and «Angaben» use.
  * A milestone also covers its skipped twins (`alsoNamed`, from `sameAs`): an old twin tick would otherwise
@@ -75,14 +83,21 @@ export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' |
   switch (d.kind) {
     case 'pbs-milestone': {
       if (!d.milestoneId) return inputs
-      let milestonesDone = inputs.milestonesDone
-      for (const id of [d.milestoneId, ...(d.alsoNamed ?? []).map((a) => a.id)]) milestonesDone = withMilestoneDone(milestonesDone, id, value, today)
+      // A tick writes only the milestone itself (a twin may point to several targets). Only an untick also
+      // clears the twin ids, so an old twin tick cannot bring the row back.
+      let milestonesDone = withMilestoneDone(inputs.milestonesDone, d.milestoneId, value, today)
+      if (!value) for (const a of d.alsoNamed ?? []) milestonesDone = withMilestoneDone(milestonesDone, a.id, false, today)
       return { ...inputs, milestonesDone }
     }
     case 'nds-registration':
-      return { ...inputs, ndsRegistered: value, ndsRegisteredOn: value ? (inputs.ndsRegisteredOn ?? today) : null }
+      return {
+        ...inputs,
+        ndsRegistered: value,
+        ndsRegisteredOn: value ? (inputs.ndsRegisteredOn ?? today) : null,
+        ...withoutNdsKeys(inputs, ['ndsRegistered', 'ndsRegisteredOn']),
+      }
     case 'nds-closing':
-      return { ...inputs, ndsClosed: value, ndsClosedOn: value ? (inputs.ndsClosedOn ?? today) : null }
+      return { ...inputs, ndsClosed: value, ndsClosedOn: value ? (inputs.ndsClosedOn ?? today) : null, ...withoutNdsKeys(inputs, ['ndsClosed']) }
     case 'leihmaterial':
       return { ...inputs, leihmaterialOrdered: value }
     case 'landeskarten':
@@ -129,9 +144,9 @@ export function withDeadlineDate(inputs: CoachInputs, kind: Deadline['kind'], da
   const value = date && date.length > 0 ? date : null
   switch (kind) {
     case 'nds-registration':
-      return { ...inputs, ndsRegisteredOn: value }
+      return { ...inputs, ndsRegisteredOn: value, ...withoutNdsKeys(inputs, ['ndsRegisteredOn']) }
     case 'nds-closing':
-      return { ...inputs, ndsClosedOn: value }
+      return { ...inputs, ndsClosedOn: value } // the closing date has no NDS badge of its own
     case 'leihmaterial':
       return { ...inputs, leihmaterialDeliveryDate: value }
     case 'landeskarten':

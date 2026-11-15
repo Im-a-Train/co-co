@@ -50,6 +50,13 @@ const focusDays = computed<string[]>(() => {
   const known = new Set(facts.value?.days.map((d) => d.iri) ?? [])
   // JS-DAY-04 targets both end days: outline both.
   for (const target of f?.targets ?? []) if (known.has(target)) days.add(target)
+  // A grouped day finding (same rule, several days) outlines the whole group: every open finding of that rule.
+  if (f && f.scope === 'day') {
+    for (const g of findingsHandle.findings.value) {
+      if (g.ruleId !== f.ruleId || g.scope !== 'day' || g.override) continue
+      for (const target of g.targets) if (known.has(target)) days.add(target)
+    }
+  }
   return [...days]
 })
 function scrollToTop() {
@@ -267,7 +274,7 @@ function showFindings(iri: Iri) {
     <WeekGrid
       v-else
       :grid="grid"
-      :selected="selected"
+      :selected="drawer ? selected : null"
       :focus-days="focusDays"
       :sticky-offset="origin ? barHeight : 0"
       @select="select"

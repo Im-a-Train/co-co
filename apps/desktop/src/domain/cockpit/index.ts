@@ -219,7 +219,7 @@ export function buildGrid(
       continue
     }
     // Block badges: open findings only; day findings belong to the day header.
-    if (f.override || f.scope === 'day') continue
+    if (f.override || f.scope === 'day' || f.origin === 'manual') continue
     for (const t of new Set(f.targets)) findingsByTarget.set(t, [...(findingsByTarget.get(t) ?? []), f])
   }
   const blockFindings = (activityIri: Iri, entryIri: Iri): Record<Severity, number> => {
@@ -461,21 +461,6 @@ export function roundDeltaParams(
   if (!diff || rounds.length === 0) return null
   const n = Math.max(...rounds.map((r) => r.number))
   return { n, added: diff.counts.added, changed: diff.counts.changed, removed: diff.counts.removed }
-}
-
-export interface MappingStatus {
-  total: number
-  mapped: number
-  confirmed: boolean
-}
-
-export function mappingStatus(
-  facts: CampFacts,
-  entries: Record<Iri, CategoryClass> | null | undefined,
-  confirmed: boolean,
-): MappingStatus {
-  const mapped = facts.categories.filter((c) => entries?.[c.iri] !== undefined).length
-  return { total: facts.categories.length, mapped, confirmed }
 }
 
 /** Display label of an activity: "1.2 Postenlauf". */

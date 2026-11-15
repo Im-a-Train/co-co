@@ -8,12 +8,12 @@ import {
   meterPercent,
   meterThresholdPercent,
   minutesOfDay,
-  severityColor,
   SEVERITIES,
   type GridBlock,
   type GridModel,
 } from '@/domain/cockpit'
 import type { JsDayReason } from '@/domain/rules/lib/jsDays'
+import type { Severity } from '@/domain/types'
 
 const props = defineProps<{
   grid: GridModel
@@ -117,6 +117,9 @@ function blockFindingsTitle(b: GridBlock): string {
 const anyFindings = computed(() => props.grid.days.some((d) => d.blocks.some((b) => blockTotal(b) > 0)))
 // Right under the sticky camp tabs (CampLayout, density comfortable = 44px) and any bar above the grid.
 const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tabs-height, 44px) + ${props.stickyOffset ?? 0}px)`)
+
+/** Same mapping as the DP chips: Muss red, Soll orange, Hinweis neutral (colour = state, informational = none). */
+const badgeClass = (s: Severity): string => (s === 'must' ? 'bg-error' : s === 'should' ? 'bg-warning' : 'wg-badge-hint')
 </script>
 
 <template>
@@ -257,7 +260,7 @@ const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tab
           <span
             v-if="blockTop(b)"
             class="wg-badge"
-            :class="`bg-${severityColor(blockTop(b)!)}`"
+            :class="badgeClass(blockTop(b)!)"
             :title="blockFindingsTitle(b)"
             data-testid="grid-block-badge"
           >
@@ -445,6 +448,10 @@ const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tab
   right: 2px;
   color: #fff;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+}
+.wg-badge-hint {
+  background: rgb(var(--v-theme-surface-variant));
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .wg-badge {
   position: absolute;

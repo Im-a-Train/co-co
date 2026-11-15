@@ -4,7 +4,7 @@
     "backToFinding": {
       "button": "Zurück zum Befund",
       "hint": "Alt+← oder Esc",
-      "context": "{ruleId} · {title}",
+      "context": "{title}",
       "label": "Du kommst von diesem Befund:"
     },
     "empty": "Keine Befunde in dieser Auswahl.",
@@ -255,6 +255,7 @@
     "group": {
       "label": "{title} · {count} Tage ({dates})",
       "labelNoDates": "{title} · {count} Tage",
+      "days": "Betrifft {count} Tage: {days}",
       "expand": "Einzeln anzeigen",
       "collapse": "Einzeln ausblenden",
       "ignoreAll": "Alle {count} ignorieren"

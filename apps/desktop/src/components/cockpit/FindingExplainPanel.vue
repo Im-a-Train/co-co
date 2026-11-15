@@ -67,6 +67,7 @@ function factValue(f: ExplainFact): string {
       @click="open = !open"
     />
     <div v-if="open" class="explain-body text-body-2 pa-3 mt-1" data-testid="finding-explain-body">
+      <slot name="extra" />
       <div class="font-weight-medium">{{ t('findings.explain.rule', { id: finding.ruleId, version: ex.ruleVersion }) }}</div>
       <div class="text-medium-emphasis">
         {{

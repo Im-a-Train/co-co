@@ -30,7 +30,8 @@ import CoachTodoBlock from './CoachTodoBlock.vue'
 import RuleEditDialog from '@/components/rules/RuleEditDialog.vue'
 import { loadBundledPacks } from '@/domain/rules/packs'
 import FindingCard from './FindingCard.vue'
-import { groupLabel, targetLabel } from './findingLabels'
+import { useDisplay } from 'vuetify'
+import { groupLabel, targetLabel, weekdayDate } from './findingLabels'
 
 export interface FeedbackDraft {
   kind: FeedbackKind
@@ -69,6 +70,10 @@ const { t } = useI18n()
 const todos = computed(() => props.findings.filter((f) => isCoachTodo(f) && !f.override))
 const topicFindings = computed(() => props.findings.filter((f) => !isCoachTodo(f)))
 const entries = computed(() => groupFindings(topicFindings.value, props.facts))
+
+/** Narrow windows (about 1024 px): a smaller editor so the main button stays on screen. */
+const { width } = useDisplay()
+const compact = computed(() => width.value < 1100)
 
 const statusOf = (f: Finding): FindingStatus => findingStatus(f, props.feedbackItems)
 /** Open while any member is open; else feedback if any member has feedback; else ignored. */
@@ -139,6 +144,11 @@ const STATUS_ICON: Record<FindingStatus, string> = {
   ignored: 'mdi-eye-off-outline',
 }
 
+/** Day group: the group label as card title and every affected day (weekday + date) in the detail. */
+const groupTitle = computed(() => (rep.value && current.value ? groupLabel(t, rep.value.title, current.value.findings.length, current.value.dates) : ''))
+const groupDaysText = computed(() =>
+  current.value ? t('findings.group.days', { count: current.value.findings.length, days: current.value.dates.map(weekdayDate).join(', ') }) : '',
+)
 function rowTitle(u: Unit): string {
   const f = u.entry.findings[0]!
   if (!u.member && u.entry.findings.length > 1) return groupLabel(t, f.title, u.entry.findings.length, u.entry.dates)
@@ -315,7 +325,11 @@ watch(
 
 const feedbackCount = computed(() => previewItems(props.feedbackItems).length)
 function openGrid() {
-  emit('openGrid', { activityIri: dayIri.value ? null : activityIri.value, dayIri: dayIri.value })
+  // The day of the member the URL (vonBefund) names, so ?tag and vonBefund cannot disagree within a group.
+  const member = current.value?.findings.find((f) => f.id === props.currentKey) ?? rep.value
+  const t0 = member ? findingTarget(member, props.facts) : null
+  const day = t0?.kind === 'day' ? t0.dayIri : dayIri.value
+  emit('openGrid', { activityIri: day ? null : activityIri.value, dayIri: day })
 }
 </script>
 
@@ -324,17 +338,6 @@ function openGrid() {
   <div v-else class="triage">
     <CoachTodoBlock :findings="todos" :camp-iri="campIri" :start-open="!entries.length" />
     <div v-if="!entries.length" class="text-body-2 text-medium-emphasis">{{ t('findings.triage.none') }}</div>
-
-    <div v-if="entries.length" class="d-flex align-center flex-wrap ga-3 mb-3">
-      <div class="text-subtitle-1 font-weight-medium" data-testid="triage-progress">
-        {{ t('findings.triage.progress', { done: progress.done, total: progress.total }) }}
-      </div>
-      <v-progress-linear :model-value="progress.total ? (progress.done / progress.total) * 100 : 0" color="primary" height="6" rounded style="max-width: 260px" />
-      <span class="text-body-2 text-medium-emphasis" data-testid="triage-counter">
-        {{ t('findings.counter.topics', { count: entries.length }, entries.length) }} ·
-        {{ t('findings.counter.findings', { count: topicFindings.length }, topicFindings.length) }}
-      </span>
-    </div>
 
     <v-alert v-if="entries.length && !progress.open" type="success" variant="tonal" density="compact" class="mb-3" data-testid="triage-all-done">
       {{ t('findings.triage.allDone') }}
@@ -351,6 +354,20 @@ function openGrid() {
     </v-alert>
 
     <div v-if="entries.length" class="triage-panes">
+      <div class="triage-side">
+        <div class="triage-progress mb-1" data-testid="triage-progress-block">
+          <div class="d-flex align-baseline ga-2">
+            <div class="text-subtitle-2 font-weight-medium" data-testid="triage-progress">
+              {{ t('findings.triage.progress', { done: progress.done, total: progress.total }) }}
+            </div>
+            <v-spacer />
+            <span class="text-caption text-medium-emphasis" data-testid="triage-counter">
+              {{ t('findings.counter.topics', { count: entries.length }, entries.length) }} ·
+              {{ t('findings.counter.findings', { count: topicFindings.length }, topicFindings.length) }}
+            </span>
+          </div>
+          <v-progress-linear :model-value="progress.total ? (progress.done / progress.total) * 100 : 0" color="primary" height="6" rounded class="mt-1" />
+        </div>
       <div ref="listEl" class="triage-list" role="listbox" :aria-label="t('findings.triage.listLabel')">
         <button
           v-for="(u, i) in units"
@@ -375,9 +392,17 @@ function openGrid() {
           </span>
         </button>
       </div>
+      </div>
 
       <div v-if="current && rep" class="triage-detail">
-        <div class="d-flex align-center ga-2 mb-2">
+        <FindingCard
+          :finding="rep"
+          hide-actions
+          :group-title="isGroup ? groupTitle : undefined"
+          :group-days="isGroup ? groupDaysText : undefined"
+          @open-activity="emit('openActivity', $event)"
+        >
+          <template #meta>
           <v-chip size="small" label :color="STATUS_COLOR[currentStatus!]" variant="flat" data-testid="triage-status">
             {{ t(`findings.triage.status.${currentStatus}`) }}
           </v-chip>
@@ -414,8 +439,8 @@ function openGrid() {
               />
             </v-list>
           </v-menu>
-        </div>
-        <FindingCard :finding="rep" hide-actions @open-activity="emit('openActivity', $event)" />
+          </template>
+        </FindingCard>
 
         <v-card variant="outlined" class="mt-3" data-testid="triage-editor">
           <v-card-text>
@@ -439,7 +464,7 @@ function openGrid() {
                 ref="textField"
                 v-model="draft.text"
                 :label="t('findings.triage.text')"
-                rows="3"
+                :rows="compact ? 2 : 3"
                 auto-grow
                 variant="outlined"
                 density="compact"
@@ -530,15 +555,23 @@ function openGrid() {
   gap: 16px;
   align-items: flex-start;
 }
-.triage-list {
+.triage-side {
   flex: 0 0 320px;
-  max-height: calc(100vh - 260px);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
   position: sticky;
-  top: 8px;
+  /* below the fixed app bar and the sticky camp tabs (CampLayout) */
+  top: calc(var(--v-layout-top, 0px) + var(--camp-tabs-height, 44px) + 8px);
+  max-height: calc(100vh - var(--v-layout-top, 0px) - var(--camp-tabs-height, 44px) - 24px);
+}
+.triage-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .triage-item {
   display: flex;
@@ -582,11 +615,14 @@ function openGrid() {
   .triage-panes {
     flex-direction: column;
   }
-  .triage-list {
+  .triage-side {
     flex: none;
     width: 100%;
-    max-height: 220px;
     position: static;
+    max-height: none;
+  }
+  .triage-list {
+    max-height: 220px;
   }
 }
 </style>

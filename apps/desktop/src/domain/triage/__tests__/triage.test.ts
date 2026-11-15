@@ -14,7 +14,6 @@ import {
   progressOf,
   recallPosition,
   rememberPosition,
-  resolveIndex,
   statusesOf,
   stepIndex,
   triageLocation,
@@ -84,13 +83,6 @@ describe('navigation', () => {
   })
   it('progress', () => {
     expect(progressOf(s('open', 'feedback', 'ignored'))).toEqual({ done: 2, total: 3, open: 1 })
-  })
-  it('resolveIndex finds the key or clamps', () => {
-    const list = [finding('A-1:a'), finding('B-1:b')]
-    expect(resolveIndex(list, 'B-1:b')).toBe(1)
-    expect(resolveIndex(list, 'gone', 5)).toBe(1)
-    expect(resolveIndex(list, null)).toBe(0)
-    expect(resolveIndex([], 'x')).toBe(-1)
   })
 })
 

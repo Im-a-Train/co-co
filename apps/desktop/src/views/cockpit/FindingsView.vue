@@ -516,7 +516,7 @@ function addAi(list: Finding[]) {
             v-for="r in disabledRules"
             :key="r.ruleId"
             :title="r.title"
-            :subtitle="`${r.ruleId} · ${r.global ? t('findings.disabledDialog.scopeAll') : t('findings.disabledDialog.scopeCamp')}`"
+            :subtitle="r.global ? t('findings.disabledDialog.scopeAll') : t('findings.disabledDialog.scopeCamp')"
           >
             <template #append>
               <v-btn size="small" variant="tonal" :text="t('findings.disabledDialog.enable')" @click="findingsHandle.enableRule(r.ruleId, r.global)" />
