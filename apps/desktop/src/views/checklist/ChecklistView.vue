@@ -92,6 +92,9 @@ const allDeadlineRows = computed(() =>
 )
 
 const deadlineSplit = computed(() => splitHidden(allDeadlineRows.value, (r) => r.key, hiddenKeys.value))
+const isUnconfirmed = (d: Deadline): boolean => d.kind === 'pbs-milestone' && d.confidence === 'unverified'
+/** «Auch genannt: Hering, 10.11.2030» for a milestone that also stands for de-duplicated twins of another pack. */
+const alsoNamedOf = (d: Deadline): string[] => (d.alsoNamed ?? []).map((a) => t('rules.deadlines.alsoNamed', { source: a.source, date: fmt(a.due) }))
 const deadlineRows = computed(() => (showHidden.value ? [...deadlineSplit.value.shown, ...deadlineSplit.value.hiddenEntries] : deadlineSplit.value.shown))
 const isHidden = (key: string): boolean => hiddenKeys.value.includes(key)
 
@@ -109,6 +112,10 @@ const rows = computed(() => rowSplit.value.shown)
 const hiddenRows = computed(() => rowSplit.value.hiddenEntries)
 const customRows = computed(() => buildCustomRows(rc.config.value.customChecklist, rc.config.value.checklist, today.value))
 const hiddenCount = computed(() => deadlineSplit.value.hiddenEntries.length + hiddenRows.value.length)
+// The switch disappears with the last hidden entry; start hidden again when the next one is hidden.
+watch(hiddenCount, (n) => {
+  if (n === 0) showHidden.value = false
+})
 
 async function setHidden(key: string, hidden: boolean): Promise<void> {
   saveError.value = null
@@ -131,7 +138,7 @@ function relative(left: number): string {
 }
 
 /** Runs a plan: milestone (CoachInputs) first, then the checklist state, sequentially. */
-async function run(plan: SyncPlan, deadline: Pick<Deadline, 'kind' | 'milestoneId'> | null, done: boolean): Promise<void> {
+async function run(plan: SyncPlan, deadline: Pick<Deadline, 'kind' | 'milestoneId' | 'alsoNamed'> | null, done: boolean): Promise<void> {
   saveError.value = null
   try {
     if (deadline) {
@@ -158,6 +165,14 @@ async function setDeadlineDate(d: Deadline, value: string): Promise<void> {
   }
 }
 const dateValueOf = (d: Deadline): string => deadlineDateValue(settings.coachInputs.value, d.kind) ?? ''
+/**
+ * Saves the inline date on blur / Enter only: Chromium fires `change` on every keystroke of the year
+ * (0002, 0020, …), which would store a half-typed date and re-sort the row away from the cursor.
+ */
+function commitDate(d: Deadline, e: Event): void {
+  const value = (e.target as HTMLInputElement).value
+  if (value !== dateValueOf(d)) void setDeadlineDate(d, value)
+}
 
 function toggleDeadline(d: Deadline, done: boolean): Promise<void> {
   if (d.kind === 'pbs-milestone' && d.milestoneId) return run(planMilestoneToggle(d.milestoneId, done, loadBundledChecklist()), d, done)
@@ -173,7 +188,6 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
 
 <template>
   <div data-testid="checklist-view">
-    <h1 class="text-h5 mb-1">{{ t('campConfig.checklist.tabTitle') }}</h1>
     <p class="text-body-2 text-medium-emphasis mb-1">{{ t('campConfig.checklist.tabIntro') }}</p>
     <p class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">{{ t('campConfig.checklist.leadersCaption') }}</p>
     <v-switch
@@ -214,28 +228,31 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
             <div class="text-body-2" :class="{ 'text-medium-emphasis': r.d.done }">
               {{ r.title }}
               <v-chip
-                v-if="r.d.kind === 'pbs-milestone' && r.d.confidence === 'unverified'"
+                v-if="isUnconfirmed(r.d)"
                 size="x-small"
                 label
-                color="warning"
                 variant="tonal"
                 class="ml-1"
-                :title="t('campConfig.checklist.unconfirmedHint')"
+                :title="t('rules.deadlines.unconfirmedHint', { source: r.d.source?.title ?? '' })"
                 data-testid="unverified-badge"
               >
                 {{ t('campConfig.checklist.unconfirmed') }}
               </v-chip>
             </div>
-            <div class="text-caption text-medium-emphasis">{{ fmt(r.d.due) }} · {{ relative(r.left) }}</div>
+            <div class="text-caption text-medium-emphasis">
+              {{ fmt(r.d.due) }} · {{ relative(r.left) }}
+              <span v-for="a in alsoNamedOf(r.d)" :key="a" data-testid="deadline-also-named"> · {{ a }}</span>
+            </div>
             <div v-if="deadlineDateField(r.d.kind) === 'done' && r.d.done" class="d-flex align-center flex-wrap ga-2 mt-1" data-testid="deadline-done-date">
-              <span class="text-caption">{{ t(`campConfig.checklist.doneOn.${r.d.kind}`, { date: dateValueOf(r.d) ? fmt(dateValueOf(r.d)) : '–' }) }}</span>
+              <label class="text-caption" :for="`done-${r.key}`">{{ t(`campConfig.checklist.doneOn.${r.d.kind}`) }}</label>
               <input
+                :id="`done-${r.key}`"
                 type="date"
                 class="cl-date"
                 :value="dateValueOf(r.d)"
-                :aria-label="t('campConfig.checklist.doneDateAria')"
                 data-testid="deadline-done-date-input"
-                @change="(e: Event) => setDeadlineDate(r.d, (e.target as HTMLInputElement).value)"
+                @blur="(e: Event) => commitDate(r.d, e)"
+                @keydown.enter="(e: Event) => commitDate(r.d, e)"
               />
             </div>
             <div v-else-if="deadlineDateField(r.d.kind) === 'delivery'" class="d-flex align-center flex-wrap ga-2 mt-1" data-testid="deadline-delivery">
@@ -247,7 +264,8 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
                 :value="dateValueOf(r.d)"
                 :title="t('campConfig.checklist.deliveryHint')"
                 data-testid="deadline-delivery-input"
-                @change="(e: Event) => setDeadlineDate(r.d, (e.target as HTMLInputElement).value)"
+                @blur="(e: Event) => commitDate(r.d, e)"
+                @keydown.enter="(e: Event) => commitDate(r.d, e)"
               />
             </div>
           </div>

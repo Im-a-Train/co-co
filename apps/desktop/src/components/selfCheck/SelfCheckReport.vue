@@ -47,7 +47,7 @@ async function openEcamp(url: string) {
         <v-icon :icon="SEV[g.severity].icon" :color="SEV[g.severity].color" size="small" />
         {{ g.header }}
       </div>
-      <v-list density="compact" class="py-0">
+      <v-list density="compact" :lines="false" class="py-0">
         <v-list-item v-for="it in g.items" :key="it.findingId" data-testid="selfcheck-report-item">
           <v-list-item-title class="text-wrap">
             <template v-if="it.activityLabel">

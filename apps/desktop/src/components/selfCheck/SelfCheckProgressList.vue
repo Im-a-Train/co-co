@@ -20,12 +20,13 @@ const columns = [
 ] as const
 type ColumnKey = (typeof columns)[number]['key']
 
-/** Colour = state: red only while a Muss is in the column, orange for open Soll/Hinweis, green for fixed, none for zero. */
+/** Colour = state: green for fixed; open columns red while they hold a Muss, orange for a Soll, else (only Hinweise, or zero) none. */
 function colorOf(key: ColumnKey, color: string): string | undefined {
   const list = props.progress[key]
   if (list.length === 0) return undefined
-  if (key === 'added') return list.some((f) => f.severity === 'must') ? 'error' : 'warning'
-  return color
+  if (key === 'fixed') return color
+  if (list.some((f) => f.severity === 'must')) return 'error'
+  return list.some((f) => f.severity === 'should') ? 'warning' : undefined
 }
 
 interface Entry {
@@ -70,20 +71,20 @@ const entries = computed<Record<ColumnKey, Entry[]>>(() => {
           {{ t(`selfCheck.progress.${c.key}`) }}
           <v-chip size="x-small" :color="colorOf(c.key, c.color)" variant="tonal">{{ progress[c.key].length }}</v-chip>
         </v-card-title>
-        <v-list density="compact" class="pt-0">
-          <v-list-item v-if="entries[c.key].length === 0" :title="t('selfCheck.progress.empty')" class="text-medium-emphasis" />
+        <v-list density="compact" lines="two" class="pt-0">
+          <v-list-item v-if="entries[c.key].length === 0" lines="one" :title="t('selfCheck.progress.empty')" class="text-medium-emphasis" />
           <v-list-item
             v-for="e in entries[c.key]"
             :key="e.key"
-            :title="e.title"
             :to="c.key === 'fixed' ? undefined : triageLocation(campIri, e.firstId)"
-            :title-tag="'span'"
             :data-testid="'selfcheck-finding'"
           >
-            <template #subtitle>
-              <span class="text-wrap d-block">{{ e.subtitle }}</span>
-              <v-chip v-if="e.marker" size="x-small" label color="warning" variant="tonal" class="mt-1" data-testid="selfcheck-changed-marker">{{ e.marker }}</v-chip>
+            <template #title>
+              <span class="text-wrap">{{ e.title }}</span>
             </template>
+            <template #subtitle>{{ e.subtitle }}</template>
+            <!-- Outside the subtitle: its line clamp would cut the marker off. -->
+            <v-chip v-if="e.marker" size="x-small" label variant="tonal" class="mt-1" data-testid="selfcheck-changed-marker">{{ e.marker }}</v-chip>
             <template v-if="c.key !== 'fixed'" #append>
               <v-icon icon="mdi-arrow-right" size="small" :aria-label="t('selfCheck.openFinding')" />
             </template>

@@ -13,7 +13,7 @@ import {
   withMilestoneDone,
 } from '../lib/checklistSync'
 import { emptyCoachInputs } from '../../campFacts/store'
-import { loadBundledMilestones } from '../milestones'
+import { computeMilestoneDeadlines, loadBundledMilestones } from '../milestones'
 import type { Deadline } from '../../types'
 
 const CAMP = '/api/camps/c1'
@@ -106,6 +106,26 @@ describe('withDeadlineDone', () => {
     expect(withDeadlineDone(base, { kind: 'leihmaterial' }, true, 'x').leihmaterialOrdered).toBe(true)
     expect(withDeadlineDone(base, { kind: 'landeskarten' }, true, 'x').landeskartenOrdered).toBe(true)
     expect(withDeadlineDone(base, { kind: 'lagerbewilligung' }, true, 'x').lagerbewilligungDone).toBe(true)
+  })
+  it('a milestone also covers its skipped twins (sameAs), so an old twin tick cannot keep it ticked', () => {
+    const d = { kind: 'pbs-milestone' as const, milestoneId: 'M-A', alsoNamed: [{ id: 'M-TWIN', source: 'Hering', due: '2026-03-10' }] }
+    const ticked = { ...base, milestonesDone: { 'M-TWIN': '2026-01-01', 'M-OTHER': '2026-01-02' } }
+    expect(withDeadlineDone(ticked, d, false, '2026-03-01').milestonesDone).toEqual({ 'M-OTHER': '2026-01-02' })
+    expect(withDeadlineDone(base, d, true, '2026-03-01').milestonesDone).toEqual({ 'M-A': '2026-03-01', 'M-TWIN': '2026-03-01' })
+  })
+  it('unticking a de-duplicated bundled milestone sticks after recomputing the deadlines', () => {
+    const list = loadBundledMilestones()
+    const twin = list.milestones.find((m) => m.sameAs?.length)
+    expect(twin).toBeDefined()
+    const camp = { iri: CAMP, title: 'L', start: '2031-07-10', end: '2031-07-20', lastJsDate: null, lastActivityDate: null }
+    const modulesOn = { isModuleActive: () => true }
+    const inputs = { ...base, milestonesDone: { [twin!.id]: '2031-01-01' } }
+    const target = computeMilestoneDeadlines(camp, inputs, list, modulesOn).find((x) => x.milestoneId === twin!.sameAs![0])
+    expect(target).toMatchObject({ done: true })
+    expect(target!.alsoNamed?.map((a) => a.id)).toContain(twin!.id)
+    const cleared = withDeadlineDone(inputs, target!, false, '2031-02-01')
+    const after = computeMilestoneDeadlines(camp, cleared, list, modulesOn).find((x) => x.milestoneId === twin!.sameAs![0])
+    expect(after?.done).toBe(false)
   })
 })
 

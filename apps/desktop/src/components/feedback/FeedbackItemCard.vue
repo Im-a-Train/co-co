@@ -23,6 +23,7 @@ const emit = defineEmits<{
   save: [patch: { text: string; kind: FeedbackKind }]
   remove: []
   post: []
+  'undo-post': []
   'mark-sent': [sent: boolean]
   'replies-seen': []
 }>()
@@ -113,8 +114,15 @@ function save() {
             <v-list-item prepend-icon="mdi-delete" base-color="error" :title="t('feedback.delete')" @click="emit('remove')" />
           </v-list>
         </v-menu>
-        <v-btn v-if="canPost && item.status === 'draft'" size="small" variant="tonal" color="primary" prepend-icon="mdi-comment-arrow-right"
-          :loading="posting || queued" :disabled="queued" data-testid="feedback-post" @click="emit('post')">{{ queued || posting ? t('feedback.posting') : t('feedback.post') }}</v-btn>
+        <template v-if="canPost && item.status === 'draft'">
+          <!-- Queued (undo window): the label stays readable and the undo sits on the card, so it survives a second queued post. -->
+          <template v-if="queued">
+            <span class="text-caption text-medium-emphasis px-2" data-testid="feedback-post-queued">{{ t('feedback.posting') }}</span>
+            <v-btn size="small" variant="text" prepend-icon="mdi-undo" data-testid="feedback-post-undo-card" @click="emit('undo-post')">{{ t('feedback.postUndo') }}</v-btn>
+          </template>
+          <v-btn v-else size="small" variant="tonal" color="primary" prepend-icon="mdi-comment-arrow-right"
+            :loading="posting" data-testid="feedback-post" @click="emit('post')">{{ t('feedback.post') }}</v-btn>
+        </template>
       </template>
       <template v-else>
         <v-spacer />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { copyRich, copyText } from '@/lib/clipboard'
 import { commands } from '@/lib/tauri'
@@ -13,6 +13,8 @@ const props = defineProps<{
   suggestedTemplate?: FeedbackTemplateId | null
   /** Confirming «gesendet» also moves the review status to «Änderungen angefragt». */
   setsStatus?: boolean
+  /** ... and first records round 1 (no round yet). */
+  startsRound?: boolean
 }>()
 const emit = defineEmits<{ (e: 'confirm-sent', ids: string[]): void }>()
 const { t } = useI18n()
@@ -55,6 +57,20 @@ const pendingSent = computed(() => {
   const open = new Set(props.items.filter((i) => i.status === 'draft').map((i) => i.id))
   return copiedIds.value.filter((id) => open.has(id))
 })
+
+const sentBarKey = computed(() =>
+  !props.setsStatus ? 'feedback.sentBar.textNoStatus' : props.startsRound ? 'feedback.sentBar.textRound' : 'feedback.sentBar.text',
+)
+
+const sentBarEl = ref<HTMLElement | null>(null)
+watch(
+  () => pendingSent.value.length > 0,
+  async (open) => {
+    if (!open) return
+    await nextTick()
+    sentBarEl.value?.scrollIntoView({ block: 'nearest' })
+  },
+)
 
 function afterCopy(ok: boolean) {
   notice.value = ok ? t('feedback.copied') : t('feedback.copyFailed')
@@ -142,28 +158,31 @@ async function onHtmlClick(e: MouseEvent) {
         <v-icon size="x-small" class="mr-1">mdi-comment-check-outline</v-icon>{{ t('feedback.previewPostedSummary', { n: postedCount }, postedCount) }}
       </div>
 
-      <v-alert
-        v-if="pendingSent.length"
-        type="info"
-        variant="tonal"
-        density="compact"
-        class="mt-3"
-        data-testid="sent-bar"
-      >
-        <div class="mb-2">
-          {{ t(setsStatus ? 'feedback.sentBar.text' : 'feedback.sentBar.textNoStatus', { n: pendingSent.length }, pendingSent.length) }}
-        </div>
-        <div class="d-flex ga-2">
-          <v-btn size="small" variant="flat" color="primary" data-testid="sent-bar-confirm" @click="confirmSent">{{ t('feedback.sentBar.confirm') }}</v-btn>
-          <v-btn size="small" variant="text" data-testid="sent-bar-later" @click="copiedIds = null">{{ t('feedback.sentBar.later') }}</v-btn>
-        </div>
-      </v-alert>
-
       <div class="d-flex align-center mt-3">
-        <v-btn :variant="pendingSent.length ? 'tonal' : 'flat'" color="primary" prepend-icon="mdi-content-copy" :disabled="!rendered.body" data-testid="preview-copy" @click="copyBody">
+        <v-btn :variant="pendingSent.length ? 'tonal' : 'flat'" color="primary" prepend-icon="mdi-content-copy" :disabled="!rendered.body || !shown.length" data-testid="preview-copy" @click="copyBody">
           {{ t('feedback.copy') }}
         </v-btn>
         <span v-if="notice" class="text-caption ml-3">{{ notice }}</span>
+      </div>
+
+      <!-- Right under «Kopieren», where the coach just clicked; scrolled into view in the sticky column. -->
+      <div ref="sentBarEl">
+        <v-alert
+          v-if="pendingSent.length"
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mt-3"
+          data-testid="sent-bar"
+        >
+          <div class="mb-2">
+            {{ t(sentBarKey, { n: pendingSent.length }, pendingSent.length) }}
+          </div>
+          <div class="d-flex ga-2">
+            <v-btn size="small" variant="flat" color="primary" data-testid="sent-bar-confirm" @click="confirmSent">{{ t('feedback.sentBar.confirm') }}</v-btn>
+            <v-btn size="small" variant="text" data-testid="sent-bar-later" @click="copiedIds = null">{{ t('feedback.sentBar.later') }}</v-btn>
+          </div>
+        </v-alert>
       </div>
     </v-card-text>
   </v-card>

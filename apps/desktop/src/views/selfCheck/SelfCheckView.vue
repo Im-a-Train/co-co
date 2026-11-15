@@ -54,19 +54,20 @@ async function copy() {
 <template>
   <div>
     <div class="d-flex align-center flex-wrap ga-3 mb-2">
-      <h1 class="text-h5">{{ t('selfCheck.title') }}</h1>
       <v-btn
-        icon="mdi-information-outline"
+        prepend-icon="mdi-information-outline"
         size="small"
         variant="text"
-        :aria-label="t('selfCheck.introToggle')"
         :aria-expanded="showIntro"
         data-testid="selfcheck-intro-toggle"
         @click="showIntro = !showIntro"
-      />
+      >
+        {{ t('selfCheck.introToggle') }}
+      </v-btn>
       <v-spacer />
       <v-btn
         color="primary"
+        variant="flat"
         prepend-icon="mdi-clipboard-check-outline"
         :disabled="!facts"
         data-testid="selfcheck-start"
@@ -144,7 +145,7 @@ async function copy() {
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" :disabled="busy" @click="dialog = false">{{ t('selfCheck.run.cancel') }}</v-btn>
-          <v-btn color="primary" :loading="busy" data-testid="selfcheck-confirm" @click="start">{{ t('selfCheck.run.confirm') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="busy" data-testid="selfcheck-confirm" @click="start">{{ t('selfCheck.run.confirm') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

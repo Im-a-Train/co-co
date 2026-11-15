@@ -60,6 +60,10 @@ export async function feedbackFlows({ page, step, go, shot }) {
     await go('feedback', 'flow-fb-undo')
     const card = await addActivityItem('Undo-Test: Bitte Material ergänzen.')
     await card.getByTestId('feedback-post').click({ timeout: 5000 })
+    // While queued the card keeps a readable «Wird gepostet …» and its own «Rückgängig».
+    await card.getByTestId('feedback-post-queued').waitFor({ timeout: 3000 })
+    if (!(await card.getByTestId('feedback-post-undo-card').count())) throw new Error('queued card has no undo')
+    await shot(page, 'flow-fb-queued')
     await page.getByTestId('feedback-post-undo').click({ timeout: 3000 })
     await settle(6500)
     if ((await card.getAttribute('data-status')) !== 'draft') throw new Error('item was posted despite undo')
@@ -70,6 +74,7 @@ export async function feedbackFlows({ page, step, go, shot }) {
     await go('runden', 'flow-fb-approve')
     await page.getByRole('button', { name: 'Bewilligt', exact: true }).first().click({ timeout: 5000 })
     await page.getByTestId('approval-dialog').waitFor({ timeout: 5000 })
+    await settle(500) // let the dialog transition finish before the screenshot
     await shot(page, 'flow-fb-approval-dialog')
     const blockers = await page.getByTestId('approval-blockers').innerText()
     if (!/offen|nicht/i.test(blockers)) throw new Error('no blockers listed: ' + blockers)

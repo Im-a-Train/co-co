@@ -46,10 +46,11 @@
     "preview": "Vorschau",
     "previewLength": "{channel} · {n} Zeichen",
     "previewIncludeSent": "Bereits gesendete Punkte einschliessen",
-    "previewPostedSummary": "Zu {n} Aktivität habe ich direkt in eCamp kommentiert. | Zu {n} Aktivitäten habe ich direkt in eCamp kommentiert.",
+    "previewPostedSummary": "{n} Punkt ist schon als Kommentar in eCamp und fehlt deshalb im Text. | {n} Punkte sind schon als Kommentare in eCamp und fehlen deshalb im Text.",
     "previewEmpty": "Keine offenen Punkte für die Vorschau. Gesendete und in eCamp gepostete Punkte sind nicht enthalten.",
     "sentBar": {
       "text": "Gesendet? Dann markiere ich {n} Punkt als gesendet und setze den Status auf «Änderungen angefragt». | Gesendet? Dann markiere ich {n} Punkte als gesendet und setze den Status auf «Änderungen angefragt».",
+      "textRound": "Gesendet? Dann markiere ich {n} Punkt als gesendet, halte den Lagerstand als Runde 1 fest und setze den Status auf «Änderungen angefragt». | Gesendet? Dann markiere ich {n} Punkte als gesendet, halte den Lagerstand als Runde 1 fest und setze den Status auf «Änderungen angefragt».",
       "textNoStatus": "Gesendet? Dann markiere ich {n} Punkt als gesendet. | Gesendet? Dann markiere ich {n} Punkte als gesendet.",
       "confirm": "Ja, gesendet",
       "later": "Noch nicht",

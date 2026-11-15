@@ -129,13 +129,10 @@
       "saveFailed": "Stand konnte nicht gespeichert werden",
       "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen der Leitung findest du im Fristen-Radar (Filter «Leitung»).",
       "unconfirmed": "unbestätigt",
-      "unconfirmedHint": "Richtwert aus Hering (hering.scout.ch), von der PBS noch nicht bestätigt.",
       "doneOn": {
-        "nds-registration": "angemeldet am {date}",
-        "nds-closing": "abgeschlossen am {date}"
+        "nds-registration": "angemeldet am",
+        "nds-closing": "abgeschlossen am"
       },
-      "doneDateLabel": "Datum",
-      "doneDateAria": "Datum korrigieren",
       "deliveryLabel": "Lieferdatum",
       "deliveryHint": "Verschiebt die Bestellfrist",
       "sourceMenu": "Quelle",

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /** Review status chip for the camp header; the menu offers only the allowed transitions. */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import ApprovalCheckDialog from '@/components/rounds/ApprovalCheckDialog.vue'
-import { useApprovalGuard } from '@/composables/useApprovalGuard'
+import ApprovalGate from '@/components/rounds/ApprovalGate.vue'
+import { isApprovalStatus } from '@/composables/useApprovalGuard'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useRounds } from '@/composables/useRounds'
 import { allowedTransitions, reviewStatusColor } from '@/domain/rounds'
@@ -33,13 +33,25 @@ async function apply(status: ReviewStatus, note: string | null) {
     error.value = t('rounds.errors.invalidTransition')
   }
 }
-const guard = useApprovalGuard(() => props.campIri, apply)
-const set = (status: ReviewStatus) => guard.request(status)
+// The approval check (all rules evaluated) is mounted once the menu is first opened, not on every camp page.
+const menuOpen = ref(false)
+const gateArmed = ref(false)
+watch(menuOpen, (open) => {
+  if (open) gateArmed.value = true
+})
+const gate = ref<InstanceType<typeof ApprovalGate> | null>(null)
+async function set(status: ReviewStatus) {
+  if (!isApprovalStatus(status)) return apply(status, null)
+  gateArmed.value = true
+  await nextTick()
+  // Without the gate (cannot happen: the menu armed it) nothing is approved unchecked.
+  await gate.value?.request(status)
+}
 </script>
 
 <template>
   <div class="d-flex align-center ga-2">
-    <v-menu>
+    <v-menu v-model="menuOpen">
       <template #activator="{ props: menu }">
         <v-chip
           v-bind="menu"
@@ -59,14 +71,6 @@ const set = (status: ReviewStatus) => guard.request(status)
       </v-list>
     </v-menu>
     <span v-if="error" class="text-caption text-error">{{ error }}</span>
-    <ApprovalCheckDialog
-      v-if="guard.pending.value && guard.blockers.value"
-      v-model="guard.open.value"
-      :camp-id="campId"
-      :blockers="guard.blockers.value"
-      :target="guard.pending.value.status"
-      :initial-note="guard.pending.value.note"
-      @confirm="guard.confirm"
-    />
+    <ApprovalGate v-if="gateArmed" ref="gate" :camp-iri="campIri" :camp-id="campId" @apply="apply" />
   </div>
 </template>

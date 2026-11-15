@@ -12,7 +12,7 @@ import { useCampRoute } from '@/composables/useCampRoute'
 import { useFeedback, type NewFeedback } from '@/composables/useFeedback'
 import { useRounds } from '@/composables/useRounds'
 import { KIND_ORDER } from '@/domain/feedback'
-import { canTransition } from '@/domain/rounds'
+import { canTransition, RoundsError } from '@/domain/rounds'
 import { newReplies } from '@/domain/feedback/commentSync'
 import { generalPointById } from '@/domain/feedback/defaults'
 import { getHiddenGeneralPoints, hideGeneralPoint, restoreAllGeneralPoints } from '@/domain/feedback/generalPointsStore'
@@ -20,7 +20,7 @@ import { groupFeedback } from '@/domain/feedback/structure'
 import { listDocuments } from '@/domain/documents/store'
 import { lastMcpChange } from '@/composables/mcpChanges'
 import { activityBlockNumbers, activityShortUrlMap, activityUrlMap } from '@/domain/ecampLinks'
-import type { DocumentRecord, FeedbackKind, FeedbackScope, FeedbackTemplateId } from '@/domain/types'
+import type { DocumentRecord, FeedbackKind, FeedbackScope, FeedbackTemplateId, ReviewStatus } from '@/domain/types'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -28,8 +28,15 @@ const { campIri } = useCampRoute()
 const { facts, load: loadFacts } = useCampFacts(campIri)
 const fb = useFeedback(campIri)
 const rounds = useRounds(campIri)
-onMounted(() => void rounds.load())
-watch(campIri, () => void rounds.load())
+/** A camp without a stored review state is «neu»; `review` is null before load() as well, hence the flag. */
+const roundsLoaded = ref(false)
+async function loadRounds() {
+  roundsLoaded.value = false
+  await rounds.load()
+  roundsLoaded.value = true
+}
+onMounted(() => void loadRounds())
+watch(campIri, () => void loadRounds())
 
 const hiddenPoints = ref<string[]>([])
 async function loadHiddenPoints() {
@@ -175,7 +182,7 @@ function queuePost(id: string) {
 }
 function undoPost(id: string) {
   dequeue(id)
-  snack.value = null
+  if (snack.value?.undoId === id) snack.value = null
 }
 // Leaving the page must not lose a queued post.
 onBeforeUnmount(() => {
@@ -183,9 +190,9 @@ onBeforeUnmount(() => {
 })
 
 // Preview: template follows the camp state; «Kopieren» can mark the copied points as sent and request changes.
-const reviewStatus = computed(() => rounds.review.value?.status ?? null)
+const reviewStatus = computed<ReviewStatus | null>(() => (roundsLoaded.value ? (rounds.review.value?.status ?? 'neu') : null))
 const suggestedTemplate = computed<FeedbackTemplateId | null>(() => {
-  if (!rounds.review.value) return null
+  if (reviewStatus.value === null) return null
   if (reviewStatus.value === 'aenderungen_angefragt') return 'auflagen'
   return rounds.rounds.value.length === 0 ? 'grobprogramm' : null
 })
@@ -203,7 +210,8 @@ async function confirmSent(ids: string[]) {
     }
     snack.value = { text: t('feedback.sentBar.done', { n }, n), color: 'success' }
   } catch (e) {
-    snack.value = { text: `${t('feedback.sentBar.failed')}: ${e instanceof Error ? e.message : String(e)}`, color: 'error' }
+    const reason = e instanceof RoundsError ? t(`rounds.errors.${e.code}`) : e instanceof Error ? e.message : String(e)
+    snack.value = { text: `${t('feedback.sentBar.failed')}: ${reason}`, color: 'error' }
   }
 }
 
@@ -325,6 +333,7 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
               @save="(patch) => fb.update(item.id, patch)"
               @remove="fb.remove(item.id)"
               @post="queuePost(item.id)"
+              @undo-post="undoPost(item.id)"
               @mark-sent="(sent) => fb.markSent(item.id, sent)"
               @replies-seen="fb.markRepliesSeen(item.id)"
             />
@@ -359,11 +368,12 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
                     :lint="fb.lint.value.filter((l) => l.itemId === item.id)"
                     :facts="facts"
                     :posting="postingId === item.id"
-              :queued="queuedIds.includes(item.id)"
+                    :queued="queuedIds.includes(item.id)"
                     :focused="focusId === item.id"
                     @save="(patch) => fb.update(item.id, patch)"
                     @remove="fb.remove(item.id)"
                     @post="queuePost(item.id)"
+                    @undo-post="undoPost(item.id)"
                     @mark-sent="(sent) => fb.markSent(item.id, sent)"
                     @replies-seen="fb.markRepliesSeen(item.id)"
                   />
@@ -380,6 +390,7 @@ const snackOpen = computed({ get: () => snack.value !== null, set: (v) => { if (
             :context="renderContext"
             :suggested-template="suggestedTemplate"
             :sets-status="setsStatus"
+            :starts-round="setsStatus && rounds.rounds.value.length === 0"
             @confirm-sent="confirmSent"
           />
         </div>

@@ -66,11 +66,19 @@ export function withMilestoneDone(done: Record<string, IsoDate> | undefined, id:
   return next
 }
 
-/** CoachInputs with one deadline marked done/undone, in the storage the deadline radar and «Angaben» use. */
-export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' | 'milestoneId'>, value: boolean, today: IsoDate): CoachInputs {
+/**
+ * CoachInputs with one deadline marked done/undone, in the storage the deadline radar and «Angaben» use.
+ * A milestone also covers its skipped twins (`alsoNamed`, from `sameAs`): an old twin tick would otherwise
+ * keep the merged row ticked after an untick.
+ */
+export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' | 'milestoneId' | 'alsoNamed'>, value: boolean, today: IsoDate): CoachInputs {
   switch (d.kind) {
-    case 'pbs-milestone':
-      return d.milestoneId ? { ...inputs, milestonesDone: withMilestoneDone(inputs.milestonesDone, d.milestoneId, value, today) } : inputs
+    case 'pbs-milestone': {
+      if (!d.milestoneId) return inputs
+      let milestonesDone = inputs.milestonesDone
+      for (const id of [d.milestoneId, ...(d.alsoNamed ?? []).map((a) => a.id)]) milestonesDone = withMilestoneDone(milestonesDone, id, value, today)
+      return { ...inputs, milestonesDone }
+    }
     case 'nds-registration':
       return { ...inputs, ndsRegistered: value, ndsRegisteredOn: value ? (inputs.ndsRegisteredOn ?? today) : null }
     case 'nds-closing':
