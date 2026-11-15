@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { isDocumentReviewed, reviewProgress, type ReviewProgressInput } from '../progress'
+import { isDocumentReviewed, reviewProgress, reviewVerdict, toCampProgressSummary, REVIEW_STEP_ROUTES, type ReviewProgressInput } from '../progress'
+import type { ApprovalBlockers } from '../../rounds'
 
 const empty: ReviewProgressInput = {
   reviewStatus: null,
   mappingConfirmed: false,
-  coachInputsPresent: false,
+  missingInputs: 2,
+  suggestedModules: [],
   triage: { done: 0, total: 4 },
   manualFindingCount: 0,
   documents: { total: 2, reviewed: 0 },
@@ -15,7 +17,8 @@ const empty: ReviewProgressInput = {
 const full: ReviewProgressInput = {
   reviewStatus: 'bewilligt',
   mappingConfirmed: true,
-  coachInputsPresent: true,
+  missingInputs: 0,
+  suggestedModules: [],
   triage: { done: 4, total: 4 },
   manualFindingCount: 1,
   documents: { total: 2, reviewed: 2 },
@@ -68,5 +71,63 @@ describe('isDocumentReviewed', () => {
     expect(isDocumentReviewed({ docCheck: {}, activityIris: [] }, 0)).toBe(true)
     expect(isDocumentReviewed({ docCheck: null, activityIris: [] }, 1)).toBe(true)
     expect(isDocumentReviewed({ docCheck: null, activityIris: ['x'] }, 0)).toBe(true)
+  })
+})
+
+describe('inputs / mapping steps', () => {
+  it('inputs is done at 0 missing, open otherwise', () => {
+    expect(reviewProgress({ ...full, missingInputs: 0 }).steps[1]?.done).toBe(true)
+    expect(reviewProgress({ ...full, missingInputs: 3 }).steps[1]?.done).toBe(false)
+  })
+  it('mapping needs a confirmed mapping AND no suggested module', () => {
+    expect(reviewProgress({ ...full, suggestedModules: ['berg'] }).steps[0]?.done).toBe(false)
+    expect(reviewProgress({ ...full, mappingConfirmed: false }).steps[0]?.done).toBe(false)
+    expect(reviewProgress({ ...full, suggestedModules: [] }).steps[0]?.done).toBe(true)
+  })
+})
+
+describe('REVIEW_STEP_ROUTES', () => {
+  it('maps every step to a real camp route name', () => {
+    expect(REVIEW_STEP_ROUTES).toEqual({
+      mapping: 'camp-grid',
+      inputs: 'camp-inputs',
+      triage: 'camp-findings',
+      documents: 'camp-documents',
+      checklist: 'camp-checklist',
+      feedback: 'camp-feedback',
+      status: 'camp-rounds',
+    })
+  })
+})
+
+const blockers = (over: Partial<ApprovalBlockers> = {}): ApprovalBlockers => ({
+  openMust: 0, untriaged: 0, unsentMust: 0, unsentDrafts: 0, jsDays: null, mappingUnconfirmed: false, any: false, ...over,
+})
+
+describe('reviewVerdict', () => {
+  it('approved wins, with or without date', () => {
+    const b = blockers({ openMust: 1, any: true })
+    expect(reviewVerdict({ blockers: b, reviewStatus: 'bewilligt', approvedAt: '2026-01-01T10:00:00Z' })).toEqual({ kind: 'approved', at: '2026-01-01T10:00:00Z' })
+    expect(reviewVerdict({ blockers: b, reviewStatus: 'bewilligt_mit_auflagen', approvedAt: null })).toEqual({ kind: 'approved', at: null })
+  })
+  it('waiting while changes are requested', () => {
+    expect(reviewVerdict({ blockers: blockers(), reviewStatus: 'aenderungen_angefragt', approvedAt: null })).toEqual({ kind: 'waiting' })
+  })
+  it('blocked with blockers, ready without', () => {
+    const b = blockers({ openMust: 2, any: true })
+    expect(reviewVerdict({ blockers: b, reviewStatus: 'in_review', approvedAt: null })).toEqual({ kind: 'blocked', blockers: b })
+    expect(reviewVerdict({ blockers: blockers(), reviewStatus: null, approvedAt: null })).toEqual({ kind: 'ready' })
+  })
+})
+
+describe('toCampProgressSummary', () => {
+  it('takes percent, first open step and counts', () => {
+    const now = new Date('2026-05-06T07:08:09Z')
+    expect(toCampProgressSummary(reviewProgress(empty), { triageOpen: 4, openMust: 1 }, now)).toEqual({
+      percent: 0, nextStep: 'mapping', triageOpen: 4, openMust: 1, updatedAt: '2026-05-06T07:08:09.000Z',
+    })
+  })
+  it('nextStep is null when everything is done', () => {
+    expect(toCampProgressSummary(reviewProgress(full), { triageOpen: 0, openMust: 0 }).nextStep).toBeNull()
   })
 })

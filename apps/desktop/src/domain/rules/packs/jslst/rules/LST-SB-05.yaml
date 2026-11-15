@@ -10,6 +10,7 @@ messageVariants:
   areaWasser: "Wasser"
   areaWinter: "Winter"
   areaJoin: " / "
+feedbackText: "Für «{activity}» fehlt noch eine detaillierte Planung mit Sicherheitskonzept (Sicherheitsbereich {area}). Könnt ihr sie ergänzen?"
 severity: should
 confidence: verified
 scope: activity

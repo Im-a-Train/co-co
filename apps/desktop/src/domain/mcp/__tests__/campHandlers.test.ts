@@ -106,7 +106,7 @@ describe('get_camp_progress', () => {
       manualFindings: [manual()],
       documents: [doc()],
       feedback: [makeFeedback({ status: 'posted' })],
-      reviewContext: { coachInputsPresent: true, checklist: { done: 1, total: 2 }, moduleStates: {}, disabledRuleIds: [] },
+      reviewContext: { checklist: { done: 1, total: 2 }, moduleStates: {}, disabledRuleIds: [] },
     })
     const v = value as { percent: number; steps: { key: string; label: string; done: boolean; value: number; total: number; hint: string | null }[] }
     expect(v.percent).toBeGreaterThan(0)
@@ -161,7 +161,7 @@ describe('get_review_guidance', () => {
     const metas = [meta({ id: 'A-1' }), meta({ id: 'A-2' }), meta({ id: 'P-1', module: 'pbs', group: 'pbs' }), meta({ id: 'H-1', kind: 'hard' })]
     const { value } = await run('get_review_guidance', CAMP_ARG, {
       packs: packs(metas),
-      reviewContext: { coachInputsPresent: false, checklist: { done: 0, total: 0 }, moduleStates: { pbs: 'off' }, disabledRuleIds: ['A-2'] },
+      reviewContext: { checklist: { done: 0, total: 0 }, moduleStates: { pbs: 'off' }, disabledRuleIds: ['A-2'] },
     })
     const v = value as { ruleCount: number; rules: { id: string; kind: string }[]; guidance: string }
     expect(v.rules.map((r) => r.id)).toEqual(['A-1', 'H-1'])

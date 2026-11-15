@@ -5,6 +5,7 @@
 import { feedbackTemplates } from '../../locales/messages'
 import { anchorLabel, feedbackKindOf, isManualCategory } from '../manualFindings'
 import type { CampFacts, DocumentRecord, FeedbackChannel, FeedbackItem, FeedbackKind, FeedbackTemplateId, Finding, Iri } from '../types'
+import type { FindingGroupEntry } from '../triage'
 import { tr } from './i18n'
 import { KIND_ORDER, orderItems } from './order'
 import { groupFeedback } from './structure'
@@ -345,12 +346,24 @@ function itemFromManualFinding(finding: Finding, campIri: Iri, now: Date): Feedb
 
 /** New draft item prefilled from a finding (kind 'must' for must findings, else 'suggestion'). */
 export function itemFromFinding(finding: Finding, campIri: Iri, now: Date = new Date()): FeedbackItem {
+  return ruleItem(finding, campIri, now, null)
+}
+
+/**
+ * `itemFromFinding` with an optional extra sentence (group dates): it goes after the message and before
+ * the template's closing question, or at the end of the rule's own feedbackText.
+ */
+function ruleItem(finding: Finding, campIri: Iri, now: Date, extra: string | null): FeedbackItem {
   if (finding.origin === 'manual') return itemFromManualFinding(finding, campIri, now)
   const isMust = finding.severity === 'must'
-  // Rule messages often lack final punctuation; the template appends a question right after it.
+  // Rule messages often lack final punctuation (also after a closing «)»); a sentence may follow.
   const message = finding.message.trim()
-  const params = { title: finding.title, message: /[.!?…:)]$/.test(message) ? message : `${message}.` }
-  const text = finding.feedbackText?.trim() || tr(isMust ? 'feedback.fromFinding.must' : 'feedback.fromFinding.other', params)
+  const sentence = /[.!?…:]$/.test(message) ? message : `${message}.`
+  const params = { title: finding.title, message: extra ? `${sentence} ${extra}` : sentence }
+  const own = finding.feedbackText?.trim()
+  const text = own
+    ? (extra ? `${own} ${extra}` : own)
+    : tr(isMust ? 'feedback.fromFinding.must' : 'feedback.fromFinding.other', params)
   const activityIri = finding.scope === 'activity' ? finding.targets[0] : undefined
   const iso = now.toISOString()
   const item: FeedbackItem = {
@@ -385,3 +398,39 @@ export const TEMPLATE_IDS: readonly FeedbackTemplateId[] = [
   'nach-dem-lagerbesuch',
   'abschluss',
 ] as const
+
+/**
+ * Items for the preview/copy text. Default: drafts only; `includeSent` adds already sent items.
+ * Posted items are never included: they already are in eCamp as comments.
+ */
+export function previewItems(items: readonly FeedbackItem[], opts: { includeSent?: boolean } = {}): FeedbackItem[] {
+  return items.filter((i) => i.status === 'draft' || (opts.includeSent === true && i.status === 'sent'))
+}
+
+/** Items that were posted directly to eCamp (summarised in one line in the preview). */
+export function postedItems(items: readonly FeedbackItem[]): FeedbackItem[] {
+  return items.filter((i) => i.status === 'posted')
+}
+
+/**
+ * One draft item for a group of same-rule findings: text of the first finding plus one sentence that
+ * names the dates. `findingId` is the first finding, `findingIds` all of them. When any finding is a
+ * Muss, the item is a Muss item with the Muss wording (never hidden behind a milder first finding).
+ * A group of one behaves like `itemFromFinding`.
+ */
+export function itemFromFindingGroup(
+  group: FindingGroupEntry,
+  campIri: Iri,
+  datesLabel: string,
+  now: Date = new Date(),
+): FeedbackItem {
+  const [first, ...rest] = group.findings
+  if (!first) throw new Error('itemFromFindingGroup: empty group')
+  if (!rest.length) return itemFromFinding(first, campIri, now)
+  const anyMust = group.findings.some((f) => f.severity === 'must')
+  // Date labels like «24.01.» already end with a dot: don't double it.
+  const sentence = tr('feedback.fromFinding.groupDays', { count: group.findings.length, dates: datesLabel }).replace(/\.\.$/, '.')
+  const item = ruleItem(anyMust ? { ...first, severity: 'must' } : first, campIri, now, sentence)
+  item.findingIds = group.findings.map((f) => f.id)
+  return item
+}

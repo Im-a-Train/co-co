@@ -16,8 +16,9 @@
       "too-long-for-comment": "Zu lang für einen eCamp-Kommentar (max. 1024 Zeichen): wird beim Posten aufgeteilt."
     },
     "fromFinding": {
-      "must": "{title}: {message} Wie wollt ihr das lösen?",
-      "other": "{title}: {message} Was meint ihr dazu?"
+      "must": "{message} Wie wollt ihr das lösen?",
+      "other": "{message}",
+      "groupDays": "Das betrifft {count} Tage: {dates}."
     },
     "nextStepWords": "bitte|könnt ihr|könntet ihr|wollt ihr|ergänz|bis |vorschlag|schlage vor|sollte|solltet|prüf|klär|anpass",
     "campFallback": "das Lager",

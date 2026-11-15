@@ -10,6 +10,7 @@ messageVariants:
   noAccess: "Ohne wintersichere Zufahrt gilt das Lager als Sicherheitsbereich Winter (Expertenbewilligung, Zusatz Winter, nur Jugendliche)."
   form_zelt: "Zelt"
   form_gemischt: "gemischt"
+feedbackText: "Winterlager finden in einem Haus mit wintersicherer Zufahrt statt. Wie sieht das bei euch aus?"
 severity: should
 confidence: verified
 scope: camp

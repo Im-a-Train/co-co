@@ -18,6 +18,7 @@ messageVariants:
   reasonWinterSnowshoe: "Schneeschuhtour mit langer Dauer, mehrtägig oder anspruchsvoll"
   reasonWinterBiwak: "Biwak oder Iglu im Winter ohne Lagerhaus"
   reasonJoin: "; "
+feedbackText: "«{activity}» könnte im Sicherheitsbereich {area} liegen. Ist das der Fall? Falls ja, bitte als «SB {area}» markieren."
 severity: should
 confidence: heuristic
 scope: activity

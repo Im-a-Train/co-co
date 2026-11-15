@@ -5,6 +5,7 @@ status: active
 title: "Lagerprogramm nicht in der NDS"
 description: "Das definitive Lagerprogramm muss spätestens beim Abschluss des Angebots in der NDS hochgeladen sein. Vor Lagerende nur ein Hinweis, danach eine Empfehlung, nach der Abschlussfrist Pflicht."
 message: "Das definitive Lagerprogramm ist noch nicht in der NDS hochgeladen. Es muss spätestens beim Abschluss des Angebots vorliegen (Frist {due})."
+feedbackText: "Für den NDS-Abschluss (Frist {due}) brauche ich noch euer definitives Lagerprogramm. Könnt ihr es mir bitte so bald wie möglich schicken?"
 severity: must
 confidence: verified
 scope: camp

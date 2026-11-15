@@ -5,6 +5,7 @@ status: active
 title: "Anreise- und Abreisetag zusammen"
 description: "Anreise- und Abreisetag zählen zusammen als ein J+S-Tag, wenn sie gemeinsam die J+S-Tag-Kriterien erreichen (mindestens 240 Minuten, ab 2027 zusätzlich Bewegungszeit). Ohne J+S-Aktivitäten an beiden Tagen gibt es keinen Befund."
 message: "Erster und letzter Lagertag zählen nicht als J+S-Tag (zusammen {minutes} min, nötig {min})."
+feedbackText: "Der erste und der letzte Lagertag zählen zusammen noch nicht als J+S-Tag. Könnt ihr dort mehr J+S-Aktivität einplanen?"
 severity: should
 confidence: verified
 scope: day

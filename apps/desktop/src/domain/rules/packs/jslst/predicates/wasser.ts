@@ -136,6 +136,7 @@ export const lstWasser04: RulePredicate = (ctx) => {
         params: { activity: a.title },
         variant: 'unknown',
         severity: 'hint',
+        needsInput: 'midata',
         fragments: { setting: fragments.setting },
         inputs: { setting: s.setting, requiredKey: key },
         evidence,

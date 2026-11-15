@@ -5,6 +5,7 @@ status: active
 title: "Tag ohne Programm"
 description: "Für sämtliche Lagertage braucht es eine Tagesplanung mit Start- und Endzeiten."
 message: "Für {date} ist kein Programm erfasst. Für sämtliche Lagertage braucht es eine Tagesplanung mit Start- und Endzeiten."
+feedbackText: "Für den {date} ist noch kein Programm erfasst. Könnt ihr eine Tagesplanung mit Start- und Endzeiten eintragen?"
 severity: must
 confidence: verified
 scope: day

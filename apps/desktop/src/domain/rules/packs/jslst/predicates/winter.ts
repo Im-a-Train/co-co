@@ -46,7 +46,7 @@ export const lstWinter01: RulePredicate = (ctx) => {
     return [{ ...campHit(ctx), variant: 'notHouse', fragments: { campForm: [{ variant: `form_${campForm}` }] }, inputs }]
   }
   if (winterSafeAccess === false) return [{ ...campHit(ctx), variant: 'noAccess', severity: 'hint', inputs }]
-  if (winterSafeAccess === null) return [{ ...campHit(ctx), severity: 'hint', inputs }]
+  if (winterSafeAccess === null) return [{ ...campHit(ctx), severity: 'hint', needsInput: 'coachInputs', inputs }]
   return []
 }
 

@@ -5,6 +5,7 @@
  */
 import { computed, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import { useCampFacts } from '@/composables/useCampFacts'
+import { useCampSettings } from '@/composables/useCampSettings'
 import { useFindings } from '@/composables/useFindings'
 import { diffEntities, snapshotEntities } from '@/domain/rounds'
 import { getSnapshot } from '@/domain/rounds/store'
@@ -56,6 +57,7 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
   const iri = () => toValue(campIri)
   const campFacts = useCampFacts(campIri)
   const findingsHandle = useFindings(campIri)
+  const settingsHandle = useCampSettings(campIri)
   const setError = (e: unknown) => {
     errors.value = { ...errors.value, [iri()]: e instanceof Error ? e.message : String(e) }
   }
@@ -151,6 +153,7 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
         js ? { valid: js.validDayCount, total: js.totalDayCount } : null,
         progress(),
         options,
+        !settingsHandle.mappingConfirmed.value,
       )
       return { model, html: renderSelfCheckReportHtml(model), text: renderSelfCheckReportText(model) }
     },

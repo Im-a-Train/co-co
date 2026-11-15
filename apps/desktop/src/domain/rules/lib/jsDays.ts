@@ -84,6 +84,8 @@ export interface JsDay {
   combinedWith: Iri | null
   /** Valid as part of the arrival/departure combination. */
   validCombined: boolean
+  /** Why the day does not count on its own (set by `reportFromJsModel`; absent on legacy reports). */
+  reasons?: JsDayReason[]
 }
 
 export interface JsDayReport {
@@ -266,6 +268,7 @@ export type JsDayReason =
   | { code: 'tooShort'; minutes: number; required: number }
   | { code: 'shortUnit'; activityIri: Iri; minutes: number; start: IsoDateTime; end: IsoDateTime; required: number }
   | { code: 'gap'; minutes: number; start: IsoDateTime; end: IsoDateTime; required: number }
+  | { code: 'bwz'; minutes: number; required: number }
   | { code: 'combinedOnly' }
 
 /**
@@ -510,4 +513,82 @@ export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput
     trainingFreeDays: interior.filter((d) => !d.isJsDay),
     isJsActivity,
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Single source of truth: the context day model drives grid, bars, tile, Selbstcheck and MCP
+// ---------------------------------------------------------------------------------------------
+
+/** Required Bewegungszeit per J+S day in minutes (`js.minBwzDayMinutes`, from 2027); null = no criterion. */
+export function bwzRequiredMinutes(params: ParamReader): number | null {
+  return params.get<number | null>('js.minBwzDayMinutes') ?? null
+}
+
+const hhmm = (min: number): string => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
+
+/**
+ * Why a day of the context model does not count (mirrors `buildJsDayModel`). Empty when the day counts on its
+ * own. An arrival/departure day that only counts through the pair (`endDaysMode === 'combined'`) lists its own
+ * failures followed by `combinedOnly`. The model only keeps the IRIs of too-short entries (`shortEntryIris`), so
+ * `shortUnit` needs their details from `units` (e.g. all units of the legacy report); entries without details
+ * are left out. Which entries are short and on which day always follows the model (tags, start date).
+ */
+export function jsModelDayReasons(
+  day: JsModelDay,
+  model: JsDayModel,
+  t: JsThresholds,
+  bwzRequiredMinutes: number | null,
+  units: readonly JsUnit[] = [],
+): JsDayReason[] {
+  if (day.isJsDay) return []
+  const reasons: JsDayReason[] = []
+  if (day.units < t.minDayUnits) reasons.push({ code: 'fewUnits', units: day.units, required: t.minDayUnits })
+  if (day.jsMinutes < t.minDayMinutes) reasons.push({ code: 'tooShort', minutes: day.jsMinutes, required: t.minDayMinutes })
+  if (bwzRequiredMinutes !== null && day.bwzMinutes < bwzRequiredMinutes) {
+    reasons.push({ code: 'bwz', minutes: day.bwzMinutes, required: bwzRequiredMinutes })
+  }
+  for (const iri of day.shortEntryIris) {
+    const u = units.find((x) => x.scheduleEntryIri === iri)
+    if (u) reasons.push({ code: 'shortUnit', activityIri: u.activityIri, minutes: u.minutes, start: u.start, end: u.end, required: t.minUnitMinutes })
+  }
+  for (const g of day.shortGaps) {
+    reasons.push({
+      code: 'gap',
+      minutes: g.minutes,
+      start: `${day.date}T${hhmm(Math.min(g.from, 1439))}:00+00:00`,
+      end: `${day.date}T${hhmm(Math.min(g.to, 1439))}:00+00:00`,
+      required: t.minGapMinutes,
+    })
+  }
+  if (model.endDaysMode === 'combined' && (day.isFirst || day.isLast)) reasons.push({ code: 'combinedOnly' })
+  return reasons
+}
+
+/**
+ * Per-day report whose validity and counts come from the context model (end days via `endDaysMode`); the
+ * legacy report only contributes units and Sozialzeit gaps (grid hatching). Days the model does not know keep
+ * their legacy values.
+ */
+export function reportFromJsModel(model: JsDayModel, legacy: JsDayReport, t: JsThresholds, bwzRequiredMinutes: number | null): JsDayReport {
+  const byIri = new Map(model.days.map((d) => [d.dayIri, d]))
+  const combined = model.endDaysMode === 'combined' && model.days.length >= 2
+  const firstIri = model.days[0]?.dayIri ?? null
+  const lastIri = model.days[model.days.length - 1]?.dayIri ?? null
+  const units = legacy.days.flatMap((d) => d.units)
+  const days = legacy.days.map((d): JsDay => {
+    const m = byIri.get(d.dayIri)
+    if (!m) return d
+    const isEdge = m.isFirst || m.isLast
+    const pair = combined && isEdge
+    return {
+      ...d,
+      jsMinutes: m.jsMinutes,
+      unitCount: m.units,
+      valid: m.isJsDay,
+      validCombined: pair,
+      combinedWith: pair ? (m.isFirst ? lastIri : firstIri) : null,
+      reasons: jsModelDayReasons(m, model, t, bwzRequiredMinutes, units),
+    }
+  })
+  return { days, validDayCount: model.jsDayCount, totalDayCount: days.length - (combined ? 1 : 0) }
 }

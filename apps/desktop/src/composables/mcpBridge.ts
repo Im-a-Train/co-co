@@ -17,7 +17,7 @@ import { deleteManualFinding, getManualFinding, listManualFindings, saveManualFi
 import { listRounds, getReview, setReviewStatus } from '@/domain/rounds/store'
 import { evaluate } from '@/domain/rules/engine'
 import { computeAllDeadlines, type DeadlineCamp } from '@/domain/rules/lib/deadlines'
-import { computeJsDays, lastJsDate } from '@/domain/rules/lib/jsDays'
+import { campJsReport } from '@/domain/rules/lib/jsReport'
 import { computeMilestoneDeadlines, loadBundledMilestones } from '@/domain/rules/milestones'
 import { listRuleEdits, loadEffectivePacks, reloadRuleEdits, saveRuleEdit } from '@/domain/rules/editsStore'
 import { getResource, listResources, updateResource } from '@/domain/resources/store'
@@ -28,7 +28,7 @@ import { getRuleState } from '@/domain/rules/ruleStateStore'
 import { addOverride, listCampSummaries, listOverrides } from '@/domain/rules/store'
 import { getDb, newId } from '@/domain/storage/db'
 import { getAppSettings } from '@/domain/storage/settings'
-import type { AppSettings, CampFacts, Deadline, FeedbackItem, Finding, Iri, ModuleId, RulePack } from '@/domain/types'
+import type { AppSettings, CampFacts, Deadline, FeedbackItem, Finding, Iri, ModuleId, RuleContextInput, RulePack } from '@/domain/types'
 import { commands, onMcpToolCall, onMcpToolCancel } from '@/lib/tauri'
 import { notifyMcpChange } from './mcpChanges'
 import { requestConfirm } from './mcpConfirm'
@@ -64,6 +64,35 @@ export function createMcpContext(): McpContext {
     return handle.camps.value
   }
 
+  /** RuleContextInput like useFindings, but without MiData/NDS (red never reaches MCP). */
+  async function ruleInput(campIri: Iri): Promise<{ input: RuleContextInput; settings: AppSettings; ruleState: Awaited<ReturnType<typeof getRuleState>>; facts: CampFacts }> {
+    const facts = await loadFacts(campIri)
+    const settings = await getAppSettings()
+    const mapping = await getMapping(campIri)
+    const coachInputs = stripRedDerivedInputs(await getCoachInputs(campIri))
+    const documents = (await getDb().documents.where('campIri').equals(campIri).toArray()).filter((d) => d.zone !== 'red')
+    const overrides = await listOverrides(campIri)
+    const ruleState = await getRuleState()
+    // Rules v2: module states, activity tags and camp context, like useFindings.
+    const campConfig = await getCampRuleConfig(campIri)
+    const { user } = useSession()
+    const userDisplayName = facts.collaborators.find((c) => c.isCurrentUser)?.displayName ?? user.value?.displayName ?? null
+    const input: RuleContextInput = {
+      facts,
+      mapping: mapping?.confirmed ? mapping : null,
+      coachInputs,
+      midata: null,
+      nds: null,
+      documents,
+      settings,
+      now: new Date(),
+      userDisplayName,
+      overrides,
+      campConfig,
+    }
+    return { input, settings, ruleState, facts }
+  }
+
   const ctx: McpContext = {
     now: () => new Date(),
     listCamps,
@@ -71,40 +100,19 @@ export function createMcpContext(): McpContext {
     getMapping: (campIri) => getMapping(campIri),
 
     async findings(campIri) {
-      const facts = await loadFacts(campIri)
-      const settings = await getAppSettings()
-      const mapping = await getMapping(campIri)
-      const coachInputs = stripRedDerivedInputs(await getCoachInputs(campIri))
-      const documents = (await getDb().documents.where('campIri').equals(campIri).toArray()).filter((d) => d.zone !== 'red')
-      const overrides = await listOverrides(campIri)
-      const ruleState = await getRuleState()
-      // Rules v2: module states, activity tags and camp context, like useFindings.
-      const campConfig = await getCampRuleConfig(campIri)
-      const { user } = useSession()
-      const userDisplayName = facts.collaborators.find((c) => c.isCurrentUser)?.displayName ?? user.value?.displayName ?? null
-      const found = evaluate(
-        enabledPacks(settings),
-        {
-          facts,
-          mapping: mapping?.confirmed ? mapping : null,
-          coachInputs,
-          // Red zone: MiData/NDS never reach MCP.
-          midata: null,
-          nds: null,
-          documents,
-          settings,
-          now: new Date(),
-          userDisplayName,
-          overrides,
-          campConfig,
-        },
-        { disabledRuleIds: disabledRuleIds(ruleState, campIri) },
-      )
+      const { input, settings, ruleState, facts } = await ruleInput(campIri)
+      const found = evaluate(enabledPacks(settings), input, { disabledRuleIds: disabledRuleIds(ruleState, campIri) })
       // Same category exclusions as the Befunde view (incl. former rule ids).
       const allRules = enabledPacks(settings).flatMap((p) => p.rules)
       const formerIdsOf = (ruleId: string): readonly string[] => resolveRule(allRules, ruleId)?.meta.formerIds ?? []
       const { kept } = filterExcludedFindings(found, facts, ruleState, campIri, formerIdsOf)
       return kept.filter((f: Finding) => f.origin === 'rule')
+    },
+
+    async jsDayCounts(campIri) {
+      const { input, settings } = await ruleInput(campIri)
+      const r = campJsReport(enabledPacks(settings), input)
+      return r ? { valid: r.report.validDayCount, total: r.report.totalDayCount, lastJsDate: r.lastJsDate } : null
     },
 
     rulePacks: () => enabledPacks(getSettingsSync()),
@@ -144,7 +152,7 @@ export function createMcpContext(): McpContext {
         ).length
         const moduleStates: Partial<Record<ModuleId, 'on' | 'suggested' | 'off'>> = {}
         for (const [id, res] of Object.entries(rc.moduleStates.value)) if (res) moduleStates[id as ModuleId] = res.state
-        return { coachInputsPresent: inputs !== null, checklist: { done, total: rc.checklist.value.length }, moduleStates, disabledRuleIds: disabled }
+        return { checklist: { done, total: rc.checklist.value.length }, moduleStates, disabledRuleIds: disabled }
       } finally {
         scope.stop()
       }
@@ -172,10 +180,9 @@ export function createMcpContext(): McpContext {
         deadlineCamps = deadlineCamps.filter((c) => c.iri === campIri)
         if (deadlineCamps.length === 0) {
           const facts = await loadFacts(campIri)
-          const mapping = await getMapping(campIri)
-          const report = mapping?.confirmed ? computeJsDays(facts, mapping) : null
+          const counts = await ctx.jsDayCounts(campIri)
           deadlineCamps = [
-            { iri: facts.camp.iri, title: facts.camp.title, start: facts.camp.start, end: facts.camp.end, lastJsDate: report ? lastJsDate(report) : null },
+            { iri: facts.camp.iri, title: facts.camp.title, start: facts.camp.start, end: facts.camp.end, lastJsDate: counts?.lastJsDate ?? null },
           ]
         }
       }

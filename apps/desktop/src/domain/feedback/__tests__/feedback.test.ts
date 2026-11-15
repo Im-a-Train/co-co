@@ -4,6 +4,9 @@ import {
   fillTemplate,
   getTemplate,
   itemFromFinding,
+  itemFromFindingGroup,
+  postedItems,
+  previewItems,
   lintItems,
   orderItems,
   renderFeedback,
@@ -165,7 +168,7 @@ describe('itemFromFinding', () => {
       findingId: finding.id,
       createdAt: '2026-02-03T04:05:06.000Z',
     })
-    expect(it2.text).toContain('Sicherheit fehlt')
+    expect(it2.text).toBe('Keine Sicherheitsüberlegungen. Wie wollt ihr das lösen?')
     expect(lintItems([it2])).toEqual([])
   })
   it('marks findings that quote MiData as redDerived', () => {
@@ -182,6 +185,66 @@ describe('itemFromFinding', () => {
   })
 })
 
+
+describe('itemFromFinding texts', () => {
+  const base = { id: 'R:x', ruleId: 'R', severity: 'hint', title: 'Titel', scope: 'camp', targets: ['/api/camps/c1'], evidence: [] }
+  it('uses the bare message for non-must findings, adding a full stop', () => {
+    const t = itemFromFinding({ ...base, message: 'Das Programm ist dicht' } as unknown as Finding, '/api/camps/c1').text
+    expect(t).toBe('Das Programm ist dicht.')
+  })
+  it('adds a full stop after a closing parenthesis', () => {
+    const t = itemFromFinding({ ...base, message: 'Zu wenig Zeit (siehe 1.2)' } as unknown as Finding, '/api/camps/c1').text
+    expect(t).toBe('Zu wenig Zeit (siehe 1.2).')
+  })
+  it('keeps existing sentence punctuation', () => {
+    expect(itemFromFinding({ ...base, message: 'Wirklich?' } as unknown as Finding, '/api/camps/c1').text).toBe('Wirklich?')
+  })
+  it('prefers the rule feedbackText', () => {
+    expect(itemFromFinding({ ...base, message: 'm', feedbackText: 'Ihr Lieben, bitte ergänzen.' } as unknown as Finding, '/api/camps/c1').text).toBe('Ihr Lieben, bitte ergänzen.')
+  })
+})
+
+describe('itemFromFindingGroup', () => {
+  const mk = (n: number, severity: 'must' | 'should' = 'should') =>
+    ({ id: `R:d${n}`, ruleId: 'R', severity, title: 'T', message: `Keine Mahlzeiten am Tag ${n}.`, scope: 'day', targets: [`/api/days/d${n}`], evidence: [] }) as unknown as Finding
+  const group = (findings: Finding[]) => ({ key: 'group:R', ruleId: 'R', severity: findings[0]!.severity, findings, dates: [] as string[] })
+  it('creates one item linked to all findings with the dates sentence', () => {
+    const it2 = itemFromFindingGroup(group([mk(1), mk(2), mk(3)]), '/api/camps/c1', '24.01. bis 26.01.', new Date('2026-02-03T04:05:06Z'))
+    expect(it2.findingId).toBe('R:d1')
+    expect(it2.findingIds).toEqual(['R:d1', 'R:d2', 'R:d3'])
+    expect(it2.scope).toBe('camp')
+    expect(it2.text).toBe('Keine Mahlzeiten am Tag 1. Das betrifft 3 Tage: 24.01. bis 26.01.')
+    expect(it2.createdAt).toBe('2026-02-03T04:05:06.000Z')
+  })
+  it('becomes a Muss item with the Muss wording when any finding is a Muss (dates before the question)', () => {
+    const it2 = itemFromFindingGroup(group([mk(1), mk(2, 'must')]), '/api/camps/c1', '24.01., 25.01.')
+    expect(it2.kind).toBe('must')
+    expect(it2.text).toBe('Keine Mahlzeiten am Tag 1. Das betrifft 2 Tage: 24.01., 25.01. Wie wollt ihr das lösen?')
+    expect(lintItems([it2])).toEqual([])
+  })
+  it('appends the dates sentence to the rule feedbackText', () => {
+    const withText = (n: number) => ({ ...mk(n), feedbackText: 'Tragt ihr die Fixpunkte noch ein?' }) as Finding
+    const it2 = itemFromFindingGroup(group([withText(1), withText(2)]), '/api/camps/c1', 'Fr 24.01. – Sa 25.01.')
+    expect(it2.text).toBe('Tragt ihr die Fixpunkte noch ein? Das betrifft 2 Tage: Fr 24.01. – Sa 25.01.')
+    expect(it2.kind).toBe('suggestion')
+  })
+  it('a group of one equals itemFromFinding (no findingIds)', () => {
+    const it2 = itemFromFindingGroup(group([mk(1)]), '/api/camps/c1', 'x')
+    expect(it2.findingIds).toBeUndefined()
+    expect(it2.text).toBe('Keine Mahlzeiten am Tag 1.')
+  })
+  it('throws on an empty group', () => {
+    expect(() => itemFromFindingGroup(group([]) as never, '/api/camps/c1', '')).toThrow()
+  })
+})
+
+describe('previewItems / postedItems', () => {
+  const items = [item({ id: 'd', status: 'draft' }), item({ id: 's', status: 'sent' }), item({ id: 'p', status: 'posted' })]
+  it('default: drafts only', () => expect(previewItems(items).map((i) => i.id)).toEqual(['d']))
+  it('includeSent adds sent, never posted', () => expect(previewItems(items, { includeSent: true }).map((i) => i.id)).toEqual(['d', 's']))
+  it('empty input', () => expect(previewItems([])).toEqual([]))
+  it('postedItems returns posted only', () => expect(postedItems(items).map((i) => i.id)).toEqual(['p']))
+})
 
 describe('eCamp links', () => {
   const url = 'https://dev.ecamp3.ch/camps/c1/Berge/program/activity/a1/s1/Postenlauf'

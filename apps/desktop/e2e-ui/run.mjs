@@ -52,14 +52,21 @@ let server = null
 function killServer() {
   if (!server) return
   if (process.platform === 'win32' && server.pid) spawnSync('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore' })
-  else server.kill()
+  else if (server.pid) {
+    // npm runs vite as a child: kill the whole process group, or vite keeps the port.
+    try {
+      process.kill(-server.pid, 'SIGTERM')
+    } catch {
+      server.kill()
+    }
+  }
   server = null
 }
 async function ensureServer() {
   if (await isUp())
     throw new Error(`Port ${PORT} already answers (probably another session's Vite server serving other code). Set UI_PORT to a free port, e.g. UI_PORT=1431.`)
   const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-  server = spawn(cmd, ['run', 'dev:vite', ...(PORT === 1420 ? [] : ['--', '--port', String(PORT)])], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32' })
+  server = spawn(cmd, ['run', 'dev:vite', ...(PORT === 1420 ? [] : ['--', '--port', String(PORT)])], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32', detached: process.platform !== 'win32' })
   for (let i = 0; i < 120; i++) {
     if (await isUp()) return
     await new Promise((r) => setTimeout(r, 500))

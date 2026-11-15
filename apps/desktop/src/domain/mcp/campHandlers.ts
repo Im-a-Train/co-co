@@ -9,7 +9,7 @@ import { tr } from '../feedback/i18n'
 import { groupFeedback } from '../feedback/structure'
 import { MANUAL_COMMENT_MAX, anchorLabel, isManualCategory, isManualFindingId, manualToFinding, newManualFinding } from '../manualFindings'
 import { aiGuidanceRules, guidanceText } from '../rules/aiGuidance'
-import { progressOf, statusesOf } from '../triage'
+import { isCoachTodo, progressOf, statusesOf } from '../triage'
 import { RED_DERIVED_MARKER } from '../zones/aiGateway'
 import { findingsForAi } from '../zones/features'
 import { redactorForFacts } from '../zones/mcpZone'
@@ -189,7 +189,7 @@ export const get_camp_progress: McpHandler = async (args, ctx) => {
   const rc = await ctx.reviewContext(campIri)
   const fb = (await ctx.listFeedback(campIri)).filter((i) => !isRedFeedback(i))
   const findings = await triageFindings(ctx, campIri, facts)
-  const tri = progressOf(statusesOf(findings, fb))
+  const tri = progressOf(statusesOf(findings.filter((f) => !isCoachTodo(f)), fb))
   const docs = await mcpDocuments(ctx, campIri)
   const manual = await mcpManualFindings(ctx, campIri)
   const manualByDoc = new Map<string, number>()
@@ -197,7 +197,10 @@ export const get_camp_progress: McpHandler = async (args, ctx) => {
   const progress = reviewProgress({
     reviewStatus: review?.status ?? null,
     mappingConfirmed: mapping?.confirmed === true,
-    coachInputsPresent: rc.coachInputsPresent,
+    missingInputs: findings.filter((f) => !f.override && f.needsInput === 'coachInputs').length,
+    suggestedModules: Object.entries(rc.moduleStates)
+      .filter(([, state]) => state === 'suggested')
+      .map(([id]) => id),
     triage: { done: tri.done, total: tri.total },
     manualFindingCount: manual.length,
     documents: { total: docs.length, reviewed: docs.filter((d) => isDocumentReviewed(d, manualByDoc.get(d.id) ?? 0)).length },

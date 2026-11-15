@@ -80,6 +80,7 @@ export interface FakeState {
   review: ReviewState | null
   rounds: Round[]
   findings: Finding[]
+  jsDayCounts: { valid: number; total: number; lastJsDate: string | null } | null
   deadlines: Deadline[]
   packs: RulePack[]
   resources: ResourceRecord[]
@@ -110,13 +111,14 @@ export function makeFakeContext(over: Partial<FakeState> = {}) {
     review: null,
     rounds: [],
     findings: [makeFinding()],
+    jsDayCounts: null,
     deadlines: [],
     packs: [],
     resources: [],
     ruleEdits: [],
     manualFindings: [],
     documents: [],
-    reviewContext: { coachInputsPresent: false, checklist: { done: 0, total: 0 }, moduleStates: {}, disabledRuleIds: [] },
+    reviewContext: { checklist: { done: 0, total: 0 }, moduleStates: {}, disabledRuleIds: [] },
     confirmAnswer: true,
     ...over,
   }
@@ -131,6 +133,7 @@ export function makeFakeContext(over: Partial<FakeState> = {}) {
     loadFacts: vi.fn(async () => facts),
     getMapping: vi.fn(async () => null),
     findings: vi.fn(async () => state.findings),
+    jsDayCounts: vi.fn(async () => state.jsDayCounts),
     rulePacks: () => state.packs,
     listManualFindings: vi.fn(async () => state.manualFindings),
     getManualFinding: vi.fn(async (id: string) => state.manualFindings.find((m) => m.id === id) ?? null),

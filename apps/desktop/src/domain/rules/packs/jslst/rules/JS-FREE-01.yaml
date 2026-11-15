@@ -8,6 +8,7 @@ message: "{free} trainingsfreie Tage bei {days} Lagertagen – erlaubt sind {all
 messageVariants:
   conflict: "{free} trainingsfreie Tage bei {days} Lagertagen. Der Leitfaden-Text erlaubt {allowed}, seine Beispieltabelle aber {allowedTable} – die Quellen widersprechen sich. Beim J+S-Coach-Support klären."
   conflict2027: "{free} trainingsfreie Tage bei {days} Lagertagen. Der Leitfaden erlaubt {allowed}; die J+S-Vorgaben ab 2027 erlauben Tage ohne J+S-Aktivitäten, solange die Mindestzahl J+S-Tage erreicht ist. Ob die Obergrenze weiter gilt, ist offen – beim J+S-Coach-Support klären."
+feedbackText: "Im Lager gibt es {free} trainingsfreie Tage bei {days} Lagertagen. Könnt ihr einzelne davon mit J+S-Aktivitäten füllen?"
 severity: should
 confidence: verified
 scope: camp

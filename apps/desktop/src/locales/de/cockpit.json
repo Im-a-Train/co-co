@@ -87,7 +87,9 @@
         "tooShort": "Nur {time} J+S-Zeit, mindestens {required} nötig",
         "shortUnit": "Einheit {start}–{end} ist nur {minutes} min lang, mindestens {required} min nötig",
         "gap": "Sozialzeit {start}–{end} nur {minutes} min, mindestens {required} min nötig",
-        "combinedOnly": "Zählt nur zusammen mit dem An-/Abreisetag als gültig"
+        "combinedOnly": "Zählt nur zusammen mit dem An-/Abreisetag als gültig",
+        "bwz": "Bewegungszeit {bwz} von {required} min",
+        "bwzMissing": "Keine Bewegungszeit erfasst, mindestens {required} min nötig"
       }
     },
     "drawer": {

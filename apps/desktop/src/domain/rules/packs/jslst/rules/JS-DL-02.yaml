@@ -8,6 +8,7 @@ message: "NDS-Abschluss: Frist am {due} überschritten, Abschluss nicht bestäti
 messageVariants:
   late: "NDS-Abschluss: Abschluss erfolgte am {on}, Frist war {due}: kein Anspruch auf Auszahlung{src}"
   soon: "NDS-Abschluss: Frist am {due}; danach besteht kein Anspruch auf Auszahlung{src}"
+feedbackText: "Für den NDS-Abschluss (Frist {due}) brauche ich von euch die vollständige Anwesenheitskontrolle und alle Unterlagen. Könnt ihr das bitte so bald wie möglich erledigen?"
 severity: must
 confidence: verified
 scope: camp

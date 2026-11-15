@@ -5,6 +5,7 @@ status: active
 title: "J+S-Aktivität ohne Sicherheitsüberlegungen"
 description: "J+S-Aktivitäten enthalten Sicherheitsüberlegungen. Aktivitäten mit Risikobezug (draussen, Wasser, Berg, Seil, Nacht, Winter, Feuer, Sicherheitsbereich, EBB) sind ein Mangel (should), andere ein Hinweis."
 message: "«{title}» hat keine Sicherheitsüberlegungen."
+feedbackText: "Bei «{title}» fehlen noch die Sicherheitsüberlegungen. Welche Risiken seht ihr und wie sichert ihr sie ab?"
 severity: should
 confidence: heuristic
 scope: activity

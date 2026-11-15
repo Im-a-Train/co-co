@@ -2,7 +2,7 @@
 /** /lager/:campId/uebersicht: KPIs (findings, valid J+S days, J+S time per day, changes since last round, mapping status). */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { progressOf, statusesOf } from '@/domain/triage'
+import { isCoachTodo, progressOf, statusesOf } from '@/domain/triage'
 import { isDocumentReviewed, reviewProgress } from '@/domain/cockpit/progress'
 import { listDocuments } from '@/domain/documents/store'
 import { splitHidden } from '@/domain/rules/lib/checklistSync'
@@ -67,7 +67,7 @@ watch(campIri, () => void loadDocuments())
 
 const progress = computed(() => {
   const fb = feedback.items.value
-  const tri = progressOf(statusesOf(findings.value, fb))
+  const tri = progressOf(statusesOf(findings.value.filter((f) => !isCoachTodo(f)), fb))
   // Same items as the Checkliste tab (M17): coach points only, minus hidden ones, plus the coach's own points.
   const hidden = rc.config.value.hiddenChecklist ?? []
   const checklistItems = splitHidden(
@@ -85,7 +85,10 @@ const progress = computed(() => {
   return reviewProgress({
     reviewStatus: review.value?.status ?? null,
     mappingConfirmed: settings.mappingConfirmed.value,
-    coachInputsPresent: !!settings.coachInputs.value,
+    missingInputs: findings.value.filter((f) => !f.override && f.needsInput === 'coachInputs').length,
+    suggestedModules: Object.entries(rc.moduleStates.value)
+      .filter(([, res]) => res?.state === 'suggested')
+      .map(([id]) => id),
     triage: { done: tri.done, total: tri.total },
     manualFindingCount: manual.items.value.length,
     documents: {

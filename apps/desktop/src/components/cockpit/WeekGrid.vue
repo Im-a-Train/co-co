@@ -34,6 +34,10 @@ function reasonText(r: JsDayReason): string {
       return p('cockpit.grid.invalidReasons.gap', { start: clock(r.start), end: clock(r.end), minutes: r.minutes, required: r.required })
     case 'combinedOnly':
       return p('cockpit.grid.invalidReasons.combinedOnly')
+    case 'bwz':
+      return r.minutes > 0
+        ? p('cockpit.grid.invalidReasons.bwz', { bwz: r.minutes, required: r.required })
+        : p('cockpit.grid.invalidReasons.bwzMissing', { required: r.required })
   }
 }
 

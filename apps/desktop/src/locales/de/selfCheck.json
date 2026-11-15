@@ -10,7 +10,7 @@
       "hint": "Hinweis",
       "jsDays": "J+S-Tage",
       "jsDaysValue": "{valid} von {total}",
-      "changed": "Geändert seit Selbstcheck",
+      "changed": "Änderungen in eCamp seit der Entwurfsrunde",
       "changedNone": "Noch kein Selbstcheck"
     },
     "run": {
@@ -28,7 +28,9 @@
       "fixed": "Behoben",
       "remaining": "Offen",
       "added": "Neu",
-      "empty": "Keine"
+      "empty": "Keine",
+      "changedSeverity": "jetzt {now} (vorher {before})",
+      "changedVariant": "geändert"
     },
     "report": {
       "title": "Bericht",
@@ -50,6 +52,10 @@
       "openFinding": "Im Befund öffnen",
       "jsDaysChip": "J+S-Tage {valid}/{total}",
       "none": "Keine offenen Befunde.",
+      "provisional": "Vorläufig: Die Kategorien-Zuordnung ist noch nicht bestätigt – J+S-Tage und Tagesregeln sind nicht geprüft.",
+      "days": "an {n} Tagen ({dates})",
+      "groupCount": "{label} ({topics} Themen, {places} Stellen)",
+      "groupCountOne": "{label} (1 Thema, {places} Stellen)",
       "fixedHeading": "Behoben seit letztem Selbstcheck ({n})"
     },
     "history": {

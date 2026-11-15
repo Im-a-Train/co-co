@@ -5,6 +5,7 @@ status: active
 title: "Planungsstand ab 3 Wochen vor Lagerbeginn"
 description: "Ab 3 Wochen vor Lagerbeginn stehen alle Aktivitäten im höchsten Fortschrittsstatus."
 message: "{count} Aktivitäten sind noch nicht im Status «{label}» (Lagerbeginn in {days} Tagen)"
+feedbackText: "{count} Aktivitäten sind noch nicht im Status «{label}». Könnt ihr sie bitte nachführen?"
 severity: hint
 confidence: best-practice
 scope: camp

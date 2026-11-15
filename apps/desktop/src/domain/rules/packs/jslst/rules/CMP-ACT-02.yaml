@@ -5,6 +5,7 @@ status: active
 title: "J+S-Aktivität ohne Beschreibung"
 description: "J+S-Aktivitäten und ihre Inhalte müssen klar beschrieben und im Programm ersichtlich sein: Ablauf (Storyboard) oder Notizen sind nötig."
 message: "«{title}» ist eine J+S-Aktivität, hat aber weder Ablauf (Storyboard) noch Notizen."
+feedbackText: "Bei «{title}» fehlen Ablauf und Notizen. Könnt ihr kurz beschreiben, wie die Aktivität abläuft?"
 severity: should
 confidence: verified
 scope: activity

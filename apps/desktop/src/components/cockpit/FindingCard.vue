@@ -22,7 +22,11 @@ const { t, te } = useI18n()
 const moduleNote = computed(() => {
   const n = props.finding.moduleNote
   if (!n || !props.finding.module) return null
-  return t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason: reasonText(t, te, n) })
+  // The engine stores the note's own key in `key`; the reason is `params.reasonKey` (empty when no reason is known).
+  const { reasonKey, ...reasonParams } = (n.params ?? {}) as Record<string, string | number>
+  const reason = typeof reasonKey === 'string' && reasonKey ? reasonText(t, te, { key: reasonKey, params: reasonParams }) : ''
+  const note = t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason })
+  return reason ? note : note.replace(' ()', '')
 })
 const url = computed(() => safeExternalUrl(props.finding.source?.url))
 /** Hilfsmittel key of the primary source (the cited source whose URL is the finding's source URL). */

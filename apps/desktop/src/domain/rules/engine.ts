@@ -208,6 +208,7 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campD
     const id = findingId(meta.id, targets)
     const evidence: Evidence[] = hit.evidence ?? []
     const message = renderMessage(meta, hit)
+    const feedbackText = hit.needsInput ? undefined : renderFeedbackText(meta, hit)
     const outcome = hitOutcome(meta, hit, moduleState)
     // Red-derived facts (hit.redKeys) also count as red where tags are used: add the source tag unless present.
     const tags = [
@@ -231,7 +232,8 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campD
       confidence: outcome.confidence,
       title: meta.title,
       message,
-      ...(renderFeedbackText(meta, hit) ? { feedbackText: renderFeedbackText(meta, hit) } : {}),
+      // Coach homework (needsInput) never goes to the leaders, so it carries no leader-facing text.
+      ...(feedbackText ? { feedbackText } : {}),
       scope: meta.scope,
       targets,
       evidence,
@@ -241,6 +243,7 @@ function evaluateRule(rule: Rule, pack: RulePack | null, ctx: RuleContext, campD
       moduleNote,
       origin: 'rule',
       tags,
+      ...(hit.needsInput ? { needsInput: hit.needsInput } : {}),
       override: ctx.overrides.find((o) => o.findingId === id) ?? ctx.overrides.find((o) => formerFindingIds.includes(o.findingId)) ?? null,
       explain: buildExplanation(meta, pack, hit, ctx, campDate, outcome.severity, { moduleState, reason: outcome.reason }),
     })

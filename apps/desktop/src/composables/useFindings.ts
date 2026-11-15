@@ -9,7 +9,8 @@ import { liveQuery } from 'dexie'
 import { getDb } from '@/domain/storage/db'
 import { getAppSettings } from '@/domain/storage/settings'
 import { countFindings, evaluate } from '@/domain/rules/engine'
-import { computeJsDays, lastJsDate, type JsDayReport } from '@/domain/rules/lib/jsDays'
+import { bwzRequiredMinutes, computeJsDays, lastJsDate, reportFromJsModel, thresholdsFromParams, type JsDayReport } from '@/domain/rules/lib/jsDays'
+import { jsMinDaysOf, lastModelJsDate } from '@/domain/rules/lib/jsReport'
 import { selectPacks } from '@/domain/rules/packs'
 import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import { useRuleEdits } from '@/composables/useRuleEdits'
@@ -24,7 +25,7 @@ import { manualToFinding } from '@/domain/manualFindings'
 import i18n from '@/plugins/i18n'
 import { DEFAULT_APP_SETTINGS } from '@/domain/types'
 import type { RuleContextInput } from '@/domain/types'
-import type { JsDayModel } from '@/domain/types'
+import type { JsDayModel, RuleContext } from '@/domain/types'
 import type { AppSettings, CampRuleConfig, DocumentRecord, Finding, FindingCounts, Iri, MidataAggregate, NdsAggregate, Override, RulePack } from '@/domain/types'
 import { getMidataRecord } from '@/domain/midata/store'
 import { midataVersion } from '@/composables/midataSignal'
@@ -34,16 +35,15 @@ import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampSettings } from '@/composables/useCampSettings'
 import { onDataStoreLocked, useDataStore } from '@/composables/useDataStore'
 
-/** Last date with J+S minutes in the context's day model (null if none). */
-function lastModelJsDate(model: JsDayModel): string | null {
-  for (let i = model.days.length - 1; i >= 0; i--) if (model.days[i].jsMinutes > 0) return model.days[i].date
-  return null
-}
-
 export interface FindingsHandle {
   findings: ComputedRef<Finding[]>
   counts: ComputedRef<FindingCounts>
+  /** Per-day J+S report; from the context day model whenever it is usable (single source for grid, bars, tile). */
   jsDays: ComputedRef<JsDayReport | null>
+  /** Display-only guess with the UNCONFIRMED mapping; null once the mapping is confirmed. Never fed to the rules. */
+  previewJsDays: ComputedRef<JsDayReport | null>
+  /** Required number of J+S days (`js.minConsecutiveDays`). */
+  jsMinDays: ComputedRef<number>
   evaluating: ComputedRef<boolean>
   error: ComputedRef<string | null>
   refresh(): Promise<void>
@@ -110,6 +110,11 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   const evalError = ref<string | null>(null)
   const { state: ruleState } = useRuleState()
   const disablePrompt = ref<DisablePrompt | null>(null)
+  // The «schon n-mal ignoriert» prompt belongs to this camp: it clears on an answer, when the page is left
+  // (the handle goes away) or when the same page switches to another camp.
+  watch(iri, () => {
+    disablePrompt.value = null
+  })
   const { version: ruleEditsVersion } = useRuleEdits()
   const ruleTitle = (ruleId: string) => resolveRule(loadEffectivePacks().flatMap((p) => p.rules), ruleId)?.meta.title ?? ruleId
   const formerIdsOf = (ruleId: string): readonly string[] =>
@@ -223,26 +228,42 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
   })
 
   /** J+S day model of the evaluated context (respects activity tags, params and 2027 rules). */
-  const jsModel = computed<JsDayModel | null>(() => {
+  const jsContext = computed<RuleContext | null>(() => {
     const input = contextInput.value
     void ruleEditsVersion.value
     if (!input) return null
     try {
-      const model = completeContext(enabledPacks(appSettings.value), input).js
-      return model.status === 'ok' ? model : null
+      return completeContext(enabledPacks(appSettings.value), input)
     } catch {
       return null
     }
   })
+  const jsModel = computed<JsDayModel | null>(() => {
+    const model = jsContext.value?.js
+    return model && model.status === 'ok' ? model : null
+  })
 
-  /** Legacy per-day report (grid/bars) with the valid-day count taken from the context model when available. */
+  /** Per-day report: units/gaps of the legacy calculator, validity and counts from the context model when usable. */
   const jsDays = computed<JsDayReport | null>(() => {
     const facts = factsHandle.facts.value
     void settingsHandle.version.value
     if (!facts) return null
-    const legacy = computeJsDays(facts, settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null)
-    return jsModel.value ? { ...legacy, validDayCount: jsModel.value.jsDayCount } : legacy
+    const ctx = jsContext.value
+    const t = ctx ? thresholdsFromParams(ctx.params) : undefined
+    const legacy = computeJsDays(facts, settingsHandle.mapping.value?.confirmed ? settingsHandle.mapping.value : null, t)
+    const model = jsModel.value
+    return model && ctx && t ? reportFromJsModel(model, legacy, t, bwzRequiredMinutes(ctx.params)) : legacy
   })
+
+  const previewJsDays = computed<JsDayReport | null>(() => {
+    const facts = factsHandle.facts.value
+    void settingsHandle.version.value
+    const mapping = settingsHandle.mapping.value
+    if (!facts || !mapping || mapping.confirmed) return null
+    const ctx = jsContext.value
+    return computeJsDays(facts, mapping, ctx ? thresholdsFromParams(ctx.params) : undefined)
+  })
+  const jsMinDays = computed(() => (jsContext.value ? jsMinDaysOf(jsContext.value) : 4))
 
   const ruleFindings = computed(() =>
     filterExcludedFindings(result.value.findings, factsHandle.facts.value, ruleState.value, iri.value, formerIdsOf),
@@ -310,6 +331,8 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
     findings,
     counts,
     jsDays,
+    previewJsDays,
+    jsMinDays,
     evaluating: computed(() => factsHandle.loading.value),
     error: computed(() => result.value.error ?? evalError.value ?? factsHandle.error.value),
     async refresh() {
@@ -323,9 +346,10 @@ export function useFindings(campIri: MaybeRefOrGetter<Iri>): FindingsHandle {
       if (finding.origin === 'manual') return
       try {
         const count = disablePromptCount(await listAllOverrides(), ruleState.value, finding.ruleId, iri.value)
-        disablePrompt.value = count === null ? null : { ruleId: finding.ruleId, title: ruleTitle(finding.ruleId), count }
+        // An unrelated ignore without a new prompt keeps the open one: it clears on an answer or when the page is left.
+        if (count !== null) disablePrompt.value = { ruleId: finding.ruleId, title: ruleTitle(finding.ruleId), count }
       } catch {
-        disablePrompt.value = null
+        // keep the current prompt
       }
     },
     disabledRules,

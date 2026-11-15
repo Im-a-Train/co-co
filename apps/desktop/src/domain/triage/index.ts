@@ -2,13 +2,14 @@
  * Triage ("Befunde durchgehen"): pure helpers for status derivation, navigation and routing.
  * No Vue / Dexie here so everything is unit-testable.
  */
-import type { CampFacts, FeedbackItem, Finding, Iri } from '../types'
+import type { CampFacts, FeedbackItem, Finding, IsoDate, Iri, Severity } from '../types'
 import { campIdFromIri } from '../iri'
 
 export type FindingStatus = 'open' | 'feedback' | 'ignored'
 
 /** True when `item` was created for `finding` (findingId wins; else ruleId + target). */
 export function feedbackMatchesFinding(item: FeedbackItem, finding: Finding): boolean {
+  if (item.findingIds?.length) return item.findingIds.includes(finding.id)
   if (item.findingId) return item.findingId === finding.id
   if (!item.ruleId || item.ruleId !== finding.ruleId) return false
   if (item.scope === 'activity') return !!item.activityIri && finding.targets.includes(item.activityIri)
@@ -114,18 +115,22 @@ export interface FindingOrigin {
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v ? v : null)
 
-/** Route location for the grid with the activity open, remembering which finding we came from. */
+/**
+ * Route location for the grid, remembering which finding we came from. With `opts.dayIri` (day
+ * findings) the grid gets `tag=<dayIri>` to highlight that day and opens no activity drawer;
+ * otherwise `activity` opens the activity.
+ */
 export function gridLocationFromFinding(
   campIri: Iri,
   findingId: string,
-  activityIri: Iri,
-  opts: { list?: boolean; filterActivity?: Iri | null } = {},
+  activityIri: Iri | null,
+  opts: { list?: boolean; filterActivity?: Iri | null; dayIri?: Iri | null } = {},
 ) {
   return {
     name: 'camp-grid',
     params: { campId: campIdFromIri(campIri) },
     query: {
-      activity: activityIri,
+      ...(opts.dayIri ? { tag: opts.dayIri } : activityIri ? { activity: activityIri } : {}),
       vonBefund: findingId,
       ...(opts.list ? { vonAnsicht: 'liste' } : {}),
       ...(opts.filterActivity ? { vonFilter: opts.filterActivity } : {}),
@@ -160,4 +165,133 @@ export function previousEntryIsOrigin(previousFullPath: string | null | undefine
   if (q.get('befund') !== origin.findingId) return false
   if ((q.get('ansicht') === 'liste') !== origin.list) return false
   return (q.get('activity') || null) === origin.filterActivity
+}
+
+// ---- Coach homework, targets and grouping ------------------------------------------------------------
+
+/** A finding that waits for an input from the coach (never feedback for the leaders). */
+export function isCoachTodo(f: Finding): boolean {
+  return !!f.needsInput
+}
+
+/** The day a finding is about: the first target that is a day of the camp (null without facts). */
+export function dayIriOfFinding(f: Finding, facts: CampFacts | null): Iri | null {
+  if (!facts) return null
+  return f.targets.find((t) => facts.days.some((d) => d.iri === t)) ?? null
+}
+
+export type FindingTarget =
+  | { kind: 'day'; dayIri: Iri; date: IsoDate }
+  | { kind: 'activity'; activityIri: Iri; number: string | null; title: string; date: IsoDate | null }
+  | { kind: 'camp' }
+  | { kind: 'document'; documentId: string }
+
+/**
+ * What a finding is about, for the triage subtitle («Mi 29.01.» / «1.1 Skifahren» / «Lager»).
+ * Camp findings are always «Lager»; a schedule-entry finding names its own block, an activity finding
+ * the activity's first block. Dates are camp-local calendar dates (never converted).
+ */
+export function findingTarget(f: Finding, facts: CampFacts | null): FindingTarget {
+  if (f.scope === 'document' && f.targets[0]) return { kind: 'document', documentId: f.targets[0] }
+  if (!facts || f.scope === 'camp') return { kind: 'camp' }
+  const dayIri = dayIriOfFinding(f, facts)
+  const day = dayIri ? facts.days.find((d) => d.iri === dayIri) : undefined
+  if (day && f.scope === 'day') return { kind: 'day', dayIri: day.iri, date: day.date }
+  const activityIri = activityIriOfFinding(f, facts)
+  if (activityIri) {
+    const activity = facts.activities.find((a) => a.iri === activityIri)
+    const entries = facts.scheduleEntries.filter((e) => e.activityIri === activityIri)
+    const own = entries.find((e) => f.targets.includes(e.iri))
+    const entry = own ?? [...entries].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0))[0]
+    const entryDay = entry?.dayIri ? facts.days.find((d) => d.iri === entry.dayIri) : undefined
+    return {
+      kind: 'activity',
+      activityIri,
+      number: entry?.number ?? null,
+      title: activity?.title ?? '',
+      // `start` is camp-local wall-clock time (+00:00): its date part is the calendar date.
+      date: entryDay?.date ?? (entry ? entry.start.slice(0, 10) : null),
+    }
+  }
+  if (day) return { kind: 'day', dayIri: day.iri, date: day.date }
+  return { kind: 'camp' }
+}
+
+export interface FindingGroupEntry {
+  key: string
+  ruleId: string
+  severity: Severity
+  /** Sorted by date / block number; single findings are groups of one. */
+  findings: Finding[]
+  /** Ascending, unique camp-local dates the entry is about (day targets, else the block's day; empty when unknown). */
+  dates: IsoDate[]
+}
+
+const SEVERITY_RANK: Record<Severity, number> = { must: 0, should: 1, hint: 2 }
+
+function findingDates(f: Finding, facts: CampFacts | null): IsoDate[] {
+  if (!facts) return []
+  if (f.scope === 'day') {
+    return f.targets.flatMap((t) => facts.days.filter((d) => d.iri === t).map((d) => d.date))
+  }
+  const t = findingTarget(f, facts)
+  if (t.kind === 'day') return [t.date]
+  if (t.kind === 'activity' && t.date) return [t.date]
+  return []
+}
+
+const byNumber = (a: string | null, b: string | null): number =>
+  (a ?? '\uffff').localeCompare(b ?? '\uffff', 'de', { numeric: true })
+
+/** Order of entries of one rule: severity first (engine order), then date, then block number. */
+function compareEntries(a: FindingGroupEntry, b: FindingGroupEntry, facts: CampFacts | null): number {
+  const da = a.dates[0] ?? '\uffff'
+  const db = b.dates[0] ?? '\uffff'
+  const numberOf = (e: FindingGroupEntry) => {
+    const t = e.findings.length === 1 && e.findings[0] ? findingTarget(e.findings[0], facts) : null
+    return t?.kind === 'activity' ? t.number : null
+  }
+  return SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || (da < db ? -1 : da > db ? 1 : 0) || byNumber(numberOf(a), numberOf(b))
+}
+
+/**
+ * Groups same-rule DAY findings (scope `day`, at least two) into one entry; activity, camp and other
+ * findings stay single. Entries keep the order of first appearance, except that adjacent entries of
+ * the same rule are sorted by date / block number (the engine orders them by hash id). A Muss is never
+ * hidden: the group takes the most severe severity of its findings.
+ */
+export function groupFindings(findings: readonly Finding[], facts: CampFacts | null): FindingGroupEntry[] {
+  const dayByRule = new Map<string, Finding[]>()
+  for (const f of findings) {
+    if (f.scope !== 'day') continue
+    const list = dayByRule.get(f.ruleId) ?? []
+    list.push(f)
+    dayByRule.set(f.ruleId, list)
+  }
+  const entries: FindingGroupEntry[] = []
+  const emitted = new Set<string>()
+  for (const f of findings) {
+    const grouped = f.scope === 'day' && (dayByRule.get(f.ruleId)?.length ?? 0) >= 2
+    if (grouped) {
+      if (emitted.has(f.ruleId)) continue
+      emitted.add(f.ruleId)
+      const members = (dayByRule.get(f.ruleId) ?? []).map((m) => ({ m, d: findingDates(m, facts)[0] ?? '' }))
+      members.sort((a, b) => (a.d === b.d ? 0 : !a.d ? 1 : !b.d ? -1 : a.d < b.d ? -1 : 1))
+      const sorted = members.map((x) => x.m)
+      const dates = [...new Set(sorted.flatMap((m) => findingDates(m, facts)))].sort()
+      const severity = sorted.reduce<Severity>((acc, m) => (SEVERITY_RANK[m.severity] < SEVERITY_RANK[acc] ? m.severity : acc), f.severity)
+      entries.push({ key: `group:${f.ruleId}`, ruleId: f.ruleId, severity, findings: sorted, dates })
+    } else {
+      entries.push({ key: f.id, ruleId: f.ruleId, severity: f.severity, findings: [f], dates: findingDates(f, facts) })
+    }
+  }
+  // Sort each run of adjacent same-rule entries (stable; other entries keep their position).
+  const out: FindingGroupEntry[] = []
+  for (let i = 0; i < entries.length; ) {
+    let j = i + 1
+    while (j < entries.length && entries[j]!.ruleId === entries[i]!.ruleId) j++
+    out.push(...entries.slice(i, j).sort((a, b) => compareEntries(a, b, facts)))
+    i = j
+  }
+  return out
 }

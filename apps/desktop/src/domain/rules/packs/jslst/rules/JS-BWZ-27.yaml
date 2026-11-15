@@ -7,6 +7,7 @@ description: "Ab 2027 sind pro J+S-Tag mindestens 120 Minuten sportlich-aktive B
 message: "{date}: nur {bwz} min Bewegungszeit (nötig {min}) – Tag zählt nicht als J+S-Tag."
 messageVariants:
   noData: "Keine Angaben zur Bewegungszeit erfasst: ab 2027 sind {min} min pro J+S-Tag nötig."
+feedbackText: "Ab 2027 sind pro J+S-Tag {min} Minuten Bewegungszeit nötig. Könnt ihr die Bewegungszeit bei den J+S-Aktivitäten ergänzen oder erhöhen?"
 severity: should
 confidence: verified
 scope: day

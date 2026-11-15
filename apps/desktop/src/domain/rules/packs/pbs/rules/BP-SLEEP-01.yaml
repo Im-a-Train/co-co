@@ -12,6 +12,7 @@ messageVariants:
   stufe_pios: "Pios"
   stufe_rover: "Rover"
   stufe_gemischt: "gemischte Gruppen"
+feedbackText: "Vor Tag {day} bleibt zwischen Programmende und -beginn wenig Zeit zum Schlafen. Könnt ihr den Abend früher beenden oder den Morgen später beginnen?"
 severity: hint
 confidence: heuristic
 scope: day
