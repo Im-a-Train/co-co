@@ -101,8 +101,7 @@
         "kinds": "Art der Frist",
         "allKinds": "Alle Arten",
         "reset": "Filter zurücksetzen",
-        "noMatch": "Keine Frist passt zu den Filtern.",
-        "kindsInMenu": "Art der Frist"
+        "noMatch": "Keine Frist passt zu den Filtern."
       },
       "kindShort": {
         "nds-registration": "NDS-Anmeldung",
@@ -130,7 +129,8 @@
         "stand": "Stand NDS {time}: {count} Pendenzen mit Frist",
         "escalation": "(Eskalation {date})",
         "loadFailed": "NDS-Pendenzen konnten nicht geladen werden",
-        "hint": "Nur im Arbeitsspeicher: Die Pendenzen werden nicht gespeichert und verschwinden beim Verlassen der Seite."
+        "hint": "Nur im Arbeitsspeicher: Die Pendenzen werden nicht gespeichert und verschwinden beim Verlassen der Seite.",
+        "readOnly": "NDS-Pendenz: Erledigen kannst du sie nur in der NDS."
       },
       "unconfirmedHint": "Richtwert aus {source}, nicht offiziell bestätigt.",
       "saveFailed": "Stand konnte nicht gespeichert werden",
@@ -152,8 +152,7 @@
         "ago": "vor {n} Tagen",
         "agoOne": "gestern"
       },
-      "openCamp": "Lager-Angaben öffnen",
-      "summary": "Diese Woche: {week} Fristen · {overdue} überfällig",
+      "summary": "Diese Woche fällig: {week} · Überfällig: {overdue}",
       "kindTitle": {
         "nds-registration": "NDS-Anmeldung",
         "nds-closing": "NDS-Abschluss",
@@ -166,6 +165,7 @@
       "groups": {
         "title": "{bucket} · {n}",
         "empty": "{bucket}: nichts fällig",
+        "emptyOverdue": "Nichts überfällig",
         "overdue": "Überfällig",
         "week": "Diese Woche",
         "month": "Nächste 4 Wochen",
@@ -179,7 +179,8 @@
       "more": "Mehr",
       "leaderChip": "Leitung",
       "leaderDoneHint": "Von der Lagerleitung erledigt",
-      "doneAria": "Erledigt",
+      "doneAria": "Erledigt: {title} · {camp}",
+      "leaderDoneAria": "Von der Lagerleitung erledigt: {title} · {camp}",
       "legendUnconfirmed": "* Richtwert aus einer Planungshilfe, nicht offiziell bestätigt.",
       "alsoNamed": "Auch genannt: {source}, {date}",
       "ruleLinkHint": "Regel {id} im Regelkatalog öffnen",

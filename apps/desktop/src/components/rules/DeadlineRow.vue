@@ -21,7 +21,7 @@ type Row = Deadline & {
   titleHint?: string
 }
 
-const props = defineProps<{ row: Row; highlighted?: boolean }>()
+const props = defineProps<{ row: Row }>()
 const emit = defineEmits<{ toggle: [row: Row, done: boolean] }>()
 const { t } = useI18n()
 
@@ -57,14 +57,21 @@ const dateTitle = computed(() => {
   return parts.join(' · ') || undefined
 })
 
-const checkboxLabel = computed(() => (isLeader.value ? t('rules.deadlines.leaderDoneHint') : t('rules.deadlines.doneAria')))
+/** Names the row, so a screen reader can tell the checkboxes apart. */
+const checkboxLabel = computed(() =>
+  t(isLeader.value ? 'rules.deadlines.leaderDoneAria' : 'rules.deadlines.doneAria', { title: props.row.title, camp: props.row.campTitle }),
+)
+const ruleLinkTitle = computed(() => {
+  const hint = t('rules.deadlines.ruleLinkHint', { id: props.row.ruleId ?? '' })
+  return props.row.titleHint ? `${props.row.titleHint} · ${hint}` : hint
+})
 </script>
 
 <template>
   <div
     :id="`deadline-${row.key}`"
     class="deadline-row d-flex align-start ga-2 py-2 px-3"
-    :class="{ 'deadline-highlight': highlighted, 'deadline-archived': row.archived }"
+    :class="{ 'deadline-archived': row.archived }"
     :data-testid="row.kind === 'pbs-milestone' ? 'milestone-row' : 'deadline-row'"
   >
     <v-checkbox-btn
@@ -78,7 +85,15 @@ const checkboxLabel = computed(() => (isLeader.value ? t('rules.deadlines.leader
       data-testid="deadline-done"
       @update:model-value="(v: boolean | null) => emit('toggle', row, v === true)"
     />
-    <v-icon v-else icon="mdi-shield-lock-outline" size="small" class="mt-2 mx-1 text-medium-emphasis" />
+    <v-icon
+      v-else
+      icon="mdi-shield-lock-outline"
+      size="small"
+      class="mt-2 mx-1 text-medium-emphasis"
+      :title="t('rules.deadlines.ndsTasks.readOnly')"
+      :aria-label="t('rules.deadlines.ndsTasks.readOnly')"
+      data-testid="nds-task-lock"
+    />
 
     <div class="flex-grow-1 min-w-0">
       <div class="text-body-2 d-flex align-center flex-wrap ga-1" :class="{ 'text-medium-emphasis': row.done }">
@@ -86,7 +101,7 @@ const checkboxLabel = computed(() => (isLeader.value ? t('rules.deadlines.leader
         <RouterLink
           v-if="row.ruleId"
           :to="{ path: '/regeln', query: { rule: row.ruleId } }"
-          :title="row.titleHint ?? t('rules.deadlines.ruleLinkHint', { id: row.ruleId })"
+          :title="ruleLinkTitle"
           data-testid="deadline-rule-link"
         >
           {{ row.title }}
@@ -115,9 +130,6 @@ const checkboxLabel = computed(() => (isLeader.value ? t('rules.deadlines.leader
 }
 .deadline-archived {
   opacity: 0.55;
-}
-.deadline-highlight {
-  background: rgba(var(--v-theme-primary), 0.12);
 }
 .min-w-0 {
   min-width: 0;

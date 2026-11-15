@@ -75,7 +75,7 @@
     },
     "tags": {
       "title": "Erkennung korrigieren",
-      "hint": "Co-co erkennt vieles aus den Texten. Hier korrigierst du die Erkennung für diese Aktivität; «Automatisch» heisst: co-co entscheidet selbst.",
+      "hint": "co-co erkennt vieles aus den Texten. Hier korrigierst du die Erkennung für diese Aktivität; «Automatisch» heisst: co-co entscheidet selbst.",
       "label": "Markierungen dieser Aktivität",
       "saveFailed": "Markierungen konnten nicht gespeichert werden",
       "auto": "Automatisch",

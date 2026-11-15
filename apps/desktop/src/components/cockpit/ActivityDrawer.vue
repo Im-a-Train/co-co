@@ -11,6 +11,7 @@ import { useManualFindings } from '@/composables/useManualFindings'
 import { dateOf, findingsForActivity, formatClock, formatDateShort, minutesOfDay, responsibleNames, severityColor } from '@/domain/cockpit'
 import { listDocuments, saveDocument } from '@/domain/documents/store'
 import { ecampActivityUrl } from '@/domain/ecampLinks'
+import { groupFindings, type FindingGroupEntry } from '@/domain/triage'
 import { commands } from '@/lib/tauri'
 import type { CampFacts, CategoryClass, DocumentRecord, Finding, Iri, Severity } from '@/domain/types'
 import AiSafetyReviewButton from '@/components/ai/AiSafetyReviewButton.vue'
@@ -63,6 +64,9 @@ const own = computed(() =>
 )
 const activityFindings = computed(() => own.value.filter((f) => f.scope !== 'day'))
 const dayFindings = computed(() => own.value.filter((f) => f.scope === 'day'))
+/** Same-rule day findings are one row with their dates (contract decision 4), e.g. «Gültiger J+S-Lagertag · 25.01., 27.01.». */
+const dayGroups = computed(() => groupFindings(dayFindings.value, props.facts))
+const groupDates = (g: FindingGroupEntry) => g.dates.map(formatDateShort).join(', ')
 const manualHandle = useManualFindings(() => props.campIri)
 const manualOwn = computed(() => (props.activityIri ? (manualHandle.byActivity.value.get(props.activityIri) ?? []) : []))
 const addOpen = ref(false)
@@ -84,6 +88,7 @@ const position = computed(() => (props.order && props.activityIri ? props.order.
 const prevIri = computed(() => (position.value > 0 ? (props.order![position.value - 1] ?? null) : null))
 const nextIri = computed(() => (position.value >= 0 && props.order ? (props.order[position.value + 1] ?? null) : null))
 const canStep = computed(() => !!props.order && props.order.length > 1 && position.value >= 0)
+const stepIcons = computed(() => (props.stepKeys === 'horizontal' ? ['mdi-chevron-left', 'mdi-chevron-right'] : ['mdi-chevron-up', 'mdi-chevron-down']))
 
 function isTyping(e: KeyboardEvent): boolean {
   const el = e.target as HTMLElement | null
@@ -92,7 +97,8 @@ function isTyping(e: KeyboardEvent): boolean {
 /** Esc closes first (before «Zurück zum Befund»); arrows step. Open dialogs / menus keep their own keys. */
 function onKey(e: KeyboardEvent) {
   if (!props.modelValue || !activity.value || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || isTyping(e)) return
-  if (document.querySelector('.v-overlay--active')) return
+  // Open dialogs / menus keep their keys; a hovered tooltip or a snackbar does not block them.
+  if (document.querySelector('.v-overlay--active:not(.v-tooltip):not(.v-snackbar)')) return
   if (e.key === 'Escape') {
     e.preventDefault()
     emit('update:modelValue', false)
@@ -113,7 +119,8 @@ const meta = computed(() => {
   if (!a || !props.facts) return ''
   const people = props.activityIri ? responsibleNames(props.facts, a.iri) : []
   const cls = category.value ? t(`categoryClass.${props.classOf(category.value.iri)}`) : ''
-  return [category.value?.short, cls, a.location, people.join(', ')].filter(Boolean).join(' · ')
+  const who = people.length ? people.join(', ') : t('cockpit.drawer.noResponsibles')
+  return [category.value?.short, cls, a.location, who].filter(Boolean).join(' · ')
 })
 
 interface Entry {
@@ -255,7 +262,7 @@ async function linkDocument(d: DocumentRecord) {
         <div class="text-h6 flex-grow-1 drawer-title" data-testid="drawer-title">{{ activity.title }}</div>
         <v-btn
           v-if="canStep"
-          icon="mdi-chevron-up"
+          :icon="stepIcons[0]"
           variant="text"
           size="small"
           :disabled="!prevIri"
@@ -266,7 +273,7 @@ async function linkDocument(d: DocumentRecord) {
         />
         <v-btn
           v-if="canStep"
-          icon="mdi-chevron-down"
+          :icon="stepIcons[1]"
           variant="text"
           size="small"
           :disabled="!nextIri"
@@ -321,7 +328,16 @@ async function linkDocument(d: DocumentRecord) {
           </template>
           <v-list density="compact" max-height="320" min-width="260" data-testid="drawer-link-list">
             <v-list-subheader>{{ t('cockpit.drawer.linkDocument') }}</v-list-subheader>
-            <v-list-item v-if="!linkable.length" :title="t('cockpit.drawer.linkNone')" disabled />
+            <template v-if="!allDocs.length">
+              <v-list-item :title="t('cockpit.drawer.linkEmpty')" disabled />
+              <v-list-item
+                prepend-icon="mdi-file-document-multiple-outline"
+                :title="t('cockpit.drawer.openDocuments')"
+                data-testid="drawer-link-to-documents"
+                @click="emit('openDocument', null)"
+              />
+            </template>
+            <v-list-item v-else-if="!linkable.length" :title="t('cockpit.drawer.linkNone')" disabled />
             <v-list-item
               v-for="d in linkable"
               :key="d.id"
@@ -337,7 +353,7 @@ async function linkDocument(d: DocumentRecord) {
       <v-alert v-if="linkError" type="error" variant="tonal" density="compact" class="mb-2" closable :text="linkError" @click:close="linkError = null" />
 
       <div v-if="meta" class="text-body-2" data-testid="drawer-meta">{{ meta }}</div>
-      <div v-for="line in dateLines" :key="line" class="text-body-2 text-medium-emphasis" data-testid="drawer-dates">{{ line }}</div>
+      <div v-for="(line, i) in dateLines" :key="i" class="text-body-2 text-medium-emphasis" data-testid="drawer-dates">{{ line }}</div>
 
       <!-- (2) findings -->
       <div class="d-flex align-center mt-4 mb-1">
@@ -362,21 +378,24 @@ async function linkDocument(d: DocumentRecord) {
         </button>
       </div>
 
-      <template v-if="dayFindings.length">
-        <div class="text-subtitle-2 mt-3 mb-1">{{ t('cockpit.drawer.dayFindings') }} ({{ dayFindings.length }})</div>
+      <template v-if="dayGroups.length">
+        <div class="text-subtitle-2 mt-3 mb-1">{{ t('cockpit.drawer.dayFindings') }} ({{ dayGroups.length }})</div>
         <div class="finding-rows mb-2" data-testid="drawer-day-findings">
           <button
-            v-for="f in dayFindings"
-            :key="f.id"
+            v-for="g in dayGroups"
+            :key="g.key"
             type="button"
             class="finding-row"
             :title="t('cockpit.drawer.openFinding')"
             data-testid="drawer-finding-row"
-            @click="emit('openFinding', f)"
+            @click="emit('openFinding', g.findings[0]!)"
           >
-            <v-icon icon="mdi-circle" size="x-small" :color="dotColor(f.severity)" :title="t(`severity.${f.severity}`)" />
-            <span class="finding-row-title">{{ f.title }}</span>
-            <span class="text-caption text-medium-emphasis text-no-wrap">{{ f.ruleId }}</span>
+            <v-icon icon="mdi-circle" size="x-small" :color="dotColor(g.severity)" :title="t(`severity.${g.severity}`)" />
+            <span class="finding-row-title">
+              {{ g.findings[0]!.title }}
+              <span v-if="g.dates.length" class="text-medium-emphasis" data-testid="drawer-day-finding-dates">· {{ groupDates(g) }}</span>
+            </span>
+            <span class="text-caption text-medium-emphasis text-no-wrap">{{ g.ruleId }}</span>
             <v-icon icon="mdi-chevron-right" size="small" class="text-medium-emphasis" />
           </button>
         </div>

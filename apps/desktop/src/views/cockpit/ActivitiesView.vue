@@ -28,6 +28,8 @@ const router = useRouter()
 const route = useRoute()
 const { campIri, factsHandle, settings, findingsHandle } = useCockpit()
 const mappingConfirmed = settings.mappingConfirmed
+/** Only once the stored / guessed mapping is loaded: no warning flash while settings load. */
+const mappingPending = computed(() => !!settings.mapping.value && !mappingConfirmed.value)
 const { facts } = factsHandle
 
 const state = reactive<ListState>(stateFromQuery(route.query))
@@ -185,7 +187,7 @@ function showInGrid(iri: Iri) {
     <v-alert v-else-if="!allRows.length" type="info" variant="tonal" density="compact" :text="t('activities.empty')" />
     <template v-else>
       <v-alert
-        v-if="!mappingConfirmed"
+        v-if="mappingPending"
         type="warning"
         variant="tonal"
         density="compact"
@@ -261,7 +263,7 @@ function showInGrid(iri: Iri) {
         hide-default-footer
         must-sort
         :sort-by="sortBy"
-        :no-data-text="state.onlyFindings && !mappingConfirmed ? t('activities.noFindingsYet') : t('activities.noMatch')"
+        :no-data-text="state.onlyFindings && mappingPending ? t('activities.noFindingsYet') : t('activities.noMatch')"
         :row-props="rowProps"
         hover
         @update:sort-by="onSort"

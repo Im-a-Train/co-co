@@ -67,8 +67,11 @@ const initialFilters = readFilters()
 const filterCamps = ref<Iri[]>(initialFilters.campIris)
 const filterKinds = ref<DeadlineKind[]>(initialFilters.kinds)
 const showArchived = ref(initialFilters.showArchived)
-/** Audience filter: default only coach deadlines; none selected = all. Stored as before, shown as a two-way toggle. */
-const filterAudiences = ref<Audience[]>(initialFilters.audiences)
+/**
+ * Audience filter: default only coach deadlines; none selected = all. Stored as before, shown as a two-way
+ * toggle, so an older stored value (e.g. only «leaders» from the former chips) is read as «all».
+ */
+const filterAudiences = ref<Audience[]>(initialFilters.audiences.length === 1 && initialFilters.audiences[0] === 'coach' ? ['coach'] : [])
 const scope = computed<'mine' | 'all'>({
   get: () => (filterAudiences.value.length === 1 && filterAudiences.value[0] === 'coach' ? 'mine' : 'all'),
   set: (v) => {
@@ -88,13 +91,11 @@ watch([filterCamps, filterKinds, showArchived, filterAudiences], () => {
     /* storage unavailable: the filters just are not remembered */
   }
 })
-const hasFilters = computed(
-  () => filterCamps.value.length > 0 || filterKinds.value.length > 0 || scope.value !== 'mine',
-)
+/** The scope toggle shows its own state, so «Filter zurücksetzen» only covers camp and kind. */
+const hasFilters = computed(() => activeCampFilter.value.length > 0 || filterKinds.value.length > 0)
 function resetFilters() {
   filterCamps.value = []
   filterKinds.value = []
-  filterAudiences.value = ['coach']
 }
 const kindItems = computed(() => KIND_OPTIONS.map((k) => ({ value: k, title: t(`rules.deadlines.kindShort.${k}`) })))
 
@@ -171,6 +172,12 @@ const deadlineCamps = computed(() =>
 
 /** Camp selector: only camps that are not archived; the autocomplete shows only with more than one. */
 const campOptions = computed(() => deadlineCamps.value.filter((c) => !isArchivedCamp(c.end, today.value)).map((c) => ({ value: c.iri, title: c.title })))
+/** A stored camp filter only applies while the autocomplete is shown and offers that camp (no invisible filter). */
+const activeCampFilter = computed<Iri[]>(() => {
+  if (campOptions.value.length <= 1) return []
+  const offered = new Set(campOptions.value.map((o) => o.value))
+  return filterCamps.value.filter((iri) => offered.has(iri))
+})
 
 /** Every deadline incl. archived ones (camp ended more than a month ago: done, computed, never stored). */
 const allDeadlines = computed<Deadline[]>(() => {
@@ -187,13 +194,13 @@ const allDeadlines = computed<Deadline[]>(() => {
 
 const archivedCount = computed(() => new Set(allDeadlines.value.filter((d) => d.archived).map((d) => d.campIri)).size)
 
-/** Deadlines after archive switch and camp/kind/status filters: feeds radar, table and ICS export. */
+/** Deadlines after archive switch, scope and camp/kind filters: feeds the grouped list and the ICS export. */
 const deadlines = computed<Deadline[]>(() =>
   filterDeadlines(
     allDeadlines.value.filter(
       (d) => (showArchived.value || !d.archived) && (!filterAudiences.value.length || filterAudiences.value.includes(d.audience ?? 'coach')),
     ),
-    { campIris: filterCamps.value, kinds: filterKinds.value, statuses: [] },
+    { campIris: activeCampFilter.value, kinds: filterKinds.value, statuses: [] },
     today.value,
   ),
 )
@@ -229,9 +236,10 @@ const GROUP_ORDER: GroupBucket[] = ['overdue', 'week', 'month', 'later', 'done']
 const groups = computed(() =>
   GROUP_ORDER.map((bucket) => ({ bucket, items: rows.value.filter((r) => r.bucket === bucket) })).filter((g) => g.bucket !== 'done' || g.items.length > 0),
 )
-/** «Später» is collapsed by default; everything else is open. */
+/** «Später» is collapsed by default, unless nothing is due before it (off-season: the page would show no row). */
 const openState = ref<Partial<Record<GroupBucket, boolean>>>({})
-const isOpen = (b: GroupBucket): boolean => openState.value[b] ?? b !== 'later'
+const nothingDueSoon = computed(() => !rows.value.some((r) => r.bucket === 'overdue' || r.bucket === 'week' || r.bucket === 'month'))
+const isOpen = (b: GroupBucket): boolean => openState.value[b] ?? (b !== 'later' || nothingDueSoon.value)
 function toggleGroup(b: GroupBucket) {
   openState.value = { ...openState.value, [b]: !isOpen(b) }
 }
@@ -240,7 +248,8 @@ const summary = computed(() => ({
   week: allRows.value.filter((r) => r.bucket === 'week').length,
   overdue: allRows.value.filter((r) => r.bucket === 'overdue').length,
 }))
-const legendVisible = computed(() => rows.value.some((r) => r.kind === 'pbs-milestone' && r.confidence === 'unverified'))
+/** The asterisk legend only while an asterisk is on screen (not for rows inside a collapsed group). */
+const legendVisible = computed(() => rows.value.some((r) => isOpen(r.bucket) && r.kind === 'pbs-milestone' && r.confidence === 'unverified'))
 
 type DeadlineRowData = Deadline & { title: string }
 const saveError = ref<string | null>(null)
@@ -251,11 +260,9 @@ async function toggleDone(row: DeadlineRowData, done: boolean): Promise<boolean>
   try {
     // Plain copy: IndexedDB cannot clone Vue reactive proxies.
     const stored = inputsByCamp.value[row.campIri]
-    let next: CoachInputs = stored ? JSON.parse(JSON.stringify(stored)) : emptyCoachInputs(row.campIri)
-    // A milestone also covers its skipped twins (sameAs): their old ticks must not resurface.
-    const ids = row.milestoneId ? [row.milestoneId, ...(row.alsoNamed ?? []).map((a) => a.id)] : []
-    if (ids.length) for (const id of ids) next = withDeadlineDone(next, { kind: 'pbs-milestone', milestoneId: id }, done, today.value)
-    else next = withDeadlineDone(next, row, done, today.value)
+    const current: CoachInputs = stored ? JSON.parse(JSON.stringify(stored)) : emptyCoachInputs(row.campIri)
+    // withDeadlineDone also writes a milestone's skipped twins (alsoNamed), so their old ticks cannot resurface.
+    const next = withDeadlineDone(current, row, done, today.value)
     await saveCoachInputs(next)
     inputsByCamp.value = { ...inputsByCamp.value, [row.campIri]: next }
     // Linked checklist items share the state (sequential: the stores are not written atomically).
@@ -445,7 +452,7 @@ function fmt(iso: string): string {
       <p v-if="legendVisible" class="text-caption text-medium-emphasis mb-2" data-testid="legend-unconfirmed">{{ t('rules.deadlines.legendUnconfirmed') }}</p>
       <section v-for="g in groups" :key="g.bucket" class="mb-3" :data-testid="`group-${g.bucket}`">
         <div v-if="!g.items.length" class="text-body-2 text-medium-emphasis px-1" :data-testid="`group-empty-${g.bucket}`">
-          {{ t('rules.deadlines.groups.empty', { bucket: t(`rules.deadlines.groups.${g.bucket}`) }) }}
+          {{ g.bucket === 'overdue' ? t('rules.deadlines.groups.emptyOverdue') : t('rules.deadlines.groups.empty', { bucket: t(`rules.deadlines.groups.${g.bucket}`) }) }}
         </div>
         <template v-else>
           <button

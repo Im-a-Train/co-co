@@ -168,7 +168,6 @@
       "dates": "{count} Termine: {days}",
       "dateLine": "{day} · {time}{number}",
       "dayFindings": "Zu den Tagen dieser Aktivität",
-      "dayFindingsHint": "Tagesbefunde, die diese Aktivität betreffen.",
       "showAll": "Ganzen Ablauf anzeigen",
       "showLess": "Kürzer anzeigen",
       "noSafety": "Keine Sicherheitsüberlegungen erfasst",
@@ -177,7 +176,8 @@
       "prev": "Vorherige Aktivität",
       "next": "Nächste Aktivität",
       "linkDocument": "Dokument verknüpfen …",
-      "linkNone": "Keine weiteren Dokumente im Lager",
+      "linkNone": "Alle Dokumente des Lagers sind schon verknüpft",
+      "linkEmpty": "Noch keine Dokumente in diesem Lager",
       "linkFailed": "Dokument konnte nicht verknüpft werden",
       "openFinding": "Befund öffnen"
     }

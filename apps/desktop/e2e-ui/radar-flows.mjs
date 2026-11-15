@@ -24,10 +24,14 @@ export async function radarFlows({ page, step, shot, BASE }) {
     await page.waitForSelector('[data-testid="deadlines-summary"]', { timeout: 8000 })
     await page.waitForTimeout(600)
     const t = await text()
-    if (!/Diese Woche: \d+ Fristen · \d+ überfällig/.test(t)) throw new Error('summary line missing')
+    if (!/Diese Woche fällig: \d+ · Überfällig: \d+/.test(t)) throw new Error('summary line missing')
     for (const b of ['overdue', 'week', 'month', 'later']) {
       if (!(await page.locator(`[data-testid="group-${b}"]`).count())) throw new Error(`group missing: ${b}`)
     }
+    // Off-season (nothing due within 4 weeks) «Später» opens by default, so the page never shows zero rows.
+    const soon = await page.locator('[data-testid="group-overdue"] [data-testid$="-row"], [data-testid="group-week"] [data-testid$="-row"], [data-testid="group-month"] [data-testid$="-row"]').count()
+    const laterOpen = await page.locator('[data-testid="group-head-later"][aria-expanded="true"]').count()
+    if (!soon && (await page.getByTestId('group-head-later').count()) && !laterOpen) throw new Error('«Später» stays collapsed although nothing is due earlier')
     if (await page.getByTestId('radar').count()) throw new Error('radar must be gone')
     if (await page.locator('table').count()) throw new Error('table must be gone')
     await shot(page, 'flow-radar-overview')

@@ -170,9 +170,13 @@ function setApproval(kind: SbApprovalKind | null, date?: string | null): void {
 .tag-label {
   margin-bottom: 2px;
 }
+/* switch rows read like the other rows (body-2), not like form fields */
+.tag-row :deep(.v-switch .v-label) {
+  font-size: 0.875rem;
+}
+/* the buttons take the group's height: keep the fixed compact height (an auto height squeezes them to the text) */
 .tag-toggle {
-  flex-wrap: wrap;
-  height: auto;
+  max-width: 100%;
 }
 .sb-box {
   border: 1px dashed rgba(var(--v-border-color), 0.4);

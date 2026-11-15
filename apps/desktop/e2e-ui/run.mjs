@@ -222,6 +222,9 @@ async function main() {
     await page.getByTestId('drawer-title').waitFor({ timeout: 5000 })
     if (await page.locator('.v-navigation-drawer__scrim').count()) throw new Error('drawer is modal (scrim shown)')
     if (!(await page.getByTestId('drawer-open-ecamp').count())) throw new Error('«In eCamp öffnen» missing')
+    // same-rule day findings are one row with their dates (no two identical rows)
+    const dayRows = (await page.locator('[data-testid="drawer-day-findings"] .finding-row').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim())
+    if (new Set(dayRows).size !== dayRows.length) throw new Error('day finding rows repeat: ' + dayRows.join(' | '))
     // non-modal: another block swaps the content in place, ←/→ step, Esc closes
     const first = await page.getByTestId('drawer-title').innerText()
     const other = page.locator('.wg-block').filter({ hasNotText: first })
@@ -306,6 +309,12 @@ async function main() {
       }
       if ((await page.getByTestId('drawer-title').innerText()) === second) throw new Error('↑/↓ did not step to another activity')
     }
+    // «Dokument verknüpfen …»: Esc closes the menu first, the drawer stays open
+    await page.getByTestId('drawer-link-document').click({ timeout: 5000 })
+    await page.getByTestId('drawer-link-list').waitFor({ timeout: 3000 })
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (!(await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count())) throw new Error('Esc in the link menu closed the drawer')
     await page.keyboard.press('Escape')
     await page.waitForTimeout(500)
     if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('Esc did not close the drawer')
