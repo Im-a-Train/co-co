@@ -81,11 +81,14 @@ export const MISSING_INPUT_FIELDS: Record<string, MissingInputKey[]> = {
   'LST-WINTER-01': ['winterSafeAccess'],
 }
 
-/** The inputs to fill in, in rule order and without duplicates, for the open coach-input findings. */
-export function missingInputKeys(findings: ReadonlyArray<{ ruleId: string; needsInput?: string }>): MissingInputKey[] {
+/**
+ * The inputs to fill in, in rule order and without duplicates, for the open coach-input findings. Ignored
+ * findings (override) do not count, same as `missingInputs` of the review progress.
+ */
+export function missingInputKeys(findings: ReadonlyArray<{ ruleId: string; needsInput?: string; override?: unknown }>): MissingInputKey[] {
   const out: MissingInputKey[] = []
   for (const f of findings) {
-    if (f.needsInput !== 'coachInputs') continue
+    if (f.needsInput !== 'coachInputs' || f.override) continue
     for (const k of MISSING_INPUT_FIELDS[f.ruleId] ?? []) if (!out.includes(k)) out.push(k)
   }
   return out

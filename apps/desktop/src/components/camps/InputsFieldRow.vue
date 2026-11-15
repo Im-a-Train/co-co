@@ -27,6 +27,8 @@ const props = defineProps<{
   /** Label key suffix (camps.inputs.fields.<labelKey>), defaults to the field key. */
   labelKey?: string
   testId?: string
+  /** In «Fehlt noch für die Prüfung»: the finding that asked for this input is gone. */
+  done?: boolean
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
 const { t } = useI18n()
@@ -69,6 +71,9 @@ const rules = computed(() => (props.ruleIds ?? []).map((id) => ({ id, title: pro
       <template v-if="midataSince" #append-inner><MidataBadge :since="midataSince" /></template>
     </v-select>
     <div class="text-caption text-medium-emphasis mt-1 d-flex flex-wrap align-center">
+      <span v-if="done" class="text-success mr-1" :data-testid="`input-done-${fieldKey}`">
+        <v-icon icon="mdi-check" size="x-small" class="mr-1" />{{ t('camps.inputs.missingResolved') }} ·
+      </span>
       <span>{{ purpose }}</span>
       <v-menu v-if="rules.length" location="bottom start">
         <template #activator="{ props: menuProps }">
@@ -78,7 +83,7 @@ const rules = computed(() => (props.ruleIds ?? []).map((id) => ({ id, title: pro
             size="x-small"
             density="compact"
             class="ml-1 text-none"
-            :aria-label="t('camps.inputs.rulesLinkTitle')"
+            :title="t('camps.inputs.rulesLinkTitle')"
             :data-testid="`input-rules-${fieldKey}`"
           >
             {{ t('camps.inputs.rulesLink', { n: rules.length }, rules.length) }}

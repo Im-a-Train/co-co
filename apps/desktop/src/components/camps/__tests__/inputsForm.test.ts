@@ -44,5 +44,8 @@ describe('INPUT_RULES / MISSING_INPUT_FIELDS', () => {
       'participantsJsAgeCount',
     ])
   })
+  it('skips ignored findings', () => {
+    const ignored = { ruleId: 'JS-LL-01', needsInput: 'coachInputs', override: { findingId: 'x' } }
+    expect(missingInputKeys([ignored, { ruleId: 'JS-STAFF-02', needsInput: 'coachInputs', override: null }])).toEqual(['jsLeadersCount'])
+  })
 })
-
