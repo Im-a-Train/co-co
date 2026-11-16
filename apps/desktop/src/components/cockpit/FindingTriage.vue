@@ -127,7 +127,8 @@ const hasMust = computed(() => openMembers.value.some((f) => f.severity === 'mus
 const existingFeedback = computed(
   () => current.value?.findings.map((f) => feedbackForFinding(f, props.feedbackItems)).find((x) => !!x) ?? null,
 )
-const activityIri = computed(() => (rep.value ? activityIriOfFinding(rep.value, props.facts) : null))
+/** A day group spans several days (and activities): no single activity, the GP shows all of its days. */
+const activityIri = computed(() => (rep.value && !isGroup.value ? activityIriOfFinding(rep.value, props.facts) : null))
 const dayIri = computed(() => {
   const t0 = rep.value ? findingTarget(rep.value, props.facts) : null
   return t0?.kind === 'day' ? t0.dayIri : null

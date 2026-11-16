@@ -1,3 +1,13 @@
+<script lang="ts">
+import type { CategoryClass, Iri } from '@/domain/types'
+
+/**
+ * Unconfirmed edits of a confirmed mapping per camp (in memory only): they survive switching tabs, not a restart.
+ * Module scope on purpose: everything in `<script setup>` runs once per component instance.
+ */
+const pendingDrafts = new Map<Iri, Record<Iri, CategoryClass>>()
+</script>
+
 <script setup lang="ts">
 /**
  * Category -> LS/LA/LP/ES/NONE mapping, confirm once. Shown inside the GP view: as the first card while the mapping is
@@ -11,10 +21,6 @@ import { useCampRoute } from '@/composables/useCampRoute'
 import { useCampSettings } from '@/composables/useCampSettings'
 import type { FindingsHandle } from '@/composables/useFindings'
 import { guessCategories } from '@/domain/campFacts'
-import type { CategoryClass, Iri } from '@/domain/types'
-
-/** Unconfirmed edits of a confirmed mapping per camp (in memory only): they survive switching tabs, not a restart. */
-const pendingDrafts = new Map<string, Record<Iri, CategoryClass>>()
 
 const props = defineProps<{ findingsHandle?: FindingsHandle }>()
 const emit = defineEmits<{ confirmed: []; dirty: [value: boolean] }>()

@@ -96,6 +96,11 @@ function onConfirmed() {
   editing.value = false
   justConfirmed.value = true
 }
+/** A pending (unconfirmed) change, also one kept from an earlier visit: keep the card open with its actions. */
+function onDirty(v: boolean) {
+  pendingChange.value = v
+  if (v) editing.value = true
+}
 function goToFindings() {
   void router.push({ name: 'camp-findings', params: { campId: campIdFromIri(campIri.value) } })
 }
@@ -246,7 +251,7 @@ function showFindings(iri: Iri) {
         <v-icon icon="mdi-shape-outline" class="mr-2" />{{ t('cockpit.grid.mappingTitle') }}
       </v-card-title>
       <div v-show="mappingOpen" :class="confirmedMapping ? 'px-4 pb-4 pt-2' : 'px-4 pb-4'">
-        <CategoryMappingPanel :findings-handle="findingsHandle" @confirmed="onConfirmed" @dirty="pendingChange = $event" />
+        <CategoryMappingPanel :findings-handle="findingsHandle" @confirmed="onConfirmed" @dirty="onDirty" />
       </div>
     </v-card>
 
