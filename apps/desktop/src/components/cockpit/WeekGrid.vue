@@ -164,7 +164,7 @@ const badgeClass = (s: Severity): string => {
     <div class="wg-head" :style="{ top: stickyTop }">
       <div class="wg-time" />
       <div v-for="(d, i) in grid.days" :key="d.date" class="wg-colhead" :class="{ 'wg-focus': isFocus(d) }" :data-testid="isFocus(d) ? 'grid-focus-day' : undefined">
-        <div v-if="isFocus(d)" class="wg-thisday text-caption font-weight-bold">{{ t('cockpit.grid.thisDay') }}</div>
+        <div v-if="isFocus(d)" class="wg-thisday text-caption font-weight-bold">{{ t((focusDays?.length ?? 0) > 1 ? 'cockpit.grid.affectedDay' : 'cockpit.grid.thisDay') }}</div>
         <component
           :is="d.findingId ? 'button' : 'div'"
           :type="d.findingId ? 'button' : undefined"

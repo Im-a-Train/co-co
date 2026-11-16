@@ -113,6 +113,7 @@
       "previewNote": "Die J+S-Zeiten sind ein Vorschlag, solange du die Zuordnung nicht bestätigt hast. Es gibt noch keine Befunde dazu.",
       "endPair": "An- und Abreisetag zählen zusammen",
       "thisDay": "Dieser Tag",
+      "affectedDay": "Betroffener Tag",
       "openDayFinding": "Befund zu diesem Tag öffnen",
       "highlightFindings": "Nur Aktivitäten mit Befunden hervorheben",
       "calcMissing": "J+S-Berechnung nicht verfügbar",

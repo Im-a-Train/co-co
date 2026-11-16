@@ -139,7 +139,11 @@ const noteOpen = (id: string): boolean => openNotes.value[id] === true || noteOf
               </div>
               <div v-if="row.deadline && row.status" class="d-flex flex-wrap align-center ga-2 mt-1" data-testid="checklist-deadline">
                 <v-icon size="x-small" icon="mdi-link-variant" />
-                <span class="text-caption">{{ t('campConfig.checklist.dueOn', { date: fmt(row.deadline.due) }) }}</span>
+                <span class="text-caption">{{ t('campConfig.checklist.dueOn', { date: fmt(row.deadline.due) }) }}<span
+                  v-if="row.deadline.kind === 'pbs-milestone' && row.deadline.confidence === 'unverified'"
+                  :title="t('rules.deadlines.unconfirmedHint', { source: row.deadline.source?.title ?? '' })"
+                  data-testid="unverified-badge"
+                >*</span></span>
                 <DeadlineStatusChip v-if="showStatusChip(row.status)" :status="row.status" />
               </div>
               <v-text-field

@@ -42,12 +42,18 @@ Per camp the coach sets `auto`/`on`/`off` (Dexie `campRuleConfig`); resolution i
 
 Required: `id`, `version`, `module`, `status` (`active` | `retired`), `title`, `description`, `message`,
 `severity`, `confidence`, `scope`, `validFrom`. Optional: `kind` (`hard` default | `ai`, see below), `validTo`, `messageVariants`, `inputs`, `params`,
-`keywords`, `sources`, `formerIds`, `tags`, `feedbackText`. Every key in `params`/`keywords`/`sources` must exist.
+`keywords`, `sources`, `formerIds`, `tags`, `feedbackText`, `feedbackTextGroup`. Every key in `params`/`keywords`/`sources` must exist.
 Placeholders in texts use `{name}`; hits fill them (`params`, `variant`, `fragments`). Never hard-code a
 threshold in a text: pass it as a param.
 
 `feedbackText`: the leaders' text («ihr», Swiss spelling, one concrete ask, no rule ids, only placeholders of the
 message/whole-message variants); required for every active must/should rule (guard `__tests__/feedbackText.test.ts`).
+
+`feedbackTextGroup` (optional, `scope: day` rules only): wording used when same-rule day findings are grouped into one
+feedback item (triage «Feedback erstellen» on a group, «Befunde übernehmen»). Placeholders: `{n}` = number of listed
+days, `{dates}` = date list (e.g. «24., 25. und 26.01.»). It names the days itself, so no extra «Das betrifft …»
+sentence is appended; without dates a trailing «({dates})» is dropped. Without it the single `feedbackText` plus that
+sentence is used.
 
 Policy (loader/engine enforced): `must` requires `confidence: verified`; `unverified`/`conflict` are capped at
 `should`; predicates may lower severity/confidence per hit, never raise; a `suggested` module caps at `hint`.

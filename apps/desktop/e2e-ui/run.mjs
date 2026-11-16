@@ -343,6 +343,16 @@ async function main() {
     await page.waitForTimeout(800)
     const txt = await page.evaluate(() => document.body.innerText)
     if (/Noch kein Feedback|keine Einträge/i.test(txt)) throw new Error('feedback list still empty')
+    // A second click on the same card must open the existing item, not create a duplicate.
+    const count1 = await page.getByTestId('feedback-item').count()
+    await go('befunde', 'flow-findings')
+    await page.getByTestId('mode-list').click()
+    await page.waitForTimeout(500)
+    await page.getByRole('button', { name: /feedback erstellen/i }).first().click({ timeout: 5000 })
+    await page.waitForURL(/feedback/, { timeout: 5000 })
+    await page.waitForTimeout(800)
+    const count2 = await page.getByTestId('feedback-item').count()
+    if (count2 !== count1) throw new Error(`«Feedback erstellen» twice created a duplicate (${count1} -> ${count2})`)
   })
 
   await step('flow: feedback preview tabs', async () => {

@@ -2,7 +2,7 @@
 /** List mode: same-rule day findings as one card («Fixpunkte (Mahlzeiten) fehlen · 7 Tage (24.–30.01.)»); the slot holds the single findings. */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { severityColor } from '@/domain/cockpit'
+import { severityBorderColor } from '@/components/cockpit/severityStyle'
 import type { FindingGroupEntry } from '@/domain/triage'
 import { groupLabel, weekdayDate } from './findingLabels'
 
@@ -23,7 +23,7 @@ const notIgnored = computed(() => props.group.findings.filter((f) => !f.override
     variant="outlined"
     density="compact"
     :class="{ 'opacity-60': allIgnored }"
-    :style="{ borderLeft: `4px solid rgb(var(--v-theme-${severityColor(group.severity)}))` }"
+    :style="{ borderLeft: `4px solid ${severityBorderColor(group.severity)}` }"
     data-testid="finding-group"
     :data-group="group.findings.length"
   >

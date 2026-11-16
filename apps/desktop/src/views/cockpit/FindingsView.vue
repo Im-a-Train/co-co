@@ -14,6 +14,7 @@ import { campIdFromIri } from '@/domain/iri'
 import {
   activityIriOfFinding,
   groupFindings,
+  feedbackForFinding,
   gridLocationFromFinding,
   isCoachTodo,
   recallPosition,
@@ -234,12 +235,22 @@ async function undoOverrides(list: Finding[]) {
   })
 }
 async function feedback(f: Finding) {
+  // A finding that already has an item opens it instead of creating a duplicate.
+  const existing = feedbackForFinding(f, feedbackHandle.items.value)
+  if (existing) return openFeedbackItem(existing.id)
   error.value = await createFeedbackFromFinding(router, campIri.value, f)
 }
 /** One feedback item for a whole group, then jump to the feedback tab (like «Feedback erstellen» on a single finding). */
 async function feedbackGroup(g: FindingGroupEntry) {
   // Ignored days (visible with «Ignorierte anzeigen») stay out of the item.
-  const open = g.findings.some((f) => f.override) ? groupFindings(g.findings.filter((f) => !f.override), facts.value)[0] : g
+  // Members that already have feedback stay out too; with nothing left the existing item opens.
+  const pending = g.findings.filter((f) => !f.override && !feedbackForFinding(f, feedbackHandle.items.value))
+  if (pending.length === 0) {
+    const existing = g.findings.map((f) => feedbackForFinding(f, feedbackHandle.items.value)).find((i) => i)
+    if (existing) openFeedbackItem(existing.id)
+    return
+  }
+  const open = pending.length === g.findings.length ? g : groupFindings(pending, facts.value)[0]
   if (!open) return
   error.value = await tryAction(async () => {
     const item = itemFromFindingGroup(open, campIri.value, formatDateList(open.dates))

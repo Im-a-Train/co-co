@@ -82,7 +82,7 @@ watch(() => route.hash, scrollToHash)
           <DiagnosticsSection />
         </section>
       </div>
-      <nav class="settings-anchors d-none d-lg-block":aria-label="t('settings.sections.navLabel')" data-testid="settings-anchors">
+      <nav class="settings-anchors d-none d-lg-block" :aria-label="t('settings.sections.navLabel')" data-testid="settings-anchors">
         <v-list nav density="compact" class="py-0">
           <v-list-item
             v-for="a in anchors"

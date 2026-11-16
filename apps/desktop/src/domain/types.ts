@@ -487,7 +487,7 @@ export interface NdsAggregate {
   offerNumber: string | null
   start: IsoDate | null
   end: IsoDate | null
-  /** Raw state codes (see NDS_STATE_LABELS in domain/nds). */
+  /** Raw state codes (labels: `ndsStateLabel` in domain/nds, locale keys `nds.state.<CODE>`). */
   offerState: string | null
   offerItemState: string | null
   /** Date of approvalTimestamp («bewilligt am»). */

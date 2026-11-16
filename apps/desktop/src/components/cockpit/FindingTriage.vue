@@ -9,7 +9,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { itemFromFindingGroup, KIND_ORDER, previewItems } from '@/domain/feedback'
-import { severityColor } from '@/domain/cockpit'
+import { severityBorderColor } from '@/components/cockpit/severityStyle'
 import { formatDateList } from '@/domain/selfCheck'
 import {
   activityIriOfFinding,
@@ -381,7 +381,7 @@ function openGrid() {
           :data-severity="u.entry.severity"
           :data-finding-id="u.entry.findings[0]!.id"
           :data-group="!u.member && u.entry.findings.length > 1 ? u.entry.findings.length : undefined"
-          :style="{ borderLeftColor: `rgb(var(--v-theme-${u.entry.findings[0]!.origin === 'manual' ? 'coach' : severityColor(u.entry.severity)}))` }"
+          :style="{ borderLeftColor: u.entry.findings[0]!.origin === 'manual' ? 'rgb(var(--v-theme-coach))' : severityBorderColor(u.entry.severity) }"
           role="option"
           :aria-selected="i === index"
           @click="go(i)"

@@ -7,7 +7,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { severityColor } from '@/domain/cockpit'
+import { severityBorderColor } from '@/components/cockpit/severityStyle'
 import { campIdFromIri } from '@/domain/iri'
 import type { Finding, Iri } from '@/domain/types'
 
@@ -69,7 +69,7 @@ function go(key: ActionKey) {
           v-for="f in findings"
           :key="f.id"
           class="coach-todo-row d-flex align-center ga-3 py-1"
-          :style="{ borderLeftColor: `rgb(var(--v-theme-${severityColor(f.severity)}))` }"
+          :style="{ borderLeftColor: severityBorderColor(f.severity) }"
           :data-finding-id="f.id"
           data-testid="coach-todo-row"
         >

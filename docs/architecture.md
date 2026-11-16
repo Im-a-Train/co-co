@@ -39,7 +39,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | `cockpit/` | Pure helpers for KPIs and the week grid | `buildGrid`, `jsDayBars`, … |
 | `midata/` | Event link resolution, `midata` table store, rule facts from the aggregate | `resolveEventLink`, `getMidataRecord`, `saveMidataAggregate` |
 | `selfCheck/` | Leader self-check («Entwurfsrunde»): runs, progress vs. last run, plain-text report; store writes the run + a snapshot (`selfcheck:<id>`) | `planSelfCheckRun`, `compareWithRun`, `renderSelfCheckReport` |
-| `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
+| `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections; `live.ts` `subscribeLive(query, onValue)` wraps Dexie `liveQuery` so Dexie imports stay inside `domain/storage` | `getDb`, `getAppSettings`, `updateAppSettings`, `subscribeLive` |
 | `resources/` | Hilfsmittel (ADR 0013): bundled defaults from `sources.yaml`, patch/history, registry merge, full-text search (ranked document text → title/summary → citing rules (optional `citations`, Hilfsmittel view only) → matches that need the maintainer notes); store seeds lazily and notifies on writes | `bundledResources`, `mergeRegistry`, `searchResources`, `listResources`, `updateResource` |
 | `rules/edits*` | Coach rule edits (ADR 0013): policy (AI/MCP never `must`/`verified`), minimal patches, effective packs | `validateRuleEditPatch`, `applyRuleEdits`, `saveRuleEdit`, `loadEffectivePacks` |
 | `manualFindings/` | Coach findings (ADR 0014): validation, categories, anchor labels, mapping to `Finding` (`origin: 'manual'`); store on Dexie table `manualFindings` | `newManualFinding`, `manualToFinding`, `feedbackKindOf`, `anchorLabel` |
@@ -53,11 +53,11 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | Composable | Provides | Used by |
 | --- | --- | --- |
 | `useSession`, `useInstances` | login state, token refresh, instance discovery | router, connection view, settings |
-| `useCampList` | camps of the user + summaries | Meine Lager, deadlines |
+| `useCampList` | camps of the user + summaries (summaries read live via `subscribeLive`; «Meine Lager» (CampsView) also shows feedback/document counts live) | Meine Lager, deadlines |
 | `useCampFacts(campIri)` | facts, loading, progress, reload | camp layout + every camp view |
 | `useCampSettings(campIri)` | category mapping (+ confirmed), coach inputs, `classOf` | rules, cockpit, documents |
 | `useFindings(campIri)` | findings, counts, `jsDays` (model-derived), `previewJsDays` (unconfirmed guess, display only, never fed to the engine), `jsMinDays`, `jsModelFor(mapping)` (what-if for the mapping panel), ignore, AI findings | cockpit views, triage, feedback |
-| `useReviewProgress(campIri?, { findings?, settings?, persist? })` | progress, approval blockers, verdict, next step, openMust / triageOpen (coach todos excluded); persists `CampSummaryRecord.progress` (debounced) for «Meine Lager» | Übersicht, useApprovalGuard |
+| `useReviewProgress(campIri?, { findings?, settings?, persist? })` | progress, approval blockers, verdict, next step, openMust / triageOpen (coach todos excluded); persists `CampSummaryRecord.progress` (debounced) for «Meine Lager»; reads feedback and documents live via `subscribeLive`, so changes in other views show up without reload | Übersicht, useApprovalGuard |
 | `useApprovalGuard(campIri, apply)` | setting «Bewilligt» / «Bewilligt mit Auflagen» with open blockers opens `ApprovalCheckDialog` (note required while a Muss is open, stored in `ReviewStatusChange.note`); local co-co state only, nothing is written to eCamp | header `ReviewStatusMenu` (via `ApprovalGate`), Runden stepper |
 | `useSignOut()` | eCamp logout + camp list reset | header account menu, Einstellungen |
 | `useRuleState` | rule disable state (per camp / global), ignore-threshold prompt | Befunde, Regeln catalogue |

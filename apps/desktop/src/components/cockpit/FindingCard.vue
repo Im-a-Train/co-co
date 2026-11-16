@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { safeExternalUrl, severityColor } from '@/domain/cockpit'
+import { safeExternalUrl } from '@/domain/cockpit'
+import { severityBorderColor } from '@/components/cockpit/severityStyle'
 import { paramValueText, reasonText } from '@/components/camps/ruleConfigUi'
 import type { Finding } from '@/domain/types'
 import { useCampRoute } from '@/composables/useCampRoute'
@@ -68,7 +69,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
     variant="outlined"
     density="compact"
     :class="{ 'opacity-60': finding.override }"
-    :style="{ borderLeft: `4px solid rgb(var(--v-theme-${isManual ? 'coach' : severityColor(finding.severity)}))` }"
+    :style="{ borderLeft: `4px solid ${isManual ? 'rgb(var(--v-theme-coach))' : severityBorderColor(finding.severity)}` }"
   >
     <v-card-text class="py-3">
       <div class="d-flex align-center flex-wrap ga-2 mb-1">
