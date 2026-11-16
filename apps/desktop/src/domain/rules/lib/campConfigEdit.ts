@@ -12,16 +12,67 @@ export function withModuleState(c: CampRuleConfig, id: ModuleId, state: ModuleCo
 }
 
 /**
+ * Definition of the tag groups shared by the coach UI (ActivityTagEditor) and the resolver below.
+ * - `single`: at most one tag of the group (an exclusive choice; no tag = «Automatisch»).
+ * - `multi`: tags of the group combine (sb-berg + sb-wasser); `none` is the explicit «keiner» tag that excludes them.
+ * - `switch`: one independent on/off tag.
+ */
+export interface TagGroup {
+  id: 'unternehmung' | 'js' | 'sb' | 'wasser' | 'ebb' | 'ef' | 'gesichert' | 'aufsicht'
+  mode: 'single' | 'multi' | 'switch'
+  tags: readonly ActivityTag[]
+  /** Explicit «keiner» tag of a multi group (contradicts all `tags`). */
+  none?: ActivityTag
+  /** The group is only offered while one of these tags is set (a tag of the group itself keeps it visible). */
+  visibleWith?: readonly ActivityTag[]
+}
+
+export const TAG_GROUPS: readonly TagGroup[] = [
+  { id: 'unternehmung', mode: 'single', tags: ['unternehmung', 'keine-unternehmung'] },
+  { id: 'js', mode: 'single', tags: ['js-aktivitaet', 'keine-js-aktivitaet'] },
+  { id: 'sb', mode: 'multi', tags: SB_TAGS, none: 'kein-sb' },
+  { id: 'wasser', mode: 'single', tags: ['wasser-bad-beaufsichtigt', 'wasser-pool', 'wasser-see', 'wasser-fluss'], visibleWith: ['sb-wasser'] },
+  { id: 'ebb', mode: 'single', tags: ['ebb-a', 'ebb-b', 'kein-ebb'] },
+  { id: 'ef', mode: 'multi', tags: ['ef1', 'ef2', 'ef3', 'ef4', 'ef5', 'ef6'] },
+  { id: 'gesichert', mode: 'switch', tags: ['gesicherter-bereich'] },
+  { id: 'aufsicht', mode: 'switch', tags: ['externe-wasseraufsicht'] },
+]
+
+/** Every tag appears in exactly one group (guarded by a test). */
+export const groupOfTag = (tag: ActivityTag): TagGroup | undefined =>
+  TAG_GROUPS.find((g) => g.tags.includes(tag) || g.none === tag)
+
+/** Whether the group's row is shown for these tags. */
+export function isGroupVisible(g: TagGroup, tags: readonly ActivityTag[]): boolean {
+  if (!g.visibleWith) return true
+  return g.tags.some((t) => tags.includes(t)) || g.visibleWith.some((t) => tags.includes(t))
+}
+
+/** Tags of one group that are currently set (including its `none` tag). */
+export const tagsInGroup = (g: TagGroup, tags: readonly ActivityTag[]): ActivityTag[] =>
+  tags.filter((t) => g.tags.includes(t) || g.none === t)
+
+/** Exclusive choice: replaces the group's tags by `tag` (null = «Automatisch»: removes them). */
+export function withGroupChoice(tags: readonly ActivityTag[], g: TagGroup, tag: ActivityTag | null): ActivityTag[] {
+  const rest = tags.filter((t) => !g.tags.includes(t) && g.none !== t)
+  return tag ? [...rest, tag] : rest
+}
+
+/** Combinable group / switch: toggles one tag (the resolver drops contradicting ones such as `kein-sb`). */
+export function withTagToggled(tags: readonly ActivityTag[], tag: ActivityTag): ActivityTag[] {
+  return tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag]
+}
+
+/**
  * Mutually exclusive tag groups: each group lists «classes»; only one class may be present at a time (several
  * tags of the same class may combine, e.g. sb-berg + sb-wasser). The newly added tag wins.
+ * Derived from TAG_GROUPS: `single` groups make every tag its own class, a `multi` group with `none` has two classes.
  */
-const EXCLUSIVE_GROUPS: readonly (readonly (readonly ActivityTag[])[])[] = [
-  [['js-aktivitaet'], ['keine-js-aktivitaet']],
-  [['unternehmung'], ['keine-unternehmung']],
-  [SB_TAGS, ['kein-sb']],
-  [['ebb-a'], ['ebb-b'], ['kein-ebb']],
-  [['wasser-bad-beaufsichtigt'], ['wasser-pool'], ['wasser-see'], ['wasser-fluss']],
-]
+const EXCLUSIVE_GROUPS: readonly (readonly (readonly ActivityTag[])[])[] = TAG_GROUPS.flatMap((g) => {
+  if (g.mode === 'single') return [g.tags.map((t) => [t] as readonly ActivityTag[])]
+  if (g.mode === 'multi' && g.none) return [[g.tags, [g.none]] as readonly (readonly ActivityTag[])[]]
+  return []
+})
 
 /** Removes contradicting tags; among conflicting classes the one holding a newly added tag (else the last listed) wins. */
 function resolveExclusive(tags: ActivityTag[], previous: readonly ActivityTag[]): ActivityTag[] {

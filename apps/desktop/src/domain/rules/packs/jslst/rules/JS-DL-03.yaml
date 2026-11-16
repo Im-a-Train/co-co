@@ -10,6 +10,7 @@ messageVariants:
   landeskarten: "Landeskarten hätten bis {due} bestellt werden sollen (keine Bestellung bestätigt)."
   noDeliveryDate: "Lieferdatum unbekannt – Frist ab Lagerbeginn gerechnet; liegt das Lieferdatum früher, ist auch die Frist früher."
   detailJoin: " "
+feedbackText: "Die Frist für die Bestellung von Leihmaterial bzw. Landeskarten war am {due}. Braucht ihr noch etwas davon? Dann meldet euch bitte so bald wie möglich bei mir."
 severity: should
 confidence: verified
 scope: camp

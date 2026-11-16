@@ -34,15 +34,124 @@ export async function feedbackFlows({ page, step, go, shot }) {
     const checks = page.locator('[data-testid^="refine-check-"]')
     if (!(await checks.count())) throw new Error('no refine checkboxes')
     if (!(await page.getByTestId('refine-submit').isEnabled())) await checks.first().locator('input').check({ force: true })
+    // Also take one same-rule day group («… · n Tage (…)»): it must become ONE item for all its days.
+    const groupId = await page.evaluate(() => {
+      for (const row of document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')) {
+        const cb = row.querySelector('input[type="checkbox"]')
+        if (cb && !cb.checked && /· \d+ Tage/.test(row.querySelector('.text-caption')?.textContent ?? '')) {
+          return row.querySelector('[data-testid^="refine-check-"]')?.getAttribute('data-testid') ?? null
+        }
+      }
+      return null
+    })
+    if (groupId) await page.getByTestId(groupId).locator('input').check({ force: true })
+    // Remember what is selected (row id + text per checked checkbox) to assert exactly these become items.
+    const selectedRows = await page.evaluate(() => {
+      const out = []
+      for (const row of document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')) {
+        const cb = row.querySelector('input[type="checkbox"]')
+        const ta = row.querySelector('textarea')
+        const id = row.querySelector('[data-testid^="refine-check-"]')?.getAttribute('data-testid')
+        if (cb && cb.checked && ta && ta.value.trim()) out.push({ id, text: ta.value.trim() })
+      }
+      return out
+    })
+    const selectedTexts = selectedRows.map((r) => r.text)
+    if (!selectedTexts.length) throw new Error('refine: nothing selected')
+    const beforeTexts = await page.getByTestId('feedback-item').evaluateAll((els) => els.map((e) => e.textContent || ''))
     await page.getByTestId('refine-submit').click()
     await settle(1500)
     const after = await page.getByTestId('feedback-item').count()
     if (after <= before) throw new Error(`no items created (${before} -> ${after})`)
+    if (after - before !== selectedTexts.length) throw new Error(`refine created ${after - before} items for ${selectedTexts.length} selected rows`)
+    const afterTexts = await page.getByTestId('feedback-item').evaluateAll((els) => els.map((e) => e.textContent || ''))
+    for (const text of selectedTexts) {
+      const want = 1 + beforeTexts.filter((b) => b.includes(text)).length
+      const got = afterTexts.filter((a) => a.includes(text)).length
+      if (got !== want) throw new Error(`refine: selected text «${text.slice(0, 60)}» shown ${got}x, expected ${want}x`)
+    }
     const hasDay = await page.locator('[data-testid^="feedback-day-"]').count()
     const hasAct = await page.locator('[data-testid^="feedback-activity-"]').count()
     if (!hasDay || !hasAct) throw new Error(`day/activity headings missing (${hasDay}/${hasAct})`)
     await shot(page, 'flow-fb-refined')
     // Leave no overlay (snackbar) open: the next flow navigates by hash and Vuetify aborts that while one is active.
     await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 10000 }).catch(() => {})
+    // A second «Befunde übernehmen» no longer offers what was just taken over (no duplicates on a second run).
+    await page.getByTestId('feedback-refine').click()
+    await page.waitForSelector('[data-testid="refine-dialog"]', { timeout: 5000 })
+    await settle(1200)
+    const again = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')].map((row) => ({
+        id: row.querySelector('[data-testid^="refine-check-"]')?.getAttribute('data-testid'),
+        text: row.querySelector('textarea')?.value.trim() ?? '',
+      })),
+    )
+    for (const s of selectedRows) {
+      if (again.some((r) => r.id === s.id || r.text === s.text)) throw new Error(`refine: «${s.text.slice(0, 60)}» offered again after it was taken over`)
+    }
+    await page.getByTestId('refine-dialog').getByRole('button', { name: 'Abbrechen', exact: true }).click()
+    await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 10000 }).catch(() => {})
+  })
+
+  async function addActivityItem(body) {
+    await page.getByRole('button', { name: 'Aktivitäts-Punkt' }).click({ timeout: 5000 })
+    await page.locator('.v-select').first().click()
+    await page.locator('.v-overlay--active .v-list-item').first().click()
+    await page.locator('.v-card textarea').first().fill(body)
+    await page.getByRole('button', { name: 'Speichern', exact: true }).click()
+    await settle(500)
+    return page.getByTestId('feedback-item').filter({ hasText: body })
+  }
+
+  await step('flow: «In eCamp posten» can be undone within 5 s', async () => {
+    await go('feedback', 'flow-fb-undo')
+    const card = await addActivityItem('Undo-Test: Bitte Material ergänzen.')
+    await card.getByTestId('feedback-post').click({ timeout: 5000 })
+    // While queued the card keeps a readable «Wird gepostet …» and its own «Rückgängig».
+    await card.getByTestId('feedback-post-queued').waitFor({ timeout: 3000 })
+    if (!(await card.getByTestId('feedback-post-undo-card').count())) throw new Error('queued card has no undo')
+    await shot(page, 'flow-fb-queued')
+    await page.getByTestId('feedback-post-undo').click({ timeout: 3000 })
+    await settle(6500)
+    if ((await card.getAttribute('data-status')) !== 'draft') throw new Error('item was posted despite undo')
+    await shot(page, 'flow-fb-undone')
+  })
+
+  await step('flow: approval asks before «Bewilligt» with open blockers and needs a note for a Muss', async () => {
+    await go('runden', 'flow-fb-approve')
+    await page.getByRole('button', { name: 'Bewilligt', exact: true }).first().click({ timeout: 5000 })
+    await page.getByTestId('approval-dialog').waitFor({ timeout: 5000 })
+    await settle(500) // let the dialog transition finish before the screenshot
+    await shot(page, 'flow-fb-approval-dialog')
+    const blockers = await page.getByTestId('approval-blockers').innerText()
+    if (!/offen|nicht/i.test(blockers)) throw new Error('no blockers listed: ' + blockers)
+    if (/Muss-Befund/.test(blockers)) {
+      if (await page.getByTestId('approval-force').isEnabled()) throw new Error('«Trotzdem bewilligen» enabled without note while a Muss is open')
+      await page.getByTestId('approval-note').locator('textarea').first().fill('Mit Leitenden besprochen.')
+    }
+    await page.getByTestId('approval-force').click()
+    await settle(800)
+    const chip = await page.locator('[data-mark="current"]').first().innerText()
+    if (!/Bewilligt/.test(chip)) throw new Error('status not approved: ' + chip)
+    await shot(page, 'flow-fb-approved')
+    // back to «In Prüfung» so later flows start from the usual state
+    await page.getByRole('button', { name: 'In Prüfung', exact: true }).first().click({ timeout: 5000 })
+    await settle(500)
+  })
+
+  await step('flow: copying the preview offers «Ja, gesendet» that marks drafts and requests changes', async () => {
+    await go('feedback', 'flow-fb-sent')
+    await page.getByTestId('preview-copy').click({ timeout: 5000 })
+    await page.getByTestId('sent-bar').waitFor({ timeout: 4000 })
+    await shot(page, 'flow-fb-sent-bar')
+    await page.getByTestId('sent-bar-confirm').click()
+    await settle(1500)
+    if (await page.locator('[data-testid="feedback-item"][data-status="draft"]').count()) throw new Error('drafts remain after «Ja, gesendet»')
+    await page.getByTestId('preview-include-sent').waitFor({ timeout: 3000 })
+    await shot(page, 'flow-fb-sent-done')
+    await go('runden', 'flow-fb-status-after-sent')
+    if (!/Änderungen angefragt/.test(await page.evaluate(() => document.body.innerText))) throw new Error('status «Änderungen angefragt» missing')
+    await page.getByRole('button', { name: 'In Prüfung', exact: true }).first().click({ timeout: 5000 })
+    await settle(500)
   })
 }

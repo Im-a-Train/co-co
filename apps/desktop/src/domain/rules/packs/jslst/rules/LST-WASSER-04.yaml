@@ -15,6 +15,7 @@ messageVariants:
   requiredPool: "Qualifikation für unbeaufsichtigte Pools (z. B. Plus Pool oder Modul Wasser LS/T)"
   requiredSee: "Qualifikation für Baden im See (z. B. Modul See oder Modul Wasser LS/T)"
   requiredFluss: "Qualifikation für Schwimmen im Fluss (Modul Fluss bzw. Sicherheitsbereich Wasser)"
+feedbackText: "Für «{activity}» braucht es im Leitungsteam eine Person mit der passenden Wasserqualifikation. Wer hat sie, oder wer wird als Aufsicht engagiert?"
 severity: should
 confidence: heuristic
 scope: activity

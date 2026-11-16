@@ -23,6 +23,8 @@ export async function resourcesFlows({ page, step, shot, BASE }) {
 
   await step('flow: hilfsmittel lists the bundled sources', async () => {
     await openResources()
+    await page.getByTestId('resources-outdated-toggle').click()
+    await settle(500)
     const n = await items().count()
     if (n < 23) throw new Error(`expected >= 23 entries, got ${n}`)
     await shot(page, 'hilfsmittel')
@@ -34,6 +36,10 @@ export async function resourcesFlows({ page, step, shot, BASE }) {
     if ((await open.count()) !== 1) throw new Error('MAN panel not open')
     const txt = await open.innerText()
     if (!/Zuletzt geprüft/i.test(txt) || !/Bearbeiten/i.test(txt)) throw new Error('details/actions missing')
+    // The entry title must not end up under the app bar (GLOBAL-13).
+    const titleTop = await open.locator('.v-expansion-panel-title').evaluate((el) => el.getBoundingClientRect().top)
+    const barBottom = await page.locator('.v-app-bar').first().evaluate((el) => el.getBoundingClientRect().bottom)
+    if (titleTop < barBottom - 1) throw new Error(`entry title under the app bar: ${titleTop} < ${barBottom}`)
     await shot(page, 'hilfsmittel-detail')
   })
 
@@ -103,5 +109,34 @@ export async function resourcesFlows({ page, step, shot, BASE }) {
     await page.waitForSelector('[data-testid="resources-view"]', { timeout: 8000 })
     await settle(1200)
     if ((await page.locator('.v-expansion-panel--active').count()) < 1) throw new Error('target entry not opened')
+  })
+
+  await step('flow: hilfsmittel sorted by weight with a collapsed outdated group', async () => {
+    await openResources()
+    const first = await items().first().innerText()
+    if (/Veraltet/.test(first.split('\n').slice(0, 3).join(' '))) throw new Error('outdated entry listed first')
+    if ((await page.getByTestId('resources-outdated-group').count()) !== 1) throw new Error('outdated group missing')
+    if ((await page.locator('#res-BERG').count()) !== 0) throw new Error('outdated entry visible although the group is collapsed')
+    await page.getByTestId('resources-outdated-toggle').click()
+    await settle(500)
+    if ((await page.locator('#res-BERG').count()) !== 1) throw new Error('outdated group did not expand')
+    await shot(page, 'hilfsmittel-sorted')
+  })
+
+  await step('flow: hilfsmittel search finds documents through citing rules, zero hits link to the rules', async () => {
+    await openResources()
+    await page.getByTestId('resources-search').locator('input').fill('Seeschwimmen')
+    await settle(700)
+    if ((await items().count()) < 1) throw new Error('no citation hit for «Seeschwimmen»')
+    const snip = await page.locator('[data-testid="resource-snippet"]').first().innerText()
+    if (!/zitiert in/.test(snip)) throw new Error(`snippet: ${snip}`)
+    await shot(page, 'hilfsmittel-citation-search')
+    await page.getByTestId('resources-search').locator('input').fill('Xyzzyqq')
+    await settle(500)
+    await page.getByTestId('resources-search-rules').click()
+    await page.waitForSelector('.search-field input', { timeout: 8000 })
+    await settle(600)
+    const v = await page.locator('.search-field input').inputValue()
+    if (v !== 'Xyzzyqq') throw new Error(`rules search not prefilled: ${v}`)
   })
 }

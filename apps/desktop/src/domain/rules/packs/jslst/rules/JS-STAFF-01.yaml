@@ -5,6 +5,7 @@ status: retired
 title: "Betreuungsverhältnis Leitende"
 description: "Ausser Betrieb: Für Lagersport/Trekking gibt es kein vorgegebenes Betreuungsverhältnis. Die sicherheitsrelevante Gruppengrösse legen die Leitenden selbst fest. Ersetzt durch JS-STAFF-02 (Mindestanzahl) und JS-STAFF-03 (beitragsrelevante Gruppengrösse)."
 message: "{leaders} Leitende für {participants} Teilnehmende (empfohlen: mindestens {needed})"
+feedbackText: "Bei {participants} Teilnehmenden sind {leaders} Leitende eingeplant, empfohlen sind mindestens {needed}. Könnt ihr das Team verstärken?"
 severity: should
 confidence: conflict
 scope: camp

@@ -10,7 +10,14 @@ defineProps<{ disabled?: boolean }>()
 const { t } = useI18n()
 const { selected } = useInstances()
 const showInstance = ref(false)
-const selectedLabel = computed(() => (selected.value.labelKey ? t(selected.value.labelKey) : selected.value.label))
+const instanceHost = computed(() => {
+  try {
+    return new URL(selected.value.baseUrl).host
+  } catch {
+    return selected.value.baseUrl
+  }
+})
+const isTestInstance = computed(() => selected.value.id !== 'prod')
 const { busy, lastError, isLoggedIn, openLoginWindow, passwordLogin } = useSession()
 
 const identifier = ref('')
@@ -30,7 +37,6 @@ async function submitPassword(): Promise<void> {
   <v-card class="h-100">
     <v-card-item prepend-icon="mdi-login">
       <v-card-title>{{ t('login.title') }}</v-card-title>
-      <v-card-subtitle>{{ t('login.subtitle', { url: selected.baseUrl }) }}</v-card-subtitle>
     </v-card-item>
 
     <v-card-text>
@@ -97,7 +103,10 @@ async function submitPassword(): Promise<void> {
 
       <div class="text-body-2 mt-4 d-flex flex-wrap align-center ga-1" data-testid="login-instance-line">
         <span class="text-medium-emphasis">{{ t('login.instance') }}:</span>
-        <span>{{ selectedLabel }} ({{ selected.baseUrl }})</span>
+        <span data-testid="login-instance-host">{{ instanceHost }}</span>
+        <v-chip v-if="isTestInstance" size="x-small" color="warning" variant="tonal" label data-testid="login-instance-test">
+          {{ t('login.testInstance') }}
+        </v-chip>
         <span class="text-medium-emphasis">·</span>
         <a href="#" role="button" data-testid="login-instance-change" @click.prevent="showInstance = !showInstance">
           {{ showInstance ? t('login.instanceClose') : t('login.instanceChange') }}

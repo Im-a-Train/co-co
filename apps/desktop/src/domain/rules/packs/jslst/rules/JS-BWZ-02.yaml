@@ -10,6 +10,7 @@ messageVariants:
   step: "Bewegungszeit von «{activity}» ({value} min): nicht in {step}-Minuten-Schritten."
   missing: "Bewegungszeit von «{activity}»: fehlt."
   tooLong: "Bewegungszeit von «{activity}» ({value} min): länger als die Aktivität ({duration} min)."
+feedbackText: "Bei «{activity}» fehlt die Bewegungszeit in eCamp oder sie stimmt noch nicht. Könnt ihr sie bitte prüfen und korrigieren?"
 severity: must
 confidence: verified
 scope: activity

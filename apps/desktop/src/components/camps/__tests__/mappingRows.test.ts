@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMappingRows, mappingDirty } from '../mappingRows'
+import { buildMappingRows, mappingDirty, mappingReasonKey } from '../mappingRows'
 import type { ActivityFact, CategoryFact, CategoryMapping } from '@/domain/types'
 
 const cats = [
@@ -23,5 +23,20 @@ describe('mappingRows', () => {
     expect(mappingDirty(m, { '/c1': 'LS' })).toBe(false)
     expect(mappingDirty(m, { '/c1': 'LA' })).toBe(true)
     expect(mappingDirty(null, {})).toBe(true)
+  })
+  it('carries the guess reason as a locale key', () => {
+    const rows = buildMappingRows(cats, acts, [{ categoryIri: '/c1', guess: 'LS', confidence: 'low', reason: 'name:sport' }], {})
+    expect(rows[0].reason).toBe('nameSport')
+    expect(rows[1].reason).toBeNull()
+  })
+  it('maps every guess reason', () => {
+    expect(mappingReasonKey('short:LS')).toBe('short')
+    expect(mappingReasonKey('name:lagersport')).toBe('nameJs')
+    expect(mappingReasonKey('name:essen')).toBe('nameJs')
+    expect(mappingReasonKey('name:frei')).toBe('nameFree')
+    expect(mappingReasonKey('name:aktivität')).toBe('nameActivity')
+    expect(mappingReasonKey('ys-characteristics')).toBe('ys')
+    expect(mappingReasonKey('default')).toBe('default')
+    expect(mappingReasonKey(null)).toBeNull()
   })
 })

@@ -1,13 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import { adoptNdsFields } from '@/composables/useNds'
-import { countEntries, ndsPreChecked, ndsValueKey } from '../format'
+import { countEntries, ndsLinkLabel, ndsPreChecked, ndsValueKey } from '../format'
 
 describe('nds format helpers', () => {
+  it('ndsLinkLabel names the camp, the id only as last resort', () => {
+    const t = (k: string, p: Record<string, unknown>) => (k === 'nds.card.link.offer' ? `Angebot ${String(p.n)}` : k)
+    const link = { offerBusinessId: 'o', campBusinessId: 'camp-9001' }
+    expect(ndsLinkLabel({ ...link, groupName: 'Musterstufe', offerNumber: '999001', start: '2031-01-24', end: '2031-01-30' }, null, t)).toBe(
+      'Musterstufe · Angebot 999001 (24.–30.01.2031)',
+    )
+    expect(ndsLinkLabel(link, { offerNumber: '999001', start: null, end: null }, t)).toBe('Angebot 999001')
+    expect(ndsLinkLabel(link, { offerNumber: null, start: '2031-01-24', end: null }, t)).toBe('camp-9001 (24.01.2031)')
+    expect(ndsLinkLabel(link, null, t)).toBe('camp-9001')
+  })
   it('countEntries sorts by count, keeps unknown codes raw', () => {
     const rows = countEntries({ B_CODE: 1, A_CODE: 3, C_CODE: 1 })
     expect(rows.map((r) => r.code)).toEqual(['A_CODE', 'B_CODE', 'C_CODE'])
     expect(rows[0].n).toBe(3)
     expect(rows[0].label).toBeTruthy()
+  })
+  it('countEntries uses the role mapping when t is given', () => {
+    const t = (k: string) => (k === 'persons.role.child' ? 'Kind' : k)
+    const rows = countEntries({ CHILD: 18, SOME_NEW_STATE: 1 }, t)
+    expect(rows.find((r) => r.code === 'CHILD')!.label).toBe('Kind')
+    expect(rows.find((r) => r.code === 'SOME_NEW_STATE')!.label).toBe('SOME_NEW_STATE')
   })
   it('ndsValueKey', () => {
     expect(ndsValueKey(null)).toBeNull()

@@ -106,12 +106,12 @@ describe('get_camp_progress', () => {
       manualFindings: [manual()],
       documents: [doc()],
       feedback: [makeFeedback({ status: 'posted' })],
-      reviewContext: { coachInputsPresent: true, checklist: { done: 1, total: 2 }, moduleStates: {}, disabledRuleIds: [] },
+      reviewContext: { checklist: { done: 1, total: 2 }, moduleStates: {}, disabledRuleIds: [] },
     })
     const v = value as { percent: number; steps: { key: string; label: string; done: boolean; value: number; total: number; hint: string | null }[] }
     expect(v.percent).toBeGreaterThan(0)
     expect(v.steps.map((s) => s.key)).toEqual(['mapping', 'inputs', 'triage', 'documents', 'checklist', 'feedback', 'status'])
-    expect(v.steps.find((s) => s.key === 'mapping')!.label).toBe('Zuordnung bestätigt')
+    expect(v.steps.find((s) => s.key === 'mapping')!.label).toBe('Lager einrichten')
     expect(v.steps.find((s) => s.key === 'inputs')!.done).toBe(true)
     expect(v.steps.find((s) => s.key === 'checklist')).toMatchObject({ value: 1, total: 2 })
     expect(v.steps.find((s) => s.key === 'documents')).toMatchObject({ value: 1, total: 1 })
@@ -130,6 +130,17 @@ describe('documents', () => {
     expect(json).not.toContain('secret')
     expect(json).not.toContain('"path"')
     expect(json).not.toContain('Notfall:')
+  })
+
+  it('list_documents: coach confirmations are not missing, and a document that is not the safety concept has no audit', async () => {
+    const confirmed = doc({ docCheckConfirmed: ['emergencyNumbers'] as never })
+    const notConcept = doc({ id: 'd3', name: 'materialliste.xlsx', safetyConcept: false })
+    const { value } = await run('list_documents', CAMP_ARG, { documents: [confirmed, notConcept] })
+    const list = value as { id: string; safetyConcept: boolean | null; docCheck: { missing: string[]; confirmed: string[] } | null }[]
+    expect(list[0].docCheck).toMatchObject({ missing: [], confirmed: ['emergencyNumbers'], complete: true })
+    expect(list[0].safetyConcept).toBeNull()
+    expect(list[1].docCheck).toBeNull()
+    expect(list[1].safetyConcept).toBe(false)
   })
 
   it('get_document_text needs aiAllowed, redacts and pages', async () => {
@@ -161,7 +172,7 @@ describe('get_review_guidance', () => {
     const metas = [meta({ id: 'A-1' }), meta({ id: 'A-2' }), meta({ id: 'P-1', module: 'pbs', group: 'pbs' }), meta({ id: 'H-1', kind: 'hard' })]
     const { value } = await run('get_review_guidance', CAMP_ARG, {
       packs: packs(metas),
-      reviewContext: { coachInputsPresent: false, checklist: { done: 0, total: 0 }, moduleStates: { pbs: 'off' }, disabledRuleIds: ['A-2'] },
+      reviewContext: { checklist: { done: 0, total: 0 }, moduleStates: { pbs: 'off' }, disabledRuleIds: ['A-2'] },
     })
     const v = value as { ruleCount: number; rules: { id: string; kind: string }[]; guidance: string }
     expect(v.rules.map((r) => r.id)).toEqual(['A-1', 'H-1'])

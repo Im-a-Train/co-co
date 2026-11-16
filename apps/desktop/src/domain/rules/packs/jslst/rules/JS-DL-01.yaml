@@ -9,6 +9,7 @@ messageVariants:
   late: "NDS-Anmeldung: Anmeldung erfolgte am {on}, Frist war {due}: Bewilligung nicht garantiert{src}"
   soonOne: "NDS-Anmeldung: Frist am {due} (noch {left} Tag){src}"
   soonMany: "NDS-Anmeldung: Frist am {due} (noch {left} Tage){src}"
+feedbackText: "Für die NDS-Anmeldung (Frist {due}) brauche ich alle Angaben zum Lager von euch. Fehlt mir noch etwas, schickt es mir bitte so bald wie möglich."
 severity: must
 confidence: verified
 scope: camp

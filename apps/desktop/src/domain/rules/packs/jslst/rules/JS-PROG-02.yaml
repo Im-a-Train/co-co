@@ -5,6 +5,8 @@ status: active
 title: "Fixpunkte (Mahlzeiten) fehlen"
 description: "Die Tagesplanung enthält Fixpunkte wie Mahlzeiten. Erkennung über Stichwörter im Titel der Aktivitäten."
 message: "Am {date} sind keine Fixpunkte wie Mahlzeiten im Programm erkennbar."
+feedbackText: "Am {date} sehe ich keine Mahlzeiten im Programm. Tragt ihr die Fixpunkte noch ein?"
+feedbackTextGroup: "An {n} Tagen ({dates}) sehe ich keine Mahlzeiten im Programm. Tragt ihr die Fixpunkte noch ein?"
 severity: hint
 confidence: heuristic
 scope: day

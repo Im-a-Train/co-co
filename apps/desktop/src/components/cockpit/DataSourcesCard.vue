@@ -4,6 +4,7 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useNds } from '@/composables/useNds'
 import { usePersons } from '@/composables/usePersons'
 import { getNdsRecord } from '@/domain/nds/store'
 import type { Iri, NdsRegaCounts } from '@/domain/types'
@@ -11,6 +12,9 @@ import type { Iri, NdsRegaCounts } from '@/domain/types'
 const props = defineProps<{ campIri: Iri; params: Record<string, string> }>()
 const { t } = useI18n()
 const persons = usePersons(() => props.campIri)
+const nds = useNds()
+const ndsOn = nds.enabled
+onMounted(() => void nds.init())
 
 const rega = ref<NdsRegaCounts | null>(null)
 const ndsLoaded = ref(false)
@@ -30,6 +34,9 @@ watch(
 )
 
 const summary = computed(() => persons.summary.value)
+// Only worth a card when a comparison found something (differences, or Rega gaps while NDS is on); the
+// «noch nicht verglichen» hint belongs to Personen. Never an NDS line while NDS is off.
+const visible = computed(() => summary.value.compared && (summary.value.differences > 0 || (ndsOn.value && regaMissing.value > 0)))
 const regaMissing = computed(() =>
   rega.value
     ? Math.max(0, rega.value.participantsTotal - rega.value.participantsTransmitted) +
@@ -39,7 +46,7 @@ const regaMissing = computed(() =>
 </script>
 
 <template>
-  <v-card variant="outlined" class="mb-4" data-testid="overview-datasources">
+  <v-card v-if="visible" variant="outlined" class="mb-4" data-testid="overview-datasources">
     <v-card-title class="text-subtitle-1 d-flex align-center">
       <span class="flex-grow-1">{{ t('cockpit.overview.sources.title') }}</span>
       <v-btn
@@ -68,7 +75,7 @@ const regaMissing = computed(() =>
           }}
         </span>
       </div>
-      <div class="d-flex align-center ga-2" data-testid="overview-sources-rega">
+      <div v-if="ndsOn" class="d-flex align-center ga-2" data-testid="overview-sources-rega">
         <v-icon
           :icon="rega ? (regaMissing ? 'mdi-alert-outline' : 'mdi-check-circle-outline') : 'mdi-information-outline'"
           :color="rega ? (regaMissing ? 'warning' : 'success') : undefined"

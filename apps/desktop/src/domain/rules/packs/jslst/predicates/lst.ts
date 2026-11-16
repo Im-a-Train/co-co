@@ -45,7 +45,7 @@ export const jsCamp01: RulePredicate = (ctx) => {
   const hits: RuleHit[] = []
   if (ctx.js.status === 'unknown') {
     // Owner of the «Kategorie-Zuordnung fehlt» hint (§3.9.1); all other rules reading ctx.js stay silent.
-    hits.push({ targets: [ctx.facts.camp.iri, 'noMapping'], variant: 'noMapping', severity: 'hint', inputs: { mappingKnown: false } })
+    hits.push({ targets: [ctx.facts.camp.iri, 'noMapping'], variant: 'noMapping', severity: 'hint', needsInput: 'mapping', inputs: { mappingKnown: false } })
   }
   if (mode === 'jsDaysSkipping') {
     // From 2027: J+S days only; free days and days failing the J+S-day criteria are skipped, never break the run.
@@ -240,7 +240,7 @@ export const jsLl01: RulePredicate = (ctx) => {
   if (v === true) return []
   const stand = v === false ? midataStand(ctx, ['lagerleiterAttested']) : null
   if (stand) return [{ ...campHit(ctx, { stand }, { evidence: [midataEvidence(stand)] }), variant: 'midata' }]
-  return [v === null ? { ...campHit(ctx, {}, { severity: 'hint' }), variant: 'missing' } : campHit(ctx, {})]
+  return [v === null ? { ...campHit(ctx, {}, { severity: 'hint' }), variant: 'missing', needsInput: 'coachInputs' } : campHit(ctx, {})]
 }
 
 // JS-FREE-01 ---------------------------------------------------------------------------------

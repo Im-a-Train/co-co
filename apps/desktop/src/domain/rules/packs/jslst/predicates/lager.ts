@@ -1,5 +1,5 @@
 /** Module `lst-lager` (Lagerleben und Organisation). Keyword based on German activity texts; all texts live in the rule YAMLs. Pure. */
-import type { ActivityFact, DocumentRecord, Evidence, MessageFragment, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
+import type { ActivityFact, DocumentRecord, Evidence, MessageFragment, RuleContext, RuleHit, RulePredicate, SafetyCheckKey } from '@/domain/types'
 import { DOC_CHECK } from '../../../lib/docCheck'
 import { minutesBetween, sortedDays, wallDate, wallMinutes } from '../../../lib/jsDays'
 import { normalizeText } from '../../../lib/keywords'
@@ -132,12 +132,19 @@ export const safeWx01: RulePredicate = (ctx) => {
 const RISK_SETS = ['MOUNTAIN', 'WATER', 'WINTER', 'ROPE', 'EBB_A', 'EBB_B']
 const RISK_TAGS = ['sb-berg', 'sb-wasser', 'sb-winter', 'ebb-a', 'ebb-b']
 
-const itemsFound = (d: DocumentRecord) => d.docCheck?.items.filter((i) => i.found).length ?? 0
+/** An item counts as found when the check saw it or the coach confirmed it with «Ist vorhanden». */
+const isFound = (d: DocumentRecord, i: { key: SafetyCheckKey; found: boolean }) => i.found || (d.docCheckConfirmed?.includes(i.key) ?? false)
+const itemsFound = (d: DocumentRecord) => d.docCheck?.items.filter((i) => isFound(d, i)).length ?? 0
 
-/** The safety concept: a document named like one, else the document with the most docCheck items found. */
+/**
+ * The safety concept: the document the coach marked as one, else a document named like one, else the
+ * document with the most docCheck items found. Documents the coach marked «not the safety concept» never count.
+ */
 function conceptDoc(ctx: RuleContext): DocumentRecord | null {
-  const checked = ctx.documents.filter((d) => d.docCheck)
+  const checked = ctx.documents.filter((d) => d.docCheck && d.safetyConcept !== false)
   if (checked.length === 0) return null
+  const confirmed = checked.filter((d) => d.safetyConcept === true)
+  if (confirmed.length > 0) return [...confirmed].sort((a, b) => itemsFound(b) - itemsFound(a))[0]
   const named = checked.filter((d) => ctx.keywords.match('DOC_SICHERHEITSKONZEPT', d.name).length > 0)
   const pool = named.length > 0 ? named : checked
   return [...pool].sort((a, b) => itemsFound(b) - itemsFound(a))[0]
@@ -158,7 +165,7 @@ export const lstLager01: RulePredicate = (ctx) => {
   if (!doc) return [{ targets: [camp], inputs: { checkedDocuments: 0 } }]
   const hits: RuleHit[] = []
   const evidence: Evidence[] = [{ kind: 'document', documentId: doc.id, label: doc.name }]
-  const missing = doc.docCheck?.items.filter((i) => !i.found).map((i) => DOC_CHECK.labels[i.key]) ?? []
+  const missing = doc.docCheck?.items.filter((i) => !isFound(doc, i)).map((i) => DOC_CHECK.labels[i.key]) ?? []
   if (missing.length > 0) {
     hits.push({
       targets: [camp, doc.id],

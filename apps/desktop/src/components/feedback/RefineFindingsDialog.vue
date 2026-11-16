@@ -8,10 +8,12 @@ import { useI18n } from 'vue-i18n'
 import { useFindings } from '@/composables/useFindings'
 import { useManualFindings } from '@/composables/useManualFindings'
 import type { NewFeedback } from '@/composables/useFeedback'
-import { itemFromFinding, KIND_ORDER } from '@/domain/feedback'
+import { groupLabel } from '@/components/cockpit/findingLabels'
+import { itemFromFinding, itemFromFindingGroup, KIND_ORDER } from '@/domain/feedback'
 import { groupFeedback, type FeedbackStructure } from '@/domain/feedback/structure'
 import { manualToFinding } from '@/domain/manualFindings'
-import { findingStatus } from '@/domain/triage'
+import { formatDateList } from '@/domain/selfCheck'
+import { findingStatus, groupFindings, isCoachTodo, type FindingGroupEntry } from '@/domain/triage'
 import type { CampFacts, DocumentRecord, FeedbackItem, FeedbackKind, Finding, Iri, ManualFindingCategory } from '@/domain/types'
 
 type DocLike = Pick<DocumentRecord, 'id' | 'name' | 'activityIris'>
@@ -30,10 +32,12 @@ const findingsHandle = useFindings(() => props.campIri)
 const manual = useManualFindings(() => props.campIri)
 
 interface Row {
-  /** Finding id, also the id of the draft item. */
+  /** Finding id (group key for a group row), also the id of the draft item. */
   id: string
   finding: Finding
   draft: FeedbackItem
+  /** Row title: the finding title, or the group label «… · 7 Tage (24.–30.01.)». */
+  label: string
 }
 
 function categoryLabel(c: ManualFindingCategory): string {
@@ -44,7 +48,18 @@ function toRows(findings: Finding[]): Row[] {
   return findings.map((finding) => {
     const draft = itemFromFinding(finding, props.campIri)
     draft.id = finding.id
-    return { id: finding.id, finding, draft }
+    return { id: finding.id, finding, draft, label: finding.title }
+  })
+}
+
+/** Same-rule day findings become one row (one feedback item with `findingIds`), sorted by date like triage. */
+function toGroupRows(groups: FindingGroupEntry[]): Row[] {
+  return groups.map((group) => {
+    const first = group.findings[0]!
+    if (group.findings.length === 1) return toRows([first])[0]!
+    const draft = itemFromFindingGroup(group, props.campIri, formatDateList(group.dates))
+    draft.id = group.key
+    return { id: group.key, finding: first, draft, label: groupLabel(t, first.title, group.findings.length, group.dates) }
   })
 }
 
@@ -58,9 +73,12 @@ const manualRows = computed<Row[]>(() =>
   ),
 )
 const autoRows = computed<Row[]>(() =>
-  toRows(
-    findingsHandle.findings.value.filter(
-      (f) => f.origin !== 'manual' && findingStatus(f, props.feedbackItems) === 'open',
+  toGroupRows(
+    groupFindings(
+      findingsHandle.findings.value.filter(
+        (f) => f.origin !== 'manual' && !isCoachTodo(f) && findingStatus(f, props.feedbackItems) === 'open',
+      ),
+      props.facts,
     ),
   ),
 )
@@ -125,6 +143,7 @@ function submit() {
     if (d.activityIri) nf.activityIri = d.activityIri
     if (d.ruleId) nf.ruleId = d.ruleId
     if (d.findingId) nf.findingId = d.findingId
+    if (d.findingIds?.length) nf.findingIds = [...d.findingIds]
     if (d.manualFindingId) nf.manualFindingId = d.manualFindingId
     if (d.documentId) nf.documentId = d.documentId
     if (d.documentAnchor) nf.documentAnchor = d.documentAnchor
@@ -162,7 +181,7 @@ function submit() {
             <div v-for="i in s.structure.general" :key="i.id" class="refine-row">
               <v-checkbox v-model="selected[i.id]" density="compact" hide-details :data-testid="`refine-check-${i.id}`" />
               <div class="flex-grow-1">
-                <div class="text-caption text-medium-emphasis">{{ rowById.get(i.id)?.finding.title }}</div>
+                <div class="text-caption text-medium-emphasis">{{ rowById.get(i.id)?.label }}</div>
                 <v-textarea v-model="texts[i.id]" :label="t('feedback.refine.textLabel')" auto-grow rows="1" density="compact" variant="outlined" hide-details />
               </div>
               <v-select v-model="kinds[i.id]" :items="KIND_ORDER.map((k) => ({ title: t(`feedback.kind.${k}`), value: k }))" density="compact" variant="outlined" hide-details class="refine-kind" />
@@ -176,7 +195,7 @@ function submit() {
               <div v-for="i in a.items" :key="i.id" class="refine-row">
                 <v-checkbox v-model="selected[i.id]" density="compact" hide-details :data-testid="`refine-check-${i.id}`" />
                 <div class="flex-grow-1">
-                  <div class="text-caption text-medium-emphasis">{{ rowById.get(i.id)?.finding.title }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ rowById.get(i.id)?.label }}</div>
                   <v-textarea v-model="texts[i.id]" :label="t('feedback.refine.textLabel')" auto-grow rows="1" density="compact" variant="outlined" hide-details />
                 </div>
                 <v-select v-model="kinds[i.id]" :items="KIND_ORDER.map((k) => ({ title: t(`feedback.kind.${k}`), value: k }))" density="compact" variant="outlined" hide-details class="refine-kind" />

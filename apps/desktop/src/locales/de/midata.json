@@ -8,7 +8,7 @@
     "settings": {
       "title": "MiData",
       "intro": "MiData (db.scout.ch) wird nur lesend angefragt, nur auf deinen Wunsch und nur über die App, nie über den Browser.",
-      "redZoneText": "Rote Zone: Die Daten aus MiData bleiben auf diesem Gerät. Nur Zahlen und Ja/Nein-Angaben (zum Beispiel Anzahl Teilnehmende, Altersspanne, Leitende mit Ausbildung) gelangen in co-co, nie an die KI. Geburtsdaten und vollständige Namen verlassen die App-Schicht nicht.",
+      "redZoneText": "Rote Zone: Daten aus MiData bleiben auf diesem Gerät und gehen nie an die KI. co-co speichert davon nur Zahlen und Ja/Nein-Angaben. Namen und Geburtsdaten siehst du nur im Tab «Personen», nur im Arbeitsspeicher und nur nach Klick auf «Personen laden».",
       "baseUrl": "MiData-Adresse",
       "baseUrlHint": "Standard: https://db.scout.ch",
       "status": {
@@ -20,6 +20,7 @@
         "viaEcamp": "über die eCamp-Anmeldung (MiData-OAuth) verbunden"
       },
       "login": "Bei MiData anmelden",
+      "relogin": "Erneut anmelden",
       "loginHint": "Öffnet ein Anmeldefenster. Das Passwort sieht nur MiData.",
       "tokenTitle": "Alternative: Service-Token einfügen",
       "tokenLabel": "Service-Token",
@@ -31,7 +32,6 @@
       "saved": "Gespeichert.",
       "notInApp": "Nur in der Desktop-App verfügbar.",
       "diag": {
-        "title": "Diagnose (M7-0)",
         "intro": "Prüft, was MiData für einen Anlass preisgibt. Es werden nur Statuscodes und Feldnamen angezeigt.",
         "eventId": "Anlass-Nr.",
         "groupId": "Gruppen-Nr. (optional)",
@@ -48,7 +48,6 @@
         "none": "keine"
       },
       "oauthHelp": "Meldest du dich bei eCamp über MiData an, übernimmt co-co die MiData-Sitzung automatisch. Bei Passwort- oder Google-Anmeldung musst du dich hier separat bei MiData anmelden.",
-      "personIdDetected": "automatisch erkannt",
       "personIdAuto": "Automatisch erkannt: {who} (MiData-Nr. {id})",
       "personIdYou": "du",
       "personIdOverride": "Manuell ändern",
@@ -143,7 +142,22 @@
       "invalidTitle": "{labels}: {state}",
       "validUntil": "gültig bis {date}",
       "notValidAtCamp": "nicht gültig während des Lagers",
-      "legend": "Legende: grün = gültig während des ganzen Lagers, gelb = vorhanden, aber nicht gültig während des Lagers, rot = fehlt, grau = unbekannt.",
+      "activities": {
+        "title": "Sicherheitsrelevante Aktivitäten – verantwortlich und ausgebildet?",
+        "row": "{activity} ({area})",
+        "responsible": "verantwortlich: {names}",
+        "nobody": "niemand verantwortlich eingetragen",
+        "ok": "ausgebildet",
+        "noQual": "keine passende Ausbildung",
+        "unknown": "nicht zuordenbar",
+        "unknownHint": "Keine der verantwortlichen Personen passt (Name oder Pfadiname) zu einer Leitungsperson aus MiData.",
+        "area": {
+          "wasser": "Wasser",
+          "berg": "Berg",
+          "winter": "Winter"
+        }
+      },
+      "legend": "Legende: grün = gültig während des ganzen Lagers, orange = vorhanden, aber nicht gültig während des Lagers, graues Kreuz = fehlt, graues Fragezeichen = unbekannt. Rot ist nur die Abdeckung einer nötigen Qualifikation, die im ganzen Team fehlt.",
       "quals": {
         "lagerleiter": "Lagerleiter",
         "leiterLsT": "LS/T",

@@ -5,6 +5,7 @@ status: active
 title: "Einheit beginnt mit Einstimmen/Aufwärmen"
 description: "Jede J+S-Einheit beginnt mit einem gezielten Aufwärmen oder Einstimmen. Geprüft wird, ob der Beginn des Ablaufs (Storyboard) ein entsprechendes Stichwort enthält."
 message: "«{title}»: Der Ablauf beginnt nicht erkennbar mit einem Einstimmen oder Aufwärmen."
+feedbackText: "Bei «{title}» beginnt der Ablauf nicht erkennbar mit einem Einstimmen oder Aufwärmen. Könnt ihr das ergänzen?"
 severity: should
 confidence: heuristic
 scope: activity

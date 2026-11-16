@@ -5,6 +5,7 @@ status: active
 title: "Ziele der Aktivität fehlen"
 description: "Jede J+S-Aktivität hat Ziele, abgeleitet aus Analyse, Erscheinungsformen und J+S-Zielen."
 message: "«{activity}» hat keine Ziele. Ziele leiten sich aus Analyse, Erscheinungsformen und J+S-Zielen ab."
+feedbackText: "Bei «{activity}» fehlen noch die Ziele. Welche Ziele verfolgt ihr mit der Aktivität?"
 severity: hint
 confidence: best-practice
 scope: activity

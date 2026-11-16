@@ -79,7 +79,7 @@ export const jsCamp02: RulePredicate = (ctx) => {
   const min = ctx.params.get<number>('js.minParticipants')
   const ages = { ageMin: ctx.params.get<number>('js.ageMin'), ageMax: ctx.params.get<number>('js.ageMax') }
   const found = jsAgeParticipants(ctx)
-  if (!found) return [{ ...campHit(ctx, ages, { severity: 'hint' }), variant: 'missing' }]
+  if (!found) return [{ ...campHit(ctx, ages, { severity: 'hint' }), variant: 'missing', needsInput: 'coachInputs' }]
   const { n, source, stand } = found
   if (n >= min) return []
   const fromData = source === 'midata' || stand !== null
@@ -110,7 +110,8 @@ export const jsStaff02: RulePredicate = (ctx) => {
   if (!jsApplies(ctx)) return []
   const min = ctx.params.get<number>('js.minLeaders')
   const found = jsLeaders(ctx)
-  if (!found) return [{ ...campHit(ctx, { min }, { severity: 'hint' }), variant: 'missing' }]
+  // MiData or the count under «Angaben»: the Angaben field always works, MiData is optional.
+  if (!found) return [{ ...campHit(ctx, { min }, { severity: 'hint' }), variant: 'missing', needsInput: 'coachInputs' }]
   if (found.n >= min) return []
   return [
     {

@@ -3,15 +3,31 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { germanRoleLabel } from '@/domain/persons/roleLabels'
-import { effectiveKeys, isUnmappedKind, nextQualMapping, qualMappingChanged, type QualificationMatrix, type QualMapping, type QualMatrixRow } from '@/domain/midata'
+import {
+  effectiveKeys,
+  isUnmappedKind,
+  nextQualMapping,
+  qualMappingChanged,
+  type QualificationMatrix,
+  type QualMapping,
+  type QualMatrixActivityCheck,
+  type QualMatrixRow,
+} from '@/domain/midata'
 import { MIDATA_QUAL_KEYS, MIDATA_QUAL_KEYS_V2, type MidataQualKey, type MidataQualKind } from '@/domain/types'
+import { formatStand } from './format'
 
-const props = defineProps<{
-  matrix: QualificationMatrix
-  kinds: MidataQualKind[]
-  mapping: QualMapping
-  loading?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    matrix: QualificationMatrix
+    kinds?: MidataQualKind[]
+    mapping?: QualMapping
+    loading?: boolean
+    /** Read-only variant (Personen): own title, no intro, no kind mapping. */
+    title?: string
+    compact?: boolean
+  }>(),
+  { kinds: () => [], mapping: () => ({}), loading: false, title: undefined, compact: false },
+)
 const emit = defineEmits<{
   saveMapping: [next: QualMapping]
   reload: []
@@ -38,6 +54,23 @@ function setKeys(label: string, keys: MidataQualKey[]): void {
   justSaved.value = false
 }
 
+type ActivityState = 'ok' | 'noQual' | 'nobody' | 'unknown'
+const ACTIVITY_ICON: Record<ActivityState, { icon: string; color: string }> = {
+  ok: { icon: 'mdi-check', color: 'success' },
+  noQual: { icon: 'mdi-close', color: 'error' },
+  nobody: { icon: 'mdi-alert-circle-outline', color: 'warning' },
+  unknown: { icon: 'mdi-help', color: 'grey' },
+}
+/**
+ * Row state of a safety activity. Nobody responsible is its own (orange) state; unreadable MiData
+ * qualifications make every answer unknown (they would otherwise all read as «keine passende Ausbildung»).
+ */
+function activityState(a: QualMatrixActivityCheck): ActivityState {
+  if (a.responsibles.length === 0) return 'nobody'
+  if (!props.matrix.qualificationsReadable || a.ok === null) return 'unknown'
+  return a.ok ? 'ok' : 'noQual'
+}
+
 function fmtDate(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split('-')
   return `${d}.${m}.${y}`
@@ -58,9 +91,11 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
 
 <template>
   <v-card variant="outlined" class="mb-4" data-testid="qual-matrix">
-    <v-card-title class="text-subtitle-1">{{ t('midata.matrix.title') }}</v-card-title>
+    <v-card-title class="text-subtitle-1">{{ title ?? t('midata.matrix.title') }}</v-card-title>
     <v-card-text>
-      <p class="text-medium-emphasis mb-3">{{ t('midata.matrix.intro') }}</p>
+      <p v-if="!compact" class="text-medium-emphasis mb-3">{{ t('midata.matrix.intro') }}</p>
+      <!-- Compact (Personen): built from the stored aggregate, which can be older than the people list below. -->
+      <p v-else class="text-caption text-medium-emphasis mb-2" data-testid="qual-stand">{{ t('midata.card.stand', { date: formatStand(matrix.fetchedAt) }) }}</p>
       <v-alert
         v-if="!matrix.qualificationsReadable"
         type="warning"
@@ -71,6 +106,35 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
       >
         {{ t('midata.matrix.notReadable') }}
       </v-alert>
+      <div v-if="matrix.activities.length > 0" class="mb-4" data-testid="qual-activities">
+        <div class="text-subtitle-2 mb-1">{{ t('midata.matrix.activities.title') }}</div>
+        <ul class="activity-list">
+          <li v-for="a in matrix.activities" :key="`${a.activityIri}-${a.area}`" class="d-flex align-baseline ga-2" data-testid="qual-activity">
+            <v-icon
+              :icon="ACTIVITY_ICON[activityState(a)].icon"
+              :color="ACTIVITY_ICON[activityState(a)].color"
+              size="small"
+              :aria-label="t(`midata.matrix.activities.${activityState(a)}`)"
+              :data-testid="`qual-activity-${activityState(a)}`"
+            />
+            <span>
+              {{ t('midata.matrix.activities.row', { activity: a.activityTitle, area: t(`midata.matrix.activities.area.${a.area}`) }) }} –
+              <span v-if="activityState(a) === 'nobody'" class="text-warning">{{ t('midata.matrix.activities.nobody') }}</span>
+              <template v-else>
+                {{ t('midata.matrix.activities.responsible', { names: a.responsibles.join(', ') }) }}
+                <template v-if="activityState(a) === 'noQual'">
+                  · <span class="text-error">{{ t('midata.matrix.activities.noQual') }}</span>
+                </template>
+                <template v-else-if="activityState(a) === 'unknown'">
+                  · <span class="text-medium-emphasis" :title="t(matrix.qualificationsReadable ? 'midata.matrix.activities.unknownHint' : 'midata.matrix.notReadable')">{{
+                    t('midata.matrix.activities.unknown')
+                  }}</span>
+                </template>
+              </template>
+            </span>
+          </li>
+        </ul>
+      </div>
       <p v-if="matrix.rows.length > 0" class="text-caption text-medium-emphasis mb-2" data-testid="qual-legend">{{ t('midata.matrix.legend') }}</p>
       <div v-if="matrix.rows.length === 0" class="text-medium-emphasis">{{ t('midata.matrix.noLeaders') }}</div>
       <div v-else class="table-wrap">
@@ -115,7 +179,7 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
                   :aria-label="t('midata.matrix.unknownCell')"
                   data-testid="qual-cell-unknown"
                 />
-                <v-icon v-else icon="mdi-close" color="error" size="small" :aria-label="t('midata.matrix.hasNot')" />
+                <v-icon v-else icon="mdi-close" size="small" class="text-medium-emphasis" :aria-label="t('midata.matrix.hasNot')" />
               </td>
             </tr>
             <tr class="font-weight-medium">
@@ -128,7 +192,7 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
         </v-table>
       </div>
 
-      <v-expansion-panels v-if="kinds.length" variant="accordion" class="mt-4">
+      <v-expansion-panels v-if="!compact && kinds.length" variant="accordion" class="mt-4">
         <v-expansion-panel data-testid="qual-kinds">
           <v-expansion-panel-title>
             {{ t('midata.matrix.kinds.title', { n: kinds.length }) }}
@@ -205,6 +269,13 @@ function cellTip(r: QualMatrixRow, c: MidataQualKey): string {
 .select-cell {
   min-width: 260px;
   padding-block: 4px;
+}
+.activity-list {
+  list-style: none;
+  padding: 0;
+}
+.activity-list li {
+  padding-block: 2px;
 }
 .unmapped {
   background: rgba(var(--v-theme-warning), 0.08);

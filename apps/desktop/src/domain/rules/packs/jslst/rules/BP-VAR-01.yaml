@@ -5,6 +5,7 @@ status: active
 title: "Abwechslung im Programm"
 description: "Die J+S-Einheiten decken über die Woche mehrere Kategorien oder Themen ab."
 message: "Wenig Abwechslung: {units} J+S-Einheiten, aber nur eine Kategorie bzw. ein Thema"
+feedbackText: "Im Programm sehe ich wenig Abwechslung bei den J+S-Einheiten. Habt ihr noch andere Themen oder Kategorien geplant?"
 severity: hint
 confidence: best-practice
 scope: camp

@@ -4,7 +4,7 @@
     "intro": "Die Unterlagen und Websites, auf die sich die Regeln stützen (Manuals, J+S-Tool-Module, Merkblätter). Mitgeliefert sind Titel, Ausgabe und Link. Du kannst Einträge anpassen, mit eigenem Dokumenttext versehen (durchsuchbar für KI und MCP), ersetzen oder neue hinzufügen. Die Regeln verweisen auf diese Einträge.",
     "loading": "Hilfsmittel werden geladen …",
     "loadFailed": "Hilfsmittel konnten nicht geladen werden",
-    "search": "Volltextsuche (auch im Dokumentinhalt)",
+    "search": "Suchen",
     "allWeights": "Alle",
     "empty": "Keine Hilfsmittel gefunden.",
     "count": "{count} Hilfsmittel",
@@ -21,19 +21,19 @@
       "modified": "geändert",
       "custom": "eigenes",
       "content": "mit Text",
-      "partlyRead": "teilweise gelesen"
+      "partlyRead": "nicht ausgewertet"
     },
     "field": {
       "key": "Schlüssel",
       "title": "Titel",
       "publisher": "Herausgeber",
       "edition": "Ausgabe",
-      "date": "Datum (JJJJ-MM-TT)",
+      "date": "Datum (TT.MM.JJJJ)",
       "url": "Link (https://…)",
       "summary": "Kurzbeschreibung",
       "notes": "Notizen",
-      "checkedOn": "Zuletzt geprüft (JJJJ-MM-TT)",
-      "weight": "Gewichtung"
+      "checkedOn": "Zuletzt geprüft (TT.MM.JJJJ)",
+      "weight": "Verbindlichkeit"
     },
     "keyHint": "Grossbuchstaben, Ziffern und Bindestriche, z. B. MEIN-MERKBLATT",
     "detail": {
@@ -41,14 +41,14 @@
       "edition": "Ausgabe",
       "date": "Datum",
       "checkedOn": "Zuletzt geprüft",
-      "partlyRead": "Nur teilweise gelesen",
+      "partlyRead": "Von co-co nicht ausgewertet",
       "notes": "Notizen",
       "noUrl": "Kein öffentlicher Link (z. B. J+S-Tool-Modul oder lokale Datei).",
       "openLink": "Original öffnen",
       "file": "Datei",
       "noContent": "Kein Dokumenttext hinterlegt. Mit «Datei ersetzen/anhängen» oder «Text einfügen» wird das Hilfsmittel für KI und MCP durchsuchbar.",
       "contentStats": "{words} Wörter, {kb} KB Text",
-      "citedBy": "Zitiert von {count} Regel(n)",
+      "citedBy": "Zitiert von {count} Regel | Zitiert von {count} Regeln",
       "citedNone": "Von keiner Regel zitiert.",
       "history": "Verlauf",
       "historyEntry": "{date}: {title} ({edition})",
@@ -77,7 +77,8 @@
       "resetTitle": "Zurücksetzen?",
       "resetBody": "«{title}» wird auf die mitgelieferten Angaben zurückgesetzt. Eigene Änderungen und der Dokumenttext gehen verloren.",
       "deleteTitle": "Löschen?",
-      "deleteBody": "«{title}» wird gelöscht."
+      "deleteBody": "«{title}» wird gelöscht.",
+      "dateInvalid": "{field}: bitte als TT.MM.JJJJ angeben."
     },
     "attach": {
       "unsupported": "Dateityp wird nicht unterstützt (PDF, DOCX, TXT, MD).",
@@ -86,6 +87,16 @@
       "done": "Dokumenttext aus «{name}» übernommen."
     },
     "linkTitle": "Hilfsmittel «{key}» anzeigen",
-    "externalLink": "Original-Link öffnen"
+    "externalLink": "Original-Link öffnen",
+    "searchPlaceholder": "Titel, Regeln, eigener Text",
+    "emptySearchRules": "In den Regeln suchen",
+    "snippetCitedBy": "zitiert in {id} {title} · {page}",
+    "snippetCitedByNoPage": "zitiert in {id} {title}",
+    "outdatedGroup": "Veraltete Unterlagen ({count})",
+    "filter": {
+      "binding": "Verbindlich",
+      "pbs": "PBS",
+      "other": "Weitere"
+    }
   }
 }

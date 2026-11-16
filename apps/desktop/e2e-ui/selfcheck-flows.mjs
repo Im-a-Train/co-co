@@ -4,13 +4,19 @@ export async function selfCheckFlows({ page, step, go, shot, BASE }) {
   void BASE
   const text = () => page.evaluate(() => document.body.innerText)
 
-  await step('flow: selfcheck tab shows intro, KPIs and empty history', async () => {
+  await step('flow: selfcheck tab shows intro, report and empty history', async () => {
     await go('selbstcheck', 'flow-selfcheck')
     await page.waitForSelector('[data-testid="selfcheck-start"]', { timeout: 8000 })
     const t = await text()
     if (!/Selbstcheck/.test(t)) throw new Error('title missing')
     if (!/Entwurfsrunde starten/i.test(t)) throw new Error('start button missing')
     await page.waitForSelector('[data-testid="selfcheck-report"]', { timeout: 8000 })
+    // J+S days: no count while provisional (PREP-01); once confirmed the chip is coloured by state (GOLDEN-13).
+    const provisional = await page.getByTestId('selfcheck-provisional').count()
+    const chip = page.getByTestId('selfcheck-report-jsdays')
+    if (provisional && (await chip.count())) throw new Error('J+S-Tage chip shown while the report is provisional')
+    if (!provisional && (await chip.count()) && !/text-(warning|success)/.test((await chip.getAttribute('class')) ?? ''))
+      throw new Error('J+S-Tage chip not coloured by state')
     await shot(page, 'flow-selfcheck-start')
   })
 

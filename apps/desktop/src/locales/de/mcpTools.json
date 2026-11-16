@@ -38,16 +38,16 @@
         "description": "Prüfrunden eines Lagers und der aktuelle Prüfstatus mit Verlauf."
       },
       "add_manual_finding": {
-        "title": "Eigenen Befund hinzufügen",
-        "description": "Erfasst einen eigenen Befund auf Lager, Aktivität oder Dokument (mit Seite, Blatt/Zelle oder km). Bleibt in co-co, wird nirgends gesendet."
+        "title": "Coach-Befund hinzufügen",
+        "description": "Erfasst einen Coach-Befund auf Lager, Aktivität oder Dokument (mit Seite, Blatt/Zelle oder km). Bleibt in co-co, wird nirgends gesendet."
       },
       "update_manual_finding": {
-        "title": "Eigenen Befund ändern",
-        "description": "Ändert Kategorie und/oder Kommentar eines eigenen Befunds."
+        "title": "Coach-Befund ändern",
+        "description": "Ändert Kategorie und/oder Kommentar eines Coach-Befunds."
       },
       "delete_manual_finding": {
-        "title": "Eigenen Befund löschen",
-        "description": "Löscht einen eigenen Befund. Kann in co-co nicht rückgängig gemacht werden."
+        "title": "Coach-Befund löschen",
+        "description": "Löscht einen Coach-Befund. Kann in co-co nicht rückgängig gemacht werden."
       },
       "add_feedback": {
         "title": "Feedback-Entwurf hinzufügen",
@@ -82,8 +82,8 @@
         "description": "Ein Hilfsmittel mit Metadaten und hinterlegtem Text, seitenweise (max. 20'000 Zeichen pro Aufruf)."
       },
       "list_manual_findings": {
-        "title": "Eigene Befunde auflisten",
-        "description": "Deine eigenen Befunde (nicht von Regeln) mit Kategorie, Kommentar, Aktivität bzw. Dokument und Stelle (Seite, Blatt, Zelle, km). Anonymisiert."
+        "title": "Coach-Befunde auflisten",
+        "description": "Deine Coach-Befunde (nicht von Regeln) mit Kategorie, Kommentar, Aktivität bzw. Dokument und Stelle (Seite, Blatt, Zelle, km). Anonymisiert."
       },
       "get_feedback_structure": {
         "title": "Feedback-Struktur lesen",

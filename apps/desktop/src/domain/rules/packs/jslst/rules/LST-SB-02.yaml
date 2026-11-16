@@ -11,6 +11,7 @@ messageVariants:
   areaWasser: "Wasser"
   areaWinter: "Winter"
   areaJoin: " / "
+feedbackText: "Für Aktivitäten im Sicherheitsbereich braucht es vor der Durchführung die Bewilligung einer Expertin oder eines Experten LS/T. Wurde sie schon eingeholt?"
 severity: must
 confidence: verified
 scope: activity

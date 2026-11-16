@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { applyResourcePatch, bundledResources, highlightSegments, mergeRegistry, searchResources, validateResource, wordCount } from '../index'
+import { applyResourcePatch, bundledResources, formatDateDe, highlightSegments, mergeRegistry, parseDateInput, searchResources, sortResourcesByWeight, validateResource, wordCount } from '../index'
 import { addResource, getResource, listResources, onResourcesChanged, resetResource, updateResource } from '../store'
 import { bundledSourceRecords, getSourceRegistry, setRegistryOverlay } from '../../rules/packs/registry'
 import { getDb, lockDb, resetLocalData } from '../../storage/db'
@@ -67,11 +67,11 @@ describe('searchResources', () => {
     mk('B', { title: 'Allgemein', content: 'Beim Baden im See muss eine Aufsichtsperson dabei sein. Wasser ist kalt.' }),
     mk('C', { title: 'Nichts' }),
   ]
-  it('ranks meta above content, case/umlaut-insensitive', () => {
+  it('ranks document text above title/summary hits, case/umlaut-insensitive', () => {
     const h = searchResources(recs, 'WASSER')
-    expect(h.map((x) => x.key)).toEqual(['A', 'B'])
-    expect(h[0]!.in).toBe('meta')
-    expect(h[1]!.in).toBe('content')
+    expect(h.map((x) => x.key)).toEqual(['B', 'A'])
+    expect(h[0]!.in).toBe('content')
+    expect(h[1]!.in).toBe('meta')
     expect(h[1]!.snippet).toContain('Wasser')
   })
   it('ANDs words and folds umlauts', () => {
@@ -82,6 +82,116 @@ describe('searchResources', () => {
   })
   it('respects limit', () => {
     expect(searchResources(recs, 'wasser', { limit: 1 })).toHaveLength(1)
+  })
+  it('takes the snippet from the title when it matches, not from the notes', () => {
+    const w = [mk('WASSER', { title: 'LS/T Wasser (Broschüre)', notes: 'S. 8: «Wildwasser I und II» ohne «nur».' })]
+    expect(searchResources(w, 'wasser')[0]!.snippet).toBe('LS/T Wasser (Broschüre)')
+    expect(searchResources(w, 'wildwasser')[0]!.snippet).toContain('Wildwasser')
+  })
+})
+
+describe('searchResources with citations', () => {
+  const mk = (key: string, p: Partial<ResourceRecord>): ResourceRecord => ({
+    key, title: key, edition: '', url: null, weight: 'info', pageConvention: 'section', partlyRead: [], origin: 'custom', modified: false, updatedAt: NOW, updatedBy: 'manual', ...p,
+  })
+  const recs = [mk('WASSER', { title: 'LS/T Wasser (Broschüre)' }), mk('MAN', { title: 'Manual' }), mk('X', { title: 'Nichts' })]
+  const citations = new Map([
+    ['WASSER', [{ id: 'LST-WASSER-06', title: 'Seeschwimmen ohne Begleitboot', description: 'Beim Schwimmen im See ist ein Boot dabei.', page: 'S. 8' }]],
+    ['MAN', [{ id: 'JS-X', title: 'Etwas', page: 'S. 21' }]],
+  ])
+  it('finds a resource through the rules that cite it, with page in the snippet', () => {
+    const h = searchResources(recs, 'schwimmen', { citations, citationSnippet: (c) => `zitiert in ${c.id} ${c.title} · ${c.page}` })
+    expect(h.map((x) => x.key)).toEqual(['WASSER'])
+    expect(h[0]!.in).toBe('citation')
+    expect(h[0]!.snippet).toBe('zitiert in LST-WASSER-06 Seeschwimmen ohne Begleitboot · S. 8')
+  })
+  it('does not use citations without the option (MCP default) and ranks them after direct hits', () => {
+    expect(searchResources(recs, 'schwimmen')).toEqual([])
+    const h = searchResources(recs, 'wasser', { citations })
+    expect(h.map((x) => [x.key, x.in])).toEqual([['WASSER', 'meta']])
+    const both = searchResources([mk('B', { title: 'Boot Info' }), ...recs], 'boot', { citations })
+    expect(both.map((x) => [x.key, x.in])).toEqual([['B', 'meta'], ['WASSER', 'citation']])
+  })
+})
+
+describe('searchResources ranking tiers', () => {
+  const mk = (key: string, p: Partial<ResourceRecord>): ResourceRecord => ({
+    key, title: key, edition: '', url: null, weight: 'info', pageConvention: 'section', partlyRead: [], origin: 'custom', modified: false, updatedAt: NOW, updatedBy: 'manual', ...p,
+  })
+  it('ranks document text, then title/summary, then citations, then notes-only', () => {
+    const recs = [
+      mk('NOTE', { title: 'Alpha', notes: 'Notfall im Notfallset' }),
+      mk('CITE', { title: 'Beta' }),
+      mk('META', { title: 'Notfall Info' }),
+      mk('TEXT', { title: 'Gamma', content: 'Im Notfall anrufen.' }),
+    ]
+    const citations = new Map([['CITE', [{ id: 'X-1', title: 'Notfallkonzept', page: 'S. 1' }]]])
+    expect(searchResources(recs, 'notfall', { citations }).map((h) => h.key)).toEqual(['TEXT', 'META', 'CITE', 'NOTE'])
+  })
+  it('a word in the notes and in the document text is a document-text hit, with the text as snippet', () => {
+    const recs = [
+      mk('CITE', { title: 'Beta' }),
+      mk('BOTH', { title: 'Alpha', notes: 'Notfallset fehlt', content: 'Im Notfall die Rega anrufen.' }),
+    ]
+    const citations = new Map([['CITE', [{ id: 'X-1', title: 'Notfallkonzept' }]]])
+    const h = searchResources(recs, 'notfall', { citations })
+    expect(h.map((x) => [x.key, x.in])).toEqual([['BOTH', 'content'], ['CITE', 'citation']])
+    expect(h[0]!.snippet).toContain('Rega')
+  })
+  it('a title hit whose document text also matches ranks with the document-text hits', () => {
+    const recs = [
+      mk('TEXT', { title: 'Gamma', content: 'Wasser ist kalt.' }),
+      mk('TITLE', { title: 'Wasser', content: 'Am Wasser gilt: Wasser nie allein.' }),
+      mk('ONLYTITLE', { title: 'Wasser Merkblatt' }),
+    ]
+    const h = searchResources(recs, 'wasser')
+    expect(h.map((x) => [x.key, x.in])).toEqual([['TITLE', 'content'], ['TEXT', 'content'], ['ONLYTITLE', 'meta']])
+  })
+  it('prefers the citation over a notes-only match of the same resource', () => {
+    const recs = [mk('R', { title: 'Alpha', notes: 'Hinweis Lager' })]
+    const citations = new Map([['R', [{ id: 'X-1', title: 'Lagerplatz', page: 'S. 1' }]]])
+    const h = searchResources(recs, 'lager', { citations })
+    expect(h).toHaveLength(1)
+    expect(h[0]!.in).toBe('citation')
+  })
+  it('picks the best citation: rule title above description', () => {
+    const recs = [mk('R', { title: 'Alpha' })]
+    const citations = new Map([['R', [
+      { id: 'A-1', title: 'Etwas', description: 'Beim Schwimmen ein Boot.' },
+      { id: 'A-2', title: 'Seeschwimmen ohne Boot' },
+    ]]])
+    expect(searchResources(recs, 'schwimmen', { citations, citationSnippet: (c) => c.id })[0]!.snippet).toBe('A-2')
+    const two = [mk('D', { title: 'D' }), mk('T', { title: 'T' })]
+    const cits = new Map([
+      ['D', [{ id: 'D-1', title: 'Etwas', description: 'Schwimmen im See' }]],
+      ['T', [{ id: 'T-1', title: 'Seeschwimmen' }]],
+    ])
+    expect(searchResources(two, 'schwimmen', { citations: cits }).map((h) => h.key)).toEqual(['T', 'D'])
+  })
+})
+
+describe('list order and dates', () => {
+  it('sorts binding first, outdated last, then by title', () => {
+    const l = sortResourcesByWeight([
+      { weight: 'outdated' as const, title: 'A' },
+      { weight: 'info' as const, title: 'B' },
+      { weight: 'binding-quote' as const, title: 'C' },
+      { weight: 'binding' as const, title: 'Z' },
+      { weight: 'binding' as const, title: 'M' },
+      { weight: 'pbs' as const, title: 'P' },
+    ])
+    expect(l.map((x) => x.title)).toEqual(['M', 'Z', 'C', 'P', 'B', 'A'])
+  })
+  it('parses TT.MM.JJJJ and ISO, formats TT.MM.JJJJ', () => {
+    expect(parseDateInput('01.02.2026')).toBe('2026-02-01')
+    expect(parseDateInput('1.2.2026')).toBe('2026-02-01')
+    expect(parseDateInput('2026-02-01')).toBe('2026-02-01')
+    expect(parseDateInput('  ')).toBe('')
+    expect(parseDateInput('31.02.2026')).toBeNull()
+    expect(parseDateInput('morgen')).toBeNull()
+    expect(formatDateDe('2026-02-01')).toBe('01.02.2026')
+    expect(formatDateDe('2026-02-01T10:00:00Z')).toBe('01.02.2026')
+    expect(formatDateDe(undefined)).toBe('')
   })
 })
 

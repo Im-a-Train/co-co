@@ -28,19 +28,19 @@
     }
   },
   "login": {
-    "title": "Anmeldung",
-    "subtitle": "bei {url}",
+    "title": "Anmelden",
     "explanation": "Melde dich mit deinem bestehenden eCamp-Konto an. Es öffnet sich ein separates Fenster mit der originalen eCamp-Anmeldeseite – dort funktionieren auch MiData (PBS), Google und weitere Anbieter.",
-    "webview": "Mit eCamp anmelden (inkl. MiData)",
+    "webview": "Mit eCamp anmelden",
     "webviewHint": "Das Anmeldefenster schliesst sich automatisch, sobald die Anmeldung erkannt wurde.",
     "password": {
-      "title": "Passwort-Login (Fallback)",
+      "title": "Mit E-Mail und Passwort anmelden",
       "hint": "Nur für Konten mit eCamp-Passwort. Das Passwort wird direkt an eCamp gesendet und weder gespeichert noch protokolliert.",
       "identifier": "E-Mail",
       "password": "Passwort",
       "submit": "Anmelden"
     },
-    "instance": "Instanz",
+    "instance": "eCamp",
+    "testInstance": "Testinstanz",
     "instanceChange": "ändern",
     "instanceClose": "schliessen"
   },
@@ -63,12 +63,18 @@
     "cookieNames": "Cookie-Namen (ohne Werte)",
     "roles": "Rollen",
     "obtainedAt": "Angemeldet seit",
+    "account": {
+      "title": "eCamp-Konto",
+      "name": "Name",
+      "email": "E-Mail",
+      "instance": "eCamp-Instanz"
+    },
     "refresh": "Token erneuern",
     "logout": "Abmelden"
   },
   "protocol": {
-    "title": "Spike-Protokoll",
-    "subtitle": "Diagnose der Anmeldung – zum Einfügen ins GitHub-Issue / ADR",
+    "title": "Anmelde-Diagnose",
+    "subtitle": "Zum Weitergeben, wenn die Anmeldung nicht klappt",
     "copy": "Ergebnis kopieren",
     "copied": "Ergebnis in die Zwischenablage kopiert.",
     "copyFailed": "Kopieren fehlgeschlagen – bitte den Bericht unten manuell kopieren.",
@@ -91,7 +97,7 @@
     }
   },
   "report": {
-    "title": "co-co M0 Login-Spike – Ergebnis",
+    "title": "co-co Anmelde-Diagnose – Ergebnis",
     "generatedAt": "Erstellt",
     "appVersion": "App-Version",
     "os": "Betriebssystem",
@@ -113,9 +119,11 @@
     "noLog": "Keine Ereignisse aufgezeichnet."
   },
   "connection": {
-    "title": "Verbindung",
+    "title": "Willkommen bei co-co",
+    "intro": "Prüfe J+S-Lager aus eCamp, sammle Befunde und schreib der Lagerleitung Feedback. Deine Daten bleiben auf diesem Gerät.",
+    "titleLoggedIn": "Verbindung",
     "loggedInTitle": "Du bist angemeldet",
-    "loggedInText": "Weitere Verbindungen (MiData, NDS) und die Instanz verwaltest du in den Einstellungen.",
+    "loggedInText": "Weitere Verbindungen (MiData, NDS) verwaltest du in den Einstellungen.",
     "toCamps": "Meine Lager",
     "manage": "Verbindungen verwalten"
   },
@@ -130,8 +138,6 @@
     "midataOff": "MiData: nicht verbunden",
     "ndsOk": "NDS: verbunden",
     "ndsOff": "NDS: nicht verbunden",
-    "ndsDisabled": "NDS: ausgeschaltet",
-    "off": "aus",
     "open": "Klicken, um die Verbindungen in den Einstellungen zu öffnen."
   }
 }

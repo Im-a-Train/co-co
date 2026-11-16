@@ -9,6 +9,7 @@ messageVariants:
   weekday0: "Sonntag"
   weekday6: "Samstag"
   holiday: "Feiertag"
+feedbackText: "Der Liefertermin für das Leihmaterial ({date}) ist kein Werktag, geliefert wird nur an Werktagen. Welcher Werktag passt euch stattdessen?"
 severity: hint
 confidence: verified
 scope: camp

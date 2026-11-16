@@ -5,6 +5,7 @@ status: active
 title: "EBB ohne begleitende Leitungsperson"
 description: "Ein vom Coach als EBB gekennzeichneter Block hat eine verantwortliche Leitungsperson. EBB mit externen Personen oder Anbietern werden von einer J+S-Leiterperson begleitet."
 message: "Für den EBB «{activity}» ist keine verantwortliche Leitungsperson eingetragen. EBB mit externen Personen oder Anbietern müssen von einer J+S-Leitungsperson begleitet werden."
+feedbackText: "Beim EBB «{activity}» ist keine verantwortliche Leitungsperson eingetragen. Wer begleitet ihn?"
 severity: should
 confidence: verified
 scope: activity

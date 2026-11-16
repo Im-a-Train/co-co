@@ -12,7 +12,7 @@ import type { RuleMeta } from '@/domain/types'
 import RuleDiffList from './RuleDiffList.vue'
 
 const props = defineProps<{ meta: RuleMeta }>()
-const emit = defineEmits<{ applied: [] }>()
+const emit = defineEmits<{ applied: []; toResources: [] }>()
 const { t } = useI18n()
 const store = useResources()
 
@@ -77,7 +77,10 @@ async function apply() {
     <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-3" :text="error" />
     <v-alert v-if="notice" type="success" variant="tonal" density="compact" class="mb-3" :text="notice" />
 
-    <p v-if="!withText.length" class="text-body-2">{{ t('rules.edit.ai.pickNone') }}</p>
+    <div v-if="!withText.length">
+      <p class="text-body-2 mb-2">{{ t('rules.edit.ai.pickNone') }}</p>
+      <v-btn size="small" variant="tonal" prepend-icon="mdi-book-open-variant-outline" :text="t('rules.edit.ai.toResources')" data-testid="rule-ai-to-resources" @click="emit('toResources')" />
+    </div>
     <template v-else>
       <v-select
         v-model="picked"

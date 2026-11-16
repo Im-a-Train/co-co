@@ -11,7 +11,7 @@ import { findingStatus } from '../triage'
 import { allowedTransitions, canTransition } from '../rounds'
 import { countFindings } from '../rules/engine'
 import { deadlineStatus } from '../rules/lib/deadlines'
-import { categoryClassOf, computeJsDays } from '../rules/lib/jsDays'
+import { categoryClassOf } from '../rules/lib/jsDays'
 import { findingsForAi } from '../zones/features'
 import { redactorForFacts } from '../zones/mcpZone'
 import type { Redactor } from '../zones/redact'
@@ -157,7 +157,7 @@ const get_camp_overview: McpHandler = async (args, ctx) => {
   const mapping = await ctx.getMapping(campIri)
   const confirmed = mapping?.confirmed ? mapping : null
   const findings = await safeFindings(ctx, campIri)
-  const report = confirmed ? computeJsDays(facts, confirmed) : null
+  const counts = confirmed ? await ctx.jsDayCounts(campIri) : null
   const review = await ctx.getReview(campIri)
   const rounds = await ctx.listRounds(campIri)
   return {
@@ -178,7 +178,7 @@ const get_camp_overview: McpHandler = async (args, ctx) => {
       name: c.name,
       class: confirmed ? categoryClassOf(confirmed, c.iri) : null,
     })),
-    jsDays: report ? { valid: report.validDayCount, total: report.totalDayCount } : null,
+    jsDays: counts ? { valid: counts.valid, total: counts.total } : null,
     findingCounts: countFindings(findings as Finding[]),
     reviewStatus: review?.status ?? 'neu',
     roundCount: rounds.length,

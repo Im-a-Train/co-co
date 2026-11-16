@@ -123,3 +123,49 @@ export function summarizePersons(rows: PersonViewRow[]): PersonsSummary {
     regaMissing: rows.filter((r) => r.rega === false).length,
   }
 }
+
+/** Sort rank of an NDS state alone (header sort): problems first. */
+export function stateRank(state: ViewState): number {
+  switch (state) {
+    case 'missing_in_nds':
+      return 0
+    case 'only_in_nds':
+      return 1
+    case 'ambiguous':
+      return 2
+    case 'field_diff':
+      return 3
+    default:
+      return 6
+  }
+}
+
+/**
+ * How urgent a row is for the coach (0 = most urgent): missing in NDS, only in NDS, unclear, differing,
+ * Rega not transmitted, expired qualification, everything else. `qualKeys` limits the qualification check
+ * to the keys the table shows (the camp's columns); all keys when omitted.
+ */
+export function problemRank(r: PersonViewRow, qualKeys?: readonly string[]): number {
+  const s = stateRank(r.state)
+  if (s < 6) return s
+  if (r.rega === false) return 4
+  if (r.kind === 'leader') {
+    const q = r.qualifications as Record<string, string | undefined>
+    const keys = qualKeys ?? Object.keys(q)
+    if (keys.some((k) => q[k] === 'invalid')) return 5
+  }
+  return 6
+}
+
+/** Rows sorted problems first; stable inside a rank (keeps the source order). */
+export function sortByProblem(rows: readonly PersonViewRow[], qualKeys?: readonly string[]): PersonViewRow[] {
+  return rows
+    .map((r, i) => ({ r, i, k: problemRank(r, qualKeys) }))
+    .sort((a, b) => a.k - b.k || a.i - b.i)
+    .map((x) => x.r)
+}
+
+/** Toggles `value` in `list` (new array). */
+export function toggleValue<T>(list: readonly T[], value: T): T[] {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
+}

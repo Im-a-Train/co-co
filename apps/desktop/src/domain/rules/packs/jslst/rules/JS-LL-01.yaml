@@ -8,6 +8,7 @@ message: "Zusatz Lagerleiter: nicht bestätigt"
 messageVariants:
   missing: "Zusatz Lagerleiter: noch nicht bestätigt (Angabe fehlt)"
   midata: "Zusatz Lagerleiter: in MiData wurde keine Leitung mit «Zusatz Lagerleiter» gefunden (Quelle: MiData, Stand {stand})"
+feedbackText: "Für J+S braucht mindestens eine Person im Leitungsteam den Zusatz «Lagerleiter». Wer hat ihn bei euch?"
 severity: must
 confidence: verified
 scope: camp

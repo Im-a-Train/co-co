@@ -3,17 +3,37 @@
     "title": "Personen",
     "banner": "Personendaten · Rote Zone: bleibt auf diesem Gerät, nur im Arbeitsspeicher, nie an die KI",
     "actions": {
-      "loadMidata": "Aus MiData laden",
-      "loadNds": "Aus NDS laden",
-      "clear": "Aus dem Speicher entfernen",
+      "load": "Personen laden",
+      "clear": "Personendaten jetzt vergessen",
       "reload": "Neu laden"
     },
     "empty": {
-      "none": "Noch keine Personen geladen. Lade die Personen aus MiData und NDS, um sie abzugleichen.",
-      "filtered": "Keine Person passt zu den Filtern.",
-      "midataNotLinked": "Dieses Lager ist noch nicht mit einem MiData-Anlass verknüpft.",
-      "ndsNotLinked": "Dieses Lager ist noch nicht mit einem NDS-Lager verknüpft.",
-      "toInputs": "Zu «Angaben»"
+      "none": "Wähle oben die Quellen, dann «Personen laden».",
+      "noneLinked": "Noch keine Personen geladen. Klicke «Personen laden», um MiData und NDS abzugleichen.",
+      "filtered": "Keine Person passt zu den Filtern."
+    },
+    "team": {
+      "title": "Leitungsteam – reicht die Ausbildung?",
+      "noAggregate": "Ausbildung des Leitungsteams: zuerst MiData-Zahlen laden.",
+      "load": "MiData-Zahlen laden"
+    },
+    "sources": {
+      "title": "Quellen",
+      "midata": "MiData",
+      "nds": "NDS",
+      "pickEvent": "Anlass wählen",
+      "changeEvent": "Anlass ändern",
+      "pickCamp": "Lager wählen",
+      "changeCamp": "Lager ändern",
+      "midataLinkedEcamp": "Anlass {id} (aus eCamp)",
+      "midataLinked": "Anlass {id}",
+      "ndsLinked": "Lager {label}",
+      "midataNotConnected": "nicht verbunden",
+      "ndsNotConnected": "nicht verbunden",
+      "ndsOff": "ausgeschaltet",
+      "ndsTurnOn": "In den Einstellungen einschalten",
+      "toSettings": "Zu den Einstellungen",
+      "hint": "Geladen wird nur auf Klick und nur in den Arbeitsspeicher."
     },
     "chips": {
       "total": "{n} Personen",
@@ -38,6 +58,7 @@
       "missing_in_nds": "fehlt in NDS",
       "only_in_nds": "nur in NDS",
       "ambiguous": "unklar",
+      "ambiguousHint": "Vermutlich: {name} (Jg. {year}) – in NDS prüfen",
       "notRelevant": "nicht in NDS erwartet",
       "notCompared": "–"
     },
@@ -46,7 +67,8 @@
       "suggestions": "Mögliche NDS-Personen (nur Namen, nicht bestätigt):",
       "suggestion": "{name} · Geb. {birth}",
       "none": "Keine Unterschiede",
-      "ndsOnly": "In NDS vorhanden, in MiData nicht gefunden"
+      "ndsOnly": "In NDS vorhanden, in MiData nicht gefunden",
+      "ndsNumber": "NDS-Nr. {n}"
     },
     "diff": {
       "birthDate": "Geburtsdatum",
@@ -59,10 +81,8 @@
       "roles": "Rolle",
       "birthDate": "Geburtsdatum",
       "age": "Alter bei Lagerbeginn",
-      "jsAge": "J+S-Alter",
       "quals": "Qualifikation",
       "state": "NDS-Status",
-      "ndsNumber": "NDS-Nr.",
       "rega": "Rega"
     },
     "rega": {
@@ -96,14 +116,21 @@
       "hide": "Geburtsdaten verbergen"
     },
     "jsAge": {
-      "yes": "5–20",
-      "no": "ausserhalb"
+      "outside": "ausserhalb J+S-Alter"
     },
     "qual": {
       "valid": "gültig",
       "invalid": "abgelaufen",
       "none": "keine",
       "unreadable": "Qualifikationen nicht lesbar"
+    },
+    "qualShort": {
+      "lagerleiter": "LL",
+      "leiterLsT": "LS/T",
+      "wasser": "Wasser",
+      "berg": "Berg",
+      "winter": "Winter",
+      "slrg": "SLRG"
     },
     "qualKey": {
       "lagerleiter": "Lagerleiter",
@@ -115,8 +142,6 @@
     },
     "filter": {
       "search": "Suchen",
-      "kind": "Typ",
-      "state": "NDS-Status",
       "jsAge": "J+S-Alter",
       "jsAgeYes": "Im J+S-Alter",
       "jsAgeNo": "Nicht im J+S-Alter",

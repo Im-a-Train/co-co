@@ -15,6 +15,10 @@ const props = defineProps<{
   anchor?: DocumentAnchor
   editId?: string
   title?: string
+  /** Category preselected for a new finding; default: «Dokumente» for document scope, else «Programm». */
+  defaultCategory?: ManualFindingCategory
+  /** Prefilled comment for a new finding (the coach edits it before saving). */
+  initialComment?: string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; saved: [finding: ManualFinding] }>()
 const { t } = useI18n()
@@ -49,8 +53,8 @@ watch(
     error.value = null
     saving.value = false
     const cur = existing.value
-    category.value = cur?.category ?? 'program'
-    comment.value = cur?.comment ?? ''
+    category.value = cur?.category ?? props.defaultCategory ?? (props.scope === 'document' ? 'documents' : 'program')
+    comment.value = cur?.comment ?? props.initialComment ?? ''
   },
   { immediate: true },
 )
@@ -96,7 +100,8 @@ async function save() {
           <v-icon icon="mdi-map-marker-outline" size="x-small" /> {{ t('findings.manual.anchor', { label: anchorText }) }}
         </div>
         <div class="text-subtitle-2 mb-1">{{ t('findings.manual.categoryLabel') }}</div>
-        <v-chip-group v-model="category" mandatory selected-class="text-primary" class="mb-2" data-testid="manual-finding-category">
+        <!-- column: all categories stay visible, so a preselected one (e.g. «Dokumente») is never scrolled away. -->
+        <v-chip-group v-model="category" mandatory column selected-class="text-primary" class="mb-2" data-testid="manual-finding-category">
           <v-chip
             v-for="c in MANUAL_FINDING_CATEGORIES"
             :key="c"

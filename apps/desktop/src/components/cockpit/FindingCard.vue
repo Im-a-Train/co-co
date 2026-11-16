@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { safeExternalUrl, severityColor } from '@/domain/cockpit'
+import { safeExternalUrl } from '@/domain/cockpit'
+import { severityBorderColor } from '@/components/cockpit/severityStyle'
 import { paramValueText, reasonText } from '@/components/camps/ruleConfigUi'
 import type { Finding } from '@/domain/types'
 import { useCampRoute } from '@/composables/useCampRoute'
@@ -9,7 +10,16 @@ import { useManualFindings } from '@/composables/useManualFindings'
 import FindingExplainPanel from './FindingExplainPanel.vue'
 import ManualFindingDialog from './ManualFindingDialog.vue'
 
-const props = defineProps<{ finding: Finding; compact?: boolean; hideActions?: boolean; canExcludeCategory?: boolean }>()
+const props = defineProps<{
+  finding: Finding
+  hideActions?: boolean
+  canExcludeCategory?: boolean
+  /** Day group (triage): title of the group and its days line replace the first member's message and activity. */
+  groupTitle?: string
+  groupDays?: string
+  /** The finding already has a feedback item: the button opens it («Feedback ansehen») instead of creating one. */
+  hasFeedback?: boolean
+}>()
 const emit = defineEmits<{
   feedback: [finding: Finding]
   override: [finding: Finding]
@@ -22,8 +32,14 @@ const { t, te } = useI18n()
 const moduleNote = computed(() => {
   const n = props.finding.moduleNote
   if (!n || !props.finding.module) return null
-  return t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason: reasonText(t, te, n) })
+  // The engine stores the note's own key in `key`; the reason is `params.reasonKey` (empty when no reason is known).
+  const { reasonKey, ...reasonParams } = (n.params ?? {}) as Record<string, string | number>
+  const reason = typeof reasonKey === 'string' && reasonKey ? reasonText(t, te, { key: reasonKey, params: reasonParams }) : ''
+  const note = t('rules.module.suggestedNote', { module: t(`rules.catalog.module.${props.finding.module}`), reason })
+  return reason ? note : note.replace(' ()', '')
 })
+/** Confidence is only shown when the coach has to act on it. */
+const needsConfidenceNote = computed(() => props.finding.confidence === 'unverified' || props.finding.confidence === 'conflict')
 const url = computed(() => safeExternalUrl(props.finding.source?.url))
 /** Hilfsmittel key of the primary source (the cited source whose URL is the finding's source URL). */
 const sourceKey = computed(() => {
@@ -55,7 +71,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
     variant="outlined"
     density="compact"
     :class="{ 'opacity-60': finding.override }"
-    :style="{ borderLeft: `4px solid rgb(var(--v-theme-${isManual ? 'coach' : severityColor(finding.severity)}))` }"
+    :style="{ borderLeft: `4px solid ${isManual ? 'rgb(var(--v-theme-coach))' : severityBorderColor(finding.severity)}` }"
   >
     <v-card-text class="py-3">
       <div class="d-flex align-center flex-wrap ga-2 mb-1">
@@ -63,16 +79,22 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.manual.tag') }}
         </v-chip>
         <template v-else>
-          <v-chip size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
-          <v-chip size="x-small" label variant="text">{{ t(`confidence.${finding.confidence}`) }}</v-chip>
+          <!-- The rule id lives under «Warum?» (explain panel); only findings without one keep a chip. -->
+          <v-chip v-if="!finding.explain" size="x-small" label variant="outlined">{{ finding.ruleId }}</v-chip>
+          <!-- neutral: orange means an open Soll (colour = state) -->
+          <v-chip v-if="needsConfidenceNote" size="x-small" label variant="outlined" prepend-icon="mdi-help-circle-outline" data-testid="finding-unsure">
+            {{ t('findings.unsure') }}
+          </v-chip>
         </template>
         <v-chip v-if="finding.origin === 'ai'" size="x-small" color="secondary" label>
           {{ t('findings.aiTag') }}
         </v-chip>
         <v-chip v-if="finding.override" size="x-small" color="grey" label>{{ t('findings.overridden') }}</v-chip>
+        <slot name="meta" />
       </div>
-      <div class="text-subtitle-1">{{ finding.title }}</div>
-      <div class="text-body-2">{{ finding.message }}</div>
+      <div class="text-subtitle-1">{{ groupTitle ?? finding.title }}</div>
+      <div v-if="groupDays" class="text-body-2" data-testid="finding-group-days">{{ groupDays }}</div>
+      <div v-else class="text-body-2">{{ finding.message }}</div>
 
       <div v-if="moduleNote" class="text-caption text-warning mt-1" data-testid="finding-module-note">
         <v-icon icon="mdi-lightbulb-on-outline" size="x-small" /> {{ moduleNote }}
@@ -86,7 +108,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         {{ t('findings.overrideReason', { reason: finding.override.reason }) }}
       </div>
 
-      <div v-if="!compact && finding.evidence.length" class="d-flex align-center flex-wrap ga-1 mt-2">
+      <div v-if="finding.evidence.length && !groupDays" class="d-flex align-center flex-wrap ga-1 mt-2">
         <span class="text-caption text-medium-emphasis">{{ t('findings.evidence') }}:</span>
         <v-chip
           v-for="(e, i) in activityEvidence"
@@ -108,9 +130,18 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         />
       </div>
 
-      <FindingExplainPanel v-if="!compact && finding.explain" :finding="finding" />
+      <FindingExplainPanel v-if="finding.explain" :finding="finding">
+        <template v-if="hideActions" #extra>
+          <div class="mb-2" data-testid="finding-source-in-why">
+            <router-link v-if="sourceKey" :to="{ name: 'resources', query: { key: sourceKey } }" class="text-body-2" data-testid="finding-source-link">
+              {{ t('findings.source') }}: {{ finding.source?.title }}
+            </router-link>
+            <a v-else-if="url" :href="url" target="_blank" rel="noopener noreferrer" class="text-body-2">{{ t('findings.source') }}: {{ finding.source?.title }}</a>
+          </div>
+        </template>
+      </FindingExplainPanel>
 
-      <div class="d-flex align-center flex-wrap ga-2 mt-2">
+      <div v-if="!(hideActions && finding.explain)" class="d-flex align-center flex-wrap ga-2 mt-2">
         <template v-if="sourceKey">
           <router-link :to="{ name: 'resources', query: { key: sourceKey } }" class="text-body-2" data-testid="finding-source-link">
             {{ t('findings.source') }}: {{ finding.source?.title }}
@@ -124,7 +155,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
           {{ t('findings.source') }}: {{ finding.source?.title }}
         </a>
         <v-spacer />
-        <template v-if="isManual && !compact && !hideActions && manualRecord">
+        <template v-if="isManual && !hideActions && manualRecord">
           <v-btn
             size="small"
             variant="text"
@@ -144,7 +175,7 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
             @blur="confirmDelete = false"
           />
         </template>
-        <template v-else-if="!compact && !hideActions && !isManual">
+        <template v-else-if="!hideActions && !isManual">
           <v-btn
             v-if="canExcludeCategory"
             size="small"
@@ -183,10 +214,12 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         <v-btn
           v-if="!hideActions"
           size="small"
-          variant="tonal"
+          :variant="hasFeedback ? 'text' : 'tonal'"
           color="primary"
-          prepend-icon="mdi-message-draw"
-          :text="t('findings.createFeedback')"
+          :prepend-icon="hasFeedback ? 'mdi-message-text-outline' : 'mdi-message-draw'"
+          :text="hasFeedback ? t('findings.triage.openFeedback') : t('findings.createFeedback')"
+          data-testid="finding-feedback"
+          :data-has-feedback="hasFeedback ? '1' : undefined"
           @click="emit('feedback', finding)"
         />
       </div>

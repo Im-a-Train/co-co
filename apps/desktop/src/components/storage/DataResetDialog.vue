@@ -4,11 +4,13 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDataStore } from '@/composables/useDataStore'
+import { useSignOut } from '@/composables/useSignOut'
 import { errorMessage } from '@/lib/tauri'
 
 const { t } = useI18n()
 const router = useRouter()
 const store = useDataStore()
+const signOut = useSignOut()
 
 const open = computed(() => store.state.value === 'keyLost')
 const confirming = ref<null | 'import' | 'reset'>(null)
@@ -20,6 +22,16 @@ function ask(kind: 'import' | 'reset'): void {
   confirming.value = kind
   confirmed.value = false
   failure.value = null
+}
+
+/** «Not now»: log out (the store locks, the dialog closes) and leave the data untouched. */
+async function later(): Promise<void> {
+  busy.value = true
+  try {
+    await signOut()
+  } finally {
+    busy.value = false
+  }
 }
 
 async function doReset(): Promise<void> {
@@ -57,9 +69,10 @@ async function doReset(): Promise<void> {
       </v-card-text>
       <v-card-actions class="flex-wrap">
         <template v-if="!confirming">
+          <v-btn variant="text" :loading="busy" data-testid="reset-later" @click="later">{{ t('storage.reset.later') }}</v-btn>
           <v-spacer />
-          <v-btn variant="tonal" data-testid="reset-import" @click="ask('import')">{{ t('storage.reset.importAfter') }}</v-btn>
-          <v-btn color="error" variant="flat" data-testid="reset-only" @click="ask('reset')">{{ t('storage.reset.resetOnly') }}</v-btn>
+          <v-btn color="error" variant="text" data-testid="reset-only" @click="ask('reset')">{{ t('storage.reset.resetOnly') }}</v-btn>
+          <v-btn color="primary" variant="flat" data-testid="reset-import" @click="ask('import')">{{ t('storage.reset.importAfter') }}</v-btn>
         </template>
         <template v-else>
           <v-btn :disabled="busy" @click="confirming = null">{{ t('storage.reset.back') }}</v-btn>

@@ -8,6 +8,7 @@ message: "Das Lager dauert nur {days} aufeinanderfolgende Tage (nötig: mindeste
 messageVariants:
   jsDays: "Das Lager hat nur {jsDays} J+S-Tage (nötig: mindestens {min}). Tage ohne J+S-Aktivitäten und Tage, welche die J+S-Tag-Kriterien nicht erfüllen, werden übersprungen: Sie zählen nicht, unterbrechen die Folge aber auch nicht."
   noMapping: "Kategorie-Zuordnung fehlt: Ohne bestätigte Zuordnung der Aktivitäten (LS/LA bzw. J+S-Aktivität) können J+S-Tage und Tagesregeln nicht geprüft werden."
+feedbackText: "Das Lager erreicht die für J+S nötigen {min} Tage noch nicht. Wie wollt ihr das lösen?"
 severity: must
 confidence: verified
 scope: camp

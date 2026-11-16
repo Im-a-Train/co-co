@@ -1,9 +1,8 @@
 <script setup lang="ts">
-/** Settings > MiData: connection (login window or service token), own person id, M7-0 diagnosis. */
+/** Settings > MiData: connection (login window or service token), own person id. The diagnosis lives in Fehlersuche. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMidata } from '@/composables/useMidata'
-import type { MidataProbe } from '@/domain/types'
 import { isTauri } from '@/lib/tauri'
 import { useSession } from '@/composables/useSession'
 
@@ -17,9 +16,6 @@ const baseUrl = ref(md.baseUrl.value)
 const personId = ref(md.personId.value ?? '')
 const token = ref('')
 const saved = ref(false)
-const diagEvent = ref('')
-const diagGroup = ref('')
-const probe = ref<MidataProbe | null>(null)
 
 onMounted(async () => {
   await md.init()
@@ -52,10 +48,6 @@ async function saveToken(): Promise<void> {
   const ok = await md.connectWithToken(token.value)
   if (ok || !md.error.value) token.value = ''
 }
-async function runProbe(): Promise<void> {
-  probe.value = await md.probe(diagEvent.value, diagGroup.value || null)
-}
-const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
 </script>
 
 <template>
@@ -92,10 +84,17 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
           </div>
 
           <div class="d-flex align-center flex-wrap ga-2">
-            <v-btn color="primary" :disabled="!inTauri" :loading="md.busy.value" data-testid="midata-login" @click="login">
-              {{ t('midata.settings.login') }}
+            <v-btn
+              :color="md.status.value.connected ? undefined : 'primary'"
+              :variant="md.status.value.connected ? 'text' : 'flat'"
+              :disabled="!inTauri"
+              :loading="md.busy.value"
+              data-testid="midata-login"
+              @click="login"
+            >
+              {{ md.status.value.connected ? t('midata.settings.relogin') : t('midata.settings.login') }}
             </v-btn>
-            <v-btn v-if="md.status.value.connected" :disabled="!inTauri" data-testid="midata-logout" @click="md.logout()">
+            <v-btn v-if="md.status.value.connected" variant="tonal" :disabled="!inTauri" data-testid="midata-logout" @click="md.logout()">
               {{ t('midata.settings.logout') }}
             </v-btn>
           </div>
@@ -148,45 +147,12 @@ const yn = (b: boolean): string => (b ? t('common.yes') : t('common.no'))
             data-testid="midata-personid"
             @blur="saveSettings"
           />
-          <div class="d-flex align-center ga-3 mt-2">
-            <v-btn variant="tonal" size="small" @click="saveSettings">{{ t('common.save') }}</v-btn>
-            <span v-if="saved" class="text-caption text-success">{{ t('midata.settings.saved') }}</span>
-          </div>
+          <div v-if="saved" class="text-caption text-success mt-2" data-testid="midata-saved">{{ t('midata.settings.saved') }}</div>
 
           <v-alert v-if="md.error.value" type="error" variant="tonal" density="compact" class="mt-3" :text="md.error.value" />
         </v-card-text>
       </v-card>
     </v-col>
 
-    <v-col cols="12" md="8" xl="6">
-      <v-expansion-panels variant="accordion">
-        <v-expansion-panel data-testid="midata-diag">
-          <v-expansion-panel-title>{{ t('midata.settings.diag.title') }}</v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <p class="text-medium-emphasis mb-3">{{ t('midata.settings.diag.intro') }}</p>
-            <div class="d-flex flex-wrap ga-2 align-start">
-              <v-text-field v-model="diagEvent" :label="t('midata.settings.diag.eventId')" density="compact" variant="outlined" hide-details style="max-width: 180px" />
-              <v-text-field v-model="diagGroup" :label="t('midata.settings.diag.groupId')" density="compact" variant="outlined" hide-details style="max-width: 200px" />
-              <v-btn :disabled="!inTauri || !diagEvent.trim()" :loading="md.busy.value" data-testid="midata-probe" @click="runProbe">
-                {{ t('midata.settings.diag.run') }}
-              </v-btn>
-            </div>
-            <v-table v-if="probe" density="compact" class="mt-3" data-testid="midata-probe-result">
-              <tbody>
-                <tr><td>{{ t('midata.settings.diag.auth') }}</td><td>{{ probe.authMethod ?? '–' }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.event') }}</td><td>{{ probe.eventStatus }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.participations') }}</td><td>{{ probe.participationsStatus }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.participationsReadable') }}</td><td>{{ yn(probe.participationsReadable) }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.birthday') }}</td><td>{{ yn(probe.peopleBirthdayReadable) }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.qualifications') }}</td><td>{{ probe.qualificationsStatus }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.classic') }}</td><td>{{ probe.classicJsonStatus ?? '–' }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.pbsFields') }}</td><td>{{ probe.pbsFieldsPresent.join(', ') || t('midata.settings.diag.none') }}</td></tr>
-                <tr><td>{{ t('midata.settings.diag.attributes') }}</td><td class="text-wrap">{{ probe.classicAttributeNames.join(', ') || t('midata.settings.diag.none') }}</td></tr>
-              </tbody>
-            </v-table>
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </v-col>
   </v-row>
 </template>

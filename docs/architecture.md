@@ -29,22 +29,22 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | --- | --- | --- |
 | `types.ts` | Shared types: CampFacts, Finding, FeedbackItem, DocumentRecord, Round, Zone, AppSettings … | types only |
 | `campFacts/` | Load the eCamp camp graph via an injected `apiGet` and normalise it; guess category classes; mapping + coach-input persistence | `loadCampFacts`, `loadCampList`, `guessCategories`, `classOf`, `htmlToText` |
-| `rules/` | Rule engine, J+S day calculator, deadlines, ignores (`Override`), rule enable/disable state, camp summaries; bundled packs `packs/jslst` + `packs/pbs` (see «Rule set v2») | `evaluate`, `computeJsDays`, `computeDeadlines`, `loadBundledPacks` |
-| `triage/` | Finding status (Offen / Feedback erstellt / Ignoriert), next-open navigation, triage URLs | `findingStatus`, `nextOpen`, `triageLocation` |
-| `feedback/` | Feedback items: ordering, lint, renderers (WhatsApp / E-Mail / text), templates, comment splitting, finding → draft | `itemFromFinding`, `render*`, `splitForComment` |
+| `rules/` | Rule engine, J+S day calculator, deadlines, ignores (`Override`), rule enable/disable state, camp summaries; bundled packs `packs/jslst` + `packs/pbs` (see «Rule set v2»); `lib/jsReport.ts` (`campJsReport`, `jsMinDaysOf`, `lastModelJsDate`) + `reportFromJsModel`: the context `JsDayModel` is the single J+S source for grid, bars, tile, Selbstcheck and MCP | `evaluate`, `computeJsDays`, `computeDeadlines`, `loadBundledPacks` |
+| `triage/` | Finding status (Offen / Feedback erstellt / Ignoriert), next-open navigation, triage URLs; coach homework (`Finding.needsInput` → «Zuerst für dich», excluded from counts, progress and the adopt dialog) and same-rule day grouping (one triage entry / one feedback item via `FeedbackItem.findingIds`) | `findingStatus`, `nextOpen`, `triageLocation`, `isCoachTodo`, `groupFindings`, `findingTarget`, `dayIriOfFinding` |
+| `feedback/` | Feedback items: ordering, lint, renderers (WhatsApp / E-Mail / text), templates, comment splitting, finding → draft; group item (`itemFromFindingGroup`), preview selection (`previewItems` drafts [+ sent], `postedItems`); a rule's `feedbackText` wins over `feedback.fromFinding.*`; a group item uses the rule's `feedbackTextGroup` (`{n}`, `{dates}`); the preview adds one line «Zu {n} Aktivitäten habe ich direkt in eCamp kommentiert.» for activities posted since the last send (`postedSinceLastSend`, `postedActivityCount`) | `itemFromFinding`, `render*`, `splitForComment` |
 | `documents/` | Text extraction (PDF, DOCX, GPX, TXT/MD), safety-concept checklist, GPX stats, document ↔ activity linking, search index | `extract`, `checkSafetyConcept`, `gpxStats`, `buildSearchIndex` |
-| `rounds/` | Review status workflow, snapshots with per-entity hashes, diff | `snapshot`, `diff`, `allowedTransitions` |
+| `rounds/` | Review status workflow, snapshots with per-entity hashes, diff; approval blockers (open Muss, untriaged, unsent Muss/drafts, J+S days below minimum, mapping unconfirmed) and stepper marks (done/skipped/current/future from `review.history`) | `snapshot`, `diff`, `allowedTransitions`, `approvalBlockers`, `reviewStepMarks` |
 | `backup/` | Export / import of all Dexie tables (versioned JSON) | `exportAll`, `importAll`, `validateExport` |
 | `zones/` | Data zones, redaction, **aiGateway** (only AI path), AI features | `redact`, `aiGateway.send`, features |
 | `cockpit/` | Pure helpers for KPIs and the week grid | `buildGrid`, `jsDayBars`, … |
 | `midata/` | Event link resolution, `midata` table store, rule facts from the aggregate | `resolveEventLink`, `getMidataRecord`, `saveMidataAggregate` |
 | `selfCheck/` | Leader self-check («Entwurfsrunde»): runs, progress vs. last run, plain-text report; store writes the run + a snapshot (`selfcheck:<id>`) | `planSelfCheckRun`, `compareWithRun`, `renderSelfCheckReport` |
-| `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections | `getDb`, `getAppSettings`, `updateAppSettings` |
-| `resources/` | Hilfsmittel (ADR 0013): bundled defaults from `sources.yaml`, patch/history, registry merge, full-text search; store seeds lazily and notifies on writes | `bundledResources`, `mergeRegistry`, `searchResources`, `listResources`, `updateResource` |
+| `storage/` | Encrypted Dexie database `coco2` (legacy `coco` only for migration) and app settings sections; `live.ts` `subscribeLive(query, onValue)` wraps Dexie `liveQuery` so Dexie imports stay inside `domain/storage` | `getDb`, `getAppSettings`, `updateAppSettings`, `subscribeLive` |
+| `resources/` | Hilfsmittel (ADR 0013): bundled defaults from `sources.yaml`, patch/history, registry merge, full-text search (ranked document text → title/summary → citing rules (optional `citations`, Hilfsmittel view only) → matches that need the maintainer notes); store seeds lazily and notifies on writes | `bundledResources`, `mergeRegistry`, `searchResources`, `listResources`, `updateResource` |
 | `rules/edits*` | Coach rule edits (ADR 0013): policy (AI/MCP never `must`/`verified`), minimal patches, effective packs | `validateRuleEditPatch`, `applyRuleEdits`, `saveRuleEdit`, `loadEffectivePacks` |
 | `manualFindings/` | Coach findings (ADR 0014): validation, categories, anchor labels, mapping to `Finding` (`origin: 'manual'`); store on Dexie table `manualFindings` | `newManualFinding`, `manualToFinding`, `feedbackKindOf`, `anchorLabel` |
 | `feedback/structure`, `feedback/defaults` | Feedback grouped general, days, activities; default general points (SiKo, PSA, …) | `groupFeedback`, `GENERAL_POINTS` |
-| `cockpit/progress` | Review progress for the Übersicht (weighted steps) | `reviewProgress` |
+| `cockpit/progress` | Review progress (weighted steps; `missingInputs`, `suggestedModules`), verdict, step → route map, compact snapshot for «Meine Lager»; a document counts as reviewed only after a coach action (safety-concept decision, confirmed check item, coach finding or activity link), never from the automatic check on import | `reviewProgress`, `reviewVerdict`, `REVIEW_STEP_ROUTES`, `toCampProgressSummary`, `isDocumentReviewed` |
 | `rules/aiGuidance` | Guidance rules (`kind: ai` plus hard rules) and compact prompt text for the AI camp review | `aiGuidanceRules`, `guidanceText` |
 | `documents/` viewer helpers | Pure helpers for the in-app viewer: GPX track/profile, xlsx grid, docx sanitiser (components `components/documents/*Viewer.vue`) | `gpxView`, `xlsxView`, `docxSanitize` |
 
@@ -53,10 +53,13 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | Composable | Provides | Used by |
 | --- | --- | --- |
 | `useSession`, `useInstances` | login state, token refresh, instance discovery | router, connection view, settings |
-| `useCampList` | camps of the user + summaries | Meine Lager, deadlines |
+| `useCampList` | camps of the user (eCamp list, shared, loaded once) | Meine Lager, deadlines |
 | `useCampFacts(campIri)` | facts, loading, progress, reload | camp layout + every camp view |
 | `useCampSettings(campIri)` | category mapping (+ confirmed), coach inputs, `classOf` | rules, cockpit, documents |
-| `useFindings(campIri)` | findings, counts, `jsDays`, ignore, AI findings | cockpit views, triage, feedback |
+| `useFindings(campIri)` | findings, counts, `jsDays` (model-derived), `previewJsDays` (unconfirmed guess, display only, never fed to the engine), `jsMinDays`, `jsModelFor(mapping)` (what-if for the mapping panel), ignore, AI findings | cockpit views, triage, feedback |
+| `useReviewProgress(campIri?, { findings?, settings?, persist? })` | progress, approval blockers, verdict, next step, openMust / triageOpen (coach todos excluded); persists `CampSummaryRecord.progress` (debounced) for «Meine Lager»; reads feedback and documents live via `subscribeLive`, so changes in other views show up without reload | Übersicht, useApprovalGuard |
+| `useApprovalGuard(campIri, apply)` | setting «Bewilligt» / «Bewilligt mit Auflagen» with open blockers opens `ApprovalCheckDialog` (note required while a Muss is open, stored in `ReviewStatusChange.note`); local co-co state only, nothing is written to eCamp | header `ReviewStatusMenu` (via `ApprovalGate`), Runden stepper |
+| `useSignOut()` | eCamp logout + camp list reset | header account menu, Einstellungen |
 | `useRuleState` | rule disable state (per camp / global), ignore-threshold prompt | Befunde, Regeln catalogue |
 | `useFeedback(campIri)` | feedback CRUD, post as eCamp comment | feedback view, triage |
 | `useDocuments(campIri)` | ingest, watched folders, drag-drop, search | documents view, activity drawer, rules |
@@ -72,6 +75,8 @@ Tables: `settings` (sections incl. `ai`, `backup`, `gpx`, `rulePacks`, `ruleStat
 `mappings`, `overrides` (ignores), `campSummaries`, `feedback`, `reviews`, `rounds`, `snapshots`,
 `documents`, `watchedFolders`, `aiLog`, `midata` (v2, red-derived aggregates), `nds` (v3), `selfChecks` (v4, leader self-check runs), `campRuleConfig` (v5, per-camp module states, activity tags, camp context), `resources` and `ruleEdits` (coco2 v3, ADR 0013, zone green; not in the frozen legacy schema, so the migration skips them), `manualFindings` (coco2 v4, ADR 0014, zone yellow, encrypted, in the backup). Schema changes: add a new Dexie version with an upgrade,
 never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012 adds the settings sections `ai.provider`, `ai.openai` and `mcp` inside the existing `settings` record (no schema change).
+
+Optional, non-indexed fields added without a new schema version (inside `_enc`, exported as whole rows by backup): `CampSummaryRecord.progress` (`saveCampSummary` keeps an existing value, `saveCampProgress` writes it), `DocumentRecord.safetyConcept` / `docCheckConfirmed` (kept on re-ingest), `FeedbackItem.findingIds`, `NdsRecord.link.groupName/offerNumber/start/end` (red-derived table). `Deadline.alsoNamed` is computed and never stored.
 
 ### Encryption at rest (ADR 0010)
 
@@ -105,13 +110,17 @@ never edit an existing one. Backup covers every table in `TABLE_NAMES`. ADR 0012
 - **Triage:** Befunde → `FindingTriage` (finding + `ActivityPreview` + inline editor) → save feedback /
   ignore / skip → next open finding. Position in `?befund=<id>`; Übersicht and GP link there via
   `triageLocation`.
-- **Camp tabs / routes** (`CAMP_TABS` in `router/index.ts`): Übersicht, GP (`raster`, Grobprogramm incl. the
-  category-mapping panel), DP (`aktivitaeten`, Detailprogramm), Befunde, Selbstcheck, Angaben, Checkliste,
-  Personen, Feedback, Dokumente, Runden. The camp header shows connection chips (eCamp / MiData / NDS →
+- **Live reads:** `domain/storage/live.ts` `subscribeLive(query, onValue)` wraps Dexie `liveQuery` (queries go
+  through `getDb()`, so the encryption middleware applies). `useReviewProgress` reads the camp's feedback and
+  documents live; «Meine Lager» (`CampsView`) reads the camp summaries (`listCampSummaries`: counts, progress,
+  «Als Nächstes») live, so a snapshot written by a camp page just after the coach came back shows up without reload.
+- **Camp tabs / routes** (`CAMP_TABS` in `router/index.ts`): Angaben, Übersicht, GP (`raster`, Grobprogramm incl. the
+  category-mapping panel), DP (`aktivitaeten`, Detailprogramm), Befunde, Dokumente, Feedback, Runden |
+  Checkliste, Personen, Selbstcheck (sticky tab bar, divider after Runden, sentence case). The camp header shows connection chips (eCamp / MiData / NDS →
   Einstellungen › Verbindungen); `/verbindung` shows only the eCamp login (data store card only on errors).
 - **Checklist ↔ deadlines:** checklist items may name a `milestone:`; `domain/rules/lib/checklistSync.ts`
   plans the writes so a linked pair shares one done state (CoachInputs milestone first, then the checklist
-  item). The Checkliste tab lists the camp's deadlines with the same storage as `/fristen`.
+  item). The Checkliste tab lists the camp's deadlines with the same storage as `/fristen`. Checkliste is the only place for the NDS registration/closing done dates and the Leihmaterial/Landeskarten delivery dates (`deadlineDateField`, `withDeadlineDate`); Angaben no longer has a «Fristen» card.
 - **Hilfsmittel + rule edits (ADR 0013):** `/hilfsmittel` lists the effective sources; rule/finding source
   links go to `/hilfsmittel?key=<KEY>`. Regelbuch edits (manual, AI proposal via `zones/ruleUpdate.ts`, or MCP
   `update_rule`) are stored as minimal patches; `loadEffectivePacks()` feeds findings and the catalogue. `zuordnung` is no tab any more: route `camp-mapping` redirects to `raster?zuordnung=1`,
@@ -199,7 +208,7 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 - **Deadline radar** (`domain/rules/milestones.ts` + `packs/*/milestones.yaml`, `domain/rules/ics.ts`): PBS
   milestones (confidence `unverified`) merged into Fristen, done flags in `CoachInputs.milestonesDone`,
   ICS export through `save_text_file` (dialog filter now follows the extension: json, ics, md, txt;
-  `coco-core::savefile`).
+  `coco-core::savefile`). A milestone may name `sameAs: [<id>]` (validated across packs); `computeMilestoneDeadlines` skips the twin when its target is active and lists it as `Deadline.alsoNamed` («Auch genannt»); ticking the target ticks the twins (`withDeadlineDone`).
 - **Documents v2**: plan only, see `docs/plans/documents-v2.md`.
 
 ## Rule set v2 (modular packs)
@@ -240,7 +249,7 @@ packs/
   globally unique and a formerId never equals a live id; every referenced source, param and keyword set
   exists; a rule YAML without predicate (or vice versa) throws; predicates may only lower
   severity/confidence; no German text in TypeScript (texts live in YAML `message`/`messageVariants`, UI
-  strings in `locales/de`).
+  strings in `locales/de`). Predicates set `RuleHit.needsInput` (`mapping` | `coachInputs` | `campConfig` | `midata`) on gap variants; the engine copies it to `Finding.needsInput` (coach homework, never sent to the leaders). Every active must/should rule and the frequent hints carry `feedbackText` in the leaders' voice («ihr», one ask, only placeholders of the message; guard `rules/__tests__/feedbackText.test.ts`). The hard day-scope rules also carry `feedbackTextGroup` (`{n}` days, `{dates}` label) for the grouped feedback item.
 - **Known small gaps:** document kinds `sicherheitskonzept`, `lagerregeln`, `lagerinfo` are matched by
   filename keyword sets (`DocumentKind` has no such kinds); the child age < 10 is the J+S definition
   constant in the trekking predicates; the 90 % threshold of LST-LAGER-02 is a TS constant; the PBS method
@@ -265,7 +274,7 @@ Decision: [adr/0012-openai-compatible-and-mcp.md](adr/0012-openai-compatible-and
   check `zones/mcpZone.ts` (`assertMcpSendable`), answer via `mcp_tool_result`. `mcp_set_tools` pushes only
   enabled tools to Rust. Each call gets an `AbortSignal` that fires on `mcp://tool-cancel` or 5 s before
   `deadlineMs`; it closes the dialog and keeps the handler from starting, so no write runs after the client
-  gave up. MCP writes bump `composables/mcpChanges.ts`; `useFeedback` / `useRounds` reload the camp.
+  gave up. MCP writes bump `composables/mcpChanges.ts`; `useFeedback` / `useRounds` reload the camp. `McpContext.jsDayCounts(campIri)` (same day model as the rules, red inputs stripped) feeds `get_camp_overview.jsDays` and the deadline path; `get_camp_progress` excludes coach todos from triage and counts `missingInputs` from `needsInput` findings (`McpReviewContext.coachInputsPresent` was removed).
 - **Confirmation:** queue in `composables/mcpConfirm.ts`, dialog `components/mcp/McpConfirmDialog.vue`
   (mounted in `App.vue`); write tools always, reads optionally.
 - **Settings UI:** KI tab with sub-tabs «Anbieter» (`AiProviderSection`), «MCP-Server»

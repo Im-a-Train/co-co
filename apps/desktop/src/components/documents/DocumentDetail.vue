@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AiSummaryButton from '@/components/ai/AiSummaryButton.vue'
-import type { CampFacts, DocumentAnchor, DocumentRecord } from '@/domain/types'
+import ManualFindingDialog from '@/components/cockpit/ManualFindingDialog.vue'
+import { activityOptions, checkCounts, isSafetyConcept } from '@/domain/documents'
+import type { CampFacts, DocumentAnchor, DocumentRecord, Iri, SafetyCheckKey, Stufe } from '@/domain/types'
 import DocumentFindings from './DocumentFindings.vue'
 import DocumentViewer from './DocumentViewer.vue'
 import GpxCard from './GpxCard.vue'
@@ -16,24 +18,44 @@ const props = defineProps<{
   paceDefault: number
   paceWoelfe: number
   includeDescent: boolean
+  /** Stufe from «Angaben» (presets the GPX pace). */
+  stufe?: Stufe | null
 }>()
-const emit = defineEmits<{ aiAllowed: [id: string, value: boolean]; summarised: [id: string, text: string] }>()
+const emit = defineEmits<{
+  aiAllowed: [id: string, value: boolean]
+  summarised: [id: string, text: string]
+  link: [id: string, activityIri: Iri]
+  safetyConcept: [id: string, value: boolean | null]
+  confirmItem: [id: string, key: SafetyCheckKey, value: boolean]
+}>()
 const { t } = useI18n()
 
-const tab = ref<'view' | 'text'>('view')
 /** Anchor the viewer jumps to; a fresh object per request so repeated jumps to the same place still fire. */
 const jumpTarget = ref<DocumentAnchor | null>(null)
+// Multi-source watch: compares element by element, so saving the record (new object) does not reset the viewer.
 watch(
-  () => [props.doc?.id, props.initialAnchor] as const,
+  [() => props.doc?.id, () => props.initialAnchor],
   () => {
-    tab.value = 'view'
     jumpTarget.value = props.initialAnchor ? { ...props.initialAnchor } : null
   },
   { immediate: true },
 )
 function jump(a: DocumentAnchor) {
-  tab.value = 'view'
   jumpTarget.value = { ...a }
+}
+
+const options = computed(() => activityOptions(props.facts))
+const asConcept = computed(() => !!props.doc && props.doc.kind !== 'gpx' && !props.doc.gpx && isSafetyConcept(props.doc))
+const counts = computed(() => (props.doc?.docCheck ? checkCounts(props.doc.docCheck, props.doc.docCheckConfirmed ?? []) : null))
+const panels = ref([0])
+const showText = computed(() => !!props.doc?.text && ['pdf', 'docx', 'xlsx'].includes(props.doc.kind))
+
+// «Als Befund übernehmen» for a checklist item: opens the finding dialog prefilled.
+const findingDialog = ref(false)
+const findingText = ref('')
+function itemToFinding(key: SafetyCheckKey) {
+  findingText.value = t('documents.checklist.findingText', { item: t(`documents.checklist.short.${key}`) })
+  findingDialog.value = true
 }
 
 function fmtSize(n: number): string {
@@ -44,38 +66,76 @@ function fmtSize(n: number): string {
 <template>
   <v-card variant="outlined">
     <v-card-title class="text-subtitle-1">{{ doc?.name ?? t('documents.detail.title') }}</v-card-title>
-    <v-card-text v-if="!doc" class="text-medium-emphasis">{{ t('documents.detail.select') }}</v-card-text>
-    <v-card-text v-else class="d-flex flex-column ga-3">
+    <v-card-text v-if="doc" class="d-flex flex-column ga-3">
       <div class="text-caption text-medium-emphasis">
         {{ t('documents.detail.path') }}: {{ doc.path }} · {{ fmtSize(doc.size) }} ·
         {{ doc.text ? t('documents.detail.textLength', { n: doc.text.length }) : t('documents.detail.noText') }}
       </div>
       <v-alert v-if="doc.extractError" type="warning" variant="tonal" density="compact" :text="doc.extractError" />
-      <v-chip size="small" color="warning" variant="tonal" prepend-icon="mdi-shield-lock-outline" class="align-self-start">
-        {{ t('documents.detail.zone') }}
+      <v-chip size="small" color="warning" variant="tonal" prepend-icon="mdi-shield-lock-outline" class="align-self-start" data-testid="document-zone">
+        {{ doc.aiAllowed ? t('documents.detail.zoneAi') : t('documents.detail.zoneLocal') }}
       </v-chip>
 
-      <v-tabs v-model="tab" density="compact">
-        <v-tab value="view" data-testid="document-tab-view">{{ t('documents.detail.tabView') }}</v-tab>
-        <v-tab value="text" data-testid="document-tab-text">{{ t('documents.detail.tabText') }}</v-tab>
-      </v-tabs>
+      <v-card variant="tonal" data-testid="document-check">
+        <v-card-title class="text-subtitle-1">{{ t('documents.detail.checkTitle') }}</v-card-title>
+        <v-card-text>
+          <GpxCard
+            v-if="doc.gpx"
+            :doc="doc"
+            :facts="facts"
+            :pace-default="paceDefault"
+            :pace-woelfe="paceWoelfe"
+            :include-descent-default="includeDescent"
+            :stufe="stufe"
+            :options="options"
+            @link="(iri: Iri) => emit('link', doc!.id, iri)"
+          />
+          <!-- A GPX file without a readable track: nothing to check, and it is never a safety concept. -->
+          <div v-else-if="doc.kind === 'gpx'" class="text-body-2">{{ t('documents.detail.noCheck') }}</div>
+          <template v-else-if="asConcept">
+            <v-expansion-panels v-model="panels" multiple variant="accordion">
+              <v-expansion-panel data-testid="document-check-panel">
+                <v-expansion-panel-title>
+                  <span v-if="counts" data-testid="document-check-verdict">
+                    {{ t('documents.detail.conceptVerdict', counts) }}
+                  </span>
+                  <span v-else>{{ t('documents.checklist.title') }}</span>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <SafetyChecklist
+                    :check="doc.docCheck"
+                    :confirmed="doc.docCheckConfirmed"
+                    @confirm="(k: SafetyCheckKey, v: boolean) => emit('confirmItem', doc!.id, k, v)"
+                    @to-finding="itemToFinding"
+                  />
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+            <v-btn
+              size="small"
+              variant="text"
+              class="mt-2"
+              data-testid="document-unmark-concept"
+              :text="t('documents.detail.unmarkConcept')"
+              @click="emit('safetyConcept', doc.id, false)"
+            />
+          </template>
+          <template v-else>
+            <div class="text-body-2">{{ t('documents.detail.notConcept') }}</div>
+            <v-btn
+              size="small"
+              variant="tonal"
+              class="mt-2"
+              data-testid="document-mark-concept"
+              :text="t('documents.detail.markConcept')"
+              @click="emit('safetyConcept', doc.id, true)"
+            />
+          </template>
+        </v-card-text>
+      </v-card>
 
-      <!-- v-show keeps the viewer mounted: switching tabs neither re-reads the file nor loses the position. -->
-      <div v-show="tab === 'view'" class="d-flex flex-column ga-3">
-        <DocumentViewer :doc="doc" :target="jumpTarget" />
-        <DocumentFindings :doc="doc" @jump="jump" />
-      </div>
-
-      <template v-if="tab === 'text'">
-      <GpxCard
-        v-if="doc.gpx"
-        :doc="doc"
-        :facts="facts"
-        :pace-default="paceDefault"
-        :pace-woelfe="paceWoelfe"
-        :include-descent-default="includeDescent"
-      />
-      <SafetyChecklist v-else-if="doc.kind !== 'gpx'" :check="doc.docCheck" />
+      <DocumentViewer :doc="doc" :target="jumpTarget" />
+      <DocumentFindings :doc="doc" @jump="jump" />
 
       <v-card variant="tonal" color="warning">
         <v-card-text>
@@ -85,21 +145,35 @@ function fmtSize(n: number): string {
             color="warning"
             density="compact"
             hide-details
+            data-testid="document-ai-switch"
             @update:model-value="emit('aiAllowed', doc.id, !!$event)"
           />
           <div class="text-caption mt-1">{{ t('documents.ai.warning') }}</div>
           <div v-if="doc.aiAllowed" class="mt-2">
-            <AiSummaryButton :doc="doc" :facts="facts" @summarised="(txt: string) => emit('summarised', doc!.id, txt)" />
+            <AiSummaryButton :doc="doc" :facts="facts" show-not-ready @summarised="(txt: string) => emit('summarised', doc!.id, txt)" />
             <div v-if="doc.aiSummary" class="mt-2"><strong>{{ t('documents.ai.summary') }}:</strong> {{ doc.aiSummary }}</div>
           </div>
         </v-card-text>
       </v-card>
 
-      <div v-if="doc.text">
-        <div class="text-subtitle-2">{{ t('documents.detail.preview') }}</div>
-        <pre class="preview text-caption">{{ doc.text.slice(0, 1500) }}{{ doc.text.length > 1500 ? ' …' : '' }}</pre>
-      </div>
-      </template>
+      <v-expansion-panels v-if="showText" variant="accordion">
+        <v-expansion-panel data-testid="document-extracted-text">
+          <v-expansion-panel-title>{{ t('documents.detail.extractedText', { n: doc.text.length }) }}</v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <pre class="preview text-caption">{{ doc.text.slice(0, 3000) }}{{ doc.text.length > 3000 ? ' …' : '' }}</pre>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+
+      <ManualFindingDialog
+        v-model="findingDialog"
+        :camp-iri="doc.campIri"
+        scope="document"
+        :document-id="doc.id"
+        :title="doc.name"
+        default-category="documents"
+        :initial-comment="findingText"
+      />
     </v-card-text>
   </v-card>
 </template>
@@ -107,7 +181,7 @@ function fmtSize(n: number): string {
 <style scoped>
 .preview {
   white-space: pre-wrap;
-  max-height: 200px;
+  max-height: 240px;
   overflow: auto;
 }
 </style>

@@ -1,6 +1,10 @@
 <script setup lang="ts">
-/** Dialog: exclude eCamp activity categories from the rule check (all rules, or single rules). Emits intents only. */
-import { computed, ref } from 'vue'
+/**
+ * Dialog: the categories that are not checked by a single rule (and, as a safety net, by all rules), each with a
+ * remove button. Categories are switched off for all rules in the GP mapping table; adding a rule exclusion happens
+ * on the finding itself. Emits intents only.
+ */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CategoryExclusion } from '@/domain/rules/ruleState'
 import type { CategoryFact } from '@/domain/types'
@@ -13,34 +17,28 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  exclude: [categoryIri: string, ruleId: string | null]
   include: [categoryIri: string, ruleId: string | null]
+  openGrid: []
 }>()
 const { t } = useI18n()
 
-const newRule = ref<string | null>(null)
-const newCategory = ref<string | null>(null)
-
-const allExcluded = computed(() => new Set(props.exclusions.filter((e) => e.ruleId === null).map((e) => e.categoryIri)))
-const perRule = computed(() => props.exclusions.filter((e) => e.ruleId !== null))
-const categoryOf = (iri: string) => props.categories.find((c) => c.iri === iri)
 const nameOf = (iri: string) => {
-  const c = categoryOf(iri)
+  const c = props.categories.find((x) => x.iri === iri)
   return c ? `${c.short} ${c.name}`.trim() : iri
 }
-const ruleItems = computed(() => props.rules.map((r) => ({ title: `${r.id} · ${r.title}`, value: r.id })))
-const categoryItems = computed(() => props.categories.map((c) => ({ title: `${c.short} ${c.name}`.trim(), value: c.iri })))
-
-function toggleAll(iri: string, on: boolean | null) {
-  if (on) emit('exclude', iri, null)
-  else emit('include', iri, null)
-}
-function addPerRule() {
-  if (!newRule.value || !newCategory.value) return
-  emit('exclude', newCategory.value, newRule.value)
-  newRule.value = null
-  newCategory.value = null
-}
+const ruleTitle = (id: string) => props.rules.find((r) => r.id === id)?.title ?? id
+const rows = computed(() =>
+  [...props.exclusions]
+    .sort((a, b) => Number(a.ruleId !== null) - Number(b.ruleId !== null))
+    .map((e) => ({
+      key: `${e.categoryIri}|${e.ruleId ?? ''}`,
+      categoryIri: e.categoryIri,
+      ruleId: e.ruleId,
+      label: e.ruleId
+        ? t('findings.categoryExclusion.ruleLabel', { category: nameOf(e.categoryIri), rule: ruleTitle(e.ruleId) })
+        : t('findings.categoryExclusion.allRulesLabel', { category: nameOf(e.categoryIri) }),
+    })),
+)
 </script>
 
 <template>
@@ -49,84 +47,30 @@ function addPerRule() {
       <v-card-text>
         <p class="text-body-2 mb-3">{{ t('findings.categoryExclusion.intro') }}</p>
 
-        <div v-if="!categories.length" class="text-body-2 text-medium-emphasis">{{ t('findings.categoryExclusion.noCategories') }}</div>
-        <div v-for="c in categories" :key="c.iri" class="d-flex align-center ga-2" data-testid="category-row">
-          <span class="category-dot" :style="{ background: c.color }" />
-          <span class="text-body-2 flex-grow-1">
-            <strong>{{ c.short }}</strong> {{ c.name }}
-          </span>
-          <v-checkbox
-            :model-value="allExcluded.has(c.iri)"
-            :label="t('findings.categoryExclusion.allRules')"
-            density="compact"
-            hide-details
-            color="primary"
-            :data-testid="`exclude-all-${c.short}`"
-            @update:model-value="toggleAll(c.iri, $event)"
-          />
-        </div>
-
-        <h3 class="text-subtitle-1 mt-4 mb-1">{{ t('findings.categoryExclusion.perRuleTitle') }}</h3>
-        <div v-if="!perRule.length" class="text-body-2 text-medium-emphasis">{{ t('findings.categoryExclusion.perRuleNone') }}</div>
+        <h3 class="text-subtitle-1 mb-1">{{ t('findings.categoryExclusion.listTitle') }}</h3>
+        <div v-if="!rows.length" class="text-body-2 text-medium-emphasis">{{ t('findings.categoryExclusion.listNone') }}</div>
         <v-list v-else density="compact" data-testid="per-rule-list">
-          <v-list-item
-            v-for="e in perRule"
-            :key="`${e.categoryIri}|${e.ruleId}`"
-            :title="t('findings.categoryExclusion.ruleLabel', { category: nameOf(e.categoryIri), ruleId: e.ruleId })"
-          >
+          <v-list-item v-for="r in rows" :key="r.key">
+            <!-- long rule titles wrap instead of being cut off -->
+            <v-list-item-title class="text-wrap">{{ r.label }}</v-list-item-title>
             <template #append>
               <v-btn
                 size="small"
                 variant="text"
                 icon="mdi-close"
                 :aria-label="t('findings.categoryExclusion.remove')"
-                @click="emit('include', e.categoryIri, e.ruleId)"
+                data-testid="exclusion-remove"
+                @click="emit('include', r.categoryIri, r.ruleId)"
               />
             </template>
           </v-list-item>
         </v-list>
-
-        <div class="text-subtitle-2 mt-3 mb-2">{{ t('findings.categoryExclusion.addTitle') }}</div>
-        <div class="d-flex flex-wrap align-center ga-2">
-          <v-select
-            v-model="newRule"
-            :items="ruleItems"
-            :label="t('findings.categoryExclusion.rule')"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="min-width: 220px; flex: 1 1 220px"
-          />
-          <v-select
-            v-model="newCategory"
-            :items="categoryItems"
-            :label="t('findings.categoryExclusion.category')"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="min-width: 180px; flex: 1 1 180px"
-          />
-          <v-btn
-            variant="tonal"
-            :disabled="!newRule || !newCategory"
-            :text="t('findings.categoryExclusion.add')"
-            @click="addPerRule"
-          />
-        </div>
       </v-card-text>
       <v-card-actions>
+        <v-btn variant="tonal" prepend-icon="mdi-calendar-week" :text="t('findings.categoryExclusion.openGrid')" data-testid="exclusion-open-grid" @click="emit('openGrid')" />
         <v-spacer />
         <v-btn :text="t('findings.categoryExclusion.close')" @click="emit('update:modelValue', false)" />
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
-
-<style scoped>
-.category-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  flex: 0 0 14px;
-}
-</style>

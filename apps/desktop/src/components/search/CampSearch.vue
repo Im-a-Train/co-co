@@ -134,8 +134,7 @@ const offset = (gi: number) => groups.value.slice(0, gi).reduce((n, g) => n + g.
       :aria-label="t('search.label')"
       prepend-inner-icon="mdi-magnify"
       density="compact"
-      variant="solo-filled"
-      flat
+      variant="outlined"
       hide-details
       clearable
       single-line
@@ -143,7 +142,11 @@ const offset = (gi: number) => groups.value.slice(0, gi).reduce((n, g) => n + g.
       data-testid="camp-search-input"
       @focus="onFocus"
       @keydown="onKey"
-    />
+    >
+      <template v-if="!query" #append-inner>
+        <kbd class="camp-search-kbd" data-testid="camp-search-kbd">{{ t('search.shortcut') }}</kbd>
+      </template>
+    </v-text-field>
     <v-card v-if="showPanel" class="camp-search-panel" elevation="8" data-testid="camp-search-results" @mousedown.prevent>
       <div v-if="!flat.length" class="pa-3 text-body-2 text-medium-emphasis" data-testid="camp-search-empty">
         {{ t('search.empty') }}
@@ -199,6 +202,15 @@ const offset = (gi: number) => groups.value.slice(0, gi).reduce((n, g) => n + g.
   max-height: 70vh;
   overflow-y: auto;
   z-index: 2000;
+}
+.camp-search-kbd {
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  white-space: nowrap;
 }
 mark {
   background: rgba(255, 193, 7, 0.45);

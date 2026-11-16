@@ -198,6 +198,11 @@ export interface McpContext {
    * reaches MCP), overrides attached, AI findings excluded.
    */
   findings(campIri: Iri): Promise<Finding[]>
+  /**
+   * J+S day counts from the same day model the rules use (`ctx.js`, incl. 2027 Bewegungszeit and end-day pairing);
+   * null while the mapping is not confirmed / no J+S activity is known. `lastJsDate` feeds the deadlines.
+   */
+  jsDayCounts(campIri: Iri): Promise<{ valid: number; total: number; lastJsDate: string | null } | null>
   /** Enabled rule packs with the coach's rule edits applied (loadEffectivePacks, AppSettings.rulePacks). */
   rulePacks(): RulePack[]
   /** Deadlines (incl. PBS milestones) of one camp, or of all camps with a summary when campIri is null. */
@@ -244,7 +249,6 @@ export interface McpContext {
 
 /** See McpContext.reviewContext. */
 export interface McpReviewContext {
-  coachInputsPresent: boolean
   checklist: { done: number; total: number }
   moduleStates: Partial<Record<ModuleId, 'on' | 'suggested' | 'off'>>
   disabledRuleIds: string[]

@@ -12,6 +12,7 @@ messageVariants:
   areaWasser: "Wasser"
   areaWinter: "Winter"
   areaJoin: " / "
+feedbackText: "Im Leitungsteam braucht mindestens eine J+S-Leitungsperson den Zusatz für den Sicherheitsbereich. Wer hat ihn?"
 severity: must
 confidence: verified
 scope: activity

@@ -5,6 +5,7 @@
  */
 import { computed, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import { useCampFacts } from '@/composables/useCampFacts'
+import { useCampSettings } from '@/composables/useCampSettings'
 import { useFindings } from '@/composables/useFindings'
 import { diffEntities, snapshotEntities } from '@/domain/rounds'
 import { getSnapshot } from '@/domain/rounds/store'
@@ -14,6 +15,7 @@ import {
   isLeaderRole,
   renderSelfCheckReportHtml,
   renderSelfCheckReportText,
+  selfCheckRunCounts,
   type SelfCheckReportModel,
   type SelfCheckProgress,
   type SelfCheckReportOptions,
@@ -56,6 +58,7 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
   const iri = () => toValue(campIri)
   const campFacts = useCampFacts(campIri)
   const findingsHandle = useFindings(campIri)
+  const settingsHandle = useCampSettings(campIri)
   const setError = (e: unknown) => {
     errors.value = { ...errors.value, [iri()]: e instanceof Error ? e.message : String(e) }
   }
@@ -110,12 +113,14 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
       const facts = await campFacts.load(true)
       if (!facts) throw new Error('noFacts')
       await findingsHandle.refresh()
-      const js = findingsHandle.jsDays.value
+      // While the mapping is unconfirmed the J+S days were not checked: store no count (like the report).
+      const js = settingsHandle.mappingConfirmed.value ? findingsHandle.jsDays.value : null
       try {
         const run = await createSelfCheckRun(facts, {
           by: isLeaderRole(role.value) ? 'leader' : 'coach',
           note,
-          counts: findingsHandle.counts.value,
+          // Without coach homework, like the progress columns and the report.
+          counts: selfCheckRunCounts(findingsHandle.findings.value),
           validJsDays: js?.validDayCount ?? null,
           totalDays: js?.totalDayCount ?? null,
           findings: findingsHandle.findings.value,
@@ -148,9 +153,10 @@ export function useSelfCheck(campIri: MaybeRefOrGetter<Iri>): SelfCheckHandle {
       const model = buildSelfCheckReport(
         facts,
         findingsHandle.findings.value,
-        js ? { valid: js.validDayCount, total: js.totalDayCount } : null,
+        js ? { valid: js.validDayCount, total: js.totalDayCount, required: findingsHandle.jsMinDays.value } : null,
         progress(),
         options,
+        !settingsHandle.mappingConfirmed.value,
       )
       return { model, html: renderSelfCheckReportHtml(model), text: renderSelfCheckReportText(model) }
     },

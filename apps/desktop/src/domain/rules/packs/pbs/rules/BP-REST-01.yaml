@@ -5,6 +5,8 @@ status: active
 title: "Freier Block pro Tag"
 description: "Jeder Tag hat mindestens einen freien Block (Freizeit oder Pause von mindestens 60 Minuten). Bleibt «unverified», weil keine aktuelle Quelle die Regel nennt (LAGER ist von 2014, Hering nur Parameter-Grundlage)."
 message: "{date}: kein freier Block (Freizeit oder Pause von mindestens {gap} Min.)"
+feedbackText: "Am {date} sehe ich keinen freien Block. Wo plant ihr Freizeit oder eine Pause ein?"
+feedbackTextGroup: "An {n} Tagen ({dates}) sehe ich keinen freien Block. Wo plant ihr Freizeit oder eine Pause ein?"
 severity: hint
 confidence: unverified
 scope: day
