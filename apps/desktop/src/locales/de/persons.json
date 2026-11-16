@@ -13,7 +13,9 @@
       "filtered": "Keine Person passt zu den Filtern."
     },
     "team": {
-      "title": "Leitungsteam – reicht die Ausbildung?"
+      "title": "Leitungsteam – reicht die Ausbildung?",
+      "noAggregate": "Ausbildung des Leitungsteams: zuerst MiData-Zahlen laden.",
+      "load": "MiData-Zahlen laden"
     },
     "sources": {
       "title": "Quellen",

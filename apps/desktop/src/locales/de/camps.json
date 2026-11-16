@@ -63,7 +63,7 @@
         "manager": "Du leitest"
       },
       "continue": "Weiter prüfen",
-      "approvedMust": "Bewilligt · {n} Muss offen",
+      "approvedMust": "{status} · {n} Muss offen",
       "next": {
         "mapping": "Lager einrichten",
         "inputs": "Lager-Angaben erfassen",

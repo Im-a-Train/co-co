@@ -139,6 +139,19 @@ const visible = computed(() =>
       .filter((entry) => entry.rules.length > 0),
   })),
 )
+/** Rules that match the search (and module) but are hidden by the kind filter, so a search never ends in a dead end. */
+const hiddenByKind = computed(() => {
+  if (kindFilter.value === 'all' || !search.value?.trim()) return 0
+  let n = 0
+  for (const pack of packs.value) {
+    for (const r of pack.rules) {
+      if (r.meta.kind === kindFilter.value) continue
+      if (group.value !== 'all' && r.meta.module !== group.value) continue
+      if (matches(r, search.value)) n++
+    }
+  }
+  return n
+})
 const hasResults = computed(() => visible.value.some((v) => v.byGroup.length > 0))
 
 function fmt(iso: string): string {
@@ -182,7 +195,13 @@ function fmt(iso: string): string {
 
     <v-alert v-if="kindFilter === 'ai' && !aiReady" type="info" variant="tonal" density="compact" class="mb-4" :text="t('rules.catalog.kind.aiOff')" data-testid="kind-ai-off" />
 
-    <v-alert v-if="!loadError && !hasResults" type="info" variant="tonal" density="compact" :text="t('rules.catalog.empty')" />
+    <v-alert v-if="hiddenByKind > 0" type="info" variant="tonal" density="compact" class="mb-4" data-testid="kind-hidden-hits">
+      {{ t(kindFilter === 'hard' ? 'rules.catalog.hiddenAiHits' : 'rules.catalog.hiddenHardHits', { n: hiddenByKind }, hiddenByKind) }}
+      <template #append>
+        <v-btn size="small" variant="text" data-testid="kind-hidden-show" @click="kindFilter = 'all'">{{ t('rules.catalog.showAll') }}</v-btn>
+      </template>
+    </v-alert>
+    <v-alert v-else-if="!loadError && !hasResults" type="info" variant="tonal" density="compact" :text="t('rules.catalog.empty')" />
 
     <v-card v-for="{ pack, byGroup } in visible" :key="pack.id" class="mb-4" variant="outlined">
       <v-card-title class="d-flex flex-wrap align-center ga-2">

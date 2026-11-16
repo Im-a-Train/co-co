@@ -35,7 +35,7 @@ watch(
 
 const summary = computed(() => persons.summary.value)
 // Only worth a card when NDS is switched on or a comparison already exists; never an NDS line while NDS is off.
-const visible = computed(() => ndsOn.value || summary.value.compared)
+const visible = computed(() => summary.value.compared && (summary.value.differences > 0 || regaMissing.value > 0))
 const regaMissing = computed(() =>
   rega.value
     ? Math.max(0, rega.value.participantsTotal - rega.value.participantsTransmitted) +

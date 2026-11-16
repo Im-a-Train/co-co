@@ -300,8 +300,8 @@ function setWinterSafeAccess(v: string | null): void {
 
 <template>
   <div>
-    <div class="d-flex align-center flex-wrap ga-3 mb-2">
-      <h1 class="text-h5">{{ t('camps.inputs.title') }}</h1>
+    <div class="d-flex align-start flex-wrap ga-3 mb-4">
+      <p class="text-medium-emphasis flex-grow-1 mb-0">{{ t('camps.inputs.intro') }}</p>
       <span
         class="text-body-2 inputs-status"
         :class="status === 'invalid' || status === 'failed' ? 'text-warning' : status === 'saved' ? 'text-success' : 'text-medium-emphasis'"
@@ -315,7 +315,6 @@ function setWinterSafeAccess(v: string | null): void {
         <template v-else-if="status === 'saved'">{{ t('camps.inputs.status.saved') }}</template>
       </span>
     </div>
-    <p class="text-medium-emphasis mb-4">{{ t('camps.inputs.intro') }}</p>
 
     <div v-if="!ready" class="text-center pa-8">
       <v-progress-circular indeterminate class="mb-2" />

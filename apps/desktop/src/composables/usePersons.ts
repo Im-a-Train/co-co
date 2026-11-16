@@ -75,6 +75,11 @@ export interface PersonsHandle {
   loadNds(): Promise<void>
   /** One click: loads every linked source in parallel (still an explicit action, ADR 0009). */
   loadAll(): Promise<void>
+  /** Refreshes only the stored MiData aggregate (team card placeholder button). */
+  refreshAggregate(): Promise<void>
+  /** MiData is linked and connected, so the aggregate can be fetched. */
+  midataUsable: ComputedRef<boolean>
+  aggregateLoading: ComputedRef<boolean>
   clear(): Promise<void>
 }
 
@@ -168,7 +173,20 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
   }
 
   async function loadAll(): Promise<void> {
-    await Promise.all([midataUsable.value ? loadMidata() : Promise.resolve(), ndsUsable.value ? loadNds() : Promise.resolve()])
+    await Promise.all([
+      midataUsable.value ? loadMidata() : Promise.resolve(),
+      ndsUsable.value ? loadNds() : Promise.resolve(),
+      // Same explicit click: also refresh the stored MiData aggregate behind the team card.
+      midataUsable.value ? refreshAggregate() : Promise.resolve(),
+    ])
+  }
+  /** Refreshes the stored MiData aggregate (team qualification card); failures only leave the card out. */
+  async function refreshAggregate(): Promise<void> {
+    try {
+      await mdCamp.refresh()
+    } catch {
+      // the card stays out; «Angaben» shows MiData errors
+    }
   }
 
   return {
@@ -176,6 +194,9 @@ export function usePersons(campIri: MaybeRefOrGetter<Iri>): PersonsHandle {
     nds,
     rows,
     compared,
+    refreshAggregate,
+    midataUsable,
+    aggregateLoading: computed(() => mdCamp.loading.value),
     campStart,
     summary,
     midataLinked,

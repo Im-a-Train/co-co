@@ -42,9 +42,12 @@ Per camp the coach sets `auto`/`on`/`off` (Dexie `campRuleConfig`); resolution i
 
 Required: `id`, `version`, `module`, `status` (`active` | `retired`), `title`, `description`, `message`,
 `severity`, `confidence`, `scope`, `validFrom`. Optional: `kind` (`hard` default | `ai`, see below), `validTo`, `messageVariants`, `inputs`, `params`,
-`keywords`, `sources`, `formerIds`, `tags`. Every key in `params`/`keywords`/`sources` must exist.
+`keywords`, `sources`, `formerIds`, `tags`, `feedbackText`. Every key in `params`/`keywords`/`sources` must exist.
 Placeholders in texts use `{name}`; hits fill them (`params`, `variant`, `fragments`). Never hard-code a
 threshold in a text: pass it as a param.
+
+`feedbackText`: the leaders' text («ihr», Swiss spelling, one concrete ask, no rule ids, only placeholders of the
+message/whole-message variants); required for every active must/should rule (guard `__tests__/feedbackText.test.ts`).
 
 Policy (loader/engine enforced): `must` requires `confidence: verified`; `unverified`/`conflict` are capped at
 `should`; predicates may lower severity/confidence per hit, never raise; a `suggested` module caps at `hint`.
@@ -73,7 +76,8 @@ the old id in the new rule's `formerIds` so overrides and disabled states carry 
   outdated), optional `showWhen` (campConfig / coachInput / activityTag / campInWinter conditions).
 - **milestones.yaml:** `id`, `title`, `description`, `anchor` (start, end, leihmaterialDelivery,
   landeskartenDelivery, lastActivity, firstSb, outageOrderBy), `offsetDays` (latest date),
-  `offsetEarliestDays`, `confidence` (`unverified` shows «unbestätigt»).
+  `offsetEarliestDays`, `confidence` (`unverified` shows «unbestätigt»), `sameAs` (ids of the same step in another list; the twin is
+  skipped while its target is active and shown as «Auch genannt»).
 
 ## Add a rule
 
@@ -82,7 +86,9 @@ the old id in the new rule's `formerIds` so overrides and disabled states carry 
 3. New thresholds in `params.yaml`, new keyword sets in `keywords/*.yaml`.
 4. Test `domain/rules/__tests__/<module>/<ID>.test.ts` with positive and negative cases (helpers:
    `FactsBuilder`, `makeCtx`, `msg`, `allPredicates` from `__tests__`).
-5. Run `npm test` and `npm run typecheck`; the completeness/consistency tests check ids, sources, params,
+5. A gap variant that only exists because the coach has not given an input sets
+   `needsInput: 'mapping' | 'coachInputs' | 'campConfig' | 'midata'` on the hit (test in `__tests__/needsInput.test.ts`).
+6. Run `npm test` and `npm run typecheck`; the completeness/consistency tests check ids, sources, params,
    keywords and policy.
 
 ## Add a sport module or a new J+S sport

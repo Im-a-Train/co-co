@@ -184,6 +184,14 @@ function undoPost(id: string) {
   dequeue(id)
   if (snack.value?.undoId === id) snack.value = null
 }
+// Switching camps reuses this view: flush the old camp's queued posts before its items are replaced.
+watch(
+  campIri,
+  () => {
+    for (const id of [...queueTimers.keys()]) void flushPost(id)
+  },
+  { flush: 'sync' },
+)
 // Leaving the page must not lose a queued post.
 onBeforeUnmount(() => {
   for (const id of [...queueTimers.keys()]) void flushPost(id)

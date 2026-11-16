@@ -463,7 +463,7 @@ function fmt(iso: string): string {
             @click="toggleGroup(g.bucket)"
           >
             <v-icon :icon="isOpen(g.bucket) ? 'mdi-chevron-down' : 'mdi-chevron-right'" size="small" class="mr-1" />
-            <span class="text-subtitle-2" :class="{ 'text-error': g.bucket === 'overdue' }">
+            <span class="text-subtitle-2" :class="{ 'text-warning': g.bucket === 'overdue' }">
               {{ t('rules.deadlines.groups.title', { bucket: t(`rules.deadlines.groups.${g.bucket}`), n: g.items.length }) }}
             </span>
           </button>

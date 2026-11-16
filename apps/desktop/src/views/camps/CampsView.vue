@@ -110,7 +110,15 @@ function reviewColor(r: CampRow): string | undefined {
 }
 function reviewText(r: CampRow): string {
   const must = approvedWithOpenMust(r)
-  return must > 0 ? t('camps.campsView.approvedMust', { n: must }) : t(`reviewStatus.${r.review}`)
+  return must > 0 ? t('camps.campsView.approvedMust', { n: must, status: t(`reviewStatus.${r.review}`) }) : t(`reviewStatus.${r.review}`)
+}
+/** One text per non-empty bucket; each renders as a no-wrap span so a line breaks only between buckets. */
+function findingParts(c: { must: number; should: number; hint: number }): string[] {
+  return [
+    c.must > 0 ? t('camps.campsView.findings.text.must', { n: c.must }) : null,
+    c.should > 0 ? t('camps.campsView.findings.text.should', { n: c.should }) : null,
+    c.hint > 0 ? t('camps.campsView.findings.text.hint', { n: c.hint }, c.hint) : null,
+  ].filter((x): x is string => x !== null)
 }
 function findingsClass(r: CampRow): string {
   const f = findingsText(r.counts)
@@ -261,15 +269,10 @@ function overdueDays(r: CampRow): number {
             <span v-if="r.counts && findingsText(r.counts)" :class="findingsClass(r)">
               <template v-if="r.counts.must + r.counts.should + r.counts.hint === 0">{{ t('camps.campsView.findings.text.none') }}</template>
               <template v-else>
-                {{
-                  [
-                    r.counts.must > 0 ? t('camps.campsView.findings.text.must', { n: r.counts.must }) : null,
-                    r.counts.should > 0 ? t('camps.campsView.findings.text.should', { n: r.counts.should }) : null,
-                    r.counts.hint > 0 ? t('camps.campsView.findings.text.hint', { n: r.counts.hint }, r.counts.hint) : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')
-                }}
+                <template v-for="(part, i) in findingParts(r.counts)" :key="i">
+                  <template v-if="i > 0">{{ ' · ' }}</template>
+                  <span class="text-no-wrap">{{ part }}</span>
+                </template>
               </template>
             </span>
             <span v-else class="text-medium-emphasis" :title="t('camps.campsView.findings.neverEvaluated')">

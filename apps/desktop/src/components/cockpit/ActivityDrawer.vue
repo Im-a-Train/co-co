@@ -242,7 +242,7 @@ async function linkDocument(d: DocumentRecord) {
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div v-if="activity" class="pa-4">
-      <template v-if="origin">
+      <template v-if="origin && narrow">
         <v-btn
           color="primary"
           variant="flat"

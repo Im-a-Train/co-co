@@ -21,7 +21,9 @@
       "setTo": "Setzen auf",
       "history": "Verlauf",
       "noteLabel": "Notiz (optional)",
-      "noTransitions": "Keine weiteren Übergänge möglich."
+      "noTransitions": "Keine weiteren Übergänge möglich.",
+      "notReady": "Lager wird noch geladen – Bewilligung erst nach der Prüfung.",
+      "notReadyShort": "Lager wird noch geladen"
     },
     "timeline": {
       "title": "Runden",

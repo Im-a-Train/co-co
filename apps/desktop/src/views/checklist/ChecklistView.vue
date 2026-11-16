@@ -202,11 +202,11 @@ function toggleItem(row: ChecklistRow, done: boolean): Promise<void> {
 <template>
   <div data-testid="checklist-view">
     <p class="text-body-2 text-medium-emphasis mb-1">{{ t('campConfig.checklist.tabIntro') }}</p>
-    <i18n-t keypath="campConfig.checklist.leadersCaption" tag="p" class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">
-      <template #link>
-        <RouterLink to="/fristen">{{ t('campConfig.checklist.leadersCaptionLink') }}</RouterLink>
-      </template>
-    </i18n-t>
+    <p class="text-caption text-medium-emphasis mb-2" data-testid="checklist-leaders-caption">
+      {{ t('campConfig.checklist.leadersCaption') }}
+      <RouterLink to="/fristen">{{ t('campConfig.checklist.leadersCaptionLink') }}</RouterLink>
+      {{ t('campConfig.checklist.leadersCaptionTail') }}
+    </p>
     <v-switch
       v-if="hiddenCount > 0"
       v-model="showHidden"

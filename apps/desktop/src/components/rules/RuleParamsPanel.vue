@@ -30,15 +30,54 @@ const defs = computed<ParamDef[]>(() => {
 const defaultOf = (d: ParamDef): ParamValue => rowValue(d, today())?.value ?? null
 
 /** How a param is edited: one number field, one number field per key (e.g. Stufe), or raw text/JSON. */
-type ParamKind = 'number' | 'map' | 'text'
+type ParamKind = 'number' | 'map' | 'window' | 'months' | 'windows' | 'text'
+interface TimeWindow {
+  from: string
+  to: string
+}
+interface NamedWindow extends TimeWindow {
+  id: string
+  label: string
+}
+const isWindow = (v: unknown): v is TimeWindow =>
+  !!v && typeof v === 'object' && !Array.isArray(v) && typeof (v as TimeWindow).from === 'string' && typeof (v as TimeWindow).to === 'string'
+const isMonths = (v: unknown): v is number[] =>
+  Array.isArray(v) && v.length > 0 && v.every((x) => Number.isInteger(x) && (x as number) >= 1 && (x as number) <= 12)
+const isNamedWindows = (v: unknown): v is NamedWindow[] =>
+  Array.isArray(v) && v.length > 0 && v.every((x) => isWindow(x) && typeof (x as NamedWindow).id === 'string' && typeof (x as NamedWindow).label === 'string')
 function kindOf(d: ParamDef): ParamKind {
   const def = defaultOf(d)
   if (typeof def === 'number') return 'number'
+  if (isWindow(def)) return 'window'
+  if (d.unit === 'months' && isMonths(def)) return 'months'
+  if (isNamedWindows(def)) return 'windows'
   if (def && typeof def === 'object' && !Array.isArray(def)) {
     const vals = Object.values(def as Record<string, unknown>)
     if (vals.length && vals.every((x) => typeof x === 'number')) return 'map'
   }
   return 'text'
+}
+const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$|^24:00$/
+const winRaw = reactive<Record<string, TimeWindow>>({})
+const monthSel = reactive<Record<string, number[]>>({})
+const winsRaw = reactive<Record<string, NamedWindow[]>>({})
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
+const monthItems = computed(() => MONTHS.map((m) => ({ title: t(`rules.edit.params.month.${m}`), value: m })))
+const monthShort = (m: number) => t(`rules.edit.params.monthShort.${m}`)
+const windowText = (w: TimeWindow) => `${w.from}–${w.to}`
+/** Readable default: «05:00–14:00», «Nov., Dez., Jan.», «Morgen 00:00–12:00, …»; raw JSON only for unknown shapes. */
+function defaultText(d: ParamDef): string {
+  const def = defaultOf(d)
+  switch (kindOf(d)) {
+    case 'window':
+      return windowText(def as unknown as TimeWindow)
+    case 'months':
+      return (def as number[]).map(monthShort).join(', ')
+    case 'windows':
+      return (def as unknown as NamedWindow[]).map((w) => `${w.label} ${windowText(w)}`).join(', ')
+    default:
+      return fmt(def)
+  }
 }
 const mapRaw = reactive<Record<string, Record<string, string>>>({})
 const asMap = (v: ParamValue): Record<string, number> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, number>) : {})
@@ -65,6 +104,17 @@ function keyLabel(k: string): string {
 function fill(d: ParamDef) {
   const cur = d.key in stored.value ? stored.value[d.key] : defaultOf(d)
   raw[d.key] = fmt(cur)
+  const kind = kindOf(d)
+  if (kind === 'window') winRaw[d.key] = isWindow(cur) ? { from: cur.from, to: cur.to } : { ...(defaultOf(d) as unknown as TimeWindow) }
+  if (kind === 'months') monthSel[d.key] = isMonths(cur) ? [...cur] : [...(defaultOf(d) as number[])]
+  if (kind === 'windows') {
+    const def = defaultOf(d) as unknown as NamedWindow[]
+    const now = isNamedWindows(cur) ? cur : def
+    winsRaw[d.key] = def.map((w) => {
+      const c = now.find((x) => x.id === w.id) ?? w
+      return { id: w.id, label: w.label, from: c.from, to: c.to }
+    })
+  }
   if (kindOf(d) === 'map') {
     const def = asMap(defaultOf(d))
     const now = asMap(cur)
@@ -101,6 +151,22 @@ function parse(d: ParamDef): ParamValue | undefined {
       out[k] = n
     }
     return out
+  }
+  if (kind === 'window') {
+    const w = winRaw[d.key]
+    return w && TIME_RE.test(w.from.trim()) && TIME_RE.test(w.to.trim()) ? { from: w.from.trim(), to: w.to.trim() } : undefined
+  }
+  if (kind === 'months') {
+    const sel = new Set(monthSel[d.key] ?? [])
+    if (!sel.size) return undefined
+    const def = defaultOf(d) as number[]
+    if (sel.size === def.length && def.every((m) => sel.has(m))) return [...def]
+    return [...sel].sort((a, b) => a - b)
+  }
+  if (kind === 'windows') {
+    const rows = winsRaw[d.key] ?? []
+    if (!rows.every((w) => TIME_RE.test(w.from.trim()) && TIME_RE.test(w.to.trim()))) return undefined
+    return rows.map((w) => ({ id: w.id, label: w.label, from: w.from.trim(), to: w.to.trim() }))
   }
   const def = defaultOf(d)
   let v: ParamValue
@@ -163,6 +229,9 @@ async function reset(d: ParamDef) {
       </div>
       <p v-if="d.description" class="text-caption text-medium-emphasis mb-2">{{ d.description }}</p>
       <div v-if="kindOf(d) === 'map'" class="text-body-2 mb-2">{{ t('rules.edit.params.default') }}: {{ mapDefaultText(d) }}</div>
+      <div v-else-if="['window', 'months', 'windows'].includes(kindOf(d))" class="text-body-2 mb-2" :data-testid="`param-${d.key}-default`">
+        {{ t('rules.edit.params.default') }}: {{ defaultText(d) }}
+      </div>
       <div v-else class="text-body-2 mb-2">
         {{ t('rules.edit.params.default') }}: <code>{{ fmt(defaultOf(d)) }}</code>
         <span v-if="unitLabel(d)" class="ml-1">{{ unitLabel(d) }}</span>
@@ -185,6 +254,32 @@ async function reset(d: ParamDef) {
             style="max-width: 8rem"
             :data-testid="`param-${d.key}-${k}`"
           />
+        </div>
+        <div v-if="kindOf(d) === 'window' && winRaw[d.key]" class="d-flex flex-wrap ga-2 mb-2">
+          <v-text-field v-model="winRaw[d.key]!.from" :label="t('rules.edit.params.from')" placeholder="HH:MM" density="compact" variant="outlined" hide-details style="max-width: 8rem" :data-testid="`param-${d.key}-from`" />
+          <v-text-field v-model="winRaw[d.key]!.to" :label="t('rules.edit.params.to')" placeholder="HH:MM" density="compact" variant="outlined" hide-details style="max-width: 8rem" :data-testid="`param-${d.key}-to`" />
+        </div>
+        <v-select
+          v-if="kindOf(d) === 'months' && monthSel[d.key]"
+          v-model="monthSel[d.key]"
+          :items="monthItems"
+          :label="t('rules.edit.params.currentMonths')"
+          multiple
+          chips
+          closable-chips
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="mb-2"
+          style="max-width: 28rem"
+          :data-testid="`param-${d.key}-months`"
+        />
+        <div v-if="kindOf(d) === 'windows' && winsRaw[d.key]" class="mb-2">
+          <div v-for="w in winsRaw[d.key]" :key="w.id" class="d-flex flex-wrap align-center ga-2 mb-2">
+            <span class="text-body-2" style="min-width: 6rem">{{ w.label }}</span>
+            <v-text-field v-model="w.from" :label="t('rules.edit.params.from')" placeholder="HH:MM" density="compact" variant="outlined" hide-details style="max-width: 8rem" :data-testid="`param-${d.key}-${w.id}-from`" />
+            <v-text-field v-model="w.to" :label="t('rules.edit.params.to')" placeholder="HH:MM" density="compact" variant="outlined" hide-details style="max-width: 8rem" :data-testid="`param-${d.key}-${w.id}-to`" />
+          </div>
         </div>
         <div class="d-flex flex-wrap align-center ga-2">
           <v-text-field

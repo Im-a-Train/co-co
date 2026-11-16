@@ -123,8 +123,9 @@
       },
       "doneAt": "erledigt am {date}",
       "saveFailed": "Stand konnte nicht gespeichert werden",
-      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen der Lagerleitung findest du unter {link} mit «Mit Lagerleitung».",
+      "leadersCaption": "Hier stehen nur Punkte und Fristen für dich als Coach. Fristen der Lagerleitung findest du unter",
       "leadersCaptionLink": "Fristen",
+      "leadersCaptionTail": "mit «Mit Lagerleitung».",
       "doneOn": {
         "nds-registration": "angemeldet am",
         "nds-closing": "abgeschlossen am"

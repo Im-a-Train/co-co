@@ -81,6 +81,14 @@ const time = (iso: string | undefined) => (iso ? new Date(iso).toLocaleString('d
     </v-alert>
 
     <QualificationMatrix v-if="p.qualMatrix.value" :matrix="p.qualMatrix.value" :title="t('persons.team.title')" compact />
+    <v-card v-else-if="p.midataUsable.value" variant="outlined" class="mb-3" data-testid="persons-team-noaggregate">
+      <v-card-text class="d-flex align-center flex-wrap ga-3">
+        <span class="text-body-2 flex-grow-1">{{ t('persons.team.noAggregate') }}</span>
+        <v-btn size="small" variant="tonal" :loading="p.aggregateLoading.value" data-testid="persons-team-load" @click="p.refreshAggregate()">
+          {{ t('persons.team.load') }}
+        </v-btn>
+      </v-card-text>
+    </v-card>
 
     <v-card variant="outlined" class="mb-3" data-testid="persons-sources">
       <v-card-title class="text-subtitle-1">{{ t('persons.sources.title') }}</v-card-title>

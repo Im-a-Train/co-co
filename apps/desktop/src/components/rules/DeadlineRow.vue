@@ -42,10 +42,9 @@ const relative = computed(() => {
   return left > 0 ? t('rules.deadlines.relative.in', { n: left }) : t('rules.deadlines.relative.ago', { n: -left })
 })
 
-/** Colour = state: overdue open = error, due within a week = warning, everything else neutral. */
+/** Colour = state: overdue or due within a week = warning (deadlines never block approval, so never red), everything else neutral. */
 const relativeClass = computed(() => {
   if (props.row.done) return 'text-medium-emphasis'
-  if (props.row.left < 0) return 'text-error'
   if (props.row.left <= 7) return 'text-warning'
   return 'text-medium-emphasis'
 })

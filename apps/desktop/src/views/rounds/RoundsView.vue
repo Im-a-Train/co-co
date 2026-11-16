@@ -104,7 +104,7 @@ async function close(id: string) {
 
     <v-row>
       <v-col cols="12" md="5">
-        <ReviewStatusStepper :review="r.review.value" class="mb-4" @set="setStatus" />
+        <ReviewStatusStepper :review="r.review.value" :approval-ready="guard.ready.value" class="mb-4" @set="setStatus" />
         <RoundTimeline :rounds="r.rounds.value" :selected-id="selectedId" @select="(id) => (selectedId = id)" @close="close" />
       </v-col>
       <v-col cols="12" md="7">

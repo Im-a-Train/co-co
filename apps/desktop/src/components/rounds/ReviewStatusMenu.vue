@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Review status chip for the camp header; the menu offers only the allowed transitions. */
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ApprovalGate from '@/components/rounds/ApprovalGate.vue'
 import { isApprovalStatus } from '@/composables/useApprovalGuard'
@@ -14,7 +14,13 @@ const { t } = useI18n()
 const r = useRounds(() => props.campIri)
 const error = ref<string | null>(null)
 
-onMounted(() => void r.load())
+// Arm the check (and with it the progress snapshot for «Meine Lager») shortly after mount, off the first paint.
+let armTimer: ReturnType<typeof setTimeout> | undefined
+onMounted(() => {
+  void r.load()
+  armTimer = setTimeout(() => (gateArmed.value = true), 1500)
+})
+onBeforeUnmount(() => clearTimeout(armTimer))
 watch(
   () => props.campIri,
   () => void r.load(),
@@ -33,19 +39,21 @@ async function apply(status: ReviewStatus, note: string | null) {
     error.value = t('rounds.errors.invalidTransition')
   }
 }
-// The approval check (all rules evaluated) is mounted once the menu is first opened, not on every camp page.
 const menuOpen = ref(false)
 const gateArmed = ref(false)
 watch(menuOpen, (open) => {
   if (open) gateArmed.value = true
 })
 const gate = ref<InstanceType<typeof ApprovalGate> | null>(null)
+/** Approval entries stay disabled until the camp is loaded and the check can run (fail closed). */
+const approvalReady = computed(() => gate.value?.ready === true)
 async function set(status: ReviewStatus) {
   if (!isApprovalStatus(status)) return apply(status, null)
   gateArmed.value = true
   await nextTick()
   // Without the gate (cannot happen: the menu armed it) nothing is approved unchecked.
-  await gate.value?.request(status)
+  const result = await gate.value?.request(status)
+  if (result === 'notReady' || result === undefined) error.value = t('rounds.status.notReady')
 }
 </script>
 
@@ -66,7 +74,14 @@ async function set(status: ReviewStatus) {
       </template>
       <v-list density="compact">
         <v-list-subheader>{{ t('rounds.status.setTo') }}</v-list-subheader>
-        <v-list-item v-for="s in options" :key="s" :title="t(`reviewStatus.${s}`)" @click="set(s)" />
+        <v-list-item
+          v-for="s in options"
+          :key="s"
+          :title="t(`reviewStatus.${s}`)"
+          :subtitle="isApprovalStatus(s) && !approvalReady ? t('rounds.status.notReadyShort') : undefined"
+          :disabled="isApprovalStatus(s) && !approvalReady"
+          @click="set(s)"
+        />
         <v-list-item v-if="!options.length" :title="t('rounds.status.noTransitions')" disabled />
       </v-list>
     </v-menu>
