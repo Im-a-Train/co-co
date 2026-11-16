@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { copyRich, copyText } from '@/lib/clipboard'
 import { commands } from '@/lib/tauri'
-import { postedItems, previewItems, renderFeedback, TEMPLATE_IDS, type RenderContext } from '@/domain/feedback'
+import { postedActivityCount, postedItems, postedSinceLastSend, previewItems, renderFeedback, TEMPLATE_IDS, type RenderContext } from '@/domain/feedback'
 import type { FeedbackChannel, FeedbackItem, FeedbackTemplateId } from '@/domain/types'
 
 const props = defineProps<{
@@ -38,13 +38,14 @@ watch(
 
 const shown = computed(() => previewItems(props.items, { includeSent: includeSent.value }))
 const postedCount = computed(() => postedItems(props.items).length)
-// Distinct activities commented directly in eCamp (the leaders get one line about them).
-const postedActivityCount = computed(() => new Set(postedItems(props.items).map((i) => i.activityIri ?? i.id)).size)
+// Activities commented directly in eCamp that the leaders get one line about: those since the last send
+// (earlier ones were named in that message), or all of them when sent points are included again.
+const postedLineCount = computed(() => postedActivityCount(includeSent.value ? postedItems(props.items) : postedSinceLastSend(props.items)))
 const sentCount = computed(() => props.items.filter((i) => i.status === 'sent').length)
 const draftIds = computed(() => shown.value.filter((i) => i.status === 'draft').map((i) => i.id))
 
 const rendered = computed(() =>
-  renderFeedback(shown.value, channel.value, { ...props.context, postedCount: postedActivityCount.value, templateId: templateId.value ?? undefined, includeLinks: includeLinks.value }),
+  renderFeedback(shown.value, channel.value, { ...props.context, postedCount: postedLineCount.value, templateId: templateId.value ?? undefined, includeLinks: includeLinks.value }),
 )
 const lengthText = computed(() =>
   t('feedback.previewLength', {

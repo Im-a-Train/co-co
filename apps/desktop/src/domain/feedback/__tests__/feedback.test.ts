@@ -5,7 +5,9 @@ import {
   getTemplate,
   itemFromFinding,
   itemFromFindingGroup,
+  postedActivityCount,
   postedItems,
+  postedSinceLastSend,
   previewItems,
   lintItems,
   orderItems,
@@ -275,6 +277,21 @@ describe('previewItems / postedItems', () => {
   it('includeSent adds sent, never posted', () => expect(previewItems(items, { includeSent: true }).map((i) => i.id)).toEqual(['d', 's']))
   it('empty input', () => expect(previewItems([])).toEqual([]))
   it('postedItems returns posted only', () => expect(postedItems(items).map((i) => i.id)).toEqual(['p']))
+  it('postedSinceLastSend: only posts after the newest sent item (earlier ones were named in that message)', () => {
+    const at = (h: number) => `2026-01-0${h}T10:00:00.000Z`
+    const list = [
+      item({ id: 'old', status: 'posted', activityIri: '/api/activities/a1', updatedAt: at(1) }),
+      item({ id: 'sent', status: 'sent', updatedAt: at(2) }),
+      item({ id: 'new1', status: 'posted', activityIri: '/api/activities/a2', updatedAt: at(3) }),
+      item({ id: 'new2', status: 'posted', activityIri: '/api/activities/a2', updatedAt: at(4) }),
+      item({ id: 'draft', status: 'draft', updatedAt: at(5) }),
+    ]
+    expect(postedSinceLastSend(list).map((i) => i.id)).toEqual(['new1', 'new2'])
+    expect(postedSinceLastSend(list.filter((i) => i.status !== 'sent')).map((i) => i.id)).toEqual(['old', 'new1', 'new2'])
+    // Two posts on one activity are one activity in the leaders' line.
+    expect(postedActivityCount(postedSinceLastSend(list))).toBe(1)
+    expect(postedActivityCount(list)).toBe(2)
+  })
 })
 
 describe('eCamp links', () => {
@@ -315,6 +332,11 @@ describe('eCamp links', () => {
     expect(renderFeedback(items, 'email', nctx).html).toContain(`<a href="${url}">1.2/3.4 Postenlauf</a>`)
     // no number -> title only
     expect(renderFeedback(items, 'whatsapp', { ...nctx, activityNumbers: {} }).body).toContain('_Postenlauf_')
+  })
+  it('the eCamp-comments line is also in the linked html, after the items', () => {
+    const r = renderFeedback(items, 'email', { ...sctx, templateId: 'auflagen', postedCount: 2 })
+    expect(r.html).toContain('Bitte Sicherheit ergänzen.<br><br>Zu 2 Aktivitäten habe ich direkt in eCamp kommentiert.')
+    expect(r.html!.indexOf('Zu 2 Aktivitäten')).toBeLessThan(r.html!.indexOf('Gebt mir kurz Bescheid'))
   })
   it('email/plain html links the title and keeps the long URL only in href', () => {
     for (const ch of ['plain', 'email'] as const) {

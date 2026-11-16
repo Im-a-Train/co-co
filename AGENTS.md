@@ -42,7 +42,7 @@ Every `campId` accepts the short id or the IRI.
 | `get_feedback_structure` | read | Feedback structure (Feedback-Struktur lesen) | Redacted; red-derived items filtered like `list_feedback`. |
 | `list_general_feedback_points` | read | List general feedback points (Allgemeine Feedback-Punkte auflisten) | Static German reference text plus used state. |
 | `get_camp_progress` | read | Camp review progress (Prüffortschritt lesen) | Counts and German labels only. |
-| `list_documents` | read | List documents (Dokumente auflisten) | Metadata only: never the file path, never red-zone documents, names redacted. `docCheck` (safety-concept audit: `missing` without the coach's «Ist vorhanden» items, `confirmed`) only for documents that count as safety concept; `safetyConcept` is the coach's decision (true/false/null). |
+| `list_documents` | read | List documents (Dokumente auflisten) | Metadata only: never the file path, never red-zone documents, names redacted. `docCheck` (safety-concept audit: `missing` without the coach's «Ist vorhanden» items, `confirmed`, `complete` = nothing missing) only for documents that count as safety concept; `safetyConcept` is the coach's decision (true/false/null). |
 | `get_document_text` | read | Get document text (Dokumenttext lesen) | Only if the document is `aiAllowed`; redacted, paged (max 20000 chars); never red zone. |
 | `get_review_guidance` | read | Get review guidance (Prüf-Leitfaden lesen) | Green (public rule texts); modules off and disabled rules are left out. |
 | `add_manual_finding` | write | Add manual finding (Coach-Befund hinzufügen) | Text de-redacted locally; MiData/NDS markers refused; anchor needs a document of the camp. |

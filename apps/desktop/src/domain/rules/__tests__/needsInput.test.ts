@@ -113,4 +113,16 @@ describe('coach homework carries no leader-facing feedbackText', () => {
     expect(out.find((f) => f.needsInput)!.feedbackText).toBeUndefined()
     expect(out.find((f) => !f.needsInput)!.feedbackText).toBe('Könnt ihr das bitte ergänzen?')
   })
+  it('renders feedbackTextGroup for normal hits only, with {n} and {dates} left open', () => {
+    const rule: Rule = {
+      meta: { ...meta, feedbackTextGroup: 'An {n} Tagen ({dates}) fehlt {what}. Könnt ihr das ergänzen?' },
+      check: (c) => [
+        { targets: [c.facts.camp.iri], needsInput: 'coachInputs', params: { what: 'x' } },
+        { targets: ['/api/days/d9'], params: { what: 'das Programm' } },
+      ],
+    }
+    const out = evaluate([packOf(rule)], ctx())
+    expect(out.find((f) => f.needsInput)!.feedbackTextGroup).toBeUndefined()
+    expect(out.find((f) => !f.needsInput)!.feedbackTextGroup).toBe('An {n} Tagen ({dates}) fehlt das Programm. Könnt ihr das ergänzen?')
+  })
 })

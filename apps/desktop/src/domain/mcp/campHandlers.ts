@@ -232,6 +232,13 @@ export const list_documents: McpHandler = async (args, ctx) => {
   const { r } = await factsAndRedactor(ctx, campIri)
   const docs = await mcpDocuments(ctx, campIri)
   const manual = await mcpManualFindings(ctx, campIri)
+  // The audit only exists for documents that count as safety concept; the coach's «Ist vorhanden» items are not missing.
+  const docCheckOf = (d: (typeof docs)[number]) => {
+    if (!d.docCheck || !isSafetyConcept(d)) return null
+    const confirmed = d.docCheckConfirmed ?? []
+    const missing = d.docCheck.items.filter((i) => !i.found && !confirmed.includes(i.key)).map((i) => i.key)
+    return { complete: missing.length === 0, checkedAt: d.docCheck.checkedAt, missing, confirmed }
+  }
   return docs.map((d) => ({
     id: d.id,
     name: redactText(r, d.name),
@@ -239,16 +246,7 @@ export const list_documents: McpHandler = async (args, ctx) => {
     size: d.size,
     activityIds: d.activityIris,
     safetyConcept: d.safetyConcept ?? null,
-    // The audit only exists for documents that count as safety concept; the coach's «Ist vorhanden» items are not missing.
-    docCheck:
-      d.docCheck && isSafetyConcept(d)
-        ? {
-            complete: d.docCheck.complete,
-            checkedAt: d.docCheck.checkedAt,
-            missing: d.docCheck.items.filter((i) => !i.found && !(d.docCheckConfirmed ?? []).includes(i.key)).map((i) => i.key),
-            confirmed: d.docCheckConfirmed ?? [],
-          }
-        : null,
+    docCheck: docCheckOf(d),
     gpx: d.gpx
       ? {
           pointCount: d.gpx.pointCount,

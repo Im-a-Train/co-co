@@ -158,7 +158,7 @@
           "winter": "Winter"
         }
       },
-      "legend": "Legende: grün = gültig während des ganzen Lagers, gelb = vorhanden, aber nicht gültig während des Lagers, graues Kreuz = fehlt, graues Fragezeichen = unbekannt. Rot erscheint nur, wenn eine nötige Qualifikation im ganzen Team nicht abgedeckt ist.",
+      "legend": "Legende: grün = gültig während des ganzen Lagers, orange = vorhanden, aber nicht gültig während des Lagers, graues Kreuz = fehlt, graues Fragezeichen = unbekannt. Rot ist nur die Abdeckung einer nötigen Qualifikation, die im ganzen Team fehlt.",
       "quals": {
         "lagerleiter": "Lagerleiter",
         "leiterLsT": "LS/T",

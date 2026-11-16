@@ -23,6 +23,10 @@ export async function commentSyncFlows({ page, step, go, shot }) {
     await addAndPost(0, 'Sync-Test eins: Bitte Sicherheitsüberlegungen ergänzen.')
     await addAndPost(1, 'Sync-Test zwei: Wie sieht das Schlechtwetterprogramm aus?')
     await shot(page, 'flow-commentsync-posted')
+    // The leaders' message names the eCamp comments in one line (TRIAGE-04); the coach caption stays.
+    const preview = await page.getByTestId('feedback-preview').innerText()
+    if (!/Zu (einer Aktivität|\d+ Aktivitäten) habe ich direkt in eCamp kommentiert\./.test(preview)) throw new Error('preview text lacks the line about the eCamp comments')
+    if (!(await page.getByTestId('preview-posted').count())) throw new Error('coach caption about posted items missing')
     await page.getByTestId('sync-comments').click({ timeout: 5000 })
     await page.waitForSelector('[data-testid="chip-resolved"]', { timeout: 8000 })
     await page.waitForTimeout(500)

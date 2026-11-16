@@ -137,7 +137,7 @@ describe('documents', () => {
     const notConcept = doc({ id: 'd3', name: 'materialliste.xlsx', safetyConcept: false })
     const { value } = await run('list_documents', CAMP_ARG, { documents: [confirmed, notConcept] })
     const list = value as { id: string; safetyConcept: boolean | null; docCheck: { missing: string[]; confirmed: string[] } | null }[]
-    expect(list[0].docCheck).toMatchObject({ missing: [], confirmed: ['emergencyNumbers'] })
+    expect(list[0].docCheck).toMatchObject({ missing: [], confirmed: ['emergencyNumbers'], complete: true })
     expect(list[0].safetyConcept).toBeNull()
     expect(list[1].docCheck).toBeNull()
     expect(list[1].safetyConcept).toBe(false)

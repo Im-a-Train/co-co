@@ -424,6 +424,22 @@ export function postedItems(items: readonly FeedbackItem[]): FeedbackItem[] {
 }
 
 /**
+ * Posted items the leaders have not been told about yet: posted after the last confirmed send (newest
+ * `sent` item). Earlier ones were named in the message that went out then (posting sets `updatedAt`;
+ * comment sync does not touch it).
+ */
+export function postedSinceLastSend(items: readonly FeedbackItem[]): FeedbackItem[] {
+  let lastSent = ''
+  for (const i of items) if (i.status === 'sent' && i.updatedAt > lastSent) lastSent = i.updatedAt
+  return postedItems(items).filter((i) => i.updatedAt > lastSent)
+}
+
+/** Distinct activities among posted items (the number for the leaders' line about the eCamp comments). */
+export function postedActivityCount(items: readonly FeedbackItem[]): number {
+  return new Set(items.filter((i) => i.status === 'posted').map((i) => i.activityIri ?? i.id)).size
+}
+
+/**
  * One draft item for a group of same-rule findings: text of the first finding plus one sentence that
  * names the dates. `findingId` is the first finding, `findingIds` all of them. When any finding is a
  * Muss, the item is a Muss item with the Muss wording (never hidden behind a milder first finding).

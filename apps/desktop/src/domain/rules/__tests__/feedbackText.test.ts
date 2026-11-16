@@ -274,6 +274,8 @@ describe.skipIf(!existsSync(FIXTURE))('feedbackText on the fixture camp «Auf in
         checked++
         expect(f.feedbackText, f.id).toBeDefined()
         expect(f.feedbackText, f.id).not.toMatch(/\{\w+\}/)
+        // The group variant keeps only {n} and {dates} open (itemFromFindingGroup fills them).
+        if (f.feedbackTextGroup) expect(f.feedbackTextGroup.replace(/\{(n|dates)\}/g, ''), f.id).not.toMatch(/\{\w+\}/)
       }
     }
     expect(checked).toBeGreaterThan(0)
