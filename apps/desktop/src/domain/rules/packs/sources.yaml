@@ -118,7 +118,7 @@
   weight: didactic
   pageConvention: printed
   partlyRead: []
-  notes: "Praxishilfe für Wasseraktivitäten; bei Wildwasser gelten die Stufen I und II."
+  notes: "Praxishilfe für Wasseraktivitäten im Lager; nennt Wildwasser der Stufen I und II."
   checkedOn: 2026-11-08
 - key: WINTER
   title: "LS/T Winter (Broschüre)"
@@ -187,7 +187,7 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Fristen, Leihmaterial, Landeskarten, J+S-Alter, Anerkennung, verbotene Sportarten."
+  notes: "Das Wichtigste für Coachs: Fristen, Leihmaterial, Landeskarten, J+S-Alter, Anerkennung, verbotene Sportarten."
   formerKeys: [C]
   checkedOn: 2026-11-08
 - key: WEB-LT
@@ -199,7 +199,7 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Verbindlich (Anmeldung) und Info."
+  notes: "Verbindliche Vorgaben zur Anmeldung, dazu allgemeine Infos."
   formerKeys: [LT]
   checkedOn: 2026-11-08
 - key: WEB-ZA
@@ -211,7 +211,7 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Verbindlich ab 2026. Keine Modulnamen."
+  notes: "Ab 2026 verbindlich."
   checkedOn: 2026-11-08
 - key: WEB-GR
   title: "Mitteilung «Vereinfachung der Gruppengrössen ab 2026»"
@@ -233,7 +233,7 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Verbindlich (einmalig)."
+  notes: "Einmalige, verbindliche Mitteilung."
   checkedOn: 2026-11-08
 - key: H
   title: "PBS Hering (Planungshilfe)"
@@ -243,7 +243,7 @@
   weight: pbs
   pageConvention: section
   partlyRead: []
-  notes: "Aktuelle Grundlage der PBS-Regeln (BP-*)."
+  notes: "Aktuelle Grundlage der PBS-Regeln (Best Practice)."
   checkedOn: 2026-11-08
 - key: MD
   title: "MiData (PBS)"
@@ -253,5 +253,5 @@
   weight: info
   pageConvention: section
   partlyRead: []
-  notes: "Datenabgleich."
+  notes: "Wird für den Abgleich der Teilnehmenden und Qualifikationen gelesen."
   checkedOn: 2026-11-08

@@ -182,7 +182,8 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
   const words = normalizeText(query).split(/\s+/).filter(Boolean)
   if (!words.length) return []
   const hits: ResourceHit[] = []
-  const notesOnlyHits = new Set<ResourceHit>()
+  // Tier per hit: 0 document text, 1 title/summary, 2 citation, 3 needs the maintainer notes.
+  const tiers = new Map<ResourceHit, number>()
   for (const r of records) {
     const title = normalizeText(r.title)
     const key = normalizeText(r.key)
@@ -190,17 +191,20 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
     const notes = normalizeText(r.notes ?? '')
     const rest = normalizeText(`${r.edition} ${r.publisher ?? ''}`)
     const content = normalizeText(r.content ?? '')
-    const meta = `${key}\n${title}\n${summary}\n${notes}\n${rest}`
-    const inMeta = words.every((w) => meta.includes(w))
-    const inAll = inMeta || words.every((w) => `${meta}\n${content}`.includes(w))
-    // Matches only in the maintainer notes rank below citation hits (the notes do not answer the coach's question).
-    const nonNotes = `${key}\n${title}\n${summary}\n${rest}`
-    const notesOnly = inMeta && !words.every((w) => nonNotes.includes(w)) && words.every((w) => `${nonNotes}\n${notes}`.includes(w))
+    const head = `${key}\n${title}\n${summary}\n${rest}`
+    const inHead = words.every((w) => head.includes(w))
+    const inContent = words.every((w) => content.includes(w))
+    const inAll = words.every((w) => head.includes(w) || notes.includes(w) || content.includes(w))
+    // A word found only in the maintainer notes: such a hit ranks last (the notes do not answer the
+    // coach's question), and a citing rule is the better answer when there is one.
+    const notesOnly = inAll && words.some((w) => !head.includes(w) && !content.includes(w))
     if (!inAll || notesOnly) {
       const cite = bestCitation(opts?.citations?.get(r.key), words)
       if (cite) {
         const snippet = opts?.citationSnippet ? opts.citationSnippet(cite.c) : `${cite.c.id} ${cite.c.title}`
-        hits.push({ key: r.key, title: r.title, url: r.url, snippet, score: cite.score, in: 'citation' })
+        const hit: ResourceHit = { key: r.key, title: r.title, url: r.url, snippet, score: cite.score, in: 'citation' }
+        tiers.set(hit, 2)
+        hits.push(hit)
         continue
       }
       if (!inAll) continue
@@ -219,7 +223,11 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
     }
     let snippet: string
     let where: 'meta' | 'content'
-    if (inMeta) {
+    // Document text whenever it carries the words (also split between title and text): the passage answers the question.
+    if (inContent || (!inHead && !notesOnly)) {
+      where = 'content'
+      snippet = snippetAround(r.content ?? '', content, words)
+    } else {
       where = 'meta'
       // Title first when it carries every word; the notes (maintainer remarks) only as a last resort.
       const src = words.every((w) => title.includes(w))
@@ -230,17 +238,13 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
             ? r.notes!
             : r.title
       snippet = snippetAround(src, normalizeText(src), words)
-    } else {
-      where = 'content'
-      snippet = snippetAround(r.content ?? '', content, words)
     }
     const hit: ResourceHit = { key: r.key, title: r.title, url: r.url, snippet, score, in: where }
-    if (notesOnly) notesOnlyHits.add(hit)
+    tiers.set(hit, notesOnly ? 3 : where === 'content' ? 0 : 1)
     hits.push(hit)
   }
-  // content → title/summary → citation → notes-only
-  const tierOf = (h: ResourceHit): number => (notesOnlyHits.has(h) ? 3 : h.in === 'content' ? 0 : h.in === 'meta' ? 1 : 2)
-  hits.sort((a, b) => tierOf(a) - tierOf(b) || b.score - a.score || a.key.localeCompare(b.key))
+  // document text → title/summary → citation → needs the notes; within a tier by score, then key
+  hits.sort((a, b) => tiers.get(a)! - tiers.get(b)! || b.score - a.score || a.key.localeCompare(b.key))
   return opts?.limit ? hits.slice(0, opts.limit) : hits
 }
 

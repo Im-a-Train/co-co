@@ -3,7 +3,7 @@
  * Camp frame: header (title, dates, reload) + tabs + child view. Shared by all modules; change with care.
  * Loads CampFacts once per camp via useCampFacts; child views use the same handle.
  */
-import { computed, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
@@ -33,10 +33,38 @@ const dates = computed(() => {
 })
 
 watch(campIri, () => void load(), { immediate: true })
+
+/*
+ * Vuetify's slide group keeps its scroll arrows once the tabs overflowed: the arrows take the space the
+ * tabs would need, so after the area grows again (activity drawer closed, window wider) it never re-checks.
+ * When the bar overflows although its tabs fit into its full width, remount it so it measures afresh.
+ */
+const layoutEl = ref<HTMLElement | null>(null)
+const tabsKey = ref(0)
+let resizeObserver: ResizeObserver | null = null
+let remeasureTimer: ReturnType<typeof setTimeout> | undefined
+function remeasureTabs(): void {
+  const bar = layoutEl.value?.querySelector<HTMLElement>('.camp-tabs')
+  if (!bar?.classList.contains('v-slide-group--is-overflowing')) return
+  const content = bar.querySelector<HTMLElement>('.v-slide-group__content')
+  if (content && content.scrollWidth <= bar.clientWidth + 1) tabsKey.value++
+}
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined' || !layoutEl.value) return
+  resizeObserver = new ResizeObserver(() => {
+    clearTimeout(remeasureTimer)
+    remeasureTimer = setTimeout(remeasureTabs, 150)
+  })
+  resizeObserver.observe(layoutEl.value)
+})
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  clearTimeout(remeasureTimer)
+})
 </script>
 
 <template>
-  <div class="camp-layout">
+  <div ref="layoutEl" class="camp-layout">
     <div class="d-flex align-center flex-wrap ga-2 mb-2">
       <v-btn :to="{ name: 'camps' }" icon="mdi-arrow-left" variant="text" :aria-label="t('campLayout.backToList')" />
       <div>
@@ -70,7 +98,7 @@ watch(campIri, () => void load(), { immediate: true })
     />
     <v-alert v-if="error" type="error" variant="tonal" class="mb-2" :title="t('campLayout.loadFailed')" :text="error" />
 
-    <v-tabs density="comfortable" show-arrows class="camp-tabs mb-4">
+    <v-tabs :key="tabsKey" density="comfortable" show-arrows class="camp-tabs mb-4">
       <template v-for="tab in CAMP_TABS" :key="tab.name">
         <v-tab
           :to="{ name: tab.name, params: { campId } }"

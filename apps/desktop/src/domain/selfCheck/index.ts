@@ -66,6 +66,20 @@ export function toSelfCheckFindings(findings: Finding[]): SelfCheckFinding[] {
   }))
 }
 
+/**
+ * Counts stored with a run (history line «0 Muss, 0 Soll, 12 Hinweis»): like countFindings, but without
+ * coach homework (needsInput), so the history agrees with the progress columns and the report.
+ */
+export function selfCheckRunCounts(findings: readonly Finding[]): FindingCounts {
+  const counts: FindingCounts = { must: 0, should: 0, hint: 0, overridden: 0 }
+  for (const f of findings) {
+    if (f.needsInput) continue
+    if (f.override) counts.overridden++
+    else counts[f.severity]++
+  }
+  return counts
+}
+
 export function planSelfCheckRun(input: {
   id: string
   campIri: Iri
@@ -307,8 +321,10 @@ export interface SelfCheckReportModel {
   /** Null while the category mapping is unconfirmed (provisional) or without data. */
   jsDays: SelfCheckJsDays | null
   groups: SelfCheckReportGroup[]
-  /** «Behoben seit letztem Selbstcheck»: title plus the old message. */
-  fixed: { id: string; title: string; message: string }[]
+  /** «Behoben seit letztem Selbstcheck»: title plus the old message; a merged day group is one entry («an 7 Tagen (…)»). */
+  fixed: { id: string; title: string; message: string; findingIds: string[] }[]
+  /** Heading of the fixed list, counted like the group headers: «(n)» or «(1 Thema, 7 Stellen)». */
+  fixedHeader: string
   /** Mapping not confirmed yet: J+S days and day rules were not checked (printed as first line). */
   provisional: boolean
 }
@@ -374,16 +390,22 @@ export function buildSelfCheckReport(
     groups.push({ severity, header, topics, places, items })
   }
   // Fixed day findings of one rule merge like the open ones: one entry per topic («an 7 Tagen (…)»).
-  // fixedHeading {n} counts these entries (topics), like the topic count of the group headers.
+  // The heading counts like the group headers: «(n)» when every topic has one place, else topics and places.
   const fixed = progress
     ? groupSelfCheckFindings(
         progress.fixed.filter((f) => include || !f.redDerived),
         facts,
       ).map((g) => {
         const first = g.items[0]!
-        return { id: first.id, title: g.title, message: g.merged ? daysLabel(g.dates) : first.message }
+        return { id: first.id, title: g.title, message: g.merged ? daysLabel(g.dates) : first.message, findingIds: g.items.map((f) => f.id) }
       })
     : []
+  const fixedTopics = fixed.length
+  const fixedPlaces = fixed.reduce((n, f) => n + f.findingIds.length, 0)
+  const fixedHeader =
+    fixedTopics === fixedPlaces
+      ? tr('selfCheck.report.fixedHeading', { n: fixedTopics })
+      : tr(fixedTopics === 1 ? 'selfCheck.report.fixedHeadingCountOne' : 'selfCheck.report.fixedHeadingCount', { topics: fixedTopics, places: fixedPlaces })
   return {
     heading: tr('selfCheck.report.heading', { camp: facts.camp.title, date: formatDate(opts.now) }),
     counts: { must: count('must'), should: count('should'), hint: count('hint') },
@@ -391,6 +413,7 @@ export function buildSelfCheckReport(
     jsDays: provisional ? null : jsDays,
     groups,
     fixed,
+    fixedHeader,
     provisional,
   }
 }
@@ -425,7 +448,7 @@ export function renderSelfCheckReportText(m: SelfCheckReportModel): string {
   }
   if (m.groups.length === 0) lines.push('', tr('selfCheck.report.none'))
   if (m.fixed.length > 0) {
-    lines.push('', tr('selfCheck.report.fixedHeading', { n: m.fixed.length }))
+    lines.push('', m.fixedHeader)
     for (const f of m.fixed) lines.push(`- ${fixedText(f)}`)
   }
   return lines.join('\n') + '\n'
@@ -449,7 +472,7 @@ export function renderSelfCheckReportHtml(m: SelfCheckReportModel): string {
   }
   if (m.groups.length === 0) parts.push(`<p>${escapeHtml(tr('selfCheck.report.none'))}</p>`)
   if (m.fixed.length > 0) {
-    parts.push(`<h4>${escapeHtml(tr('selfCheck.report.fixedHeading', { n: m.fixed.length }))}</h4>`, '<ul>')
+    parts.push(`<h4>${escapeHtml(m.fixedHeader)}</h4>`, '<ul>')
     for (const f of m.fixed) parts.push(`<li>${escapeHtml(fixedText(f))}</li>`)
     parts.push('</ul>')
   }

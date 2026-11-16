@@ -442,7 +442,13 @@ export function itemFromFindingGroup(
   const groupText = first.feedbackTextGroup?.trim()
   if (groupText) {
     // The rule's own group wording names the days itself: no extra «Das betrifft …» sentence.
-    const text = groupText.replace(/\{n\}/g, String(group.findings.length)).replace(/\{dates\}/g, datesLabel).replace(/\.\.$/, '.')
+    // {n} counts the listed days (a combined end-day hit covers two); without dates the «({dates})» goes.
+    const days = group.dates.length || group.findings.length
+    const label = datesLabel.trim()
+    const text = (label ? groupText : groupText.replace(/\s*\(\{dates\}\)/g, ''))
+      .replace(/\{n\}/g, String(days))
+      .replace(/\{dates\}/g, label)
+      .replace(/\.\.$/, '.')
     const item = ruleItem(anyMust ? { ...first, severity: 'must' } : first, campIri, now, null, text)
     item.findingIds = group.findings.map((f) => f.id)
     return item

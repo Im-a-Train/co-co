@@ -11,6 +11,12 @@ export async function selfCheckFlows({ page, step, go, shot, BASE }) {
     if (!/Selbstcheck/.test(t)) throw new Error('title missing')
     if (!/Entwurfsrunde starten/i.test(t)) throw new Error('start button missing')
     await page.waitForSelector('[data-testid="selfcheck-report"]', { timeout: 8000 })
+    // J+S days: no count while provisional (PREP-01); once confirmed the chip is coloured by state (GOLDEN-13).
+    const provisional = await page.getByTestId('selfcheck-provisional').count()
+    const chip = page.getByTestId('selfcheck-report-jsdays')
+    if (provisional && (await chip.count())) throw new Error('J+S-Tage chip shown while the report is provisional')
+    if (!provisional && (await chip.count()) && !/text-(warning|success)/.test((await chip.getAttribute('class')) ?? ''))
+      throw new Error('J+S-Tage chip not coloured by state')
     await shot(page, 'flow-selfcheck-start')
   })
 

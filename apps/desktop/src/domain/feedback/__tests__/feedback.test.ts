@@ -246,6 +246,19 @@ describe('itemFromFindingGroup', () => {
     expect(it2.text).not.toContain('Das betrifft')
     expect(it2.findingIds).toHaveLength(3)
   })
+  it('group text: {n} counts the listed days, a missing dates label drops «({dates})», a Muss keeps its own question', () => {
+    const withGroup = (n: number, severity: 'must' | 'should' = 'should') =>
+      ({ ...mk(n, severity), feedbackTextGroup: 'An {n} Tagen ({dates}) sind Pausen zu kurz. Könnt ihr mehr Zeit einplanen?' }) as Finding
+    // A combined end-day hit covers two dates: three dates from two findings.
+    const g = { ...group([withGroup(1), withGroup(2, 'must')]), dates: ['2031-01-24', '2031-01-25', '2031-01-30'] }
+    const it2 = itemFromFindingGroup(g, '/api/camps/c1', '24., 25., 30.01.2031')
+    expect(it2.text).toBe('An 3 Tagen (24., 25., 30.01.2031) sind Pausen zu kurz. Könnt ihr mehr Zeit einplanen?')
+    expect(it2.kind).toBe('must')
+    expect(lintItems([it2])).toEqual([])
+    expect(itemFromFindingGroup(group([withGroup(1), withGroup(2)]), '/api/camps/c1', '').text).toBe(
+      'An 2 Tagen sind Pausen zu kurz. Könnt ihr mehr Zeit einplanen?',
+    )
+  })
   it('a group of one equals itemFromFinding (no findingIds)', () => {
     const it2 = itemFromFindingGroup(group([mk(1)]), '/api/camps/c1', 'x')
     expect(it2.findingIds).toBeUndefined()

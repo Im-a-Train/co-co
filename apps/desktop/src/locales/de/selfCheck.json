@@ -53,7 +53,9 @@
       "days": "an {n} Tagen ({dates})",
       "groupCount": "{label} ({topics} Themen, {places} Stellen)",
       "groupCountOne": "{label} (1 Thema, {places} Stellen)",
-      "fixedHeading": "Behoben seit letztem Selbstcheck ({n})"
+      "fixedHeading": "Behoben seit letztem Selbstcheck ({n})",
+      "fixedHeadingCount": "Behoben seit letztem Selbstcheck ({topics} Themen, {places} Stellen)",
+      "fixedHeadingCountOne": "Behoben seit letztem Selbstcheck (1 Thema, {places} Stellen)"
     },
     "history": {
       "title": "Bisherige Entwurfsrunden",

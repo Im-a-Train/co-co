@@ -128,6 +128,25 @@ describe('searchResources ranking tiers', () => {
     const citations = new Map([['CITE', [{ id: 'X-1', title: 'Notfallkonzept', page: 'S. 1' }]]])
     expect(searchResources(recs, 'notfall', { citations }).map((h) => h.key)).toEqual(['TEXT', 'META', 'CITE', 'NOTE'])
   })
+  it('a word in the notes and in the document text is a document-text hit, with the text as snippet', () => {
+    const recs = [
+      mk('CITE', { title: 'Beta' }),
+      mk('BOTH', { title: 'Alpha', notes: 'Notfallset fehlt', content: 'Im Notfall die Rega anrufen.' }),
+    ]
+    const citations = new Map([['CITE', [{ id: 'X-1', title: 'Notfallkonzept' }]]])
+    const h = searchResources(recs, 'notfall', { citations })
+    expect(h.map((x) => [x.key, x.in])).toEqual([['BOTH', 'content'], ['CITE', 'citation']])
+    expect(h[0]!.snippet).toContain('Rega')
+  })
+  it('a title hit whose document text also matches ranks with the document-text hits', () => {
+    const recs = [
+      mk('TEXT', { title: 'Gamma', content: 'Wasser ist kalt.' }),
+      mk('TITLE', { title: 'Wasser', content: 'Am Wasser gilt: Wasser nie allein.' }),
+      mk('ONLYTITLE', { title: 'Wasser Merkblatt' }),
+    ]
+    const h = searchResources(recs, 'wasser')
+    expect(h.map((x) => [x.key, x.in])).toEqual([['TITLE', 'content'], ['TEXT', 'content'], ['ONLYTITLE', 'meta']])
+  })
   it('prefers the citation over a notes-only match of the same resource', () => {
     const recs = [mk('R', { title: 'Alpha', notes: 'Hinweis Lager' })]
     const citations = new Map([['R', [{ id: 'X-1', title: 'Lagerplatz', page: 'S. 1' }]]])

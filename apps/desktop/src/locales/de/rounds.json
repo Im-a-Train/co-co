@@ -9,7 +9,7 @@
       "untriaged": "{n} Befund nicht gesichtet | {n} Befunde nicht gesichtet",
       "unsentMust": "{n} Auflage nicht gesendet | {n} Auflagen nicht gesendet",
       "unsentDrafts": "{n} Feedback-Punkt nicht gesendet | {n} Feedback-Punkte nicht gesendet",
-      "jsDays": "Nur {valid} J+S-Tage gültig, nötig sind mindestens {required}",
+      "jsDays": "{valid} von mind. {required} J+S-Tagen gültig",
       "noteRequired": "Begründung (Pflicht, solange ein Muss-Befund offen ist)",
       "noteOptional": "Notiz (optional)",
       "noteHint": "Die Begründung wird im Verlauf des Review-Status gespeichert.",

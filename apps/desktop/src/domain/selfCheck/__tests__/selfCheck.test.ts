@@ -10,6 +10,7 @@ import {
   planSelfCheckRun,
   renderSelfCheckReport,
   renderSelfCheckReportHtml,
+  selfCheckRunCounts,
   toSelfCheckFindings,
 } from '../index'
 
@@ -293,9 +294,20 @@ describe('report grouping, provisional, fixed message (PREP-09 / PREP-01 / PREP-
     const m = buildSelfCheckReport(f2 as never, [], null, compareWithRun(prev, []), opts)
     expect(m.fixed).toHaveLength(1)
     expect(m.fixed[0]).toMatchObject({ title: 'Fixpunkte fehlen', message: 'an 4 Tagen (26., 27., 29., 30.01.2031)' })
+    // Sorted by date (x1 = 26., x3 = 27., x0 = 29., x2 = 30.01.); the entry links to the earliest day.
+    expect(m.fixed[0]!.findingIds).toEqual(['R-DAY:1', 'R-DAY:3', 'R-DAY:0', 'R-DAY:2'])
+    // Counted like the group headers (the screen column «Behoben» counts the 4 places).
+    expect(m.fixedHeader).toBe('Behoben seit letztem Selbstcheck (1 Thema, 4 Stellen)')
     const text = renderSelfCheckReport(f2 as never, [], null, compareWithRun(prev, []), opts)
-    expect(text).toContain('Behoben seit letztem Selbstcheck (1)')
-    expect(text).toContain('- Fixpunkte fehlen – an 4 Tagen (26., 27., 29., 30.01.2031)')
+    expect(text).toContain('\nBehoben seit letztem Selbstcheck (1 Thema, 4 Stellen)\n- Fixpunkte fehlen – an 4 Tagen (26., 27., 29., 30.01.2031)\n')
+    expect(renderSelfCheckReportHtml(m)).toContain('<h4>Behoben seit letztem Selbstcheck (1 Thema, 4 Stellen)</h4>')
+  })
+  it('fixed heading: «(n)» when every topic has one place, topics and places otherwise', () => {
+    const fx = (id: string, ruleId: string, target: string) => ({ id, ruleId, severity: 'hint' as const, title: ruleId, message: 'm', targets: [target], redDerived: false })
+    const singles = { fixed: [fx('A:1', 'A', '/api/x'), fx('B:1', 'B', '/api/y')], remaining: [], added: [], changed: {} }
+    expect(buildSelfCheckReport(f2 as never, [], null, singles, opts).fixedHeader).toBe('Behoben seit letztem Selbstcheck (2)')
+    const mixed = { ...singles, fixed: [...singles.fixed, fx('R:0', 'R', '/api/days/x0'), fx('R:1', 'R', '/api/days/x1')] }
+    expect(buildSelfCheckReport(f2 as never, [], null, mixed, opts).fixedHeader).toBe('Behoben seit letztem Selbstcheck (3 Themen, 4 Stellen)')
   })
   it('progress ignores coach homework (needsInput)', () => {
     const prev = {
@@ -309,12 +321,15 @@ describe('report grouping, provisional, fixed message (PREP-09 / PREP-01 / PREP-
     expect(p.fixed).toEqual([])
     expect(p.added.map((f) => f.id)).toEqual(['A:1'])
     expect(toSelfCheckFindings([homework, finding('A:1')]).map((f) => f.id)).toEqual(['A:1'])
+    // The history line of a run counts the same findings (no homework).
+    expect(selfCheckRunCounts([homework, newHomework, finding('A:1', { severity: 'hint' })])).toEqual({ must: 0, should: 0, hint: 1, overridden: 0 })
   })
   it('lists fixed findings with title and old message', () => {
     const prev = { id: 'r', campIri: 'x', createdAt: 'x', by: 'leader', snapshotId: null, note: '', counts: { must: 0, should: 0, hint: 0 }, validJsDays: null, totalDays: null,
       findings: [{ id: 'Z:1', ruleId: 'Z', severity: 'hint', title: 'Lager mit 4 Tagen', message: 'Zuordnung fehlt', targets: ['/api/x'], redDerived: false }] } as SelfCheckRun
     const m = buildSelfCheckReport(facts, [], null, compareWithRun(prev, []), opts)
     expect(m.fixed[0]).toMatchObject({ title: 'Lager mit 4 Tagen', message: 'Zuordnung fehlt' })
+    expect(m.fixedHeader).toBe('Behoben seit letztem Selbstcheck (1)')
     expect(renderSelfCheckReport(facts, [], null, compareWithRun(prev, []), opts)).toContain('- Lager mit 4 Tagen – Zuordnung fehlt')
   })
 })

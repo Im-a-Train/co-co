@@ -86,7 +86,7 @@ async function openEcamp(url: string) {
     <div v-if="model.fixed.length > 0" data-testid="selfcheck-report-fixed">
       <div class="text-subtitle-2 d-flex align-center ga-2">
         <v-icon icon="mdi-check-circle-outline" color="success" size="small" />
-        {{ t('selfCheck.report.fixedHeading', { n: model.fixed.length }) }}
+        {{ model.fixedHeader }}
       </div>
       <ul class="text-body-2 text-medium-emphasis pl-6">
         <li v-for="f in model.fixed" :key="f.id">{{ f.message ? `${f.title} – ${f.message}` : f.title }}</li>
