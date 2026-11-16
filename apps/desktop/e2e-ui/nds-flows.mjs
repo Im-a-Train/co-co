@@ -60,5 +60,11 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     await page.waitForSelector('[data-testid="nds-adopt"]', { state: 'detached', timeout: 5000 })
     await page.waitForTimeout(800)
     await shot(page, 'flow-nds-adopted')
+    // Checkliste shows the adopted NDS deadline values with their «NDS» badge (ADR 0007)
+    await go('checkliste', 'flow-nds-checklist')
+    await page.waitForSelector('[data-testid="camp-deadlines-card"]', { timeout: 8000 })
+    if (!(await page.locator('[data-testid="camp-deadline"] [data-testid="nds-badge"]').count())) throw new Error('NDS badge missing in Checkliste')
+    await page.getByTestId('camp-deadlines-card').scrollIntoViewIfNeeded()
+    await shot(page, 'flow-nds-checklist')
   })
 }

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { CampFacts, CategoryMapping, Finding } from '../../types'
 import { bwzRequiredMinutes, computeJsDays, reportFromJsModel, thresholdsFromParams } from '../../rules/lib/jsDays'
 import { CAT_LS, FactsBuilder, makeCtx } from '../../rules/__tests__/factory'
-import { buildGrid, jsDayBars } from '../index'
+import { buildGrid, jsDayBars, severityStateColor } from '../index'
 
 const finding = (id: string, ruleId: string, targets: string[], extra: Partial<Finding> = {}): Finding => ({
   id,
@@ -118,5 +118,13 @@ describe('buildGrid findings', () => {
   it('preview flag is passed through; no report means no summary', () => {
     expect(grid.preview).toBe(true)
     expect(grid.summary).toBeNull()
+  })
+})
+
+describe('severityStateColor (GP badge = DP chips)', () => {
+  it('colours open Muss red and open Soll orange; a Hinweis gets no colour', () => {
+    expect(severityStateColor('must')).toBe('error')
+    expect(severityStateColor('should')).toBe('warning')
+    expect(severityStateColor('hint')).toBeNull()
   })
 })

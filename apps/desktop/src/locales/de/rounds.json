@@ -22,8 +22,8 @@
       "history": "Verlauf",
       "noteLabel": "Notiz (optional)",
       "noTransitions": "Keine weiteren Übergänge möglich.",
-      "notReady": "Lager wird noch geladen – Bewilligung erst nach der Prüfung.",
-      "notReadyShort": "Lager wird noch geladen"
+      "notReady": "Lager noch nicht geladen – bewilligen kannst du erst nach der Prüfung.",
+      "notReadyShort": "Lager noch nicht geladen"
     },
     "timeline": {
       "title": "Runden",

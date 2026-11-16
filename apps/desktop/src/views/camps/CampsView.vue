@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** /lager: Meine Lager (dates, review status, finding counts, next deadline, next step). */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -22,6 +22,7 @@ import { isLeaderRole } from '@/domain/selfCheck'
 import { listCoachInputs } from '@/domain/campFacts/store'
 import { daysBetween, deadlineStatus } from '@/domain/rules/lib/deadlines'
 import { listCampSummaries } from '@/domain/rules/store'
+import { subscribeLive } from '@/domain/storage/live'
 import { reviewStatusColor } from '@/domain/rounds'
 import { listAllRounds, listReviews } from '@/domain/rounds/store'
 import type { CampRowSources } from '@/components/camps/campRows'
@@ -37,17 +38,22 @@ const sources = ref<CampRowSources>({ summaries: [], reviews: [], rounds: [], in
 
 async function loadSources(): Promise<void> {
   try {
-    const [summaries, reviews, rounds, inputs] = await Promise.all([
-      listCampSummaries(),
-      listReviews(),
-      listAllRounds(),
-      listCoachInputs(),
-    ])
-    sources.value = { summaries, reviews, rounds, inputs }
+    const [reviews, rounds, inputs] = await Promise.all([listReviews(), listAllRounds(), listCoachInputs()])
+    sources.value = { ...sources.value, reviews, rounds, inputs }
   } catch {
     // Local data is optional for the list: columns fall back to «Noch nicht geprüft».
   }
 }
+// Summaries (counts, «Als Nächstes») are read live: the camp pages write their snapshot shortly after a change,
+// often just after the coach came back here.
+let stopSummaries: (() => void) | null = null
+onMounted(() => {
+  stopSummaries = subscribeLive(
+    () => listCampSummaries(),
+    (summaries) => (sources.value = { ...sources.value, summaries }),
+  )
+})
+onBeforeUnmount(() => stopSummaries?.())
 
 async function refresh(force = false): Promise<void> {
   await Promise.all([load(force), loadSources()])
@@ -110,7 +116,9 @@ function reviewColor(r: CampRow): string | undefined {
 }
 function reviewText(r: CampRow): string {
   const must = approvedWithOpenMust(r)
-  return must > 0 ? t('camps.campsView.approvedMust', { n: must, status: t(`reviewStatus.${r.review}`) }) : t(`reviewStatus.${r.review}`)
+  // The status label stays on one line; the chip may wrap only before «n Muss offen» (narrow table).
+  const status = t(`reviewStatus.${r.review}`)
+  return must > 0 ? t('camps.campsView.approvedMust', { n: must, status: status.replace(/ /g, '\u00a0') }) : status
 }
 /** One text per non-empty bucket; each renders as a no-wrap span so a line breaks only between buckets. */
 function findingParts(c: { must: number; should: number; hint: number }): string[] {
@@ -135,7 +143,8 @@ function deadlineText(r: CampRow): string {
 }
 function deadlineColor(r: CampRow): string | undefined {
   const s = r.nextDeadline ? deadlineStatus(r.nextDeadline, today) : 'done'
-  return s === 'overdue' ? 'error' : s === 'soon' ? 'warning' : undefined
+  // Colour = state: deadlines never block approval, so overdue is a warning like «soon», never red.
+  return s === 'overdue' || s === 'soon' ? 'warning' : undefined
 }
 function overdueDays(r: CampRow): number {
   return r.nextDeadline ? Math.max(0, daysBetween(r.nextDeadline.due, today)) : 0
@@ -263,7 +272,9 @@ function overdueDays(r: CampRow): number {
           </td>
           <td :class="{ 'text-no-wrap': lgAndUp }">{{ dates(r) }}</td>
           <td>
-            <v-chip size="small" :color="reviewColor(r)" variant="tonal">{{ reviewText(r) }}</v-chip>
+            <v-chip size="small" :color="reviewColor(r)" variant="tonal" :class="{ 'review-chip-wrap': approvedWithOpenMust(r) > 0 }" data-testid="camp-review">
+              {{ reviewText(r) }}
+            </v-chip>
           </td>
           <td data-testid="camp-findings-text">
             <span v-if="r.counts && findingsText(r.counts)" :class="findingsClass(r)">
@@ -316,3 +327,13 @@ function overdueDays(r: CampRow): number {
     </v-table>
   </div>
 </template>
+
+<style scoped>
+/* «Bewilligt mit Auflagen · 1 Muss offen» may take two lines instead of pushing «Weiter prüfen» out of the table. */
+.review-chip-wrap {
+  height: auto;
+  min-height: var(--v-chip-height);
+  padding-block: 2px;
+  white-space: normal;
+}
+</style>

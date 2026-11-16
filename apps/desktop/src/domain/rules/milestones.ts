@@ -40,7 +40,8 @@ export interface Milestone {
   confidence: Confidence
   /**
    * Ids of milestones (other lists) that name the same step. When one of them is active in the camp,
-   * this entry is skipped (the YAML decides which entry is primary); an old tick of this entry carries over.
+   * this entry is skipped (the YAML decides which entry is primary); an old tick of this entry carries over
+   * only when it names a single target.
    */
   sameAs?: string[]
 }

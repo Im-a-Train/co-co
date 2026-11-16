@@ -90,6 +90,26 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     if (!/Feedback speichern & weiter \(F\)/i.test(labels) || !/Ignorieren & weiter \(I\)/i.test(labels) || !/Überspringen \(J\)/i.test(labels)) throw new Error('button labels: ' + labels)
     if (!(await page.locator('[data-testid="triage-more"]').count())) throw new Error('more menu missing')
     await shot(page, 'flow-decision-layout')
+    // a narrow window (about 1024 x 700): the main button stays on screen for every open entry
+    await page.setViewportSize({ width: 1024, height: 700 })
+    try {
+      await page.waitForTimeout(400)
+      const rows = page.locator('.triage-item[data-status="open"]')
+      const below = []
+      for (let i = 0; i < (await rows.count()); i++) {
+        await rows.nth(i).click()
+        await page.waitForTimeout(150)
+        await page.evaluate(() => window.scrollTo(0, 0))
+        const b = await page.locator('[data-testid="triage-save"]').boundingBox()
+        if (b && b.y + b.height > 700) below.push(`${await rows.nth(i).getAttribute('data-finding-id')}: ${Math.round(b.y + b.height)}`)
+      }
+      await rows.first().click()
+      await page.evaluate(() => window.scrollTo(0, 0))
+      await shot(page, 'flow-decision-layout-1024')
+      if (below.length) throw new Error('save button below the fold at 1024x700: ' + below.join(', '))
+    } finally {
+      await page.setViewportSize({ width: 1360, height: 860 })
+    }
   })
 
   await step('flow: triage 3 findings by keyboard (save, ignore, skip)', async () => {
@@ -281,6 +301,44 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     const outlined = await page.locator('[data-testid="grid-focus-day"]').count()
     if (outlined !== count) throw new Error(`group of ${count} days outlines ${outlined}`)
     await shot(page, 'flow-group-grid')
+  })
+
+  await step('flow: a day group shows its days, no single activity', async () => {
+    await go('befunde', 'flow-group-detail')
+    await page.waitForSelector('.triage-item', { timeout: 8000 })
+    await page.locator('.triage-item[data-group]:not(.member)').first().click()
+    await page.waitForTimeout(300)
+    const detail = await page.locator('.triage-detail').innerText()
+    if (!/Betrifft \d+ Tage: /.test(detail)) throw new Error('days line missing')
+    if (!/Dieser Befund betrifft keine einzelne Aktivität/.test(detail)) throw new Error('a day group must not show the first day\'s activity')
+    if (!(await page.getByTestId('triage-open-grid').count())) throw new Error('«Im GP öffnen» missing for a day group')
+    await shot(page, 'flow-group-detail')
+  })
+
+  await step('flow: GP: a closed drawer leaves no selection; an unconfirmed mapping change survives a tab switch', async () => {
+    await go('raster', 'flow-gp-state')
+    await page.locator('.wg-block').first().click({ timeout: 5000 })
+    await page.waitForTimeout(500)
+    if (!(await page.locator('.wg-block-sel').count())) throw new Error('no selection while the drawer is open')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (await page.locator('.wg-block-sel').count()) throw new Error('blocks stay outlined after the drawer closed')
+    // change one class without confirming, go to DP and back
+    await page.getByTestId('grid-mapping-edit').click()
+    await page.locator('[data-testid="mapping-row"] .v-select').last().click()
+    await page.locator('.v-overlay--active .v-list-item:not(.v-list-item--active)').first().click()
+    await page.waitForSelector('[data-testid="mapping-dirty"]', { timeout: 3000 })
+    await page.locator('.camp-tabs .v-tab', { hasText: /^DP$/ }).click()
+    await page.waitForURL(/aktivitaeten/, { timeout: 5000 })
+    await page.waitForTimeout(500)
+    await page.locator('.camp-tabs .v-tab', { hasText: /^GP$/ }).click()
+    await page.waitForURL(/raster/, { timeout: 5000 })
+    await page.waitForSelector('[data-testid="mapping-dirty"]', { state: 'visible', timeout: 5000 })
+    if (!/Nicht bestätigte Änderung/.test(await page.getByTestId('grid-mapping-line').innerText())) throw new Error('pending line lost')
+    await shot(page, 'flow-gp-mapping-pending')
+    await page.getByTestId('mapping-discard').click()
+    await page.waitForTimeout(400)
+    if (!/Kategorien zugeordnet am/.test(await page.getByTestId('grid-mapping-line').innerText())) throw new Error('discard did not restore the confirmed line')
   })
 
   await step('flow: ignoring a Muss asks for a reason first', async () => {

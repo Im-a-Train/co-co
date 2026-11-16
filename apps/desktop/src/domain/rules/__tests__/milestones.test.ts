@@ -207,6 +207,22 @@ describe('sameAs (twin milestones)', () => {
     expect(d).toHaveLength(1)
     expect(d[0].done).toBe(true)
   })
+  it('an old tick of a twin with several targets ticks none of them (it would tick unrelated rows)', () => {
+    const multi: MilestoneList = {
+      ...TWINS,
+      milestones: [
+        TWINS.milestones[0]!,
+        { ...TWINS.milestones[0]!, id: 'M-LS2', title: 'Lagerdossier an den Coach', offsetDays: -30 },
+        { ...TWINS.milestones[1]!, id: 'pbs-d', title: 'Lagerdossier an den Coach', sameAs: ['M-LS', 'M-LS2'] },
+      ],
+    }
+    const d = computeMilestoneDeadlines(camp, { milestonesDone: { 'pbs-d': '2026-05-01' } } as never, multi)
+    expect(d.map((x) => [x.milestoneId, x.done])).toEqual([
+      ['M-LS', false],
+      ['M-LS2', false],
+    ])
+    expect(d.every((x) => x.alsoNamed?.some((a) => a.id === 'pbs-d'))).toBe(true)
+  })
   it('parseMilestonesYaml validates sameAs targets', () => {
     const withSame = (ids: string) => VALID.replace('    confidence: unverified', `    sameAs: ${ids}\n    confidence: unverified`)
     expect(parseMilestonesYaml(withSame('[other]'), undefined, new Set(['other'])).milestones[0].sameAs).toEqual(['other'])

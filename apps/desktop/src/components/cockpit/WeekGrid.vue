@@ -9,6 +9,7 @@ import {
   meterThresholdPercent,
   minutesOfDay,
   SEVERITIES,
+  severityStateColor,
   type GridBlock,
   type GridModel,
 } from '@/domain/cockpit'
@@ -119,7 +120,10 @@ const anyFindings = computed(() => props.grid.days.some((d) => d.blocks.some((b)
 const stickyTop = computed(() => `calc(var(--v-layout-top, 0px) + var(--camp-tabs-height, 44px) + ${props.stickyOffset ?? 0}px)`)
 
 /** Same mapping as the DP chips: Muss red, Soll orange, Hinweis neutral (colour = state, informational = none). */
-const badgeClass = (s: Severity): string => (s === 'must' ? 'bg-error' : s === 'should' ? 'bg-warning' : 'wg-badge-hint')
+const badgeClass = (s: Severity): string => {
+  const c = severityStateColor(s)
+  return c ? `bg-${c}` : 'wg-badge-hint'
+}
 </script>
 
 <template>

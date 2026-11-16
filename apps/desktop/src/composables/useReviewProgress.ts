@@ -3,20 +3,22 @@
  * rounds, mapping, rule modules) and derives progress, approval blockers, verdict and the next step.
  * Persists a compact snapshot into the camp summary so «Meine Lager» can show the next step.
  */
-import { computed, onMounted, ref, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
+import { computed, onMounted, onScopeDispose, ref, shallowRef, toValue, watch, type ComputedRef, type MaybeRefOrGetter } from 'vue'
 import { isCoachTodo, progressOf, statusesOf } from '@/domain/triage'
 import { isDocumentReviewed, reviewProgress, reviewVerdict, toCampProgressSummary } from '@/domain/cockpit/progress'
 import type { ReviewProgress, ReviewStepKey, ReviewVerdict } from '@/domain/cockpit/progress'
 import { listDocuments } from '@/domain/documents/store'
+import { listFeedback } from '@/domain/feedback/store'
 import { approvalBlockers, type ApprovalBlockers } from '@/domain/rounds'
 import { splitHidden } from '@/domain/rules/lib/checklistSync'
 import { saveCampProgress } from '@/domain/rules/store'
-import type { CampProgressSummary, DocumentRecord, Iri } from '@/domain/types'
+import { subscribeLive } from '@/domain/storage/live'
+import type { CampProgressSummary, DocumentRecord, FeedbackItem, Iri } from '@/domain/types'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
 import { useCampRoute } from '@/composables/useCampRoute'
 import { useCampSettings, type CampSettingsHandle } from '@/composables/useCampSettings'
-import { useFeedback } from '@/composables/useFeedback'
+import { useDataStore } from '@/composables/useDataStore'
 import { useFindings, type FindingsHandle } from '@/composables/useFindings'
 import { useManualFindings } from '@/composables/useManualFindings'
 import { useRounds } from '@/composables/useRounds'
@@ -53,34 +55,58 @@ export function useReviewProgress(campIriArg?: MaybeRefOrGetter<Iri>, opts: Revi
   const settings = opts.settings ?? useCampSettings(iri)
   const findingsHandle = opts.findings ?? useFindings(iri)
   const { facts } = useCampFacts(iri)
-  const feedback = useFeedback(iri)
   const manual = useManualFindings(iri)
   const rc = useCampRuleConfig(iri)
   const rounds = useRounds(iri)
 
-  const documents = ref<DocumentRecord[]>([])
-  async function loadDocuments(): Promise<void> {
-    try {
-      documents.value = await listDocuments(iri.value)
-    } catch {
-      documents.value = []
-    }
+  // Feedback items and documents are read live (Dexie liveQuery): the long-lived header instance must see what
+  // the camp tabs (Befunde, Feedback, Dokumente) write through their own handles, or it persists a stale snapshot.
+  const feedbackItems = shallowRef<FeedbackItem[]>([])
+  const documents = shallowRef<DocumentRecord[]>([])
+  const live = ref({ feedback: false, documents: false })
+  const { ready: storeReady } = useDataStore()
+  let unsub: Array<() => void> = []
+  const stopLive = () => {
+    unsub.forEach((u) => u())
+    unsub = []
   }
-  onMounted(() => {
-    void loadDocuments()
-    void rounds.load()
-  })
-  watch(iri, () => {
-    void loadDocuments()
-    void rounds.load()
-  })
+  watch(
+    [iri, storeReady],
+    ([value, isReady]) => {
+      stopLive()
+      feedbackItems.value = []
+      documents.value = []
+      live.value = { feedback: false, documents: false }
+      if (!value || !isReady) return
+      unsub = [
+        subscribeLive(
+          () => listFeedback(value),
+          (v) => {
+            feedbackItems.value = v
+            live.value = { ...live.value, feedback: true }
+          },
+        ),
+        subscribeLive(
+          () => listDocuments(value),
+          (v) => {
+            documents.value = v
+            live.value = { ...live.value, documents: true }
+          },
+        ),
+      ]
+    },
+    { immediate: true },
+  )
+  onScopeDispose(stopLive)
+  onMounted(() => void rounds.load())
+  watch(iri, () => void rounds.load())
 
   const findings = findingsHandle.findings
   const tri = computed(() =>
     progressOf(
       statusesOf(
         findings.value.filter((f) => !isCoachTodo(f)),
-        feedback.items.value,
+        feedbackItems.value,
       ),
     ),
   )
@@ -94,7 +120,7 @@ export function useReviewProgress(campIriArg?: MaybeRefOrGetter<Iri>, opts: Revi
 
   const progress = computed<ReviewProgress | null>(() => {
     if (!facts.value) return null
-    const fb = feedback.items.value
+    const fb = feedbackItems.value
     // Same items as the Checkliste tab (M17): coach points only, minus hidden ones, plus the coach's own points.
     const hidden = rc.config.value.hiddenChecklist ?? []
     const checklistItems = splitHidden(
@@ -140,7 +166,7 @@ export function useReviewProgress(campIriArg?: MaybeRefOrGetter<Iri>, opts: Revi
     const js = findingsHandle.jsDays.value
     return approvalBlockers({
       findings: findings.value,
-      feedback: feedback.items.value,
+      feedback: feedbackItems.value,
       jsDays: confirmed && js ? { valid: js.validDayCount, required: findingsHandle.jsMinDays.value } : null,
       mappingConfirmed: confirmed,
     })
@@ -159,8 +185,11 @@ export function useReviewProgress(campIriArg?: MaybeRefOrGetter<Iri>, opts: Revi
   // Persist for «Meine Lager». Delayed past useFindings' own summary write (300 ms) so the record exists.
   if (opts.persist !== false) {
     let timer: ReturnType<typeof setTimeout> | undefined
+    // Not before feedback and documents were read once: an empty list would count everything as open.
     const snapshot = computed(() =>
-      progress.value ? toCampProgressSummary(progress.value, { triageOpen: Math.max(0, tri.value.total - tri.value.done), openMust: openMust.value }) : null,
+      progress.value && live.value.feedback && live.value.documents
+        ? toCampProgressSummary(progress.value, { triageOpen: Math.max(0, tri.value.total - tri.value.done), openMust: openMust.value })
+        : null,
     )
     watch(
       () => (snapshot.value ? `${iri.value}|${snapshotKey(snapshot.value)}` : null),

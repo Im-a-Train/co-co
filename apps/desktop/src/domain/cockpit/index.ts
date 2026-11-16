@@ -422,6 +422,14 @@ export function severityColor(s: Severity): string {
   return s === 'must' ? 'error' : s === 'should' ? 'warning' : 'info'
 }
 
+/**
+ * Colour of an open-finding count (GP block badge, DP chips): colour = state, so Muss red, Soll orange and
+ * Hinweis neutral (null = no colour; informational counts get none).
+ */
+export function severityStateColor(s: Severity): 'error' | 'warning' | null {
+  return s === 'must' ? 'error' : s === 'should' ? 'warning' : null
+}
+
 // ---------------------------------------------------------------------------------------------
 // KPIs
 // ---------------------------------------------------------------------------------------------

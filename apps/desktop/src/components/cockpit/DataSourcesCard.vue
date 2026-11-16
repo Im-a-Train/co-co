@@ -34,8 +34,9 @@ watch(
 )
 
 const summary = computed(() => persons.summary.value)
-// Only worth a card when NDS is switched on or a comparison already exists; never an NDS line while NDS is off.
-const visible = computed(() => summary.value.compared && (summary.value.differences > 0 || regaMissing.value > 0))
+// Only worth a card when a comparison found something (differences, or Rega gaps while NDS is on); the
+// «noch nicht verglichen» hint belongs to Personen. Never an NDS line while NDS is off.
+const visible = computed(() => summary.value.compared && (summary.value.differences > 0 || (ndsOn.value && regaMissing.value > 0)))
 const regaMissing = computed(() =>
   rega.value
     ? Math.max(0, rega.value.participantsTotal - rega.value.participantsTransmitted) +
