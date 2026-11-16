@@ -51,7 +51,8 @@ message/whole-message variants); required for every active must/should rule (gua
 
 `feedbackTextGroup` (optional, `scope: day` rules only): wording used when same-rule day findings are grouped into one
 feedback item (triage «Feedback erstellen» on a group, «Befunde übernehmen»). Placeholders: `{n}` = number of listed
-days, `{dates}` = date list (e.g. «24., 25. und 26.01.»). It names the days itself, so no extra «Das betrifft …»
+days, `{dates}` = date list (e.g. «24., 25. und 26.01.»); the hit fills the other placeholders (e.g. `{min}`) like in
+`feedbackText`, the engine leaves `{n}`/`{dates}` for `itemFromFindingGroup`. It names the days itself, so no extra «Das betrifft …»
 sentence is appended; without dates a trailing «({dates})» is dropped. Without it the single `feedbackText` plus that
 sentence is used.
 

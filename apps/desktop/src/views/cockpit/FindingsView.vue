@@ -125,6 +125,13 @@ const explicitMode = ref<'triage' | 'list' | null>(
 )
 const statuses = computed(() => statusesOf(findings.value, feedbackHandle.items.value))
 const hasOpen = computed(() => statuses.value.includes('open'))
+/** List mode: findings that already have a feedback item («Feedback ansehen» instead of «Feedback erstellen»). */
+const withFeedback = computed(() => new Set(findings.value.filter((f) => feedbackForFinding(f, feedbackHandle.items.value)).map((f) => f.id)))
+/** A group card opens the existing item once every non-ignored day has feedback. */
+const groupHasFeedback = (g: FindingGroupEntry): boolean => {
+  const open = g.findings.filter((f) => !f.override)
+  return open.length > 0 && open.every((f) => withFeedback.value.has(f.id))
+}
 /** Natural default: triage while there is something to do (decided once, so it does not flip when the last one is done). */
 const autoMode = ref<'triage' | 'list' | null>(null)
 watch(
@@ -468,6 +475,7 @@ function addAi(list: Finding[]) {
               v-if="e.findings.length > 1"
               :group="e"
               :open="!!listTarget && e.findings.some((x) => x.id === listTarget)"
+              :has-feedback="groupHasFeedback(e)"
               @feedback="feedbackGroup"
               @override="askOverrideGroup"
             >
@@ -475,6 +483,7 @@ function addAi(list: Finding[]) {
                 v-for="f in e.findings"
                 :key="f.id"
                 :finding="f"
+                :has-feedback="withFeedback.has(f.id)"
                 :data-finding-id="f.id"
                 tabindex="-1"
                 class="finding-card"
@@ -490,6 +499,7 @@ function addAi(list: Finding[]) {
             <FindingCard
               v-else
               :finding="e.findings[0]!"
+              :has-feedback="withFeedback.has(e.findings[0]!.id)"
               :data-finding-id="e.findings[0]!.id"
               tabindex="-1"
               class="finding-card"

@@ -53,7 +53,7 @@ The webview has no network access of its own (CSP). Everything external goes thr
 | Composable | Provides | Used by |
 | --- | --- | --- |
 | `useSession`, `useInstances` | login state, token refresh, instance discovery | router, connection view, settings |
-| `useCampList` | camps of the user + summaries (summaries read live via `subscribeLive`; «Meine Lager» (CampsView) also shows feedback/document counts live) | Meine Lager, deadlines |
+| `useCampList` | camps of the user (eCamp list, shared, loaded once) | Meine Lager, deadlines |
 | `useCampFacts(campIri)` | facts, loading, progress, reload | camp layout + every camp view |
 | `useCampSettings(campIri)` | category mapping (+ confirmed), coach inputs, `classOf` | rules, cockpit, documents |
 | `useFindings(campIri)` | findings, counts, `jsDays` (model-derived), `previewJsDays` (unconfirmed guess, display only, never fed to the engine), `jsMinDays`, `jsModelFor(mapping)` (what-if for the mapping panel), ignore, AI findings | cockpit views, triage, feedback |
@@ -110,6 +110,10 @@ Optional, non-indexed fields added without a new schema version (inside `_enc`, 
 - **Triage:** Befunde → `FindingTriage` (finding + `ActivityPreview` + inline editor) → save feedback /
   ignore / skip → next open finding. Position in `?befund=<id>`; Übersicht and GP link there via
   `triageLocation`.
+- **Live reads:** `domain/storage/live.ts` `subscribeLive(query, onValue)` wraps Dexie `liveQuery` (queries go
+  through `getDb()`, so the encryption middleware applies). `useReviewProgress` reads the camp's feedback and
+  documents live; «Meine Lager» (`CampsView`) reads the camp summaries (`listCampSummaries`: counts, progress,
+  «Als Nächstes») live, so a snapshot written by a camp page just after the coach came back shows up without reload.
 - **Camp tabs / routes** (`CAMP_TABS` in `router/index.ts`): Angaben, Übersicht, GP (`raster`, Grobprogramm incl. the
   category-mapping panel), DP (`aktivitaeten`, Detailprogramm), Befunde, Dokumente, Feedback, Runden |
   Checkliste, Personen, Selbstcheck (sticky tab bar, divider after Runden, sentence case). The camp header shows connection chips (eCamp / MiData / NDS →

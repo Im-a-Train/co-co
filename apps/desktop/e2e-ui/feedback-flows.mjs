@@ -34,16 +34,29 @@ export async function feedbackFlows({ page, step, go, shot }) {
     const checks = page.locator('[data-testid^="refine-check-"]')
     if (!(await checks.count())) throw new Error('no refine checkboxes')
     if (!(await page.getByTestId('refine-submit').isEnabled())) await checks.first().locator('input').check({ force: true })
-    // Remember what is selected (row text per checked checkbox) to assert exactly these become items.
-    const selectedTexts = await page.evaluate(() => {
+    // Also take one same-rule day group («… · n Tage (…)»): it must become ONE item for all its days.
+    const groupId = await page.evaluate(() => {
+      for (const row of document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')) {
+        const cb = row.querySelector('input[type="checkbox"]')
+        if (cb && !cb.checked && /· \d+ Tage/.test(row.querySelector('.text-caption')?.textContent ?? '')) {
+          return row.querySelector('[data-testid^="refine-check-"]')?.getAttribute('data-testid') ?? null
+        }
+      }
+      return null
+    })
+    if (groupId) await page.getByTestId(groupId).locator('input').check({ force: true })
+    // Remember what is selected (row id + text per checked checkbox) to assert exactly these become items.
+    const selectedRows = await page.evaluate(() => {
       const out = []
       for (const row of document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')) {
         const cb = row.querySelector('input[type="checkbox"]')
         const ta = row.querySelector('textarea')
-        if (cb && cb.checked && ta && ta.value.trim()) out.push(ta.value.trim())
+        const id = row.querySelector('[data-testid^="refine-check-"]')?.getAttribute('data-testid')
+        if (cb && cb.checked && ta && ta.value.trim()) out.push({ id, text: ta.value.trim() })
       }
       return out
     })
+    const selectedTexts = selectedRows.map((r) => r.text)
     if (!selectedTexts.length) throw new Error('refine: nothing selected')
     const beforeTexts = await page.getByTestId('feedback-item').evaluateAll((els) => els.map((e) => e.textContent || ''))
     await page.getByTestId('refine-submit').click()
@@ -62,6 +75,21 @@ export async function feedbackFlows({ page, step, go, shot }) {
     if (!hasDay || !hasAct) throw new Error(`day/activity headings missing (${hasDay}/${hasAct})`)
     await shot(page, 'flow-fb-refined')
     // Leave no overlay (snackbar) open: the next flow navigates by hash and Vuetify aborts that while one is active.
+    await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 10000 }).catch(() => {})
+    // A second «Befunde übernehmen» no longer offers what was just taken over (no duplicates on a second run).
+    await page.getByTestId('feedback-refine').click()
+    await page.waitForSelector('[data-testid="refine-dialog"]', { timeout: 5000 })
+    await settle(1200)
+    const again = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')].map((row) => ({
+        id: row.querySelector('[data-testid^="refine-check-"]')?.getAttribute('data-testid'),
+        text: row.querySelector('textarea')?.value.trim() ?? '',
+      })),
+    )
+    for (const s of selectedRows) {
+      if (again.some((r) => r.id === s.id || r.text === s.text)) throw new Error(`refine: «${s.text.slice(0, 60)}» offered again after it was taken over`)
+    }
+    await page.getByTestId('refine-dialog').getByRole('button', { name: 'Abbrechen', exact: true }).click()
     await page.waitForFunction(() => !document.querySelector('.v-overlay--active'), null, { timeout: 10000 }).catch(() => {})
   })
 

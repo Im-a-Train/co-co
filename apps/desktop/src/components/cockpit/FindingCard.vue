@@ -17,6 +17,8 @@ const props = defineProps<{
   /** Day group (triage): title of the group and its days line replace the first member's message and activity. */
   groupTitle?: string
   groupDays?: string
+  /** The finding already has a feedback item: the button opens it («Feedback ansehen») instead of creating one. */
+  hasFeedback?: boolean
 }>()
 const emit = defineEmits<{
   feedback: [finding: Finding]
@@ -212,10 +214,12 @@ const otherEvidence = computed(() => props.finding.evidence.filter((e) => !activ
         <v-btn
           v-if="!hideActions"
           size="small"
-          variant="tonal"
+          :variant="hasFeedback ? 'text' : 'tonal'"
           color="primary"
-          prepend-icon="mdi-message-draw"
-          :text="t('findings.createFeedback')"
+          :prepend-icon="hasFeedback ? 'mdi-message-text-outline' : 'mdi-message-draw'"
+          :text="hasFeedback ? t('findings.triage.openFeedback') : t('findings.createFeedback')"
+          data-testid="finding-feedback"
+          :data-has-feedback="hasFeedback ? '1' : undefined"
           @click="emit('feedback', finding)"
         />
       </div>

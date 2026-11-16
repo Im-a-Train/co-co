@@ -6,7 +6,12 @@ import { severityBorderColor } from '@/components/cockpit/severityStyle'
 import type { FindingGroupEntry } from '@/domain/triage'
 import { groupLabel, weekdayDate } from './findingLabels'
 
-const props = defineProps<{ group: FindingGroupEntry; open?: boolean }>()
+const props = defineProps<{
+  group: FindingGroupEntry
+  open?: boolean
+  /** Every non-ignored day already has feedback: the button opens the item («Feedback ansehen»). */
+  hasFeedback?: boolean
+}>()
 const emit = defineEmits<{ feedback: [group: FindingGroupEntry]; override: [group: FindingGroupEntry] }>()
 const { t } = useI18n()
 
@@ -53,11 +58,12 @@ const notIgnored = computed(() => props.group.findings.filter((f) => !f.override
         />
         <v-btn
           size="small"
-          variant="tonal"
+          :variant="hasFeedback ? 'text' : 'tonal'"
           color="primary"
-          prepend-icon="mdi-message-draw"
-          :text="t('findings.createFeedback')"
+          :prepend-icon="hasFeedback ? 'mdi-message-text-outline' : 'mdi-message-draw'"
+          :text="hasFeedback ? t('findings.triage.openFeedback') : t('findings.createFeedback')"
           data-testid="finding-group-feedback"
+          :data-has-feedback="hasFeedback ? '1' : undefined"
           @click="emit('feedback', group)"
         />
       </div>

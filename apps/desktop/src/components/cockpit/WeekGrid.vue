@@ -19,7 +19,7 @@ import type { Severity } from '@/domain/types'
 const props = defineProps<{
   grid: GridModel
   selected?: string | null
-  /** Day IRIs to outline («Dieser Tag», opened from a day finding). */
+  /** Day IRIs to outline (opened from a day finding): «Dieser Tag» for one, «Betroffener Tag» on each of several. */
   focusDays?: readonly string[]
   /** Extra sticky offset in px (bars above the grid that stick as well). */
   stickyOffset?: number
@@ -92,6 +92,10 @@ const endPair = computed(() => {
 })
 const isEndDay = (i: number) => endPair.value && (i === 0 || i === props.grid.days.length - 1)
 const isFocus = (d: GridModel['days'][number]) => !!d.dayIri && !!props.focusDays?.includes(d.dayIri)
+/** Label of an outlined day: counts the outlined columns, not the IRIs passed in (a day may lie outside the grid). */
+const focusLabel = computed(() =>
+  t(props.grid.days.filter(isFocus).length > 1 ? 'cockpit.grid.affectedDay' : 'cockpit.grid.thisDay'),
+)
 
 function blockStyle(b: GridBlock, color: string) {
   const w = 100 / b.lanes
@@ -164,7 +168,7 @@ const badgeClass = (s: Severity): string => {
     <div class="wg-head" :style="{ top: stickyTop }">
       <div class="wg-time" />
       <div v-for="(d, i) in grid.days" :key="d.date" class="wg-colhead" :class="{ 'wg-focus': isFocus(d) }" :data-testid="isFocus(d) ? 'grid-focus-day' : undefined">
-        <div v-if="isFocus(d)" class="wg-thisday text-caption font-weight-bold">{{ t((focusDays?.length ?? 0) > 1 ? 'cockpit.grid.affectedDay' : 'cockpit.grid.thisDay') }}</div>
+        <div v-if="isFocus(d)" class="wg-thisday text-caption font-weight-bold">{{ focusLabel }}</div>
         <component
           :is="d.findingId ? 'button' : 'div'"
           :type="d.findingId ? 'button' : undefined"

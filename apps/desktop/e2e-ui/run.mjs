@@ -338,21 +338,27 @@ async function main() {
     await page.getByTestId('mode-list').click()
     await page.waitForTimeout(500)
     await shot(page, 'flow-findings-list')
-    await page.getByRole('button', { name: /feedback erstellen/i }).first().click({ timeout: 5000 })
+    // A single finding card without feedback yet (cards with feedback offer «Feedback ansehen»).
+    const card = page.locator('.finding-card').filter({ has: page.locator('[data-testid="finding-feedback"]:not([data-has-feedback])') }).first()
+    const findingId = await card.getAttribute('data-finding-id', { timeout: 5000 })
+    await card.getByTestId('finding-feedback').click({ timeout: 5000 })
     await page.waitForURL(/feedback/, { timeout: 5000 })
     await page.waitForTimeout(800)
     const txt = await page.evaluate(() => document.body.innerText)
     if (/Noch kein Feedback|keine Einträge/i.test(txt)) throw new Error('feedback list still empty')
-    // A second click on the same card must open the existing item, not create a duplicate.
+    // The same card now offers «Feedback ansehen»: it opens the existing item, no duplicate.
     const count1 = await page.getByTestId('feedback-item').count()
     await go('befunde', 'flow-findings')
     await page.getByTestId('mode-list').click()
     await page.waitForTimeout(500)
-    await page.getByRole('button', { name: /feedback erstellen/i }).first().click({ timeout: 5000 })
+    const again = page.locator(`.finding-card[data-finding-id="${findingId}"]`).getByTestId('finding-feedback')
+    if ((await again.getAttribute('data-has-feedback', { timeout: 5000 })) !== '1') throw new Error('card with feedback still offers «Feedback erstellen»')
+    if (!/Feedback ansehen/.test(await again.innerText())) throw new Error('card with feedback: label is not «Feedback ansehen»')
+    await again.click({ timeout: 5000 })
     await page.waitForURL(/feedback/, { timeout: 5000 })
     await page.waitForTimeout(800)
     const count2 = await page.getByTestId('feedback-item').count()
-    if (count2 !== count1) throw new Error(`«Feedback erstellen» twice created a duplicate (${count1} -> ${count2})`)
+    if (count2 !== count1) throw new Error(`«Feedback ansehen» created a duplicate (${count1} -> ${count2})`)
   })
 
   await step('flow: feedback preview tabs', async () => {
