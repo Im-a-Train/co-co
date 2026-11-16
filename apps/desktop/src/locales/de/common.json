@@ -2,7 +2,6 @@
   "app": {
     "name": "co-co",
     "subtitle": "Coach Cockpit",
-    "milestone": "M1–M5",
     "status": {
       "loggedOut": "Nicht angemeldet"
     },
@@ -20,17 +19,9 @@
     "none": "keine",
     "unknown": "unbekannt",
     "retry": "Erneut versuchen",
-    "loading": "Lädt …",
     "save": "Speichern",
     "cancel": "Abbrechen",
-    "close": "Schliessen",
-    "delete": "Löschen",
-    "edit": "Bearbeiten",
-    "back": "Zurück",
-    "copy": "Kopieren",
-    "copied": "Kopiert",
-    "confirm": "Bestätigen",
-    "error": "Fehler"
+    "close": "Schliessen"
   },
   "notTauri": {
     "title": "Nur in der Desktop-App verfügbar",

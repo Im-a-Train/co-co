@@ -48,7 +48,6 @@
         "none": "keine"
       },
       "oauthHelp": "Meldest du dich bei eCamp über MiData an, übernimmt co-co die MiData-Sitzung automatisch. Bei Passwort- oder Google-Anmeldung musst du dich hier separat bei MiData anmelden.",
-      "personIdDetected": "automatisch erkannt",
       "personIdAuto": "Automatisch erkannt: {who} (MiData-Nr. {id})",
       "personIdYou": "du",
       "personIdOverride": "Manuell ändern",

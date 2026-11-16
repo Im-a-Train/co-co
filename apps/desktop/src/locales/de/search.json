@@ -5,7 +5,6 @@
     "label": "Lager durchsuchen",
     "empty": "Keine Treffer.",
     "groupActivity": "Aktivitäten",
-    "groupDocument": "Dokumente",
-    "clear": "Suche leeren"
+    "groupDocument": "Dokumente"
   }
 }

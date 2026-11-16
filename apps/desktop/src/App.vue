@@ -22,12 +22,11 @@ const router = useRouter()
 const drawer = ref(true)
 
 const navItems = [
-  { to: '/verbindung', icon: 'mdi-connection', titleKey: 'nav.connection', auth: false, hideWhenLoggedIn: true },
-  { to: '/lager', icon: 'mdi-tent', titleKey: 'nav.camps', auth: true },
-  { to: '/fristen', icon: 'mdi-calendar-clock', titleKey: 'nav.deadlines', auth: true },
-  { to: '/regeln', icon: 'mdi-book-check-outline', titleKey: 'nav.rules', auth: true },
-  { to: '/hilfsmittel', icon: 'mdi-bookshelf', titleKey: 'nav.resources', auth: true },
-  { to: '/einstellungen', icon: 'mdi-cog-outline', titleKey: 'nav.settings', auth: true },
+  { to: '/lager', icon: 'mdi-tent', titleKey: 'nav.camps' },
+  { to: '/fristen', icon: 'mdi-calendar-clock', titleKey: 'nav.deadlines' },
+  { to: '/regeln', icon: 'mdi-book-check-outline', titleKey: 'nav.rules' },
+  { to: '/hilfsmittel', icon: 'mdi-bookshelf', titleKey: 'nav.resources' },
+  { to: '/einstellungen', icon: 'mdi-cog-outline', titleKey: 'nav.settings' },
 ]
 
 const accountName = computed(() => user.value?.displayName ?? t('app.account.fallbackName'))
@@ -40,8 +39,6 @@ const isTestInstance = computed(() => {
     return false
   }
 })
-
-const visibleNavItems = computed(() => navItems.filter((i) => !(i.hideWhenLoggedIn && isLoggedIn.value)))
 
 // ADR 0013: Hilfsmittel overlay + rule edits load once the data store is ready (idempotent).
 initResources()
@@ -126,12 +123,11 @@ watch(isLoggedIn, (loggedIn) => {
     <v-navigation-drawer v-if="isLoggedIn" v-model="drawer" width="220">
       <v-list nav density="comfortable">
         <v-list-item
-          v-for="item in visibleNavItems"
+          v-for="item in navItems"
           :key="item.to"
           :to="item.to"
           :prepend-icon="item.icon"
           :title="t(item.titleKey)"
-          :disabled="item.auth && !isLoggedIn"
         />
       </v-list>
     </v-navigation-drawer>

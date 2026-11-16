@@ -7,8 +7,7 @@
       "must": "Muss",
       "should": "Soll",
       "hint": "Hinweis",
-      "changed": "Änderungen in eCamp seit der Entwurfsrunde",
-      "changedNone": "Noch kein Selbstcheck"
+      "changed": "Änderungen in eCamp seit der Entwurfsrunde"
     },
     "run": {
       "button": "Entwurfsrunde starten",

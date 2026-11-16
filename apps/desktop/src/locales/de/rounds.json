@@ -43,8 +43,7 @@
       "title": "Neue Runde starten",
       "text": "Der aktuelle Stand des Lagers wird als Runde {n} festgehalten. Eine offene Runde wird dabei abgeschlossen.",
       "noteLabel": "Notiz zur Runde (optional)",
-      "confirm": "Runde starten",
-      "needsFacts": "Der Lagerstand muss zuerst aus eCamp geladen werden."
+      "confirm": "Runde starten"
     },
     "close": {
       "button": "Runde abschliessen"

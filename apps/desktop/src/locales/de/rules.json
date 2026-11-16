@@ -50,7 +50,6 @@
         "source": "Quelle",
         "sources": "Quellen",
         "sourceBinding": "verbindlich",
-        "sourceQuote": "Zitat",
         "validity": "Gültigkeit",
         "validFrom": "ab {date}",
         "validTo": "bis {date}",
@@ -71,7 +70,6 @@
         "disabledCamps": "In {count} Lager deaktiviert | In {count} Lagern deaktiviert",
         "enable": "Wieder aktivieren",
         "disableAll": "Für alle Lager deaktivieren",
-        "disabledTag": "deaktiviert",
         "disableConfirmTitle": "{id} in allen Lagern ausschalten?",
         "disableConfirmBody": "co-co meldet dann in keinem Lager mehr: {title}.",
         "disableMustWarning": "Das ist eine Muss-Regel aus einer verbindlichen Quelle.",
@@ -405,7 +403,6 @@
       }
     },
     "paramNote": "Parameter angepasst: {label} = {value} (Standard {default})",
-    "sourceUpdated": "Quelle aktualisiert – erneut prüfen",
     "status": {
       "retired": "ausser Kraft"
     }
