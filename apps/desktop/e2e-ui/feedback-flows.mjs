@@ -34,10 +34,29 @@ export async function feedbackFlows({ page, step, go, shot }) {
     const checks = page.locator('[data-testid^="refine-check-"]')
     if (!(await checks.count())) throw new Error('no refine checkboxes')
     if (!(await page.getByTestId('refine-submit').isEnabled())) await checks.first().locator('input').check({ force: true })
+    // Remember what is selected (row text per checked checkbox) to assert exactly these become items.
+    const selectedTexts = await page.evaluate(() => {
+      const out = []
+      for (const row of document.querySelectorAll('[data-testid="refine-dialog"] .refine-row')) {
+        const cb = row.querySelector('input[type="checkbox"]')
+        const ta = row.querySelector('textarea')
+        if (cb && cb.checked && ta && ta.value.trim()) out.push(ta.value.trim())
+      }
+      return out
+    })
+    if (!selectedTexts.length) throw new Error('refine: nothing selected')
+    const beforeTexts = await page.getByTestId('feedback-item').evaluateAll((els) => els.map((e) => e.textContent || ''))
     await page.getByTestId('refine-submit').click()
     await settle(1500)
     const after = await page.getByTestId('feedback-item').count()
     if (after <= before) throw new Error(`no items created (${before} -> ${after})`)
+    if (after - before !== selectedTexts.length) throw new Error(`refine created ${after - before} items for ${selectedTexts.length} selected rows`)
+    const afterTexts = await page.getByTestId('feedback-item').evaluateAll((els) => els.map((e) => e.textContent || ''))
+    for (const text of selectedTexts) {
+      const want = 1 + beforeTexts.filter((b) => b.includes(text)).length
+      const got = afterTexts.filter((a) => a.includes(text)).length
+      if (got !== want) throw new Error(`refine: selected text «${text.slice(0, 60)}» shown ${got}x, expected ${want}x`)
+    }
     const hasDay = await page.locator('[data-testid^="feedback-day-"]').count()
     const hasAct = await page.locator('[data-testid^="feedback-activity-"]').count()
     if (!hasDay || !hasAct) throw new Error(`day/activity headings missing (${hasDay}/${hasAct})`)
