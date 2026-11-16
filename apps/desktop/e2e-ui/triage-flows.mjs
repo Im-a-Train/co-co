@@ -213,8 +213,8 @@ export async function triageFlows({ page, step, go, shot, BASE }) {
     await shot(page, 'flow-back-to-finding-grid-drawer')
     // non-modal drawer (wide window): the sticky bar is the only «Zurück zum Befund»
     if ((await page.locator('[data-testid="drawer-back-to-finding"]').count()) !== 0) throw new Error('drawer repeats the back button on a wide window')
-    const ctx = await page.locator('[data-testid="back-to-finding"]').locator('xpath=..').innerText()
-    if (!/·/.test(ctx)) throw new Error('rule id / title missing in back bar: ' + ctx)
+    const ctx = await page.locator('[data-testid="back-to-finding-context"]').innerText()
+    if (!/Du kommst|[A-Za-zäöü]{4}/.test(ctx) || /\b[A-Z]{2,4}-[A-Z]{2,5}-\d\d\b/.test(ctx)) throw new Error('back bar shows a rule id (or no title): ' + ctx)
     // Esc closes only the drawer; the bar button stays reachable
     await page.keyboard.press('Escape')
     await page.waitForTimeout(500)
