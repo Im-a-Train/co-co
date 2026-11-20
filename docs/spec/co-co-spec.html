@@ -1670,7 +1670,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
     <div class="card"><h3>Document viewer: limits</h3><p>DOCX findings have no anchor (no page model); PDF findings use the current page; deep links support <span class="mono">page</span> only (sheet and km anchors are shown, not linked). Old <span class="mono">.xls</span> is not supported. A camp without documents cannot reach 100 % on the progress bar.</p></div>
     <div class="card"><h3>OAuth callback</h3><p>eCamp does not validate the callback URL (a possible open redirect). Report it to the eCamp team; co-co doesn't rely on it.</p></div>
     <div class="card"><h3>Licence</h3><p>eCamp is AGPL-3.0. Choose an AGPL-compatible licence for co-co now if you plan to contribute it upstream later.</p></div>
-    <div class="card"><h3>Auto-updater + code signing</h3><p>There is no auto-updater yet: alpha builds are installed by hand from GitHub Releases. Open: Tauri updater (signed update manifests) and a code-signing certificate to get rid of the SmartScreen warning.</p></div>
+    <div class="card"><h3>Code signing + first real update</h3><p>The in-app updater is built (M23, signed update manifests; needs the <span class="mono">TAURI_SIGNING_PRIVATE_KEY</span> secret). Still open: a first end-to-end update from a real signed release, and a code-signing certificate to get rid of the SmartScreen warning.</p></div>
   </div>
 </div></section>
 
@@ -1848,7 +1848,7 @@ docs/adr/             <span class="c"># decision records (from this page)</span>
       ['OpenAI-compatible / local AI','Choose the AI provider: Claude or any OpenAI-compatible endpoint (Ollama, LM Studio, llama.cpp, vLLM, OpenAI). http only for localhost; the optional key is bound to its origin. Zone rules apply to every provider.','v1','ai'],
       ['MCP server for AI assistants','Local MCP server on 127.0.0.1 with a bearer token; Claude Desktop, Claude Code and other clients can read camp data and (if allowed) write feedback. Connection guide in Settings > KI.','v1','ai'],
       ['MCP tool switches (read/write)','19 read tools (on by default) and 10 write tools (off by default, confirmation in co-co), each switchable on its own. Only posting a feedback comment writes to eCamp.','v1','ai'],
-      ['Auto-update + signing','When other coaches start using it.','later'],
+      ['Code signing (Windows)','Certificate against the SmartScreen warning, when other coaches start using it. The in-app updater itself is built (M23).','later'],
       ['MiData (read-only, red zone)','Fills Lager-Angaben from MiData: participant counts, age band, leader qualifications, coach match. Only aggregates; see the MiData section.','v1'],
       ['Cross-source consistency checks','eCamp, MiData and NDS compared with each other: dates, leader counts and names, J+S leaders vs. valid qualifications, expiring qualifications, camp days, participant counts. Findings are red-derived and never reach the AI.','v1'],
       ['NDS status','Reads registration/approval, closing state, planned vs. actual counts, attendance checks and rental orders from the NDS web API (read-only, red zone, aggregates only); manual flags stay as a fallback. See the NDS section.','v1'],
