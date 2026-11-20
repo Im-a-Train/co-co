@@ -81,7 +81,8 @@ pub struct NdsRentalOrder {
 }
 
 /// The ONLY NDS-derived structure that crosses to the UI.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// (No `Eq`: [`crate::nds_sync::NdsSubsidies`] holds fractional CHF amounts.)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NdsAggregate {
     pub offer_business_id: String,
@@ -107,6 +108,15 @@ pub struct NdsAggregate {
     /// Rega registration counts (participants / supervisors); `None` if the Rega lists were not readable.
     #[serde(default)]
     pub rega: Option<RegaCounts>,
+    /// M21: attendance counts per activity; `None` if no attendance list was readable.
+    #[serde(default)]
+    pub attendance: Option<crate::nds_sync::NdsAttendance>,
+    /// M21: camp details (risk answers, flags, subsidies, NDS minimum-requirement messages).
+    #[serde(default)]
+    pub camp_details: Option<crate::nds_sync::NdsCampDetails>,
+    /// M21: offer protocol (status history with dates); `None` if not readable.
+    #[serde(default)]
+    pub protocol: Option<crate::nds_sync::NdsProtocol>,
     /// ISO date-time «Stand NDS».
     pub fetched_at: String,
 }
@@ -134,6 +144,9 @@ pub struct NdsCampSummary {
     pub end: Option<String>,
     pub offer_state: Option<String>,
     pub offer_item_state: Option<String>,
+    /// M21: organisation name of the offer (German), for camp matching.
+    #[serde(default)]
+    pub organisation_name: Option<String>,
 }
 
 /// One probed endpoint: HTTP status plus which expected fields were present (names only).
@@ -194,7 +207,7 @@ pub const OP_RENTAL_ORDERS: &str = "rentalMaterialOrderListForCamp";
 
 pub const Q_OFFER_LIST: &str = "query OfferList($chunk: Chunk, $filter: OfferFilter) {
   offerList(chunk: $chunk, filter: $filter) {
-    content { businessId offerNumber duration { first last } offerState }
+    content { businessId offerNumber duration { first last } offerState organisation { name { resolvedLocalizedString { de fr it } } } }
     totalElements totalPages number size
   }
 }";
@@ -208,7 +221,7 @@ pub const Q_CAMP_LIST: &str = "query CampList($offerBusinessId: ID!, $campBusine
 
 pub const Q_ACTIVITY_LIST: &str = "query ActivityListForCamp($campBusinessId: ID!, $chunk: Chunk, $filter: ActivityFilter) {
   activityListForCamp(campBusinessId: $campBusinessId, chunk: $chunk, filter: $filter) {
-    content { businessId activityType activityState activityDate }
+    content { businessId activityType activityState activityDate overlapCount }
     totalElements totalPages number size
   }
 }";
@@ -372,7 +385,7 @@ pub struct NdsTask {
 }
 
 /// Valid `YYYY-MM-DD` prefix (month 1-12, day 1-31) or `None`.
-fn valid_date_of(v: &Value, key: &str) -> Option<String> {
+pub(crate) fn valid_date_of(v: &Value, key: &str) -> Option<String> {
     let d = date_of(v, key)?;
     let m: u32 = d[5..7].parse().ok()?;
     let day: u32 = d[8..10].parse().ok()?;
@@ -380,7 +393,7 @@ fn valid_date_of(v: &Value, key: &str) -> Option<String> {
 }
 
 /// German text of a `{de, fr, it}` object, falling back to fr, then it.
-fn localized(v: Option<&Value>) -> Option<String> {
+pub(crate) fn localized(v: Option<&Value>) -> Option<String> {
     let v = v?;
     ["de", "fr", "it"].iter().find_map(|k| text(v, k)).map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
 }
@@ -408,7 +421,7 @@ pub fn parse_person_tasks(raw: &Value) -> Vec<NdsTask> {
 
 // ------------------------------------------------------------------ helpers
 
-fn text(v: &Value, key: &str) -> Option<String> {
+pub(crate) fn text(v: &Value, key: &str) -> Option<String> {
     match v.get(key)? {
         Value::String(s) if !s.is_empty() => Some(s.clone()),
         Value::Number(n) => Some(n.to_string()),
@@ -416,12 +429,12 @@ fn text(v: &Value, key: &str) -> Option<String> {
     }
 }
 
-fn count(v: &Value, key: &str) -> Option<u32> {
+pub(crate) fn count(v: &Value, key: &str) -> Option<u32> {
     v.get(key)?.as_u64().map(|n| n.min(u32::MAX as u64) as u32)
 }
 
 /// `YYYY-MM-DD` prefix of a date or date-time string.
-fn date_part(s: &str) -> Option<String> {
+pub(crate) fn date_part(s: &str) -> Option<String> {
     let b = s.as_bytes();
     let ok = b.len() >= 10
         && b[..10].iter().enumerate().all(|(i, c)| if i == 4 || i == 7 { *c == b'-' } else { c.is_ascii_digit() })
@@ -429,12 +442,12 @@ fn date_part(s: &str) -> Option<String> {
     ok.then(|| s[..10].to_string())
 }
 
-fn date_of(v: &Value, key: &str) -> Option<String> {
+pub(crate) fn date_of(v: &Value, key: &str) -> Option<String> {
     v.get(key)?.as_str().and_then(date_part)
 }
 
 /// `(first, last)` of a `duration {first,last}` object; `last` falls back to `first`.
-fn duration(v: &Value) -> (Option<String>, Option<String>) {
+pub(crate) fn duration(v: &Value) -> (Option<String>, Option<String>) {
     let d = v.get("duration");
     let first = d.and_then(|d| date_of(d, "first"));
     let last = d.and_then(|d| date_of(d, "last")).or_else(|| first.clone());
@@ -448,14 +461,14 @@ fn overlaps(start: &Option<String>, end: &Option<String>, from: &str, to: &str) 
     }
 }
 
-fn items_of(v: &Value) -> &[Value] {
+pub(crate) fn items_of(v: &Value) -> &[Value] {
     match v {
         Value::Array(a) => a,
         _ => v.get("content").and_then(Value::as_array).map(Vec::as_slice).unwrap_or(&[]),
     }
 }
 
-fn tally(items: &[Value], key: &str) -> BTreeMap<String, u32> {
+pub(crate) fn tally(items: &[Value], key: &str) -> BTreeMap<String, u32> {
     let mut out = BTreeMap::new();
     for it in items {
         *out.entry(text(it, key).unwrap_or_else(|| "UNKNOWN".to_string())).or_insert(0) += 1;
@@ -528,6 +541,7 @@ pub fn parse_camps_overlapping(
             end,
             offer_state: offer_state.map(str::to_string),
             offer_item_state: text(c, "offerItemState"),
+            organisation_name: None,
         });
     }
     Ok(out)
@@ -593,6 +607,9 @@ pub fn reduce_aggregate(raw: &RawNdsCamp<'_>) -> Result<NdsAggregate, CoreError>
         camp_agenda_uploaded: Some(camp.get("campAgenda").is_some_and(|a| !a.is_null())),
         rental_orders,
         rega: None,
+        attendance: None,
+        camp_details: None,
+        protocol: None,
         fetched_at: raw.fetched_at.to_string(),
     })
 }

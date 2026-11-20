@@ -17,6 +17,7 @@ pub mod maptiles;
 pub mod mcp;
 pub mod midata;
 pub mod nds;
+pub mod nds_sync;
 pub mod origin;
 pub mod persons;
 pub mod refresh;
