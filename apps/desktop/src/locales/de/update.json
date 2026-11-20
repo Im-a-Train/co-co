@@ -1,0 +1,27 @@
+{
+  "update": {
+    "dialog": {
+      "title": "Neue Version verfügbar",
+      "versions": "Neue Version: {version} (installiert: {current})",
+      "notesTitle": "Neuerungen",
+      "installHint": "Beim Aktualisieren wird co-co beendet und mit der neuen Version neu gestartet. Deine Eingaben in co-co werden laufend lokal gespeichert und bleiben erhalten; ein noch nicht abgeschlossener Text in einem offenen Eingabefeld geht verloren. Eventuell musst du dich danach erneut bei eCamp anmelden.",
+      "portableHint": "Du nutzt die portable Version. Sie kann sich nicht selbst aktualisieren: Lade die neue Version von der Download-Seite herunter.",
+      "install": "Jetzt aktualisieren",
+      "later": "Später",
+      "skip": "Diese Version überspringen",
+      "openRelease": "Download-Seite öffnen",
+      "downloading": "Update wird heruntergeladen …",
+      "downloadingPercent": "Update wird heruntergeladen … {percent} %",
+      "installing": "Update wird installiert, co-co startet gleich neu …"
+    },
+    "settings": {
+      "installed": "Installierte Version: {version}",
+      "autoCheck": "Automatisch nach Updates suchen",
+      "autoCheckHint": "Beim Start, höchstens einmal pro Tag. Es wird nur github.com kontaktiert und keine persönlichen Daten werden gesendet.",
+      "checkNow": "Jetzt nach Updates suchen",
+      "upToDate": "co-co ist auf dem neuesten Stand.",
+      "available": "Eine neue Version ist verfügbar.",
+      "reopen": "Anzeigen"
+    }
+  }
+}

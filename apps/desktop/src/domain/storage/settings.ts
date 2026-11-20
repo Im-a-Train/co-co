@@ -30,6 +30,7 @@ export function mergeSettings(stored: AppSettingsPatch | null | undefined): AppS
       ...s.mcp,
       tools: { ...DEFAULT_APP_SETTINGS.mcp.tools, ...s.mcp?.tools },
     },
+    update: { ...DEFAULT_APP_SETTINGS.update, ...s.update },
   }
 }
 
@@ -53,6 +54,7 @@ export async function updateAppSettings(patch: AppSettingsPatch): Promise<AppSet
       midata: { ...current.midata, ...patch.midata },
       nds: { ...current.nds, ...patch.nds },
       mcp: { ...current.mcp, ...patch.mcp },
+      update: { ...current.update, ...patch.update },
     })
     await db.settings.put({ key: KEY, value: next })
     return next

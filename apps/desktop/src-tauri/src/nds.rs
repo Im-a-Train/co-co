@@ -806,7 +806,7 @@ async fn poll_login<R: Runtime>(app: AppHandle<R>, base: Url, epoch: u64) {
             last_names = Some(names);
         }
         let has_session = cookies.iter().any(|c| c.name == SESSION_COOKIE && !c.value.is_empty());
-        if !has_session || !is_signed_in_location(&base, &url) || polls % VERIFY_EVERY_POLLS != 0 {
+        if !has_session || !is_signed_in_location(&base, &url) || !polls.is_multiple_of(VERIFY_EVERY_POLLS) {
             continue;
         }
 

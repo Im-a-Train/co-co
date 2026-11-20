@@ -1696,6 +1696,17 @@ export interface AppSettings {
   }
   /** ADR 0012: local MCP server (runs only while ai.enabled AND mcp.enabled). The token lives in the OS keychain. */
   mcp: McpSettings
+  /** ADR 0017: in-app update check (plain data, no secrets). */
+  update: UpdateSettings
+}
+
+export interface UpdateSettings {
+  /** Check for a new version at start-up (at most once per 24 h). Default true. */
+  autoCheck: boolean
+  /** ISO time of the last automatic or manual check. */
+  lastCheckAt: IsoDateTime | null
+  /** Version the coach chose to skip («Diese Version überspringen»). */
+  skippedVersion: string | null
 }
 
 export interface McpSettings {
@@ -1731,6 +1742,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   midata: { baseUrl: 'https://db.scout.ch', personId: null, qualMapping: {} },
   nds: { enabled: false },
   mcp: { enabled: false, port: MCP_DEFAULT_PORT, tools: {}, confirmWrites: true, confirmReads: false },
+  update: { autoCheck: true, lastCheckAt: null, skippedVersion: null },
 }
 
 // ---------------------------------------------------------------------------------------------

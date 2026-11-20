@@ -114,6 +114,7 @@ pub fn run() {
             updater::app_update_check,
             updater::app_update_auto_check_allowed,
             updater::app_update_install,
+            updater::app_update_open_release,
         ])
         .run(tauri::generate_context!())
         .expect("error while running co-co");

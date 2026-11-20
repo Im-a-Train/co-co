@@ -59,6 +59,7 @@ const COMMANDS: &[&str] = &[
     "app_update_check",
     "app_update_auto_check_allowed",
     "app_update_install",
+    "app_update_open_release",
 ];
 
 fn main() {

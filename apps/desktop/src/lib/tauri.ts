@@ -6,6 +6,9 @@
  */
 import { invoke, isTauri as coreIsTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import type { AppUpdateInfo } from '@/domain/update/policy'
+
+export type { AppUpdateInfo }
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 export type JsonObject = { [key: string]: JsonValue }
@@ -267,6 +270,16 @@ export const commands = {
   unlockDataStore: () => call<{ key: string; created: boolean }>('unlock_data_store'),
   lockDataStore: () => call<void>('lock_data_store'),
 
+  // ADR 0017: in-app updates (GitHub releases only; Rust does the network access).
+  /** Checks for a newer version. Rejects with a short German message when offline or the feed is unreadable. */
+  appUpdateCheck: () => call<AppUpdateInfo>('app_update_check'),
+  /** False for unstamped dev builds and debug builds (no automatic check there). */
+  appUpdateAutoCheckAllowed: () => call<boolean>('app_update_auto_check_allowed'),
+  /** Re-checks, downloads, installs (progress via EVENT_APP_UPDATE_PROGRESS) and restarts the app. Refused when portable. */
+  appUpdateInstall: () => call<void>('app_update_install'),
+  /** Opens the GitHub release page of `version` in the browser (the URL is built in Rust). */
+  appUpdateOpenRelease: (version: string | null) => call<void>('app_update_open_release', { version }),
+
   // M7: MiData (read-only). Refreshed only on explicit user action.
   midataStatus: () => call<MidataStatus>('midata_status'),
   /** Opens the MiData login window (no IPC); emits EVENT_MIDATA_STATUS when the session cookie is captured. */
@@ -342,6 +355,18 @@ export async function onMidataStatus(handler: (status: MidataStatus) => void): P
 export async function onNdsStatus(handler: (status: NdsStatus) => void): Promise<UnlistenFn> {
   if (!isTauri()) return noop
   return listen<NdsStatus>(EVENT_NDS_STATUS, (e) => handler(e.payload))
+}
+
+export const EVENT_APP_UPDATE_PROGRESS = 'app-update://progress'
+
+export interface AppUpdateProgress {
+  downloaded: number
+  total: number | null
+}
+
+export async function onAppUpdateProgress(handler: (p: AppUpdateProgress) => void): Promise<UnlistenFn> {
+  if (!isTauri()) return noop
+  return listen<AppUpdateProgress>(EVENT_APP_UPDATE_PROGRESS, (e) => handler(e.payload))
 }
 
 export async function onAuthLog(handler: (log: AuthLogEvent) => void): Promise<UnlistenFn> {

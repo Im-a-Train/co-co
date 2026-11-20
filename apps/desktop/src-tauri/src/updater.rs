@@ -80,6 +80,23 @@ pub async fn app_update_auto_check_allowed<R: Runtime>(app: AppHandle<R>, webvie
     Ok(update::auto_check_allowed(&app.package_info().version.to_string(), cfg!(debug_assertions)))
 }
 
+/// Opens the GitHub release page of `version` (validated, invalid -> releases overview) in the system browser.
+/// The UI never passes a URL, so this cannot be used to open arbitrary links.
+#[tauri::command]
+pub async fn app_update_open_release<R: Runtime>(
+    app: AppHandle<R>,
+    webview: Webview<R>,
+    version: Option<String>,
+) -> AppResult<()> {
+    ensure_main(&webview)?;
+    use tauri_plugin_opener::OpenerExt;
+    let url = update::release_url(version.as_deref().unwrap_or(""));
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|_| AppError::Unexpected("Der Browser konnte nicht geöffnet werden".into()))?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn app_update_install<R: Runtime>(app: AppHandle<R>, webview: Webview<R>) -> AppResult<()> {
     ensure_main(&webview)?;

@@ -14,6 +14,7 @@ import DiagnosticsSection from '@/components/settings/DiagnosticsSection.vue'
 import InstancesSection from '@/components/settings/InstancesSection.vue'
 import MidataSection from '@/components/settings/MidataSection.vue'
 import NdsSection from '@/components/settings/NdsSection.vue'
+import UpdateSection from '@/components/settings/UpdateSection.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -26,6 +27,7 @@ const anchors = [
   { id: 'nds', label: 'settings.connections.nds' },
   { id: 'ki', label: 'settings.sections.ai' },
   { id: 'datenschutz', label: 'settings.sections.dataZonesShort' },
+  { id: 'updates', label: 'settings.sections.updates' },
   { id: 'diagnose', label: 'settings.sections.diagnostics' },
 ]
 
@@ -76,6 +78,10 @@ watch(() => route.hash, scrollToHash)
         <section id="datenschutz" class="mb-8">
           <h2 class="text-h6 mb-2">{{ t('settings.sections.dataZones') }}</h2>
           <DataZonesSection />
+        </section>
+        <section id="updates" class="mb-8">
+          <h2 class="text-h6 mb-2">{{ t('settings.sections.updates') }}</h2>
+          <UpdateSection />
         </section>
         <section id="diagnose" class="mb-8">
           <h2 class="text-h6 mb-2">{{ t('settings.sections.diagnostics') }}</h2>
