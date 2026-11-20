@@ -1,14 +1,42 @@
 /**
  * In-app updates (ADR 0018). State of the update check, the update dialog and the installation.
- * Network access is Rust-only (`app_update_*` commands). The automatic check waits for the unlocked data
- * store because its settings (autoCheck, lastCheckAt, skippedVersion) live there; it runs at most once per 24 h
- * and never blocks the UI. Manual checks always run and show their result (also errors).
+ * Network access is Rust-only (`app_update_*` commands). The automatic check runs right at start-up, BEFORE
+ * the data store is unlocked (that needs an eCamp login, and a release that breaks the login must still be able
+ * to offer its fix). It therefore reads a boot copy of its settings (autoCheck, lastCheckAt, skippedVersion) from
+ * localStorage (`UPDATE_PREFS_KEY`, non-secret); every change is written to that copy AND to the encrypted
+ * settings, which stay authoritative once unlocked. At most once per 24 h, never blocks the UI. Manual checks
+ * always run and show their result (also errors).
  */
-import { ref, watch } from 'vue'
-import { shouldAutoCheck, shouldPromptAuto, type AppUpdateInfo } from '@/domain/update/policy'
+import { ref } from 'vue'
+import { parseUpdatePrefs, shouldAutoCheck, shouldPromptAuto, type AppUpdateInfo } from '@/domain/update/policy'
+import type { UpdateSettings } from '@/domain/types'
 import { getAppSettings, updateAppSettings } from '@/domain/storage/settings'
 import { commands, errorMessage, isTauri, onAppUpdateProgress } from '@/lib/tauri'
-import { useDataStore } from './useDataStore'
+
+/** Boot copy of the update settings (non-secret; allowlisted in encryptionGuard). */
+const UPDATE_PREFS_KEY = 'co-co.update.v1'
+
+function readPrefs(): UpdateSettings {
+  try {
+    return parseUpdatePrefs(localStorage.getItem(UPDATE_PREFS_KEY))
+  } catch {
+    return parseUpdatePrefs(null)
+  }
+}
+
+/** Writes the boot copy, then the encrypted settings (ignored while the store is locked). */
+async function savePrefs(patch: Partial<UpdateSettings>): Promise<void> {
+  try {
+    localStorage.setItem(UPDATE_PREFS_KEY, JSON.stringify({ ...readPrefs(), ...patch }))
+  } catch {
+    // storage blocked: the encrypted settings below still hold the value
+  }
+  try {
+    await updateAppSettings({ update: patch })
+  } catch {
+    // store locked: the boot copy is enough until the next change
+  }
+}
 
 const info = ref<AppUpdateInfo | null>(null)
 const dialogOpen = ref(false)
@@ -22,18 +50,17 @@ const autoCheck = ref(true)
 let autoStarted = false
 
 async function stamp(): Promise<void> {
-  try {
-    await updateAppSettings({ update: { lastCheckAt: new Date().toISOString() } })
-  } catch {
-    // Store locked or unavailable: the check result is still valid, we only lose the 24 h throttle.
-  }
+  await savePrefs({ lastCheckAt: new Date().toISOString() })
 }
 
+/** Settings page (store unlocked): the encrypted settings are authoritative; refresh the boot copy from them. */
 async function loadSettings(): Promise<void> {
   try {
-    autoCheck.value = (await getAppSettings()).update.autoCheck
+    const s = (await getAppSettings()).update
+    autoCheck.value = s.autoCheck
+    localStorage.setItem(UPDATE_PREFS_KEY, JSON.stringify(s))
   } catch {
-    // keep default
+    autoCheck.value = readPrefs().autoCheck
   }
 }
 
@@ -62,7 +89,7 @@ async function checkNow(): Promise<void> {
 
 async function autoCheckOnce(): Promise<void> {
   try {
-    const settings = (await getAppSettings()).update
+    const settings = readPrefs()
     autoCheck.value = settings.autoCheck
     const allowed = await commands.appUpdateAutoCheckAllowed()
     if (!shouldAutoCheck(settings, allowed, new Date())) return
@@ -78,31 +105,16 @@ async function autoCheckOnce(): Promise<void> {
   }
 }
 
-/** Call once at app start (main window). Runs the automatic check as soon as the data store is ready. */
+/** Call once at app start (main window). Runs the automatic check immediately, independent of the login. */
 function startAuto(): void {
   if (autoStarted || !isTauri()) return
   autoStarted = true
-  const store = useDataStore()
-  const go = (): void => void autoCheckOnce()
-  if (store.state.value === 'ready') {
-    go()
-    return
-  }
-  const stop = watch(
-    store.state,
-    (s) => {
-      if (s === 'ready') {
-        stop()
-        go()
-      }
-    },
-    { flush: 'post' },
-  )
+  void autoCheckOnce()
 }
 
 async function setAutoCheck(on: boolean): Promise<void> {
   autoCheck.value = on
-  await updateAppSettings({ update: { autoCheck: on } })
+  await savePrefs({ autoCheck: on })
 }
 
 function later(): void {
@@ -112,7 +124,7 @@ function later(): void {
 async function skipVersion(): Promise<void> {
   const v = info.value?.version
   dialogOpen.value = false
-  if (v) await updateAppSettings({ update: { skippedVersion: v } })
+  if (v) await savePrefs({ skippedVersion: v })
 }
 
 async function install(): Promise<void> {

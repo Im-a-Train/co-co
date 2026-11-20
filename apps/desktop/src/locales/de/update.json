@@ -6,6 +6,7 @@
       "notesTitle": "Neuerungen",
       "installHint": "Beim Aktualisieren wird co-co beendet und mit der neuen Version neu gestartet. Deine Eingaben in co-co werden laufend lokal gespeichert und bleiben erhalten; ein noch nicht abgeschlossener Text in einem offenen Eingabefeld geht verloren. Eventuell musst du dich danach erneut bei eCamp anmelden.",
       "portableHint": "Du nutzt die portable Version. Sie kann sich nicht selbst aktualisieren: Lade die neue Version von der Download-Seite herunter.",
+      "manualHint": "Auf diesem System kann sich co-co nicht selbst aktualisieren (nur unter Windows mit Installer): Lade die neue Version von der Download-Seite herunter.",
       "install": "Jetzt aktualisieren",
       "later": "Später",
       "skip": "Diese Version überspringen",
@@ -17,7 +18,7 @@
     "settings": {
       "installed": "Installierte Version: {version}",
       "autoCheck": "Automatisch nach Updates suchen",
-      "autoCheckHint": "Beim Start, höchstens einmal pro Tag. Es wird nur github.com kontaktiert und keine persönlichen Daten werden gesendet.",
+      "autoCheckHint": "Beim Start, höchstens einmal pro Tag. Es wird nur GitHub kontaktiert (github.com und dessen Download-Server), es werden keine persönlichen Daten gesendet.",
       "checkNow": "Jetzt nach Updates suchen",
       "upToDate": "co-co ist auf dem neuesten Stand.",
       "available": "Eine neue Version ist verfügbar.",

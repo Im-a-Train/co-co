@@ -14,9 +14,11 @@ run the new setup. The NSIS finish page also pre-ticked «create desktop shortcu
 1. **tauri-plugin-updater, wrapped by our own commands.** `app_update_check`, `app_update_auto_check_allowed`,
    `app_update_install` and `app_update_open_release` (Rust, `src/updater.rs`). The plugin's JS API and
    permissions are not exposed, so the webview keeps IPC to our commands only. Network access stays in Rust;
-   the CSP is unchanged. The check contacts github.com only and sends no personal data.
+   the CSP is unchanged. Only GitHub is contacted (github.com plus GitHub's download servers that release
+   assets redirect to); no personal data is sent.
 2. **Feed.** CI publishes a static `latest.json` as asset of a rolling pre-release tagged `updater`
-   (created on first use, asset replaced with `--clobber` after each real release). Endpoint:
+   (`softprops/action-gh-release`: created on first use, asset replaced after each real release; the
+   signature is taken from the exact `co-co_<version>_x64-setup.exe.sig`). Endpoint:
    `https://github.com/Im-a-Train/co-co/releases/download/updater/latest.json`. The manifest is built by
    `scripts/updater-manifest.mjs` (unit-tested) from the version, the `.sig` and the release asset URL.
 3. **Signing is mandatory.** Release builds run with `TAURI_SIGNING_PRIVATE_KEY` (GitHub secret, no password)
@@ -29,9 +31,12 @@ run the new setup. The NSIS finish page also pre-ticked «create desktop shortcu
 5. **Portable and dev builds.** No `uninstall.exe` next to the exe = portable: no in-place update, the dialog
    offers the release page. Unstamped builds (`0.1.0` without pre-release) and debug builds skip the automatic
    check; the manual check still works.
-6. **UI.** Start-up check once the data store is unlocked (its settings live in the encrypted store), at most
-   once per 24 h; dialog with «Jetzt aktualisieren», «Später», «Diese Version überspringen»
-   (`settings.update.skippedVersion`). Settings → Updates: version, auto-check switch (default on), manual check.
+6. **UI.** Start-up check right away, **before** the eCamp login unlocks the data store: a release that breaks
+   the login must still be able to offer its fix. It reads a non-secret boot copy of `settings.update`
+   (`autoCheck`, `lastCheckAt`, `skippedVersion`) from localStorage key `co-co.update.v1` (allowlisted in the
+   encryption guard); every change is written to both, and the encrypted settings refresh the copy when the
+   Updates section opens. At most once per 24 h; dialog with «Jetzt aktualisieren», «Später», «Diese Version
+   überspringen». Settings → Updates: version, auto-check switch (default on), manual check.
    co-co data is written to IndexedDB per operation, so installing does not lose saved data; text typed into an
    open, not yet saved field is lost on restart (the dialog says so).
 7. **Installer.** `windows/installer-hooks.nsh` defines `MUI_FINISHPAGE_SHOWREADME_NOTCHECKED` at top
@@ -48,7 +53,8 @@ run the new setup. The NSIS finish page also pre-ticked «create desktop shortcu
   SemVer (`0.1.0-alpha.14 < 0.1.0-alpha.15 < 0.1.0`).
 - Running a newer setup.exe by hand over an old install still preselects «vor der Installation deinstallieren»
   (template page, not configurable); app data survives either way unless «Daten löschen» is ticked.
-- macOS and Linux do not self-update; the dialog offers the release page.
+- macOS and Linux do not self-update and skip the automatic check (the feed lists only `windows-x86_64`);
+  a manual check reads that entry's version and the dialog offers the release page.
 - The updater is unrelated to Windows code signing: SmartScreen warnings remain.
 
 ## Alternatives considered

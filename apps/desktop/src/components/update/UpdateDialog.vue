@@ -36,7 +36,7 @@ const percent = computed(() => {
           {{ t('update.dialog.installHint') }}
         </v-alert>
         <v-alert v-else type="warning" variant="tonal" density="compact" class="mb-2" data-testid="update-portable-hint">
-          {{ t('update.dialog.portableHint') }}
+          {{ t(u.info.value.portable ? 'update.dialog.portableHint' : 'update.dialog.manualHint') }}
         </v-alert>
         <div v-if="u.installing.value" class="mt-3" data-testid="update-progress">
           <div class="text-body-2 mb-1">

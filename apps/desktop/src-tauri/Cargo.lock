@@ -583,6 +583,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-updater",
  "thiserror 2.0.21",
+ "time",
  "tiny_http",
  "tokio",
  "url",

@@ -1,7 +1,8 @@
 //! In-app updates (ADR 0018). Wraps tauri-plugin-updater in our own commands; the plugin's JS API
-//! and permissions are not exposed. The only host contacted is github.com (static `latest.json`
-//! of the rolling `updater` release); no personal data is sent. Errors are short German texts
-//! without URLs.
+//! and permissions are not exposed. Only GitHub is contacted: github.com (static `latest.json` of the
+//! rolling `updater` release) and GitHub's download servers the release assets redirect to; no personal
+//! data is sent. Errors are short German texts without URLs. The feed only carries `windows-x86_64`:
+//! other platforms read the version from that entry (`target`), never install, and skip the automatic check.
 
 use coco_core::update::{self, AppUpdateInfo};
 use serde::Serialize;
@@ -52,7 +53,7 @@ fn build_info(current: &str, found: Option<&tauri_plugin_updater::Update>, porta
         available: found.is_some(),
         version: found.map(|u| u.version.clone()),
         notes: found.and_then(|u| u.body.as_deref()).map(update::truncate_notes).filter(|n| !n.is_empty()),
-        date: found.and_then(|u| u.date).map(|d| d.to_string()),
+        date: found.and_then(|u| u.date).and_then(|d| d.format(&time::format_description::well_known::Rfc3339).ok()),
         can_install: found.is_some() && !portable && cfg!(windows),
         portable,
         release_url: update::release_url(&shown),
@@ -61,7 +62,10 @@ fn build_info(current: &str, found: Option<&tauri_plugin_updater::Update>, porta
 
 async fn check<R: Runtime>(app: &AppHandle<R>) -> AppResult<(Option<tauri_plugin_updater::Update>, String)> {
     let current = app.package_info().version.to_string();
-    let updater = app.updater().map_err(|e| friendly(&e))?;
+    // The feed only lists windows-x86_64; elsewhere read that entry for the version (install stays disabled).
+    let builder = app.updater_builder();
+    let builder = if cfg!(windows) { builder } else { builder.target("windows-x86_64") };
+    let updater = builder.build().map_err(|e| friendly(&e))?;
     let found = updater.check().await.map_err(|e| friendly(&e))?;
     Ok((found, current))
 }
@@ -77,7 +81,8 @@ pub async fn app_update_check<R: Runtime>(app: AppHandle<R>, webview: Webview<R>
 #[tauri::command]
 pub async fn app_update_auto_check_allowed<R: Runtime>(app: AppHandle<R>, webview: Webview<R>) -> AppResult<bool> {
     ensure_main(&webview)?;
-    Ok(update::auto_check_allowed(&app.package_info().version.to_string(), cfg!(debug_assertions)))
+    // Only Windows can install in place; elsewhere the coach checks manually (no prompt on every start).
+    Ok(cfg!(windows) && update::auto_check_allowed(&app.package_info().version.to_string(), cfg!(debug_assertions)))
 }
 
 /// Opens the GitHub release page of `version` (validated, invalid -> releases overview) in the system browser.

@@ -30,3 +30,24 @@ export function shouldAutoCheck(s: UpdateSettings, buildAllows: boolean, now: Da
 export function shouldPromptAuto(info: AppUpdateInfo, skippedVersion: string | null): boolean {
   return info.available && !!info.version && info.version !== skippedVersion
 }
+
+const DEFAULT_PREFS: UpdateSettings = { autoCheck: true, lastCheckAt: null, skippedVersion: null }
+
+/**
+ * Parses the boot copy of the update settings. It lets the start-up check run before the data store is
+ * unlocked (which needs an eCamp login): a release that breaks the login must still be able to offer its fix.
+ * Unknown or malformed values fall back to the defaults.
+ */
+export function parseUpdatePrefs(raw: string | null): UpdateSettings {
+  if (!raw) return { ...DEFAULT_PREFS }
+  try {
+    const o = JSON.parse(raw) as Partial<Record<keyof UpdateSettings, unknown>>
+    return {
+      autoCheck: typeof o.autoCheck === 'boolean' ? o.autoCheck : DEFAULT_PREFS.autoCheck,
+      lastCheckAt: typeof o.lastCheckAt === 'string' ? o.lastCheckAt : null,
+      skippedVersion: typeof o.skippedVersion === 'string' && o.skippedVersion.length <= 64 ? o.skippedVersion : null,
+    }
+  } catch {
+    return { ...DEFAULT_PREFS }
+  }
+}

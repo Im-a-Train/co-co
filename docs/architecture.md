@@ -306,7 +306,7 @@ Decision: [adr/0018-in-app-updates.md](adr/0018-in-app-updates.md).
 
 - **Rust:** `src/updater.rs` wraps `tauri-plugin-updater` in our own commands `app_update_check`,
   `app_update_auto_check_allowed`, `app_update_install` (emits `app-update://progress`, then restarts) and
-  `app_update_open_release`. The plugin's JS permissions are not granted; only github.com is contacted.
+  `app_update_open_release`. The plugin's JS permissions are not granted; only GitHub (github.com and its download servers) is contacted. The start-up check runs before login from a localStorage boot copy (`co-co.update.v1`); non-Windows builds skip it.
   Pure decisions (portable detection, release URL, notes truncation, version validation, auto-check policy)
   live in `coco-core::update`.
 - **Webview:** `composables/useAppUpdate.ts` (state, start-up check after the data store is unlocked, at most
