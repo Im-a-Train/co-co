@@ -1,0 +1,15 @@
+{
+"relations":[
+{"relationType":"MEMBER","organisation":{"businessId":"6001","name":{"de":"Pfadi Testland"}},"offerGroups":["JS_KIDS","JS_YOUTH",3],"relationStartDate":"2019-05-01T00:00:00"},
+{"relationType":"OTHER","organisation":{"businessId":"6001","name":{"de":"Dup"}}},
+{"organisation":{"businessId":"6002"}},
+{"organisation":{"name":{"de":"Ohne Id"}}},
+{"organisation":{"businessId":6003,"name":{"fr":"Scouts"}}}
+],
+"biography":[
+{"businessId":"4001","offerNumber":"N-100","sports":[{"title":{"de":"Pfadi"}},{"title":{}}],"duration":{"first":"2024-07-01","last":"2024-07-08"},"organisation":{"name":{"de":"Pfadi Testland"}},"courseCount":0,"campCount":1},
+{"businessId":"4002","duration":{"first":"2025-07-01"},"campCount":2},
+{"businessId":"4003"},
+{"offerNumber":"no id","duration":{"first":"2026-01-01"}}
+]
+}

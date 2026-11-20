@@ -1,0 +1,8 @@
+{"content":[
+{"businessId":"7001","activityState":"ATTENDANCE_CHECKED","activityDate":"2026-07-18","overlapCount":2},
+{"businessId":"7002","activityState":"ATTENDANCE_CHECKED","activityDate":"2026-07-19T00:00:00","overlapCount":0},
+{"businessId":"7003","activityState":"ATTENDANCE_OPEN","activityDate":"2026-07-20"},
+{"businessId":"abc","activityState":"ATTENDANCE_CHECKED","activityDate":"2026-07-21"},
+{"activityState":"ATTENDANCE_CHECKED","activityDate":"2026-07-22"},
+{"businessId":7005,"activityState":"WEIRD_STATE","activityDate":"not-a-date","overlapCount":"x"}
+],"totalElements":6}

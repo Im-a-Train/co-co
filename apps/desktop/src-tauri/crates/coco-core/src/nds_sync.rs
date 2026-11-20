@@ -14,8 +14,12 @@
 //! (`NdsAttendance`, `NdsCampDetails`, `NdsProtocol`, `NdsRecognition*`, `NdsCoachProfile`,
 //! `NdsPersonDetection`). Change both sides together.
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
+
+use crate::nds::{count, date_of, date_part, duration, items_of, localized, tally, text};
 
 // ------------------------------------------------------------------ constants
 
@@ -378,13 +382,69 @@ pub struct RawActivityAttendance<'a> {
     pub supervisors: &'a Value,
 }
 
+// ------------------------------------------------------------------ helpers
+
+/// Numeric id: optional '-', 1-20 digits.
+fn is_numeric_id(s: &str) -> bool {
+    let d = s.strip_prefix('-').unwrap_or(s);
+    (1..=20).contains(&d.len()) && d.bytes().all(|c| c.is_ascii_digit())
+}
+
+fn numeric_id(v: &Value, key: &str) -> Option<String> {
+    text(v, key).filter(|s| is_numeric_id(s))
+}
+
+fn trim_label(s: &str) -> String {
+    s.trim().chars().take(MAX_LABEL_CHARS).collect()
+}
+
+fn flag(v: &Value, key: &str) -> Option<bool> {
+    v.get(key)?.as_bool()
+}
+
+fn flag_in(a: &Value, b: &Value, key: &str) -> Option<bool> {
+    flag(a, key).or_else(|| flag(b, key))
+}
+
+fn num_f64(v: Option<&Value>) -> Option<f64> {
+    v?.as_f64()
+}
+
+fn has_overlap(row: &Value) -> bool {
+    row.get("overlaps").and_then(Value::as_array).is_some_and(|a| !a.is_empty())
+}
+
+fn person_key(row: &Value) -> Option<String> {
+    row.get("person").and_then(|p| text(p, "businessId"))
+}
+
+fn range_date(v: Option<&Value>, key: &str) -> Option<String> {
+    v?.get(key)?.as_str().and_then(date_part)
+}
+
+fn collect_offer_numbers(row: &Value, out: &mut BTreeSet<String>) {
+    if let Some(a) = row.get("overlaps").and_then(Value::as_array) {
+        out.extend(a.iter().filter_map(|o| text(o, "offerNumber")));
+    }
+}
+
 // ------------------------------------------------------------------ functions (contract)
 
 /// Activities from ActivityListForCamp items (list document or array), in delivered order.
 /// Items without a valid numeric `businessId` are skipped.
 pub fn activity_refs(activities: &Value) -> Vec<NdsActivityRef> {
-    let _ = activities;
-    todo!("M21 agent: implement")
+    items_of(activities)
+        .iter()
+        .filter_map(|it| {
+            let business_id = numeric_id(it, "businessId")?;
+            Some(NdsActivityRef {
+                business_id,
+                date: date_of(it, "activityDate"),
+                state: text(it, "activityState"),
+                overlap_count: count(it, "overlapCount"),
+            })
+        })
+        .collect()
 }
 
 /// Reduces the attendance lists of the read activities to counts. `activities_total` is the
@@ -394,39 +454,286 @@ pub fn reduce_attendances(
     read: &[RawActivityAttendance<'_>],
     truncated: bool,
 ) -> NdsAttendance {
-    let _ = (activities_total, read, truncated);
-    todo!("M21 agent: implement")
+    let mut participants = BTreeSet::new();
+    let mut supervisors = BTreeSet::new();
+    let mut in_checked = BTreeSet::new();
+    let mut present_any = BTreeSet::new();
+    let mut not_eligible = BTreeSet::new();
+    let mut overlap_p = BTreeSet::new();
+    let mut overlap_s = BTreeSet::new();
+    let mut guides = BTreeSet::new();
+    let mut offer_numbers = BTreeSet::new();
+    let mut overlap_dates = BTreeSet::new();
+    let mut overlap_activities = 0u32;
+    let mut checked = 0u32;
+    let mut by_date: BTreeMap<String, (u32, u32, u32)> = BTreeMap::new();
+
+    for r in read {
+        let is_checked = r.activity.state.as_deref() == Some(ATTENDANCE_CHECKED_STATE);
+        let mut activity_overlap = false;
+        let mut present_p = 0u32;
+        let mut present_s = 0u32;
+        for row in items_of(r.participants) {
+            let key = person_key(row);
+            let present = row.get("wasPresent").and_then(Value::as_bool) == Some(true);
+            if let Some(k) = &key {
+                participants.insert(k.clone());
+                if is_checked {
+                    in_checked.insert(k.clone());
+                    if present {
+                        present_any.insert(k.clone());
+                    }
+                }
+                if row.get("eligibleForSubsidies").and_then(Value::as_bool) == Some(false) {
+                    not_eligible.insert(k.clone());
+                }
+            }
+            if present {
+                present_p += 1;
+            }
+            if has_overlap(row) {
+                activity_overlap = true;
+                if let Some(k) = key {
+                    overlap_p.insert(k);
+                }
+                collect_offer_numbers(row, &mut offer_numbers);
+            }
+        }
+        for row in items_of(r.supervisors) {
+            let key = person_key(row);
+            if let Some(k) = &key {
+                supervisors.insert(k.clone());
+                if row.get("mountainGuide").and_then(Value::as_bool) == Some(true) {
+                    guides.insert(k.clone());
+                }
+            }
+            if row.get("wasPresent").and_then(Value::as_bool) == Some(true) {
+                present_s += 1;
+            }
+            if has_overlap(row) {
+                activity_overlap = true;
+                if let Some(k) = key {
+                    overlap_s.insert(k);
+                }
+                collect_offer_numbers(row, &mut offer_numbers);
+            }
+        }
+        if activity_overlap {
+            overlap_activities += 1;
+            if let Some(d) = &r.activity.date {
+                overlap_dates.insert(d.clone());
+            }
+        }
+        if is_checked {
+            checked += 1;
+            if let Some(d) = &r.activity.date {
+                let e = by_date.entry(d.clone()).or_insert((0, 0, 0));
+                e.0 += 1;
+                e.1 = e.1.max(present_p);
+                e.2 = e.2.max(present_s);
+            }
+        }
+    }
+
+    let never_present = in_checked.difference(&present_any).count() as u32;
+    NdsAttendance {
+        activities_total,
+        activities_read: read.len() as u32,
+        activities_checked: checked,
+        participants: participants.len() as u32,
+        supervisors: supervisors.len() as u32,
+        participants_never_present: never_present,
+        participants_not_eligible: not_eligible.len() as u32,
+        overlap_participants: overlap_p.len() as u32,
+        overlap_supervisors: overlap_s.len() as u32,
+        overlap_activities,
+        overlap_offer_numbers: offer_numbers.into_iter().take(20).collect(),
+        overlap_dates: overlap_dates.into_iter().collect(),
+        mountain_guides: guides.len() as u32,
+        by_date: by_date
+            .into_iter()
+            .map(|(date, (activities, p, s))| NdsDateAttendance {
+                date,
+                activities,
+                participants_present: p,
+                supervisors_present: s,
+            })
+            .collect(),
+        truncated,
+    }
+}
+
+fn msg_field(v: Option<&Value>) -> Option<String> {
+    match v? {
+        Value::String(s) => Some(s.clone()),
+        o @ Value::Object(_) => localized(Some(o)),
+        _ => None,
+    }
+}
+
+fn message_text(v: &Value) -> Option<String> {
+    let raw = match v {
+        Value::String(s) => Some(s.clone()),
+        Value::Object(_) => localized(Some(v)).or_else(|| ["message", "text"].iter().find_map(|k| msg_field(v.get(*k)))),
+        _ => None,
+    }?;
+    let t = trim_label(&raw);
+    (!t.is_empty()).then_some(t)
+}
+
+fn messages_of(v: Option<&Value>) -> Option<Vec<String>> {
+    let a = v?.as_array()?;
+    Some(a.iter().filter_map(message_text).take(20).collect())
 }
 
 /// Camp details from camp/details, one timeline element (`GET .../activity/{id}/timelineElement`,
 /// read its `offerItem`) and the offer (`GET /youthtraining/offer/offer/{id}`). Any input may be
 /// `Value::Null`. Returns `None` only when all three inputs are non-objects.
 pub fn reduce_camp_details(camp_details: &Value, timeline: &Value, offer: &Value) -> Option<NdsCampDetails> {
-    let _ = (camp_details, timeline, offer);
-    todo!("M21 agent: implement")
+    if !(camp_details.is_object() || timeline.is_object() || offer.is_object()) {
+        return None;
+    }
+    let null = Value::Null;
+    let item = timeline.get("offerItem").filter(|v| v.is_object()).unwrap_or(&null);
+    let sub = |key: &str| num_f64(item.pointer(&format!("/{key}/total")));
+    let messages = messages_of(camp_details.get("minimalRequirementsCheckResultMessages"))
+        .or_else(|| messages_of(item.get("minimalRequirementsCheckResultMessages")));
+    Some(NdsCampDetails {
+        risk_activities_planned: flag_in(camp_details, item, "riskActivitiesPlanned"),
+        risk_activity_answers: [
+            flag_in(camp_details, item, "riskActivityAnswer1"),
+            flag_in(camp_details, item, "riskActivityAnswer2"),
+            flag_in(camp_details, item, "riskActivityAnswer3"),
+        ],
+        supervisor_expertise_present: flag(item, "supervisorExpertisePresent"),
+        overnight_stay: flag_in(camp_details, item, "overnightStay"),
+        late_submission: flag(item, "lateSubmission"),
+        approval_with_reservation: flag(item, "approvalWithReservation"),
+        camp_days_with_activities: count(item, "campDaysWithActivitiesCount"),
+        camp_days_without_activities: count(item, "campDaysWithoutActivitiesCount"),
+        activity_duration_first_day: text(item, "activityDurationOnFirstDay"),
+        activity_duration_last_day: text(item, "activityDurationOnLastDay"),
+        present: NdsPresentCounts {
+            male_children: count(item, "presentMaleChildrenCount"),
+            female_children: count(item, "presentFemaleChildrenCount"),
+            male_adolescents: count(item, "presentMaleAdolescentsCount"),
+            female_adolescents: count(item, "presentFemaleAdolescentsCount"),
+            supervisors: count(item, "presentSupervisorsCount"),
+        },
+        subsidies: NdsSubsidies {
+            planned: sub("plannedCampSubsidies"),
+            actual: sub("actualCampSubsidies"),
+            total: num_f64(item.get("totalCampSubsidies")),
+        },
+        minimal_requirements_messages: messages,
+        offer_flags: NdsOfferFlags {
+            late_submitted_items: flag(offer, "hasLateSubmittedOfferItems"),
+            late_submitted_items_unapproved: flag(offer, "hasLateSubmittedOfferItemsWithUnfinishedApproval"),
+            items_in_correction: flag(offer, "hasOfferItemsInCorrection"),
+            handicap_registration: flag(offer, "hasHandicapRegistration"),
+            evaluation_state: text(offer, "evaluationState"),
+        },
+    })
 }
 
 /// Keyword classification of a German protocol label (case-insensitive):
-/// `eingereicht|gesuch` → Submitted, `bewillig` → Approved, `beurteil|prüfung` → Assessment,
-/// `abgeschlossen|abschluss|abgerechnet|abrechnung` → Closed, `ausbezahlt|bezahlt|zahlung` → Paid,
-/// else Other. First matching rule in this order wins, except that a label matching both
-/// Approved and a negation (`nicht`, `abgelehnt`, `zurück`) is Other.
+/// Specific keywords win over the generic submission words: `bewillig` → Approved,
+/// `beurteil|prüfung` → Assessment, `abgeschlossen|abschluss|abgerechnet|abrechnung` → Closed,
+/// `ausbezahlt|bezahlt|zahlung` → Paid, then `eingereicht|gesuch` → Submitted, else Other
+/// (so «Gesuch bewilligt» is Approved and «Abrechnung eingereicht» is Closed). A label matching
+/// Approved together with a negation (`nicht`, `abgelehnt`, `zurück`) is Other.
 pub fn classify_protocol_label(label: &str) -> NdsProtocolKind {
-    let _ = label;
-    todo!("M21 agent: implement")
+    let l = label.to_lowercase();
+    let any = |keys: &[&str]| keys.iter().any(|k| l.contains(k));
+    if l.contains("bewillig") && any(&["nicht", "abgelehnt", "zurück"]) {
+        return NdsProtocolKind::Other;
+    }
+    if l.contains("bewillig") {
+        NdsProtocolKind::Approved
+    } else if any(&["beurteil", "prüfung"]) {
+        NdsProtocolKind::Assessment
+    } else if any(&["abgeschlossen", "abschluss", "abgerechnet", "abrechnung"]) {
+        NdsProtocolKind::Closed
+    } else if any(&["ausbezahlt", "bezahlt", "zahlung"]) {
+        NdsProtocolKind::Paid
+    } else if any(&["eingereicht", "gesuch"]) {
+        NdsProtocolKind::Submitted
+    } else {
+        NdsProtocolKind::Other
+    }
 }
 
 /// Reduces protocol list items to an [`NdsProtocol`]. Items without a valid date are skipped.
 pub fn reduce_protocol(items: &[Value], truncated: bool) -> NdsProtocol {
-    let _ = (items, truncated);
-    todo!("M21 agent: implement")
+    let mut events: Vec<NdsProtocolEvent> = items
+        .iter()
+        .filter_map(|it| {
+            let at = it.get("createdTimestamp")?.as_str()?.to_string();
+            let date = date_part(&at)?;
+            let label = trim_label(&localized(it.get("protocolType"))?);
+            if label.is_empty() {
+                return None;
+            }
+            Some(NdsProtocolEvent { kind: classify_protocol_label(&label), at, date, label })
+        })
+        .collect();
+    events.sort_by(|a, b| a.at.cmp(&b.at));
+    let mut truncated = truncated;
+    if events.len() > MAX_PROTOCOL_EVENTS {
+        events.truncate(MAX_PROTOCOL_EVENTS);
+        truncated = true;
+    }
+    let first = |k: NdsProtocolKind| events.iter().find(|e| e.kind == k).map(|e| e.date.clone());
+    NdsProtocol {
+        submitted_on: first(NdsProtocolKind::Submitted),
+        approved_on: first(NdsProtocolKind::Approved),
+        closed_on: first(NdsProtocolKind::Closed).or_else(|| first(NdsProtocolKind::Assessment)),
+        events,
+        truncated,
+    }
 }
 
 /// `GrantedRecognitionFilter` for the coach's own recognitions:
 /// `{ "educationField": { "selected": field }, "person": { "selected": person_id } }`.
 pub fn recognition_filter(person_id: &str, education_field: &str) -> Value {
-    let _ = (person_id, education_field);
-    todo!("M21 agent: implement")
+    json!({"educationField": {"selected": education_field}, "person": {"selected": person_id}})
+}
+
+fn recognition_of(it: &Value) -> Option<NdsRecognition> {
+    let business_id = text(it, "businessId")?;
+    let title = localized(it.pointer("/cadre/name")).or_else(|| localized(it.get("rowTitle")))?;
+    let range = it.get("activeDateRange");
+    let supplements = it
+        .get("grantedRecognitionSupplements")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|s| {
+                    let title = localized(s.pointer("/recognitionSupplement/name"))?;
+                    let r = s.get("stateDateRange");
+                    Some(NdsRecognitionSupplement {
+                        title,
+                        valid_from: range_date(r, "first"),
+                        valid_until: range_date(r, "last"),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    Some(NdsRecognition {
+        business_id,
+        title,
+        education_field: it.get("cadre").and_then(|c| text(c, "educationField")),
+        state: text(it, "recognitionState"),
+        valid_from: range_date(range, "first"),
+        valid_until: range_date(range, "last"),
+        omitted_since: date_of(it, "omittedSince"),
+        invalid_since: date_of(it, "invalidSince"),
+        archived_since: date_of(it, "archivedSince"),
+        target_audience_group: text(it, "targetAudienceGroup"),
+        sport: localized(it.pointer("/sport/title")),
+        supplements,
+    })
 }
 
 /// Builds the recognitions result from the items of all queried education fields (may contain
@@ -437,27 +744,112 @@ pub fn reduce_recognitions(
     failed_fields: Vec<String>,
     fetched_at: &str,
 ) -> NdsRecognitionsResult {
-    let _ = (recognition_items, supplement_items, failed_fields, fetched_at);
-    todo!("M21 agent: implement")
+    let mut seen = BTreeSet::new();
+    let mut recognitions: Vec<NdsRecognition> = recognition_items
+        .iter()
+        .filter_map(recognition_of)
+        .filter(|r| seen.insert(r.business_id.clone()))
+        .collect();
+    recognitions.sort_by(|a, b| {
+        let ka = (a.valid_until.is_none(), a.valid_until.clone(), a.title.clone());
+        let kb = (b.valid_until.is_none(), b.valid_until.clone(), b.title.clone());
+        ka.cmp(&kb)
+    });
+    let mut seen_s = BTreeSet::new();
+    let person_supplements = supplement_items
+        .iter()
+        .filter_map(|s| localized(s.pointer("/educationSupplement/name")).or_else(|| localized(s.get("rowTitle"))))
+        .filter(|t| seen_s.insert(t.clone()))
+        .collect();
+    NdsRecognitionsResult { recognitions, person_supplements, failed_fields, fetched_at: fetched_at.to_string() }
 }
 
 /// Builds the coach profile from org relation items and biography items.
 pub fn reduce_coach_profile(relation_items: &[Value], biography_items: &[Value], fetched_at: &str) -> NdsCoachProfile {
-    let _ = (relation_items, biography_items, fetched_at);
-    todo!("M21 agent: implement")
+    let mut seen = BTreeSet::new();
+    let organisations = relation_items
+        .iter()
+        .filter_map(|it| {
+            let org = it.get("organisation")?;
+            let business_id = text(org, "businessId")?;
+            let name = localized(org.get("name"))?;
+            Some(NdsCoachOrganisation {
+                business_id,
+                name,
+                relation_type: text(it, "relationType"),
+                offer_groups: it
+                    .get("offerGroups")
+                    .and_then(Value::as_array)
+                    .map(|a| a.iter().filter_map(|g| g.as_str().map(str::to_string)).collect())
+                    .unwrap_or_default(),
+                since: date_of(it, "relationStartDate"),
+            })
+        })
+        .filter(|o| seen.insert(o.business_id.clone()))
+        .collect();
+    let mut finished_offers: Vec<NdsFinishedOffer> = biography_items
+        .iter()
+        .filter_map(|it| {
+            let offer_business_id = text(it, "businessId")?;
+            let (start, end) = duration(it);
+            Some(NdsFinishedOffer {
+                offer_business_id,
+                offer_number: text(it, "offerNumber"),
+                organisation_name: localized(it.pointer("/organisation/name")),
+                start,
+                end,
+                camp_count: count(it, "campCount"),
+                course_count: count(it, "courseCount"),
+                sports: it
+                    .get("sports")
+                    .and_then(Value::as_array)
+                    .map(|a| a.iter().filter_map(|s| localized(s.get("title"))).collect())
+                    .unwrap_or_default(),
+            })
+        })
+        .collect();
+    // start descending, None last (stable)
+    finished_offers.sort_by(|a, b| match (&a.start, &b.start) {
+        (Some(x), Some(y)) => y.cmp(x),
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => std::cmp::Ordering::Equal,
+    });
+    NdsCoachProfile { organisations, finished_offers, fetched_at: fetched_at.to_string() }
 }
 
 /// `offerBusinessId -> organisation name (German)` from OfferList items selected with
 /// `nds::Q_OFFER_LIST` (`organisation.name.resolvedLocalizedString`). Offers without a name are
 /// absent. The caller sets `NdsCampSummary::organisation_name` from this map.
-pub fn offer_organisation_names(offer_items: &[Value]) -> std::collections::BTreeMap<String, String> {
-    let _ = offer_items;
-    todo!("M21 agent: implement")
+pub fn offer_organisation_names(offer_items: &[Value]) -> BTreeMap<String, String> {
+    offer_items
+        .iter()
+        .filter_map(|it| {
+            let id = text(it, "businessId")?;
+            let name = localized(it.pointer("/organisation/name/resolvedLocalizedString"))
+                .or_else(|| localized(it.pointer("/organisation/name")))?;
+            Some((id, name))
+        })
+        .collect()
 }
 
 /// Majority coach id over OfferList items selected with [`Q_OFFER_COACHES`]. Only numeric ids
 /// (`validate`-style: optional '-', 1-20 digits) count. Ties → `None`.
 pub fn detect_person(offer_items: &[Value]) -> NdsPersonDetection {
-    let _ = offer_items;
-    todo!("M21 agent: implement")
+    let with_coach: Vec<Value> = offer_items
+        .iter()
+        .filter_map(|it| numeric_id(it.get("coach")?, "businessId").map(|id| json!({ "id": id })))
+        .collect();
+    let counts = tally(&with_coach, "id");
+    let seen = with_coach.len() as u32;
+    let mut sorted: Vec<(&String, &u32)> = counts.iter().collect();
+    sorted.sort_by(|a, b| b.1.cmp(a.1));
+    let none = NdsPersonDetection { person_id: None, offers_seen: seen, offers_matched: 0 };
+    let Some((id, top)) = sorted.first().map(|(i, c)| ((*i).clone(), **c)) else { return none };
+    let runner_up = sorted.get(1).map(|(_, c)| **c).unwrap_or(0);
+    if (f64::from(top) / f64::from(seen)) >= DETECT_MIN_SHARE && top > runner_up {
+        NdsPersonDetection { person_id: Some(id), offers_seen: seen, offers_matched: top }
+    } else {
+        none
+    }
 }

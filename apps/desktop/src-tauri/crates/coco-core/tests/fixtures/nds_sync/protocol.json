@@ -1,0 +1,10 @@
+[
+{"protocolId":"3","createdTimestamp":"2026-03-10T09:00:00","protocolType":{"de":"Angebot bewilligt"},"triggeringPerson":{"firstName":"Muster"},"protocolContent":"geheim Muster"},
+{"protocolId":"1","createdTimestamp":"2026-03-01T08:00:00","protocolType":{"de":"Gesuch eingereicht"}},
+{"protocolId":"2","createdTimestamp":"2026-03-05T08:00:00","protocolType":{"de":"Gesuch eingereicht"}},
+{"protocolId":"4","createdTimestamp":"2026-08-01T08:00:00","protocolType":{"fr":"Beurteilung offen"}},
+{"protocolId":"5","createdTimestamp":"2026-08-20T08:00:00","protocolType":{"de":"Abrechnung abgeschlossen"}},
+{"protocolId":"6","createdTimestamp":"garbage","protocolType":{"de":"Gesuch eingereicht"}},
+{"protocolId":"7","createdTimestamp":"2026-03-02T08:00:00","protocolType":{}},
+{"protocolId":"8","createdTimestamp":"2026-03-03T08:00:00"}
+]

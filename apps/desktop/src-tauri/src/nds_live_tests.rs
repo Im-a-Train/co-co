@@ -7,7 +7,7 @@
 //!
 //! Prints only HTTP status codes, field names and counts – never values.
 
-use crate::nds::{fetch_aggregate_impl, fetch_tasks_impl, find_camps_impl, probe_impl, NdsState};
+use crate::nds::{detect_person_impl, fetch_aggregate_impl, fetch_coach_profile_impl, fetch_recognitions_impl, fetch_tasks_impl, find_camps_impl, probe_impl, NdsState};
 
 fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
@@ -61,5 +61,41 @@ fn nds_live_fetch_tasks() {
             t.iter().filter(|x| x.escalation_date.is_some()).count()
         ),
         Err(e) => println!("tasks failed: {e}"),
+    }
+}
+
+#[test]
+#[ignore = "live network test against NDS, needs NDS_E2E_SESSION"]
+fn nds_live_detect_person_recognitions_profile() {
+    let Some(session) = env("NDS_E2E_SESSION") else {
+        panic!("NDS_E2E_SESSION must be set");
+    };
+    let state = NdsState::for_test(&session).unwrap();
+    let detected = match tauri::async_runtime::block_on(detect_person_impl(&state)) {
+        Ok(d) => {
+            println!("detect: found={} seen={} matched={}", d.person_id.is_some(), d.offers_seen, d.offers_matched);
+            d.person_id
+        }
+        Err(e) => {
+            println!("detect failed: {e}");
+            None
+        }
+    };
+    let Some(person) = env("NDS_E2E_PERSON").or(detected) else {
+        println!("no person id (set NDS_E2E_PERSON), skipping recognitions/profile");
+        return;
+    };
+    match tauri::async_runtime::block_on(fetch_recognitions_impl(&state, &person)) {
+        Ok(r) => println!(
+            "recognitions: {} supplements={} failedFields={:?}",
+            r.recognitions.len(),
+            r.person_supplements.len(),
+            r.failed_fields
+        ),
+        Err(e) => println!("recognitions failed: {e}"),
+    }
+    match tauri::async_runtime::block_on(fetch_coach_profile_impl(&state, &person)) {
+        Ok(p) => println!("profile: organisations={} finishedOffers={}", p.organisations.len(), p.finished_offers.len()),
+        Err(e) => println!("profile failed: {e}"),
     }
 }

@@ -1,0 +1,11 @@
+[
+{"businessId":"5002","rowTitle":{"de":"Row B"},"recognitionState":"VALID","activeDateRange":{"first":"2024-01-01","last":"2027-12-31"},"cadre":{"name":{"de":"J+S-Coach Kindersport"},"educationField":"JS_COACH"},"targetAudienceGroup":"CHILDREN","sport":{"title":{"de":"Leichtathletik"}},
+ "reason":"Privatgrund Muster",
+ "grantedRecognitionSupplements":[{"stateDateRange":{"first":"2025-01-01","last":"2026-12-31"},"recognitionSupplement":{"businessId":"1","name":{"de":"Berg"}}},{"recognitionSupplement":{"name":{}}}]},
+{"businessId":"5001","rowTitle":{"de":"Row A"},"recognitionState":"OMITTED","activeDateRange":{"first":"2020-01-01","last":"2025-06-30"},"omittedSince":"2025-07-01T00:00:00","invalidSince":"bad","cadre":{"educationField":"JS_COACH"}},
+{"businessId":"5003","recognitionState":"VALID","cadre":{"name":{"fr":"Cadre fr"},"educationField":"JS_LEADER_AND_EXPERT"}},
+{"businessId":"5002","rowTitle":{"de":"Duplicate"},"activeDateRange":{"last":"2030-01-01"}},
+{"rowTitle":{"de":"no id"}},
+{"businessId":"5004"},
+{"businessId":"5005","rowTitle":{"de":"A Titel"},"activeDateRange":{"last":"2027-12-31"}}
+]

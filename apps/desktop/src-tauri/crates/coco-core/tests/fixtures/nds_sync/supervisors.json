@@ -1,0 +1,13 @@
+{
+"7001":{"content":[
+{"wasPresent":true,"person":{"businessId":"8001"}},
+{"wasPresent":true,"mountainGuide":true,"overlaps":[{"offerNumber":"N-3"},{"offerNumber":"N-2"}],"person":{"businessId":"8002"}}
+]},
+"7002":{"content":[
+{"wasPresent":true,"person":{"businessId":"8001"}},
+{"wasPresent":false,"mountainGuide":false,"person":{"businessId":"8002"}}
+]},
+"7003":{"content":[
+{"wasPresent":true,"overlaps":[],"person":{"businessId":"8001"}}
+]}
+}

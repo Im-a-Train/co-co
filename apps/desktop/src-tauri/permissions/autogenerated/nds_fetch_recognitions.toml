@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-nds-fetch-recognitions"
+description = "Enables the nds_fetch_recognitions command without any pre-configured scope."
+commands.allow = ["nds_fetch_recognitions"]
+
+[[permission]]
+identifier = "deny-nds-fetch-recognitions"
+description = "Denies the nds_fetch_recognitions command without any pre-configured scope."
+commands.deny = ["nds_fetch_recognitions"]

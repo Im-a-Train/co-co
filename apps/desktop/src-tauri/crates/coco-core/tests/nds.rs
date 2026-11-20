@@ -35,6 +35,9 @@ fn query_only_guard() {
     for q in [Q_OFFER_LIST, Q_CAMP_LIST, Q_ACTIVITY_LIST, Q_SUPERVISORS_LIST, Q_PARTICIPANTS_LIST, Q_RENTAL_ORDERS] {
         ensure_query_only(q).expect(q);
     }
+    for q in sync_queries() {
+        ensure_query_only(q).expect(q);
+    }
     ensure_query_only("# comment\n{ offerList { content { businessId } } }").unwrap();
     for bad in [
         "mutation X { deleteCamp(id: 1) { ok } }",
@@ -49,6 +52,29 @@ fn query_only_guard() {
     }
     assert!(graphql_body("X", json!({}), "mutation X { a }").is_err());
     assert!(graphql_body("bad name", json!({}), Q_OFFER_LIST).is_err());
+}
+
+fn sync_queries() -> [&'static str; 8] {
+    use coco_core::nds_sync::*;
+    [
+        Q_PARTICIPANT_ATTENDANCES,
+        Q_SUPERVISOR_ATTENDANCES,
+        Q_PROTOCOL,
+        Q_RECOGNITIONS,
+        Q_PERSON_SUPPLEMENTS,
+        Q_ORG_RELATIONS,
+        Q_COACH_BIOGRAPHY,
+        Q_OFFER_COACHES,
+    ]
+}
+
+#[test]
+fn sync_queries_never_request_person_fields() {
+    for q in sync_queries() {
+        for forbidden in ["firstName", "lastName", "birthDate", "ahvn13", "privateAddress", "triggeringPerson", "protocolContent", "reason"] {
+            assert!(!q.contains(forbidden), "{forbidden} in {q}");
+        }
+    }
 }
 
 #[test]
