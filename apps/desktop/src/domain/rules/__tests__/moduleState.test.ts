@@ -19,6 +19,7 @@ describe('resolveModuleStates', () => {
       'lst-wasser': 'off',
       'lst-winter': 'off',
       'lst-ebb': 'off',
+      'lst-ski': 'off',
       pbs: 'on',
     })
   })

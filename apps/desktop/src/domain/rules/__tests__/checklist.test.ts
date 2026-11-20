@@ -31,9 +31,9 @@ function ctx(over: Partial<ChecklistContext> = {}): ChecklistContext {
 describe('bundled checklist', () => {
   const items = loadBundledChecklist()
 
-  it('contains all 58 items of catalog §8 with unique ids', () => {
-    expect(items).toHaveLength(58)
-    expect(new Set(items.map((i) => i.id)).size).toBe(58)
+  it('contains all 64 items of catalog §8 with unique ids', () => {
+    expect(items).toHaveLength(64)
+    expect(new Set(items.map((i) => i.id)).size).toBe(64)
   })
 
   it('every source resolves and every module exists in the bundled packs', () => {

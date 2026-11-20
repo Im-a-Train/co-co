@@ -74,3 +74,11 @@ modules:
       - { keywordSet: EBB_B, minActivities: 1 }
     onWhen:
       - { activityTag: [ebb-a, ebb-b] }
+  - id: lst-ski
+    title: "Skifahren"
+    description: "Skifahren und Snowboarden als ergänzender Bewegungsblock (EBB A): Leitung mit J+S-Anerkennung, Helm, FIS-Regeln, Erste Hilfe, freies Gelände."
+    appliesWhen: { module: lst }
+    default: auto
+    toggleable: true
+    suggestWhen:
+      - { keywordSet: SKI, minActivities: 1 }

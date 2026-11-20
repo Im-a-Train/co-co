@@ -352,3 +352,39 @@
   text: "Bei Zweifeln wird der EBB nicht durchgeführt."
   sources: [{ key: EBB-L, page: "S. 2" }, { key: MB-UP, page: "S. 6" }]
   kind: "B"
+- id: CL-SKI-01
+  module: lst-ski
+  audience: coach
+  text: "Skifahren/Snowboarden wird von einer Person mit gültiger J+S-Anerkennung Skifahren bzw. Snowboard oder einer entsprechenden Ausbildung (z. B. Skischule) geleitet; die Gesamtverantwortung bleibt bei den J+S-Leitenden."
+  sources: [{ key: WEB-SICH, page: "Sportarten mit besonderen Sicherheitsbestimmungen" }, { key: EBB-C, page: "S. 2" }]
+  kind: "B"
+- id: CL-SKI-02
+  module: lst-ski
+  audience: leaders
+  text: "Alle Teilnehmenden tragen beim Skifahren und Snowboarden einen Helm."
+  sources: [{ key: MB-SKI, page: "S. 1" }]
+  kind: "B"
+- id: CL-SKI-03
+  module: lst-ski
+  audience: leaders
+  text: "Schneesportgeräte und Ausrüstung gemeinsam mit den Teilnehmenden kontrolliert; Skibindungen im Fachgeschäft eingestellt und kontrolliert (Empfehlung)."
+  sources: [{ key: MB-SKI, page: "S. 1" }]
+  kind: "E"
+- id: CL-SKI-04
+  module: lst-ski
+  audience: leaders
+  text: "FIS-Regeln und SKUS-Richtlinien vermittelt; Leitende tragen Rettungsdecke, Druckverband und Mobiltelefon bei sich."
+  sources: [{ key: MB-SKI, page: "S. 1" }, { key: SKUS }]
+  kind: "B"
+- id: CL-SKI-05
+  module: lst-ski
+  audience: leaders
+  text: "Kinder unter 1,25 m fahren Sessellift nur in Begleitung von Erwachsenen."
+  sources: [{ key: MB-SKI, page: "S. 1" }]
+  kind: "B"
+- id: CL-SKI-06
+  module: lst-ski
+  audience: leaders
+  text: "Freies Gelände nur pistennah, mässig steil (unter 30°) und nach Absprache mit dem Pisten- und Rettungsdienst; bis 35° nur mit Notfallausrüstung (LVS, Schaufel, Sonde) und J+S-Sicherheitszusatz Freeride."
+  sources: [{ key: SKI-FR, page: "Folie 3" }, { key: SKI-FG }, { key: MB-SKI, page: "S. 1" }]
+  kind: "B"

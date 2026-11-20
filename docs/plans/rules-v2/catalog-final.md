@@ -139,6 +139,7 @@ Weights:
 | `lst-wasser` | Wasser | `module: lst` | auto | ≥ 1 activity hits WATER; any activity tagged `sb-wasser` or `wasser-*` (→ **on**) |
 | `lst-winter` | Winter | `module: lst` | auto | camp overlaps `lst.winterMonths`; ≥ 1 WINTER hit; `campConfig.winterSafeAccess === false` (suggest only); `winterSafeAccess === false` **and** camp overlaps `lst.winterMonths` (→ **on**); tag `sb-winter` (→ **on**) |
 | `lst-ebb` | Ergänzende Bewegungsblöcke | `module: lst` | auto | ≥ 1 EBB_A or EBB_B hit; tag `ebb-a`/`ebb-b` (→ **on**) |
+| `lst-ski` | Skifahren | `module: lst` | auto | ≥ 1 SKI hit (suggest only; the coach switches it on) |
 | `pbs` | PBS Best Practice | `organizer: pbs` (`camp.hitobitoProvider` or `camp.organizer` matches PBS / db.scout.ch) | on | coach may enable it for non-PBS camps |
 
 Notes:
@@ -1371,6 +1372,29 @@ All rules have `version: 1.0.0`. All J+S-gated rules (modules `js` and `lst*`) a
 - **Prüfung:** Tagged `ebb-a` or `ebb-b`, and `responsibleIris` is empty.
 - **Quellen:** [WEB-L «Aktivitäten im J+S-Lager»] «müssen diese Aktivitäten von einer J+S-Leiterperson begleitet werden»; [MB-UP S.6].
 - **Tests:** + tagged with no responsible → should; − one responsible → none.
+
+### 5.8a Module `lst-ski` (added 2026-11-20)
+
+Skifahren/Snowboarden in a LS/T camp is an EBB A of a sport with «besondere Sicherheitsbestimmungen»
+(WEB-SICH). Hilfsmittel from the J+S sport page https://www.jugendundsport.ch/de/skifahren: WEB-SKI, MB-SKI,
+SKI-FR, SKI-FG, SKI-FGV, SKI-SF, MB-UP-ALLG, SKUS, SKI-LAGER. Params `ski.offPisteMaxSlope` (30°) and
+`ski.freerideMaxSlope` (35°). Checklist CL-SKI-01…06. Skitouren stay in LST-WINTER-07 (not allowed with LS/T).
+A coach tag `kein-ebb` silences all three rules.
+
+**LST-SKI-01** · lst-ski · should/heuristic · activity · keywords, activityTags · 2026+ · hard
+- **Titel:** Skifahren: Leitung mit J+S-Anerkennung
+- **Prüfung:** SKI hit and no SKI_LEAD hit (J+S-Leiter*in Ski/Snowboard, Skischule, Skilehrer …) in any activity field (title, location, storyboard, safety text, notes).
+- **Quellen:** [WEB-SICH «Sportarten mit besonderen Sicherheitsbestimmungen»]; [WEB-SKI]; [MB-SKI S.1]; [EBB-C S.2].
+
+**LST-SKI-02** · lst-ski · should/heuristic · activity · keywords · 2026+ · ai
+- **Titel:** Skifahren: Helm, FIS-Regeln, Erste Hilfe, Material
+- **Prüfung:** SKI hit; safety text misses SKI_HELM / SKI_FIS / SKI_FIRSTAID / SKI_MATERIAL (listed as `missing`).
+- **Quellen:** [MB-SKI S.1] «sorgen dafür, dass ein Helm getragen wird»; [SKUS]; [SKI-SF].
+
+**LST-SKI-03** · lst-ski · should/heuristic · activity · keywords, params · 2026+ · ai
+- **Titel:** Skifahren im freien Gelände
+- **Prüfung:** SKI_OFFPISTE hit and no SKI_OFFPISTE_PLAN (pistennah, Pisten-/Rettungsdienst, Steilheit) in the safety text.
+- **Quellen:** [SKI-FR Folie 3] (bis 30° ohne Notfallausrüstung, bis 35° mit Notfallausrüstung + Zusatz Freeride); [SKI-FG]; [WEB-SKI]; [MB-SKI S.1]; [SKI-FGV].
 
 ### 5.9 Module `pbs`
 

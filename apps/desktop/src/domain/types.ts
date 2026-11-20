@@ -592,8 +592,8 @@ export type Severity = 'must' | 'should' | 'hint'
 export type Confidence = 'verified' | 'conflict' | 'unverified' | 'best-practice' | 'heuristic'
 export type FindingScope = 'camp' | 'day' | 'activity' | 'scheduleEntry' | 'document'
 /** Rule modules of the bundled packs (catalog v2 §2.2). */
-export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'pbs'
-export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'pbs']
+export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'lst-ski' | 'pbs'
+export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'lst-ski', 'pbs']
 /** @deprecated Rules v2: the group is the rule's module (`RuleMeta.group === RuleMeta.module`). */
 export type RuleGroup = ModuleId
 export type FindingOrigin = 'rule' | 'ai' | 'manual'

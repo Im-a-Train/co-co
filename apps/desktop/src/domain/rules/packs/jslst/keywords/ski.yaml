@@ -1,0 +1,32 @@
+- id: SKI
+  module: lst-ski
+  include: ["=ski", "^skifahr", "^skitag", "^skimorgen", "^skinachmittag", "^skilager", "^skischule", "^skiunterricht", "^skilehrer", "^pistenmorgen", "^pistentag", "=piste", "snowboard","^sessellift", "^skilift", "freeride"]
+  exclude: ["skitour", "skilift spiel", "^skispring", "^skilanglauf"]
+- id: SKI_LEAD
+  module: lst-ski
+  include: ["leiter ski", "leiterin ski", "leitende ski", "leiter skifahren", "leiterin skifahren", "leitende skifahren", "leiter snowboard", "leiterin snowboard", "anerkennung ski", "anerkennung snowboard", "j s ski", "^skileiter", "^skilehrer", "^skischule", "^schneesportschule", "^schneesportlehrer", "^snowboardlehrer", "swiss snowsports"]
+  exclude: []
+- id: SKI_HELM
+  module: lst-ski
+  include: ["helm"]
+  exclude: []
+- id: SKI_FIS
+  module: lst-ski
+  include: ["=fis", "pistenregeln", "verhaltensregeln", "=skus"]
+  exclude: []
+- id: SKI_FIRSTAID
+  module: lst-ski
+  include: ["rettungsdecke", "druckverband", "apotheke", "erste hilfe", "mobiltelefon", "=handy", "notfallnummer", "=1414", "=144"]
+  exclude: []
+- id: SKI_MATERIAL
+  module: lst-ski
+  include: ["bindung", "materialkontrolle", "material kontroll", "^materialcheck", "ausrüstung kontroll"]
+  exclude: []
+- id: SKI_OFFPISTE
+  module: lst-ski
+  include: ["freeride", "^variantenabfahrt", "^variantenfahr", "neben der piste", "abseits der piste", "freies gelände", "freien gelände", "freiem gelände", "tiefschnee", "^offpiste", "off piste"]
+  exclude: []
+- id: SKI_OFFPISTE_PLAN
+  module: lst-ski
+  include: ["pistennah", "pistendienst", "rettungsdienst", "steilheit", "hangneigung", "30 grad"]
+  exclude: []

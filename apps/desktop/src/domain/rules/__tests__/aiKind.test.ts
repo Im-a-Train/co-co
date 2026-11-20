@@ -14,6 +14,8 @@ const HARD_KEYWORD_RULES = new Set([
   'LST-SB-01',
   'LST-ANG-01',
   'LST-WASSER-04',
+  // Binding leader requirement for skiing (J+S-Anerkennung Skifahren/Snowboard).
+  'LST-SKI-01',
   // Counts the coach input slrgCount (INPUT_RULES in components/camps/inputsForm.ts); keywords only detect water activities.
   'BP-WATER-01',
 ])
