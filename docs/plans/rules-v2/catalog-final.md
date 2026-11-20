@@ -139,6 +139,8 @@ Weights:
 | `lst-wasser` | Wasser | `module: lst` | auto | ≥ 1 activity hits WATER; any activity tagged `sb-wasser` or `wasser-*` (→ **on**) |
 | `lst-winter` | Winter | `module: lst` | auto | camp overlaps `lst.winterMonths`; ≥ 1 WINTER hit; `campConfig.winterSafeAccess === false` (suggest only); `winterSafeAccess === false` **and** camp overlaps `lst.winterMonths` (→ **on**); tag `sb-winter` (→ **on**) |
 | `lst-ebb` | Ergänzende Bewegungsblöcke | `module: lst` | auto | ≥ 1 EBB_A or EBB_B hit; tag `ebb-a`/`ebb-b` (→ **on**) |
+| `js-lager` | J+S-Lagertage | `jsCamp: true, sport: [lst, ski]` | on (not toggleable) | – (ADR 0016: JS-CAMP-01, JS-DAY-01…06, JS-FREE-01, CMP-ACT-01…03 moved here from `lst`) |
+| `ski` | Skifahren | `jsCamp: true, sport: [ski]` | on (not toggleable) | – (ADR 0016) |
 | `pbs` | PBS Best Practice | `organizer: pbs` (`camp.hitobitoProvider` or `camp.organizer` matches PBS / db.scout.ch) | on | coach may enable it for non-PBS camps |
 
 Notes:
@@ -1371,6 +1373,26 @@ All rules have `version: 1.0.0`. All J+S-gated rules (modules `js` and `lst*`) a
 - **Prüfung:** Tagged `ebb-a` or `ebb-b`, and `responsibleIris` is empty.
 - **Quellen:** [WEB-L «Aktivitäten im J+S-Lager»] «müssen diese Aktivitäten von einer J+S-Leiterperson begleitet werden»; [MB-UP S.6].
 - **Tests:** + tagged with no responsible → should; − one responsible → none.
+
+### 5.8a Module `ski` (sport Skifahren, ADR 0016, added 2026-11-20)
+
+Applies to camps whose sport is `ski` (registered as J+S Lager in the sport Skifahren). The camp-day rules come from
+module `js-lager`; JS-STAFF-02 counts the coach input «J+S-Leitende» (no MiData recognition for Skifahren), JS-STAFF-03 and
+the 2027 Bewegungszeit day minimum do not apply. Hilfsmittel from https://www.jugendundsport.ch/de/skifahren: WEB-SKI,
+MB-SKI, SKI-FR, SKI-FG, SKI-FGV, SKI-SF, MB-UP-ALLG, SKUS, SKI-LAGER. Params `ski.offPisteMaxSlope` (30°),
+`ski.freerideMaxSlope` (35°). Checklist CL-SKI-01…08 (Anerkennung Skifahren + Weiterbildung, Helm, Material, FIS +
+Erste Hilfe, Sessellift unter 1,25 m, freies Gelände, NDS-Anmeldung als Skifahren, Gruppengrösse laut Leitfaden-Tabelle).
+Open: the group size per leader for Skifahren is not in the Leitfaden web text.
+
+**SKI-01** · ski · should/heuristic · activity · keywords · 2026+ · ai
+- **Titel:** Skifahren: Helm, FIS-Regeln, Erste Hilfe, Material
+- **Prüfung:** SKI hit (`^ski`, `^piste`, snowboard …; not Skitour/Skispringen/Skilanglauf); safety text misses SKI_HELM / SKI_FIS / SKI_FIRSTAID / SKI_MATERIAL (listed as `missing`).
+- **Quellen:** [MB-SKI S.1] «sorgen dafür, dass ein Helm getragen wird»; [SKUS]; [SKI-SF].
+
+**SKI-02** · ski · should/heuristic · activity · keywords, params · 2026+ · ai
+- **Titel:** Skifahren im freien Gelände
+- **Prüfung:** SKI_OFFPISTE hit and no SKI_OFFPISTE_PLAN (pistennah, Pisten-/Rettungsdienst, Steilheit) in the safety text.
+- **Quellen:** [SKI-FR Folie 3] (bis 30° ohne Notfallausrüstung, bis 35° mit Notfallausrüstung + Zusatz Freeride); [SKI-FG]; [WEB-SKI]; [MB-SKI S.1]; [SKI-FGV].
 
 ### 5.9 Module `pbs`
 

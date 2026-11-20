@@ -352,3 +352,51 @@
   text: "Bei Zweifeln wird der EBB nicht durchgeführt."
   sources: [{ key: EBB-L, page: "S. 2" }, { key: MB-UP, page: "S. 6" }]
   kind: "B"
+- id: CL-SKI-01
+  module: ski
+  audience: coach
+  text: "Mindestens zwei Leitende haben eine gültige J+S-Anerkennung Skifahren für die Zielgruppe (Weiterbildung bis Ende des zweiten Kalenderjahres nach Ausstellung bzw. letzter Weiterbildung); Leitende unter 18 nur als Hilfsleitende."
+  sources: [{ key: LEITFADEN, page: "«Lagerleitung» (Art. 12 VSpoFöP)" }, { key: WEB-C }, { key: WEB-SKI }]
+  kind: "B"
+- id: CL-SKI-07
+  module: ski
+  audience: coach
+  text: "Angebot im NDS als Lager der Sportart Skifahren (Kinder- und Jugendsport) angemeldet, spätestens 30 Tage vor Lagerbeginn."
+  sources: [{ key: WEB-C }, { key: WEB-L }]
+  kind: "B"
+- id: CL-SKI-08
+  module: ski
+  audience: coach
+  text: "Gruppengrösse pro J+S-Leiter*in mit der Tabelle «Gruppengrösse, Leitereinsatz … pro Sportart» im Leitfaden für Skifahren abgeglichen (co-co kennt die Zahl nicht)."
+  sources: [{ key: LEITFADEN, page: "«Gruppengrösse, Leitereinsatz … pro Sportart»" }, { key: WEB-GR }]
+  kind: "B"
+- id: CL-SKI-02
+  module: ski
+  audience: leaders
+  text: "Alle Teilnehmenden tragen beim Skifahren und Snowboarden einen Helm."
+  sources: [{ key: MB-SKI, page: "S. 1" }]
+  kind: "B"
+- id: CL-SKI-03
+  module: ski
+  audience: leaders
+  text: "Schneesportgeräte und Ausrüstung gemeinsam mit den Teilnehmenden kontrolliert; Skibindungen im Fachgeschäft eingestellt und kontrolliert (Empfehlung)."
+  sources: [{ key: MB-SKI, page: "S. 1" }]
+  kind: "E"
+- id: CL-SKI-04
+  module: ski
+  audience: leaders
+  text: "FIS-Regeln und SKUS-Richtlinien vermittelt; Leitende tragen Rettungsdecke, Druckverband und Mobiltelefon bei sich."
+  sources: [{ key: MB-SKI, page: "S. 1" }, { key: SKUS }]
+  kind: "B"
+- id: CL-SKI-05
+  module: ski
+  audience: leaders
+  text: "Kinder unter 1,25 m fahren Sessellift nur in Begleitung von Erwachsenen."
+  sources: [{ key: MB-SKI, page: "S. 1" }]
+  kind: "B"
+- id: CL-SKI-06
+  module: ski
+  audience: leaders
+  text: "Freies Gelände nur pistennah, mässig steil (unter 30°) und nach Absprache mit dem Pisten- und Rettungsdienst; bis 35° nur mit Notfallausrüstung (LVS, Schaufel, Sonde) und J+S-Sicherheitszusatz Freeride."
+  sources: [{ key: SKI-FR, page: "Folie 3" }, { key: SKI-FG }, { key: MB-SKI, page: "S. 1" }]
+  kind: "B"

@@ -230,8 +230,8 @@ packs/
   pbs/                    pack coco-pbs: same shape, module pbs
 ```
 
-- **Rules per module** (108 active + JS-STAFF-01 retired): js 29, lst 28, lst-lager 11, lst-wasser 10,
-  lst-trekking 9, lst-winter 8, pbs 6, lst-berg 4, lst-ebb 4.
+- **Rules per module** (110 active + JS-STAFF-01 retired): js 29, lst 17, js-lager 11, lst-lager 11, lst-wasser 10,
+  lst-trekking 9, lst-winter 8, pbs 6, lst-berg 4, lst-ebb 4, ski 2. Camp sport (`campRuleConfig.sport`): `lst` | `ski` | `other`.
 - **Module state resolution** (`lib/moduleState.ts`): `appliesWhen` (jsCamp, sport, organizer, parent
   module) -> coach state (`campConfig.modules[id]`, default `auto`) -> module default -> tag triggers (`on`)
   -> suggest triggers (`suggested`, reasons as i18n keys). `suggested` caps hits at `hint` and adds

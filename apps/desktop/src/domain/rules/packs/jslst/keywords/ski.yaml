@@ -1,0 +1,28 @@
+- id: SKI
+  module: ski
+  include: ["^ski", "^piste", "snowboard", "^sessellift", "freeride", "=carven", "^schneesport"]
+  exclude: ["skitour", "skilift spiel", "^skispring", "^skilanglauf", "^skiwachs"]
+- id: SKI_HELM
+  module: ski
+  include: ["helm"]
+  exclude: []
+- id: SKI_FIS
+  module: ski
+  include: ["=fis", "pistenregeln", "verhaltensregeln", "=skus"]
+  exclude: []
+- id: SKI_FIRSTAID
+  module: ski
+  include: ["rettungsdecke", "druckverband", "apotheke", "erste hilfe", "mobiltelefon", "=handy", "notfallnummer", "=1414", "=144"]
+  exclude: []
+- id: SKI_MATERIAL
+  module: ski
+  include: ["bindung", "materialkontrolle", "material kontroll", "^materialcheck", "ausrüstung kontroll"]
+  exclude: []
+- id: SKI_OFFPISTE
+  module: ski
+  include: ["freeride", "^variantenabfahrt", "^variantenfahr", "neben der piste", "abseits der piste", "freies gelände", "freien gelände", "freiem gelände", "tiefschnee", "^offpiste", "off piste"]
+  exclude: []
+- id: SKI_OFFPISTE_PLAN
+  module: ski
+  include: ["pistennah", "pistendienst", "rettungsdienst", "steilheit", "hangneigung", "30 grad"]
+  exclude: []

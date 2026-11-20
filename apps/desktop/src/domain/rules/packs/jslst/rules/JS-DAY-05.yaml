@@ -1,6 +1,6 @@
 id: JS-DAY-05
-version: 2.0.0
-module: lst
+version: 2.1.0
+module: js-lager
 status: active
 title: "Einheit beginnt mit Einstimmen/Aufwärmen"
 description: "Jede J+S-Einheit beginnt mit einem gezielten Aufwärmen oder Einstimmen. Geprüft wird, ob der Beginn des Ablaufs (Storyboard) ein entsprechendes Stichwort enthält."

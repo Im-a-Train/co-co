@@ -1,10 +1,10 @@
 id: JS-STAFF-02
-version: 1.0.0
+version: 1.1.0
 module: js
 status: active
 title: "Mindestens zwei J+S-Leitende"
-description: "Ein J+S-Lager Lagersport/Trekking braucht mindestens zwei J+S-Leitende mit gültiger Anerkennung. Gezählt wird nach MiData (Anerkennung Leiter LS/T), sonst nach deiner Angabe."
-message: "Es sind {count} J+S-Leitende Lagersport/Trekking mit gültiger Anerkennung erfasst – nötig sind mindestens {min}."
+description: "Ein J+S-Lager braucht mindestens zwei J+S-Leitende mit gültiger Anerkennung in der angemeldeten Sportart. Bei Lagersport/Trekking zählt co-co nach MiData (Anerkennung Leiter LS/T), sonst nach deiner Angabe; bei Skifahren und anderen Sportarten immer nach deiner Angabe (MiData führt keine Anerkennung Skifahren)."
+message: "Es sind {count} J+S-Leitende mit gültiger Anerkennung in der Sportart des Lagers erfasst – nötig sind mindestens {min}."
 messageVariants:
   missing: "Anzahl J+S-Leitende unbekannt – MiData verbinden oder Anzahl erfassen."
 feedbackText: "Für J+S braucht das Lager mindestens {min} J+S-Leitende mit gültiger Anerkennung. Wie viele habt ihr aktuell?"
