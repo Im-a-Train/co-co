@@ -44,6 +44,17 @@ describe('resolveModuleStates', () => {
     expect(r.reasons).toEqual([{ key: 'rules.module.reason.keywordSet', params: { set: 'WATER', count: 1 } }])
   })
 
+  it('a coach-on module keeps the trigger reasons the coach saw as a suggestion', () => {
+    const b = new FactsBuilder({ start: '2031-02-10' })
+    b.activity('Baden im See', CAT_LS)
+    const r = makeCtx(b.facts, { campConfig: { modules: { 'lst-wasser': 'on' } } }).campConfig.moduleStates['lst-wasser']!
+    expect(r.state).toBe('on')
+    expect(r.reasons[0].key).toBe('rules.module.reason.coachOn')
+    expect(r.reasons).toContainEqual({ key: 'rules.module.reason.keywordSet', params: { set: 'WATER', count: 1 } })
+    const w = makeCtx(b.facts, { campConfig: { modules: { 'lst-winter': 'on' } } }).campConfig.moduleStates['lst-winter']!
+    expect(w.reasons.length).toBeGreaterThan(1)
+  })
+
   it('a coach tag turns an auto module on; coach off wins over triggers', () => {
     const b = new FactsBuilder({ start: '2031-07-12' })
     const a = b.activity('Baden im See', CAT_LS)

@@ -43,7 +43,7 @@ function submitAdd(): void {
 </script>
 
 <template>
-  <v-card class="h-100">
+  <v-card>
     <v-card-item prepend-icon="mdi-server-network">
       <v-card-title>{{ t('instance.title') }}</v-card-title>
       <v-card-subtitle>{{ t('instance.subtitle') }}</v-card-subtitle>

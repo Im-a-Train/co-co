@@ -5,6 +5,7 @@ status: active
 title: "Marschzeit länger als Programmfenster"
 description: "Die aus der GPX-Route geschätzte Marschzeit (inkl. Pausen) passt ins Programmfenster der Aktivität. Tempo, Abstieg und Pausen stammen aus der Broschüre Berg (2014) und können in den Einstellungen angepasst werden."
 message: "Geschätzte Marschzeit von «{activity}» {estimate} (inkl. Pausen) passt nicht ins Programmfenster von {slot}."
+feedbackText: "Die geschätzte Marschzeit von «{activity}» passt nicht ins Programmfenster ({slot}). Könnt ihr die Zeit anpassen oder die Route kürzen?"
 severity: should
 confidence: heuristic
 scope: activity

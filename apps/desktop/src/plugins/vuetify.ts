@@ -43,7 +43,8 @@ export default createVuetify({
   },
   defaults: {
     VCard: { rounded: 'lg', elevation: 1 },
-    VBtn: { rounded: 'lg' },
+    VBtn: { rounded: 'lg', class: 'text-none' },
+    VTab: { class: 'text-none' },
     VTextField: { variant: 'outlined', density: 'comfortable' },
     VSelect: { variant: 'outlined', density: 'comfortable' },
   },

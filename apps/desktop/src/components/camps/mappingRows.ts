@@ -11,7 +11,31 @@ export interface MappingRow {
   activityCount: number
   guess: CategoryClass | null
   confidence: 'high' | 'low' | null
+  /** Why co-co suggests `guess` (key under camps.mapping.reason.*), null without a guess. */
+  reason: MappingReasonKey | null
   selected: CategoryClass
+}
+
+export type MappingReasonKey = 'short' | 'nameJs' | 'nameSport' | 'nameFree' | 'nameActivity' | 'ys' | 'default'
+
+/** Maps the machine-readable guess reason of `guessCategories` to a locale key (camps.mapping.reason.<key>). */
+export function mappingReasonKey(reason: string | null | undefined): MappingReasonKey | null {
+  if (!reason) return null
+  if (reason.startsWith('short:')) return 'short'
+  switch (reason) {
+    case 'name:sport':
+      return 'nameSport'
+    case 'name:frei':
+      return 'nameFree'
+    case 'name:aktivität':
+      return 'nameActivity'
+    case 'ys-characteristics':
+      return 'ys'
+    case 'default':
+      return 'default'
+    default:
+      return reason.startsWith('name:') ? 'nameJs' : 'default'
+  }
 }
 
 export function buildMappingRows(
@@ -33,6 +57,7 @@ export function buildMappingRows(
       activityCount: counts.get(c.iri) ?? 0,
       guess: g?.guess ?? null,
       confidence: g?.confidence ?? null,
+      reason: g ? mappingReasonKey(g.reason) : null,
       selected: draft[c.iri] ?? g?.guess ?? 'NONE',
     }
   })

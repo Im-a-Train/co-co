@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { groupDiff } from '@/domain/rounds'
 import type { Diff, DiffChange, DiffEntry, Iri } from '@/domain/types'
 
-const props = defineProps<{ diff: Diff; titleOf?: (iri: Iri) => string | undefined }>()
+const props = defineProps<{ diff: Diff; titleOf?: (iri: Iri) => string | undefined; emptyText?: string }>()
 const { t, te } = useI18n()
 
 const groups = computed(() => groupDiff(props.diff, props.titleOf))
@@ -22,10 +22,10 @@ function fieldsText(e: DiffEntry): string {
 
 <template>
   <div>
-    <div class="text-body-2 text-medium-emphasis mb-2">
+    <div v-if="diff.entries.length" class="text-body-2 text-medium-emphasis mb-2">
       {{ t('rounds.diff.counts', diff.counts) }}
     </div>
-    <v-alert v-if="!diff.entries.length" type="success" variant="tonal" density="compact" :text="t('rounds.diff.empty')" />
+    <div v-else class="text-body-2 text-medium-emphasis" data-testid="diff-empty">{{ emptyText ?? t('rounds.diff.empty') }}</div>
 
     <v-card v-if="groups.general.length" variant="outlined" class="mb-3">
       <v-card-title class="text-subtitle-2">{{ t('rounds.diff.general') }}</v-card-title>

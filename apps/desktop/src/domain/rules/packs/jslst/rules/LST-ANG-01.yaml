@@ -5,6 +5,7 @@ status: active
 title: "Keine Unternehmung im Programm"
 description: "Ein J+S-Angebot braucht mindestens eine Unternehmung (Aktivität ausserhalb des Lagerortes). Erfüllt durch den Tag «Unternehmung» oder eine J+S-Aktivität mit passendem Stichwort und anderem Ort."
 message: "Im Lager ist keine Unternehmung erkennbar (Aktivität ausserhalb des Lagerortes, z. B. Wanderung, Velotour). Ein J+S-Angebot braucht mindestens eine."
+feedbackText: "Ich sehe keine Unternehmung im Programm (z. B. Wanderung oder Velotour). Plant ihr noch eine?"
 severity: should
 confidence: heuristic
 scope: camp

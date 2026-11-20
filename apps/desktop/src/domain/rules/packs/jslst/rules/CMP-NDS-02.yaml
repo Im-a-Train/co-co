@@ -7,6 +7,7 @@ description: "Nach dem Lager ist die Anwesenheitskontrolle (AWK) aller Aktivitä
 message: "In der NDS sind bei {count} Aktivitäten die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
 messageVariants:
   one: "In der NDS ist bei 1 Aktivität die Anwesenheitskontrolle (AWK) noch offen (Quelle: NDS, Stand {stand})"
+feedbackText: "In der NDS ist die Anwesenheitskontrolle bei einzelnen Aktivitäten noch offen. Könnt ihr sie bitte nachtragen?"
 severity: should
 confidence: verified
 scope: camp

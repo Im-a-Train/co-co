@@ -20,7 +20,8 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
   })
 
   await step('flow: NDS diagnosis shows endpoints', async () => {
-    await page.locator('[data-testid="nds-diag"] .v-expansion-panel-title').click()
+    await page.getByTestId('settings-diagnostics-toggle').click()
+    await page.waitForSelector('[data-testid="nds-diag"]', { timeout: 5000 })
     await page.locator('[data-testid="nds-diag"] input').first().fill('camp-9001')
     await page.getByTestId('nds-probe').click()
     await page.waitForSelector('[data-testid="nds-probe-result"]', { timeout: 5000 })
@@ -34,13 +35,16 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     await page.getByTestId('nds-pick').click({ timeout: 5000 })
     await page.getByTestId('nds-camp-camp-9001').click({ timeout: 5000 })
     await page.waitForTimeout(500)
+    const linkText = await page.getByTestId('nds-link').innerText()
+    if (!/Musterstufe · Angebot 999001 \(/.test(linkText) || /camp-9001/.test(linkText)) throw new Error('link line should name the camp, not the id: ' + linkText)
     await shot(page, 'flow-nds-linked')
     await page.getByTestId('nds-refresh').click({ timeout: 5000 })
     await page.waitForSelector('[data-testid="nds-summary"]', { timeout: 8000 })
     const stand = await page.getByTestId('nds-stand').innerText()
     if (!/Stand NDS: \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/.test(stand)) throw new Error('bad Stand: ' + stand)
     const t = await text()
-    if (!/bewilligt am 03\.05\.2026/.test(t)) throw new Error('approval chip missing')
+    if (!/bewilligt am 03\.05\.2026 \(angemeldet spätestens an diesem Tag\)/.test(t)) throw new Error('approval chip missing')
+    if (/CHILD:|ADOLESCENT:/.test(t)) throw new Error('raw role codes in the NDS card')
     if (!/offener Anwesenheitskontrolle/.test(t)) throw new Error('AWK summary missing')
     await shot(page, 'flow-nds-loaded')
 
@@ -51,16 +55,16 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     const check = page.getByTestId('nds-adopt-check-ndsRegistered').locator('input')
     if (!(await check.isChecked())) await check.check()
     await page.getByTestId('nds-adopt-apply').click()
-    await page.waitForSelector('[data-testid="nds-badge"]', { timeout: 5000 })
-    await page.waitForTimeout(600)
+    // The NDS deadline fields no longer live in Angaben (they are edited in Checkliste), so there is no
+    // badge here any more: wait for the dialog to close and the autosave-free adopt save to finish.
+    await page.waitForSelector('[data-testid="nds-adopt"]', { state: 'detached', timeout: 5000 })
+    await page.waitForTimeout(800)
     await shot(page, 'flow-nds-adopted')
-  })
-
-  await step('flow: manual edit removes the NDS badge', async () => {
-    await page.getByTestId('input-ndsRegistered').locator('input').click()
-    await page.waitForTimeout(300)
-    const n = await page.getByTestId('input-ndsRegistered').locator('..').locator('[data-testid="nds-badge"]').count()
-    if (n !== 0) throw new Error('NDS badge still next to edited field')
-    await shot(page, 'flow-nds-badge-removed')
+    // Checkliste shows the adopted NDS deadline values with their «NDS» badge (ADR 0007)
+    await go('checkliste', 'flow-nds-checklist')
+    await page.waitForSelector('[data-testid="camp-deadlines-card"]', { timeout: 8000 })
+    if (!(await page.locator('[data-testid="camp-deadline"] [data-testid="nds-badge"]').count())) throw new Error('NDS badge missing in Checkliste')
+    await page.getByTestId('camp-deadlines-card').scrollIntoViewIfNeeded()
+    await shot(page, 'flow-nds-checklist')
   })
 }

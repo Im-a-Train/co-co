@@ -25,21 +25,22 @@ const storeProblem = computed(() => store.state.value === 'error' || store.state
 
 <template>
   <div class="mx-auto connection-col">
-    <h1 class="text-h5 mb-4">{{ t('connection.title') }}</h1>
-
     <template v-if="!isLoggedIn">
+      <h1 class="text-h5 mb-2">{{ t('connection.title') }}</h1>
+      <p class="text-body-1 text-medium-emphasis mb-4" data-testid="connection-intro">{{ t('connection.intro') }}</p>
       <LoginCard :disabled="!inTauri" />
     </template>
     <template v-else>
-      <v-alert type="success" variant="tonal" icon="mdi-account-check" class="mb-4" :title="t('connection.loggedInTitle')" :text="t('connection.loggedInText')">
+      <h1 class="text-h5 mb-4">{{ t('connection.titleLoggedIn') }}</h1>
+      <v-alert v-if="!storeProblem" type="success" variant="tonal" icon="mdi-account-check" class="mb-4" :title="t('connection.loggedInTitle')" :text="t('connection.loggedInText')">
         <template #append>
           <div class="d-flex flex-column ga-2">
             <v-btn color="primary" variant="flat" to="/lager" prepend-icon="mdi-tent" data-testid="connection-to-camps">{{ t('connection.toCamps') }}</v-btn>
-            <v-btn variant="tonal" to="/einstellungen#instanzen" prepend-icon="mdi-cog-outline" data-testid="connection-manage">{{ t('connection.manage') }}</v-btn>
+            <v-btn variant="tonal" to="/einstellungen#midata" prepend-icon="mdi-cog-outline" data-testid="connection-manage">{{ t('connection.manage') }}</v-btn>
           </div>
         </template>
       </v-alert>
-      <SessionCard />
+      <SessionCard compact />
     </template>
 
     <div v-if="storeProblem" class="mt-4">

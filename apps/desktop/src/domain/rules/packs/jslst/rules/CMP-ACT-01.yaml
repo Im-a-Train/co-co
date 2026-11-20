@@ -5,6 +5,7 @@ status: active
 title: "Aktivität ohne Verantwortliche"
 description: "Jede Aktivität hat mindestens eine verantwortliche Person."
 message: "«{title}» hat keine verantwortliche Person"
+feedbackText: "Bei «{title}» ist noch niemand als verantwortlich eingetragen. Wer übernimmt die Aktivität?"
 severity: should
 confidence: best-practice
 scope: activity

@@ -10,7 +10,7 @@ import { runSummary, summariseDocument } from '@/domain/zones/features'
 import type { CampFacts, DocumentRecord } from '@/domain/types'
 import RedactionPreviewDialog from './RedactionPreviewDialog.vue'
 
-const props = defineProps<{ doc: DocumentRecord; facts: CampFacts | null }>()
+const props = defineProps<{ doc: DocumentRecord; facts: CampFacts | null; showNotReady?: boolean }>()
 const emit = defineEmits<{ summarised: [text: string] }>()
 
 const { t } = useI18n()
@@ -25,7 +25,11 @@ function start() {
 </script>
 
 <template>
-  <span v-if="ready">
+  <div v-if="!ready && showNotReady" class="text-caption d-flex flex-wrap align-center ga-2" data-testid="ai-not-ready">
+    <span>{{ t('documents.ai.notReady') }}</span>
+    <v-btn size="small" variant="text" :to="{ name: 'settings' }">{{ t('documents.ai.toSettings') }}</v-btn>
+  </div>
+  <span v-else-if="ready">
     <v-btn
       size="small"
       variant="text"

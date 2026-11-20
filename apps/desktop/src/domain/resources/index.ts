@@ -26,8 +26,24 @@ export interface ResourceHit {
   snippet: string
   /** Higher = better. */
   score: number
-  /** Where the match is: metadata (title/summary/notes) or attached content. */
-  in: 'meta' | 'content'
+  /** Where the match is: metadata (title/summary/notes), attached content, or a rule that cites the resource. */
+  in: 'meta' | 'content' | 'citation'
+}
+
+/** A rule that cites a resource (UI only; MCP search does not pass these). `page` is the cited page/section. */
+export interface ResourceCitation {
+  id: string
+  title: string
+  description?: string
+  page?: string
+}
+
+export interface SearchOptions {
+  limit?: number
+  /** Citing rules per resource key: resources without a direct hit still match through them. */
+  citations?: ReadonlyMap<string, readonly ResourceCitation[]>
+  /** Snippet text of a citation hit (German text comes from the UI). Default: «{id} {title}». */
+  citationSnippet?: (c: ResourceCitation) => string
 }
 
 export const RESOURCE_WEIGHTS: SourceWeight[] = ['binding', 'binding-quote', 'didactic', 'outdated', 'pbs', 'info']
@@ -35,6 +51,14 @@ export const HISTORY_MAX = 10
 const KEY_RE = /^[A-Z0-9][A-Z0-9-]*$/
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const CONVENTIONS = ['printed', 'section', 'slide']
+
+/** List order of the Hilfsmittel view: binding first, outdated last. */
+const WEIGHT_ORDER: Record<SourceWeight, number> = { binding: 0, 'binding-quote': 1, pbs: 2, didactic: 3, info: 4, outdated: 5 }
+
+/** Sorts resources by weight (binding, binding-quote, pbs, didactic, info, outdated), then by title. */
+export function sortResourcesByWeight<T extends Pick<ResourceRecord, 'weight' | 'title'>>(list: readonly T[]): T[] {
+  return [...list].sort((a, b) => WEIGHT_ORDER[a.weight] - WEIGHT_ORDER[b.weight] || a.title.localeCompare(b.title, 'de'))
+}
 
 /** Bundled defaults: every sources.yaml entry as a ResourceRecord (origin 'bundled', modified false). */
 export function bundledResources(now: string = new Date().toISOString()): ResourceRecord[] {
@@ -138,11 +162,28 @@ function snippetAround(text: string, norm: string, words: string[]): string {
   return `${start > 0 ? '… ' : ''}${body}${end < text.length ? ' …' : ''}`
 }
 
+/** Best citation for all words: a match in the rule id/title outranks one in the description, which outranks the page. */
+function bestCitation(list: readonly ResourceCitation[] | undefined, words: string[]): { c: ResourceCitation; score: number } | null {
+  let best: { c: ResourceCitation; score: number } | null = null
+  for (const c of list ?? []) {
+    const head = normalizeText(`${c.id} ${c.title}`)
+    const desc = normalizeText(c.description ?? '')
+    const page = normalizeText(c.page ?? '')
+    if (!words.every((w) => head.includes(w) || desc.includes(w) || page.includes(w))) continue
+    let score = 0
+    for (const w of words) score += head.includes(w) ? 100 : desc.includes(w) ? 40 : 10
+    if (!best || score > best.score) best = { c, score }
+  }
+  return best
+}
+
 /** Full-text search over title, summary, notes, edition and content. Words AND-ed, umlaut/case-insensitive. */
-export function searchResources(records: readonly ResourceRecord[], query: string, opts?: { limit?: number }): ResourceHit[] {
+export function searchResources(records: readonly ResourceRecord[], query: string, opts?: SearchOptions): ResourceHit[] {
   const words = normalizeText(query).split(/\s+/).filter(Boolean)
   if (!words.length) return []
   const hits: ResourceHit[] = []
+  // Tier per hit: 0 document text, 1 title/summary, 2 citation, 3 needs the maintainer notes.
+  const tiers = new Map<ResourceHit, number>()
   for (const r of records) {
     const title = normalizeText(r.title)
     const key = normalizeText(r.key)
@@ -150,10 +191,24 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
     const notes = normalizeText(r.notes ?? '')
     const rest = normalizeText(`${r.edition} ${r.publisher ?? ''}`)
     const content = normalizeText(r.content ?? '')
-    const meta = `${key}\n${title}\n${summary}\n${notes}\n${rest}`
-    const inMeta = words.every((w) => meta.includes(w))
-    const inAll = inMeta || words.every((w) => `${meta}\n${content}`.includes(w))
-    if (!inAll) continue
+    const head = `${key}\n${title}\n${summary}\n${rest}`
+    const inHead = words.every((w) => head.includes(w))
+    const inContent = words.every((w) => content.includes(w))
+    const inAll = words.every((w) => head.includes(w) || notes.includes(w) || content.includes(w))
+    // A word found only in the maintainer notes: such a hit ranks last (the notes do not answer the
+    // coach's question), and a citing rule is the better answer when there is one.
+    const notesOnly = inAll && words.some((w) => !head.includes(w) && !content.includes(w))
+    if (!inAll || notesOnly) {
+      const cite = bestCitation(opts?.citations?.get(r.key), words)
+      if (cite) {
+        const snippet = opts?.citationSnippet ? opts.citationSnippet(cite.c) : `${cite.c.id} ${cite.c.title}`
+        const hit: ResourceHit = { key: r.key, title: r.title, url: r.url, snippet, score: cite.score, in: 'citation' }
+        tiers.set(hit, 2)
+        hits.push(hit)
+        continue
+      }
+      if (!inAll) continue
+    }
     let score = 0
     for (const w of words) {
       if (title.includes(w)) score += 100
@@ -168,17 +223,28 @@ export function searchResources(records: readonly ResourceRecord[], query: strin
     }
     let snippet: string
     let where: 'meta' | 'content'
-    if (inMeta) {
-      where = 'meta'
-      const src = words.some((w) => summary.includes(w)) ? r.summary! : words.some((w) => notes.includes(w)) ? r.notes! : r.title
-      snippet = snippetAround(src, normalizeText(src), words)
-    } else {
+    // Document text whenever it carries the words (also split between title and text): the passage answers the question.
+    if (inContent || (!inHead && !notesOnly)) {
       where = 'content'
       snippet = snippetAround(r.content ?? '', content, words)
+    } else {
+      where = 'meta'
+      // Title first when it carries every word; the notes (maintainer remarks) only as a last resort.
+      const src = words.every((w) => title.includes(w))
+        ? r.title
+        : words.some((w) => summary.includes(w))
+          ? r.summary!
+          : words.some((w) => notes.includes(w))
+            ? r.notes!
+            : r.title
+      snippet = snippetAround(src, normalizeText(src), words)
     }
-    hits.push({ key: r.key, title: r.title, url: r.url, snippet, score, in: where })
+    const hit: ResourceHit = { key: r.key, title: r.title, url: r.url, snippet, score, in: where }
+    tiers.set(hit, notesOnly ? 3 : where === 'content' ? 0 : 1)
+    hits.push(hit)
   }
-  hits.sort((a, b) => (a.in === b.in ? b.score - a.score : a.in === 'meta' ? -1 : 1) || a.key.localeCompare(b.key))
+  // document text → title/summary → citation → needs the notes; within a tier by score, then key
+  hits.sort((a, b) => tiers.get(a)! - tiers.get(b)! || b.score - a.score || a.key.localeCompare(b.key))
   return opts?.limit ? hits.slice(0, opts.limit) : hits
 }
 
@@ -203,4 +269,22 @@ export function highlightSegments(text: string, query: string): Array<{ text: st
 /** Word count of an extracted text. */
 export function wordCount(text: string | undefined): number {
   return text ? text.split(/\s+/).filter(Boolean).length : 0
+}
+
+/** Parses TT.MM.JJJJ or JJJJ-MM-TT to ISO (JJJJ-MM-TT); '' for empty input; null when invalid. */
+export function parseDateInput(text: string): string | null {
+  const v = text.trim()
+  if (!v) return ''
+  const de = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v)
+  const iso = de ? `${de[3]}-${de[2]!.padStart(2, '0')}-${de[1]!.padStart(2, '0')}` : v
+  if (!ISO_DATE_RE.test(iso)) return null
+  const d = new Date(`${iso}T00:00:00Z`)
+  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== iso ? null : iso
+}
+
+/** ISO date (JJJJ-MM-TT, time part ignored) as TT.MM.JJJJ; '' for empty, unchanged when not ISO. */
+export function formatDateDe(iso: string | undefined | null): string {
+  if (!iso) return ''
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso
 }

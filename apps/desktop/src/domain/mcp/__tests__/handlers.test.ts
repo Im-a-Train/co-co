@@ -51,6 +51,16 @@ describe('read tools', () => {
     expectNoPii(json)
   })
 
+  it('get_camp_overview takes the J+S counts from the day model (ctx.jsDayCounts), only with a confirmed mapping', async () => {
+    const counts = { valid: 3, total: 5, lastJsDate: '2031-07-15' }
+    const confirmed = { campIri: '/api/camps/c1', entries: {}, confirmed: true, confirmedAt: null, updatedAt: '' }
+    const fake = makeFakeContext({ jsDayCounts: counts })
+    fake.ctx.getMapping = async () => confirmed
+    expect(await MCP_HANDLERS.get_camp_overview(CAMP, fake.ctx)).toMatchObject({ jsDays: { valid: 3, total: 5 } })
+    const unconfirmed = makeFakeContext({ jsDayCounts: counts })
+    expect(await MCP_HANDLERS.get_camp_overview(CAMP, unconfirmed.ctx)).toMatchObject({ jsDays: null })
+  })
+
   it('list_activities redacts names and e-mails, filters by day and truncates content', async () => {
     const all = await run('list_activities', { ...CAMP, includeContent: true })
     expect(all.value as unknown[]).toHaveLength(2)

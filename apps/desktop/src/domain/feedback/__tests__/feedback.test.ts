@@ -4,6 +4,11 @@ import {
   fillTemplate,
   getTemplate,
   itemFromFinding,
+  itemFromFindingGroup,
+  postedActivityCount,
+  postedItems,
+  postedSinceLastSend,
+  previewItems,
   lintItems,
   orderItems,
   renderFeedback,
@@ -68,6 +73,16 @@ describe('renderFeedback', () => {
     expect(r.body).toContain('Coach C')
     expect(r.body).not.toContain('{{')
     expect(r.body).not.toContain('Betreff:')
+  })
+  it('adds one line about the eCamp comments in every channel, before the closing', () => {
+    expect(renderFeedback(items, 'whatsapp', { ...ctx, postedCount: 0 }).body).not.toContain('direkt in eCamp')
+    const wa = renderFeedback(items, 'whatsapp', { ...ctx, postedCount: 1 })
+    expect(wa.body.endsWith('Zu einer Aktivität habe ich direkt in eCamp kommentiert.')).toBe(true)
+    const plain = renderFeedback(items, 'plain', { ...ctx, postedCount: 3 })
+    expect(plain.body).toContain('Zu 3 Aktivitäten habe ich direkt in eCamp kommentiert.')
+    const mail = renderFeedback(items, 'email', { ...ctx, templateId: 'auflagen', postedCount: 2 })
+    expect(mail.body.indexOf('Zu 2 Aktivitäten')).toBeGreaterThan(mail.body.indexOf('Bitte Sicherheit ergänzen.'))
+    expect(mail.body.indexOf('Zu 2 Aktivitäten')).toBeLessThan(mail.body.indexOf('Gebt mir kurz Bescheid'))
   })
   it('plain without template lists sections only', () => {
     const r = renderFeedback(items, 'plain', ctx)
@@ -165,7 +180,7 @@ describe('itemFromFinding', () => {
       findingId: finding.id,
       createdAt: '2026-02-03T04:05:06.000Z',
     })
-    expect(it2.text).toContain('Sicherheit fehlt')
+    expect(it2.text).toBe('Keine Sicherheitsüberlegungen. Wie wollt ihr das lösen?')
     expect(lintItems([it2])).toEqual([])
   })
   it('marks findings that quote MiData as redDerived', () => {
@@ -182,6 +197,102 @@ describe('itemFromFinding', () => {
   })
 })
 
+
+describe('itemFromFinding texts', () => {
+  const base = { id: 'R:x', ruleId: 'R', severity: 'hint', title: 'Titel', scope: 'camp', targets: ['/api/camps/c1'], evidence: [] }
+  it('uses the bare message for non-must findings, adding a full stop', () => {
+    const t = itemFromFinding({ ...base, message: 'Das Programm ist dicht' } as unknown as Finding, '/api/camps/c1').text
+    expect(t).toBe('Das Programm ist dicht.')
+  })
+  it('adds a full stop after a closing parenthesis', () => {
+    const t = itemFromFinding({ ...base, message: 'Zu wenig Zeit (siehe 1.2)' } as unknown as Finding, '/api/camps/c1').text
+    expect(t).toBe('Zu wenig Zeit (siehe 1.2).')
+  })
+  it('keeps existing sentence punctuation', () => {
+    expect(itemFromFinding({ ...base, message: 'Wirklich?' } as unknown as Finding, '/api/camps/c1').text).toBe('Wirklich?')
+  })
+  it('prefers the rule feedbackText', () => {
+    expect(itemFromFinding({ ...base, message: 'm', feedbackText: 'Ihr Lieben, bitte ergänzen.' } as unknown as Finding, '/api/camps/c1').text).toBe('Ihr Lieben, bitte ergänzen.')
+  })
+})
+
+describe('itemFromFindingGroup', () => {
+  const mk = (n: number, severity: 'must' | 'should' = 'should') =>
+    ({ id: `R:d${n}`, ruleId: 'R', severity, title: 'T', message: `Keine Mahlzeiten am Tag ${n}.`, scope: 'day', targets: [`/api/days/d${n}`], evidence: [] }) as unknown as Finding
+  const group = (findings: Finding[]) => ({ key: 'group:R', ruleId: 'R', severity: findings[0]!.severity, findings, dates: [] as string[] })
+  it('creates one item linked to all findings with the dates sentence', () => {
+    const it2 = itemFromFindingGroup(group([mk(1), mk(2), mk(3)]), '/api/camps/c1', '24.01. bis 26.01.', new Date('2026-02-03T04:05:06Z'))
+    expect(it2.findingId).toBe('R:d1')
+    expect(it2.findingIds).toEqual(['R:d1', 'R:d2', 'R:d3'])
+    expect(it2.scope).toBe('camp')
+    expect(it2.text).toBe('Keine Mahlzeiten am Tag 1. Das betrifft 3 Tage: 24.01. bis 26.01.')
+    expect(it2.createdAt).toBe('2026-02-03T04:05:06.000Z')
+  })
+  it('becomes a Muss item with the Muss wording when any finding is a Muss (dates before the question)', () => {
+    const it2 = itemFromFindingGroup(group([mk(1), mk(2, 'must')]), '/api/camps/c1', '24.01., 25.01.')
+    expect(it2.kind).toBe('must')
+    expect(it2.text).toBe('Keine Mahlzeiten am Tag 1. Das betrifft 2 Tage: 24.01., 25.01. Wie wollt ihr das lösen?')
+    expect(lintItems([it2])).toEqual([])
+  })
+  it('appends the dates sentence to the rule feedbackText', () => {
+    const withText = (n: number) => ({ ...mk(n), feedbackText: 'Tragt ihr die Fixpunkte noch ein?' }) as Finding
+    const it2 = itemFromFindingGroup(group([withText(1), withText(2)]), '/api/camps/c1', 'Fr 24.01. – Sa 25.01.')
+    expect(it2.text).toBe('Tragt ihr die Fixpunkte noch ein? Das betrifft 2 Tage: Fr 24.01. – Sa 25.01.')
+    expect(it2.kind).toBe('suggestion')
+  })
+  it('uses the rule group text with {n} and {dates} filled and no extra «Das betrifft» sentence', () => {
+    const withGroup = (n: number) =>
+      ({ ...mk(n), feedbackText: 'Am 24.01.2031 reicht es nicht.', feedbackTextGroup: 'An {n} Tagen ({dates}) reicht das Programm nicht. Wie wollt ihr es anpassen?' }) as Finding
+    const it2 = itemFromFindingGroup(group([withGroup(1), withGroup(2), withGroup(3)]), '/api/camps/c1', '25.–27.01.2031')
+    expect(it2.text).toBe('An 3 Tagen (25.–27.01.2031) reicht das Programm nicht. Wie wollt ihr es anpassen?')
+    expect(it2.text).not.toContain('Das betrifft')
+    expect(it2.findingIds).toHaveLength(3)
+  })
+  it('group text: {n} counts the listed days, a missing dates label drops «({dates})», a Muss keeps its own question', () => {
+    const withGroup = (n: number, severity: 'must' | 'should' = 'should') =>
+      ({ ...mk(n, severity), feedbackTextGroup: 'An {n} Tagen ({dates}) sind Pausen zu kurz. Könnt ihr mehr Zeit einplanen?' }) as Finding
+    // A combined end-day hit covers two dates: three dates from two findings.
+    const g = { ...group([withGroup(1), withGroup(2, 'must')]), dates: ['2031-01-24', '2031-01-25', '2031-01-30'] }
+    const it2 = itemFromFindingGroup(g, '/api/camps/c1', '24., 25., 30.01.2031')
+    expect(it2.text).toBe('An 3 Tagen (24., 25., 30.01.2031) sind Pausen zu kurz. Könnt ihr mehr Zeit einplanen?')
+    expect(it2.kind).toBe('must')
+    expect(lintItems([it2])).toEqual([])
+    expect(itemFromFindingGroup(group([withGroup(1), withGroup(2)]), '/api/camps/c1', '').text).toBe(
+      'An 2 Tagen sind Pausen zu kurz. Könnt ihr mehr Zeit einplanen?',
+    )
+  })
+  it('a group of one equals itemFromFinding (no findingIds)', () => {
+    const it2 = itemFromFindingGroup(group([mk(1)]), '/api/camps/c1', 'x')
+    expect(it2.findingIds).toBeUndefined()
+    expect(it2.text).toBe('Keine Mahlzeiten am Tag 1.')
+  })
+  it('throws on an empty group', () => {
+    expect(() => itemFromFindingGroup(group([]) as never, '/api/camps/c1', '')).toThrow()
+  })
+})
+
+describe('previewItems / postedItems', () => {
+  const items = [item({ id: 'd', status: 'draft' }), item({ id: 's', status: 'sent' }), item({ id: 'p', status: 'posted' })]
+  it('default: drafts only', () => expect(previewItems(items).map((i) => i.id)).toEqual(['d']))
+  it('includeSent adds sent, never posted', () => expect(previewItems(items, { includeSent: true }).map((i) => i.id)).toEqual(['d', 's']))
+  it('empty input', () => expect(previewItems([])).toEqual([]))
+  it('postedItems returns posted only', () => expect(postedItems(items).map((i) => i.id)).toEqual(['p']))
+  it('postedSinceLastSend: only posts after the newest sent item (earlier ones were named in that message)', () => {
+    const at = (h: number) => `2026-01-0${h}T10:00:00.000Z`
+    const list = [
+      item({ id: 'old', status: 'posted', activityIri: '/api/activities/a1', updatedAt: at(1) }),
+      item({ id: 'sent', status: 'sent', updatedAt: at(2) }),
+      item({ id: 'new1', status: 'posted', activityIri: '/api/activities/a2', updatedAt: at(3) }),
+      item({ id: 'new2', status: 'posted', activityIri: '/api/activities/a2', updatedAt: at(4) }),
+      item({ id: 'draft', status: 'draft', updatedAt: at(5) }),
+    ]
+    expect(postedSinceLastSend(list).map((i) => i.id)).toEqual(['new1', 'new2'])
+    expect(postedSinceLastSend(list.filter((i) => i.status !== 'sent')).map((i) => i.id)).toEqual(['old', 'new1', 'new2'])
+    // Two posts on one activity are one activity in the leaders' line.
+    expect(postedActivityCount(postedSinceLastSend(list))).toBe(1)
+    expect(postedActivityCount(list)).toBe(2)
+  })
+})
 
 describe('eCamp links', () => {
   const url = 'https://dev.ecamp3.ch/camps/c1/Berge/program/activity/a1/s1/Postenlauf'
@@ -221,6 +332,11 @@ describe('eCamp links', () => {
     expect(renderFeedback(items, 'email', nctx).html).toContain(`<a href="${url}">1.2/3.4 Postenlauf</a>`)
     // no number -> title only
     expect(renderFeedback(items, 'whatsapp', { ...nctx, activityNumbers: {} }).body).toContain('_Postenlauf_')
+  })
+  it('the eCamp-comments line is also in the linked html, after the items', () => {
+    const r = renderFeedback(items, 'email', { ...sctx, templateId: 'auflagen', postedCount: 2 })
+    expect(r.html).toContain('Bitte Sicherheit ergänzen.<br><br>Zu 2 Aktivitäten habe ich direkt in eCamp kommentiert.')
+    expect(r.html!.indexOf('Zu 2 Aktivitäten')).toBeLessThan(r.html!.indexOf('Gebt mir kurz Bescheid'))
   })
   it('email/plain html links the title and keeps the long URL only in href', () => {
     for (const ch of ['plain', 'email'] as const) {

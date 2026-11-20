@@ -2,11 +2,14 @@
   "settings": {
     "title": "Einstellungen",
     "sections": {
-      "instances": "Verbindungen",
+      "instances": "Konto",
       "ai": "KI",
-      "backup": "Backup",
+      "backup": "Datensicherung",
       "dataZones": "Datenschutz: So geht co-co mit Daten um",
-      "diagnostics": "Diagnose"
+      "diagnostics": "Fehlersuche",
+      "midataNds": "MiData und NDS",
+      "dataZonesShort": "Datenschutz",
+      "navLabel": "Abschnitte"
     },
     "dataZones": {
       "intro": "co-co sortiert alle Daten in drei Zonen. Die Farbe sagt, wie vorsichtig die App damit umgeht. Alle lokal gespeicherten Daten sind verschlüsselt (AES-256); der Schlüssel liegt im Schlüsselbund des Betriebssystems und wird nach der eCamp-Anmeldung freigegeben.",
@@ -77,8 +80,13 @@
         "backup": "Das Backup enthält alle lokalen Tabellen und ist nicht verschlüsselt: Bewahre die Datei sicher auf. Mit der Standardeinstellung werden MiData/NDS-Daten, daraus übernommene Werte und Befunde, die sie zitieren, weggelassen."
       }
     },
+    "diagnostics": {
+      "panel": "Technische Details anzeigen",
+      "probes": "Diagnose MiData und NDS",
+      "midata": "MiData",
+      "nds": "NDS"
+    },
     "connections": {
-      "ecamp": "eCamp",
       "midata": "MiData",
       "nds": "NDS"
     }

@@ -1,7 +1,7 @@
 {
   "activities": {
     "title": "Detailprogramm (DP)",
-    "intro": "Alle Programmpunkte des Lagers als Liste. Klick auf eine Zeile öffnet die Details.",
+    "intro": "Alle Programmpunkte des Lagers als Liste. Klick auf eine Zeile öffnet die Details, ↑ und ↓ blättern.",
     "search": "Suchen (Titel, Ort, Verantwortliche)",
     "filters": {
       "class": "Klasse",
@@ -21,16 +21,21 @@
       "location": "Ort",
       "responsibles": "Verantwortliche",
       "progress": "Fortschritt",
-      "findings": "Befunde",
-      "documents": "Dokumente",
-      "documentsShort": "Dok.",
-      "actions": "Aktionen"
+      "findings": "Befunde"
     },
     "entryDay": "Tag {n}",
     "moreEntries": "+{count}",
     "count": "{shown} von {total} Aktivitäten",
     "empty": "Keine Aktivitäten vorhanden.",
     "noMatch": "Keine Aktivität passt zu den Filtern.",
-    "showInGrid": "Im GP anzeigen"
+    "showInGrid": "Im GP anzeigen",
+    "durationRepeated": "{count} × {time}",
+    "findingsChip": "{count} {severity}",
+    "mappingPending": "Zuordnung noch nicht bestätigt: Prüfungen zu J+S-Aktivitäten laufen erst danach.",
+    "mappingCheck": "Zuordnung prüfen",
+    "noFindingsYet": "Noch keine Befunde zu Aktivitäten: die J+S-Prüfungen starten, sobald du die Zuordnung bestätigt hast.",
+    "classGuess": "Vorschlag, noch nicht bestätigt",
+    "categoryExcluded": "Kategorie wird nicht geprüft",
+    "documentCount": "{count} verknüpfte Dokumente"
   }
 }

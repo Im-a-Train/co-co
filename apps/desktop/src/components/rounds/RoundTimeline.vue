@@ -25,7 +25,14 @@ const { t, d } = useI18n()
             <v-chip size="x-small" label :color="r.closedAt ? undefined : 'primary'">
               {{ r.closedAt ? t('rounds.timeline.closed', { date: d(new Date(r.closedAt), 'date') }) : t('rounds.timeline.open') }}
             </v-chip>
-            <v-chip size="x-small" label :color="r.exportedAt ? 'success' : 'warning'" variant="tonal">
+            <v-chip
+              size="x-small"
+              label
+              :color="r.exportedAt ? 'success' : 'warning'"
+              variant="tonal"
+              :to="r.exportedAt ? undefined : '/einstellungen#backup'"
+              :title="r.exportedAt ? undefined : t('rounds.timeline.toBackup')"
+            >
               {{ r.exportedAt ? t('rounds.timeline.exported') : t('rounds.timeline.notExported') }}
             </v-chip>
           </div>

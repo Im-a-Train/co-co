@@ -7,6 +7,7 @@
  * CONTRACT (M8): the types live in `../types` (mirror coco-core/src/nds.rs) and are re-exported here.
  * The helpers below are filled in by the domain implementer.
  */
+import { tr } from '../feedback/i18n'
 import type { CoachInputs, IsoDateTime, NdsAggregate, NdsField } from '../types'
 
 export type {
@@ -43,29 +44,15 @@ export interface NdsFieldDiff {
 
 
 /**
- * Single table state code -> German label. Only observed codes are listed; everything else is shown raw.
- * (offerState, offerItemState, activityState, activityType and orderState share one table.)
+ * German label of a state code, from the locale table `nds.state.<CODE>` (offerState, offerItemState,
+ * activityState, activityType and orderState share one table). Only observed codes are listed; unknown
+ * codes are returned raw (null -> empty string).
  */
-export const NDS_STATE_LABELS: Readonly<Record<string, string>> = {
-  WAITING_FOR_ASSESSMENT: 'Wartet auf Abrechnungsprüfung',
-  PAYED_CH: 'Ausbezahlt',
-  PARTIALLY_PAYED: 'Teilweise ausbezahlt',
-  UNFINISHED_BY_BATCH: 'Unvollständig abgeschlossen (automatisch)',
-  ATTENDANCE_CHECKED: 'Präsenzkontrolle erledigt',
-  CAMP_DAY_WITH_YOUTH_SPORT_ACTIVITIES: 'Lagertag mit J+S-Aktivitäten',
-  FIRST_CAMP_DAY: 'Erster Lagertag',
-  LAST_CAMP_DAY: 'Letzter Lagertag',
-  FINISHED: 'Abgeschlossen',
-  // involvementType / targetAudienceGroup (observed in captures)
-  INSTRUCTOR: 'Leitende',
-  ASSISTANT_INSTRUCTOR: 'Hilfsleitende',
-  YOUTH_TRAINING: 'J+S-Kinder und -Jugendsport',
-}
-
-/** German label of a state code; unknown codes are returned raw (null -> empty string). */
 export function ndsStateLabel(code: string | null): string {
   if (!code) return ''
-  return NDS_STATE_LABELS[code] ?? code
+  const key = `nds.state.${code}`
+  const label = tr(key)
+  return label === key ? code : label
 }
 
 /** True for observed states that count as closed. Unknown/null never do. */
@@ -149,4 +136,42 @@ export function ndsDatesDiffer(agg: NdsAggregate, campStart: string | null, camp
 export function participantsDiffer(ndsPlanned: number | null, other: number | null, threshold = 0.2): boolean {
   if (!ndsPlanned || !other || ndsPlanned <= 0 || other <= 0) return false
   return Math.abs(ndsPlanned - other) / Math.max(ndsPlanned, other) > threshold
+}
+
+/** `dd.mm.yyyy` of an ISO date (or date-time). */
+function dmy(iso: string): { d: string; m: string; y: string } {
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return { d, m, y }
+}
+
+/** «24.–30.01.2031» within one month, «30.01. – 03.02.2031» within one year, else full dates; empty without start. */
+export function ndsDateRange(start: string | null | undefined, end: string | null | undefined): string {
+  if (!start) return ''
+  const a = dmy(start)
+  if (!end || end.slice(0, 10) === start.slice(0, 10)) return `${a.d}.${a.m}.${a.y}`
+  const b = dmy(end)
+  if (a.y === b.y && a.m === b.m) return `${a.d}.–${b.d}.${b.m}.${b.y}`
+  if (a.y === b.y) return `${a.d}.${a.m}. – ${b.d}.${b.m}.${b.y}`
+  return `${a.d}.${a.m}.${a.y} – ${b.d}.${b.m}.${b.y}`
+}
+
+/**
+ * What the link line shows. A loaded aggregate wins (it is the latest NDS state and always belongs to the
+ * linked camp, see saveNdsLink); otherwise the extras stored with the link at pick time.
+ */
+export interface NdsLinkInfo {
+  groupName: string | null
+  offerNumber: string | null
+  dates: string
+}
+
+export function ndsLinkInfo(
+  link: { groupName?: string | null; offerNumber?: string | null; start?: string | null; end?: string | null },
+  agg: { offerNumber: string | null; start: string | null; end: string | null } | null,
+): NdsLinkInfo {
+  return {
+    groupName: link.groupName ?? null,
+    offerNumber: agg?.offerNumber ?? link.offerNumber ?? null,
+    dates: agg?.start ? ndsDateRange(agg.start, agg.end) : ndsDateRange(link.start, link.end),
+  }
 }

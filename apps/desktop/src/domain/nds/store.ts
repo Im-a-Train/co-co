@@ -1,7 +1,7 @@
 /**
  * Dexie access for the `nds` table (M8). Records are tagged `zone: 'red-derived'`.
  */
-import type { Iri, NdsAggregate, NdsRecord } from '../types'
+import type { Iri, NdsAggregate, NdsLink, NdsRecord } from '../types'
 import { getDb, type CocoDb } from '../storage/db'
 
 const now = () => new Date().toISOString()
@@ -13,7 +13,7 @@ export async function getNdsRecord(campIri: Iri, db: CocoDb = getDb()): Promise<
 /** Links the camp to an NDS camp. Changing the link drops a stored aggregate of another camp. */
 export async function saveNdsLink(
   campIri: Iri,
-  link: { offerBusinessId: string; campBusinessId: string },
+  link: NdsLink,
   db: CocoDb = getDb(),
 ): Promise<NdsRecord> {
   const prev = await getNdsRecord(campIri, db)
@@ -22,7 +22,7 @@ export async function saveNdsLink(
   const rec: NdsRecord = {
     campIri,
     zone: 'red-derived',
-    link: { offerBusinessId: link.offerBusinessId, campBusinessId: link.campBusinessId },
+    link: { ...link },
     aggregate: keep,
     fetchedAt: keep ? prev!.fetchedAt : null,
     updatedAt: now(),

@@ -2,13 +2,11 @@
 /** /lager/:campId/selbstcheck: leader self-check («Entwurfsrunde»), progress, report and history. */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import KpiTile from '@/components/cockpit/KpiTile.vue'
 import SelfCheckHistory from '@/components/selfCheck/SelfCheckHistory.vue'
 import SelfCheckProgressList from '@/components/selfCheck/SelfCheckProgressList.vue'
 import SelfCheckReport from '@/components/selfCheck/SelfCheckReport.vue'
 import { useCampFacts } from '@/composables/useCampFacts'
 import { useCampRoute } from '@/composables/useCampRoute'
-import { useFindings } from '@/composables/useFindings'
 import { useSelfCheck } from '@/composables/useSelfCheck'
 import { diffTotal } from '@/domain/cockpit'
 import { copyRich } from '@/lib/clipboard'
@@ -16,7 +14,6 @@ import { copyRich } from '@/lib/clipboard'
 const { t } = useI18n()
 const { campIri } = useCampRoute()
 const { facts } = useCampFacts(campIri)
-const { counts, jsDays } = useFindings(campIri)
 const sc = useSelfCheck(campIri)
 
 const dialog = ref(false)
@@ -32,11 +29,6 @@ watch(campIri, () => void sc.load())
 
 const changed = computed(() => (sc.diffSinceLatest.value ? diffTotal(sc.diffSinceLatest.value) : null))
 const report = computed(() => sc.report({ includeRedDerived: includeRed.value }))
-const jsValue = computed(() =>
-  jsDays.value
-    ? t('selfCheck.kpi.jsDaysValue', { valid: jsDays.value.validDayCount, total: jsDays.value.totalDayCount })
-    : '–',
-)
 const lastDate = computed(() =>
   sc.latest.value ? new Date(sc.latest.value.createdAt).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' }) : '',
 )
@@ -62,19 +54,20 @@ async function copy() {
 <template>
   <div>
     <div class="d-flex align-center flex-wrap ga-3 mb-2">
-      <h1 class="text-h5">{{ t('selfCheck.title') }}</h1>
       <v-btn
-        icon="mdi-information-outline"
+        prepend-icon="mdi-information-outline"
         size="small"
         variant="text"
-        :aria-label="t('selfCheck.introToggle')"
         :aria-expanded="showIntro"
         data-testid="selfcheck-intro-toggle"
         @click="showIntro = !showIntro"
-      />
+      >
+        {{ t('selfCheck.introToggle') }}
+      </v-btn>
       <v-spacer />
       <v-btn
         color="primary"
+        variant="flat"
         prepend-icon="mdi-clipboard-check-outline"
         :disabled="!facts"
         data-testid="selfcheck-start"
@@ -93,13 +86,6 @@ async function copy() {
       {{ t('selfCheck.run.failed') }}
     </v-alert>
 
-    <v-row dense class="mb-4">
-      <v-col cols="6" md="3"><KpiTile :title="t('selfCheck.kpi.must')" :value="counts.must" color="error" /></v-col>
-      <v-col cols="6" md="3"><KpiTile :title="t('selfCheck.kpi.should')" :value="counts.should" color="warning" /></v-col>
-      <v-col cols="6" md="3"><KpiTile :title="t('selfCheck.kpi.hint')" :value="counts.hint" color="info" /></v-col>
-      <v-col cols="6" md="3"><KpiTile :title="t('selfCheck.kpi.jsDays')" :value="jsValue" /></v-col>
-    </v-row>
-
     <h2 class="text-h6 mb-2">{{ t('selfCheck.progress.title') }}</h2>
     <div v-if="sc.progress.value" class="mb-6">
       <div class="text-caption text-medium-emphasis mb-2">
@@ -108,7 +94,7 @@ async function copy() {
           {{ t('selfCheck.kpi.changed') }}: {{ changed ?? '–' }}
         </span>
       </div>
-      <SelfCheckProgressList :progress="sc.progress.value" :camp-iri="campIri" />
+      <SelfCheckProgressList :progress="sc.progress.value" :camp-iri="campIri" :facts="facts" />
     </div>
     <div v-else class="text-medium-emphasis mb-6" data-testid="selfcheck-no-run">{{ t('selfCheck.progress.noRun') }}</div>
 
@@ -159,7 +145,7 @@ async function copy() {
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" :disabled="busy" @click="dialog = false">{{ t('selfCheck.run.cancel') }}</v-btn>
-          <v-btn color="primary" :loading="busy" data-testid="selfcheck-confirm" @click="start">{{ t('selfCheck.run.confirm') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="busy" data-testid="selfcheck-confirm" @click="start">{{ t('selfCheck.run.confirm') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

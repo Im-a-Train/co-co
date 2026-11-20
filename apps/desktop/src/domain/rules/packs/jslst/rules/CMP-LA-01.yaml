@@ -5,6 +5,7 @@ status: active
 title: "Lageraktivität ohne Themenbereich"
 description: "Jede Lageraktivität (LA) ist einem Themenbereich zugeordnet. Das Konzept LA kommt in den Quellen für 2027 nicht mehr vor."
 message: "«{title}» ist eine Lageraktivität ohne Themenbereich"
+feedbackText: "«{title}» hat noch keinen Themenbereich. Welchem Themenbereich ordnet ihr die Aktivität zu?"
 severity: should
 confidence: best-practice
 scope: activity

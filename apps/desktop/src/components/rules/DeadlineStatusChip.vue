@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Status chip of a deadline (done=success, overdue=error, soon=warning, open=neutral). */
+/** Status chip of a deadline (done=success, overdue=error, soon=warning). Open renders nothing: the empty checkbox says it. */
 import { useI18n } from 'vue-i18n'
 import type { DeadlineStatus } from '@/domain/rules/lib/deadlines'
 
@@ -15,7 +15,7 @@ const COLOR: Record<DeadlineStatus, string | undefined> = {
 </script>
 
 <template>
-  <v-chip size="small" label :color="COLOR[status]" :variant="COLOR[status] ? 'flat' : 'tonal'">
+  <v-chip v-if="status !== 'open'" size="small" label :color="COLOR[status]" :variant="COLOR[status] ? 'flat' : 'tonal'">
     {{ t(`rules.deadlines.status.${status}`) }}
   </v-chip>
 </template>

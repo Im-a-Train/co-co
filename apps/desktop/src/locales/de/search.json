@@ -1,10 +1,10 @@
 {
   "search": {
-    "placeholder": "Aktivitäten und Dokumente durchsuchen (Strg+K)",
+    "placeholder": "Im Lager suchen",
+    "shortcut": "Strg K",
     "label": "Lager durchsuchen",
     "empty": "Keine Treffer.",
     "groupActivity": "Aktivitäten",
-    "groupDocument": "Dokumente",
-    "clear": "Suche leeren"
+    "groupDocument": "Dokumente"
   }
 }

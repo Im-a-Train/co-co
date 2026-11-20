@@ -8,7 +8,7 @@
   weight: binding
   pageConvention: printed
   partlyRead: ["Bilder S. 46–47 (Sicherheitsmanagement, Ampelschema)", "Abbildung Fig. 4"]
-  notes: "PDF page = printed page. S. 21 says «auf mindestens zwei Tageszeiten verteilt» without «pro Lagertag». S. 21 Fig. 4 is the core."
+  notes: "Die Grundlage für die Tageszeiten-Regel im Lagersport/Trekking; die Abbildung zur Aufteilung ist der Kern."
   checkedOn: 2026-11-08
 - key: TOOL-V
   title: "J+S-Tool Modul «Lagersport/Trekking Vorgaben»"
@@ -20,7 +20,7 @@
   weight: binding
   pageConvention: section
   partlyRead: ["Bilder (Angebot.png, Lager.png, Activites.svg)"]
-  notes: "J+S tool only, no public URL."
+  notes: "Nur im J+S-Tool, kein öffentlicher Link."
   checkedOn: 2026-11-08
 - key: TOOL-G
   title: "J+S-Tool Modul «Lagersport/Trekking Grundlagen»"
@@ -31,7 +31,7 @@
   weight: didactic
   pageConvention: section
   partlyRead: []
-  notes: "J+S tool only, no public URL."
+  notes: "Nur im J+S-Tool, kein öffentlicher Link."
   checkedOn: 2026-11-08
 - key: TOOL-P
   title: "J+S-Tool Modul «Eine gute J+S-Aktivität planen»"
@@ -43,7 +43,7 @@
   weight: didactic
   pageConvention: section
   partlyRead: ["verlinkte Module «Sicherheit in der Planung» und «Innovieren»"]
-  notes: "J+S tool only, no public URL."
+  notes: "Nur im J+S-Tool, kein öffentlicher Link."
   checkedOn: 2026-11-08
 - key: PBS27
   title: "2027 Neuigkeiten von PBS und J+S"
@@ -54,7 +54,7 @@
   weight: binding-quote
   pageConvention: slide
   partlyRead: ["Folien 3, 13 und 15 (Grafik/Video)"]
-  notes: "Binding only where it quotes J+S."
+  notes: "Gilt nur dort verbindlich, wo es J+S zitiert."
   checkedOn: 2026-11-08
 - key: EBB-C
   title: "Checkliste Ergänzende Bewegungsblöcke für Coachs"
@@ -96,7 +96,7 @@
   weight: outdated
   pageConvention: printed
   partlyRead: []
-  notes: "Module names and SPORTdb references are outdated."
+  notes: "Gute Übersicht zum Lagerleben; Modulnamen und SPORTdb-Verweise sind veraltet."
   checkedOn: 2026-11-08
 - key: BERG
   title: "LS/T Berg (Broschüre)"
@@ -107,7 +107,7 @@
   weight: outdated
   pageConvention: printed
   partlyRead: []
-  notes: "Printed page = PDF page - 2."
+  notes: "Praxishilfe für Bergaktivitäten im Lager."
   checkedOn: 2026-11-08
 - key: WASSER
   title: "LS/T Wasser (Broschüre)"
@@ -118,7 +118,7 @@
   weight: didactic
   pageConvention: printed
   partlyRead: []
-  notes: "S. 8 «Wildwasser I und II» has no «nur»."
+  notes: "Praxishilfe für Wasseraktivitäten im Lager; nennt Wildwasser der Stufen I und II."
   checkedOn: 2026-11-08
 - key: WINTER
   title: "LS/T Winter (Broschüre)"
@@ -129,7 +129,7 @@
   weight: didactic
   pageConvention: printed
   partlyRead: []
-  notes: "Printed page = PDF page - 2. The basic rules are binding now through MB-UP S. 4."
+  notes: "Praxishilfe für Winteraktivitäten; die Grundregeln stehen heute im Merkblatt zur Unfallprävention."
   checkedOn: 2026-11-08
 - key: MB-UP
   title: "Unfallprävention und Sicherheitsanforderungen in Lagersport/Trekking"
@@ -142,7 +142,7 @@
   weight: binding
   pageConvention: printed
   partlyRead: []
-  notes: "6 pages, all read. Declared binding by LEITFADEN and WEB-L («müssen … unbedingt eingehalten werden»). No ratios, deadlines, programme rules or 2027 model."
+  notes: "Verbindliche Sicherheitsanforderungen; enthält keine Betreuungsschlüssel, Fristen oder Programmregeln."
   checkedOn: 2026-11-08
 - key: LEITFADEN
   title: "Leitfaden für J+S-Angebote aller J+S-Sportarten und Organisatoren"
@@ -154,10 +154,10 @@
   weight: binding
   pageConvention: section
   partlyRead: ["Kapitel «Gruppengrösse, Leitereinsatz … pro Sportart» (nur Teaser-Kacheln)"]
-  notes: "Quotes SpoFöV/VSpoFöP. Free-days text and example table contradict each other. No 2027 model."
+  notes: "Rechtliche Grundlage für J+S-Angebote; bei den freien Tagen widerspricht sich der Text mit der Beispieltabelle."
   checkedOn: 2026-11-08
 - key: WEB-SICH
-  title: "Web page «Sicherheit in Lagersport/Trekking»"
+  title: "Webseite «Sicherheit in Lagersport/Trekking»"
   publisher: BASPO
   edition: "25.11.2025"
   date: 2025-11-25
@@ -165,10 +165,10 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Almost identical to MB-UP. Differences: «Mobiltelefon» in the emergency kit (web only); «Erfrieren» vs «Kälte»; «Entscheidungshilfe» (jsle.ch/dTCd); «Hauptverantwortung … Lagerleitung»."
+  notes: "Online-Fassung der Sicherheitsanforderungen, fast gleich wie das Merkblatt, mit kleinen Ergänzungen."
   checkedOn: 2026-11-08
 - key: WEB-L
-  title: "Web page «Lager»"
+  title: "Webseite «Lager»"
   publisher: BASPO
   edition: "22.09.2026"
   date: 2026-09-22
@@ -179,7 +179,7 @@
   formerKeys: [L]
   checkedOn: 2026-11-08
 - key: WEB-C
-  title: "Web page «Leitfaden für J+S-Coaches»"
+  title: "Webseite «Leitfaden für J+S-Coaches»"
   publisher: BASPO
   edition: "14.08.2026"
   date: 2026-08-14
@@ -187,11 +187,11 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Deadlines, Leihmaterial, Landeskarten, J+S-Alter, Anerkennung, verbotene Sportarten."
+  notes: "Das Wichtigste für Coachs: Fristen, Leihmaterial, Landeskarten, J+S-Alter, Anerkennung, verbotene Sportarten."
   formerKeys: [C]
   checkedOn: 2026-11-08
 - key: WEB-LT
-  title: "Web page «Lagersport/Trekking»"
+  title: "Webseite «Lagersport/Trekking»"
   publisher: BASPO
   edition: "22.09.2026"
   date: 2026-09-22
@@ -199,11 +199,11 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Binding (registration) / info."
+  notes: "Verbindliche Vorgaben zur Anmeldung, dazu allgemeine Infos."
   formerKeys: [LT]
   checkedOn: 2026-11-08
 - key: WEB-ZA
-  title: "News «Zusatzanerkennungen Sicherheit»"
+  title: "Mitteilung «Zusatzanerkennungen Sicherheit»"
   publisher: BASPO
   edition: "22.12.2025"
   date: 2025-12-22
@@ -211,10 +211,10 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Binding from 2026. No module names."
+  notes: "Ab 2026 verbindlich."
   checkedOn: 2026-11-08
 - key: WEB-GR
-  title: "News «Vereinfachung der Gruppengrössen ab 2026»"
+  title: "Mitteilung «Vereinfachung der Gruppengrössen ab 2026»"
   publisher: BASPO
   edition: "22.12.2025"
   date: 2025-12-22
@@ -222,10 +222,10 @@
   weight: info
   pageConvention: section
   partlyRead: []
-  notes: "No LS/T number."
+  notes: "Keine Angabe zu Lagersport/Trekking."
   checkedOn: 2026-11-08
 - key: WEB-LU
-  title: "News «Lieferunterbruch Leihmaterial»"
+  title: "Mitteilung «Lieferunterbruch Leihmaterial»"
   publisher: BASPO
   edition: "23.06.2026"
   date: 2026-06-23
@@ -233,7 +233,7 @@
   weight: binding
   pageConvention: section
   partlyRead: []
-  notes: "Binding (one-off)."
+  notes: "Einmalige, verbindliche Mitteilung."
   checkedOn: 2026-11-08
 - key: H
   title: "PBS Hering (Planungshilfe)"
@@ -243,7 +243,7 @@
   weight: pbs
   pageConvention: section
   partlyRead: []
-  notes: "Current source of the BP-* rules."
+  notes: "Aktuelle Grundlage der PBS-Regeln (Best Practice)."
   checkedOn: 2026-11-08
 - key: MD
   title: "MiData (PBS)"
@@ -253,5 +253,5 @@
   weight: info
   pageConvention: section
   partlyRead: []
-  notes: "Data consistency."
+  notes: "Wird für den Abgleich der Teilnehmenden und Qualifikationen gelesen."
   checkedOn: 2026-11-08

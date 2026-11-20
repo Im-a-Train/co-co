@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import RuleCard from '@/components/rules/RuleCard.vue'
 import RuleEditDialog from '@/components/rules/RuleEditDialog.vue'
+import { useAi } from '@/composables/useAi'
 import { useRuleEdits } from '@/composables/useRuleEdits'
 import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import { useRuleState } from '@/composables/useRuleState'
@@ -15,6 +16,7 @@ import type { ModuleId, Rule, RuleMeta, RulePack, Severity } from '@/domain/type
 
 const { t } = useI18n()
 const { state: ruleState } = useRuleState()
+const { ready: aiReady } = useAi()
 const stateError = ref<string | null>(null)
 
 /** Disabled state of one rule: everywhere, and in how many camps. */
@@ -23,6 +25,13 @@ function disabledInfo(meta: RuleMeta) {
   const all = isGloballyDisabled(ruleState.value, meta.id, former)
   const camps = campsWithDisabled(ruleState.value, meta.id, former)
   return { all, camps, any: all || camps > 0 }
+}
+/** «Für alle Lager deaktivieren» asks first: it switches the rule off everywhere. */
+const disableTarget = ref<RuleMeta | null>(null)
+async function confirmDisable() {
+  const meta = disableTarget.value
+  disableTarget.value = null
+  if (meta) await toggle(meta, 'disableAll')
 }
 async function toggle(meta: RuleMeta, action: 'enable' | 'disableAll') {
   try {
@@ -69,13 +78,14 @@ async function focusRule(id: string) {
   kindFilter.value = 'all'
   openRule.value = rule.meta.id
   await nextTick()
-  setTimeout(() => document.getElementById(`rule-${rule.meta.id}`)?.scrollIntoView({ block: 'center' }), 150)
+  // 'start' + scroll-margin-top (below the app bar): an expanded rule can be taller than the window.
+  setTimeout(() => document.getElementById(`rule-${rule.meta.id}`)?.scrollIntoView({ block: 'start' }), 150)
 }
 
 const search = ref('')
 const group = ref<ModuleId | 'all'>('all')
 /** Kind filter: hard engine rules vs. AI guidance (ADR 0014). */
-const kindFilter = ref<'all' | 'hard' | 'ai'>('all')
+const kindFilter = ref<'all' | 'hard' | 'ai'>('hard')
 /** Filter options: the modules of the loaded packs (catalog v2). */
 const GROUPS = computed<ModuleId[]>(() => modulesOf(packs.value).map((m) => m.id))
 
@@ -98,17 +108,50 @@ watch(
   { immediate: true },
 )
 
+/** `?q=<text>`: prefill the search (the Hilfsmittel search links here); AI-only rules stay findable. */
+watch(
+  () => route.query.q,
+  (q) => {
+    if (typeof q === 'string' && q.trim()) {
+      search.value = q
+      kindFilter.value = 'all'
+      group.value = 'all'
+    }
+  },
+  { immediate: true },
+)
+
+const SEVERITY_RANK: Record<Severity, number> = { must: 0, should: 1, hint: 2 }
+/** Coach order inside a module: must, should, hint, then by title; retired rules last. */
+function coachOrder(a: Rule, b: Rule): number {
+  const retired = Number(a.meta.status === 'retired') - Number(b.meta.status === 'retired')
+  return retired || SEVERITY_RANK[a.meta.severity] - SEVERITY_RANK[b.meta.severity] || a.meta.title.localeCompare(b.meta.title, 'de')
+}
+
 const visible = computed(() =>
   packs.value.map((pack) => ({
     pack,
     byGroup: GROUPS.value.filter((g) => group.value === 'all' || group.value === g)
       .map((g) => ({
         group: g,
-        rules: pack.rules.filter((r) => r.meta.module === g && (kindFilter.value === 'all' || r.meta.kind === kindFilter.value) && matches(r, search.value)),
+        rules: pack.rules.filter((r) => r.meta.module === g && (kindFilter.value === 'all' || r.meta.kind === kindFilter.value) && matches(r, search.value)).sort(coachOrder),
       }))
       .filter((entry) => entry.rules.length > 0),
   })),
 )
+/** Rules that match the search (and module) but are hidden by the kind filter, so a search never ends in a dead end. */
+const hiddenByKind = computed(() => {
+  if (kindFilter.value === 'all' || !search.value?.trim()) return 0
+  let n = 0
+  for (const pack of packs.value) {
+    for (const r of pack.rules) {
+      if (r.meta.kind === kindFilter.value) continue
+      if (group.value !== 'all' && r.meta.module !== group.value) continue
+      if (matches(r, search.value)) n++
+    }
+  }
+  return n
+})
 const hasResults = computed(() => visible.value.some((v) => v.byGroup.length > 0))
 
 function fmt(iso: string): string {
@@ -140,9 +183,9 @@ function fmt(iso: string): string {
         class="search-field"
       />
       <v-chip-group v-model="kindFilter" mandatory selected-class="text-primary" data-testid="kind-filter">
-        <v-chip value="all" size="small" filter>{{ t('rules.catalog.kind.all') }}</v-chip>
         <v-chip value="hard" size="small" filter>{{ t('rules.catalog.kind.hard') }}</v-chip>
         <v-chip value="ai" size="small" filter prepend-icon="mdi-creation">{{ t('rules.catalog.kind.ai') }}</v-chip>
+        <v-chip value="all" size="small" filter>{{ t('rules.catalog.kind.all') }}</v-chip>
       </v-chip-group>
       <v-chip-group v-model="group" mandatory selected-class="text-primary">
         <v-chip value="all" size="small" filter>{{ t('rules.catalog.allGroups') }}</v-chip>
@@ -150,12 +193,19 @@ function fmt(iso: string): string {
       </v-chip-group>
     </div>
 
-    <v-alert v-if="!loadError && !hasResults" type="info" variant="tonal" density="compact" :text="t('rules.catalog.empty')" />
+    <v-alert v-if="kindFilter === 'ai' && !aiReady" type="info" variant="tonal" density="compact" class="mb-4" :text="t('rules.catalog.kind.aiOff')" data-testid="kind-ai-off" />
+
+    <v-alert v-if="hiddenByKind > 0" type="info" variant="tonal" density="compact" class="mb-4" data-testid="kind-hidden-hits">
+      {{ t(kindFilter === 'hard' ? 'rules.catalog.hiddenAiHits' : 'rules.catalog.hiddenHardHits', { n: hiddenByKind }, hiddenByKind) }}
+      <template #append>
+        <v-btn size="small" variant="text" data-testid="kind-hidden-show" @click="kindFilter = 'all'">{{ t('rules.catalog.showAll') }}</v-btn>
+      </template>
+    </v-alert>
+    <v-alert v-else-if="!loadError && !hasResults" type="info" variant="tonal" density="compact" :text="t('rules.catalog.empty')" />
 
     <v-card v-for="{ pack, byGroup } in visible" :key="pack.id" class="mb-4" variant="outlined">
       <v-card-title class="d-flex flex-wrap align-center ga-2">
         <span>{{ pack.name }}</span>
-        <v-chip size="x-small" label variant="tonal">{{ t('rules.catalog.pack.version', { version: pack.version }) }}</v-chip>
         <v-chip v-if="pack.validFrom" size="x-small" label variant="tonal">
           {{ t('rules.catalog.pack.validFrom', { date: fmt(pack.validFrom) }) }}
         </v-chip>
@@ -175,16 +225,22 @@ function fmt(iso: string): string {
               :id="`rule-${rule.meta.id}`"
               :key="rule.meta.id"
               :value="rule.meta.id"
+              class="rule-panel"
               :class="{ 'opacity-60': rule.meta.status === 'retired' }"
               :data-testid="rule.meta.status === 'retired' ? 'rule-retired' : undefined"
             >
               <v-expansion-panel-title>
                 <div class="d-flex align-center ga-3 flex-grow-1">
-                  <v-chip size="x-small" label :color="SEVERITY_COLOR[rule.meta.severity]" variant="flat" class="flex-shrink-0">
+                  <v-chip v-if="rule.meta.kind === 'ai'" size="x-small" label variant="outlined" prepend-icon="mdi-creation" class="flex-shrink-0" data-testid="rule-ai-only">
+                    {{ t('rules.catalog.kind.aiOnly') }}
+                  </v-chip>
+                  <v-chip v-else size="x-small" label :color="SEVERITY_COLOR[rule.meta.severity]" variant="flat" class="flex-shrink-0">
                     {{ t(`severity.${rule.meta.severity}`) }}
                   </v-chip>
-                  <code class="text-caption flex-shrink-0">{{ rule.meta.id }}</code>
-                  <span class="text-body-2" :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta).all }">{{ rule.meta.title }}</span>
+                  <span
+                    class="text-body-2"
+                    :class="{ 'text-decoration-line-through text-medium-emphasis': disabledInfo(rule.meta).all, 'text-medium-emphasis': rule.meta.kind === 'ai' }"
+                  >{{ rule.meta.title }}</span>
                   <v-chip v-if="rule.meta.status === 'retired'" size="x-small" color="grey" label>{{ t('rules.status.retired') }}</v-chip>
                   <v-chip v-if="editedIds.has(rule.meta.id)" size="x-small" color="warning" label :title="t('rules.edit.chipTitle')" data-testid="rule-edited">
                     {{ t('rules.edit.chip') }}
@@ -195,6 +251,8 @@ function fmt(iso: string): string {
                   <v-chip v-else-if="disabledInfo(rule.meta).camps" size="x-small" color="grey" label data-testid="rule-disabled">
                     {{ t('rules.catalog.state.disabledCamps', { count: disabledInfo(rule.meta).camps }, disabledInfo(rule.meta).camps) }}
                   </v-chip>
+                  <v-spacer />
+                  <code class="text-caption text-disabled flex-shrink-0 rule-id">{{ rule.meta.id }}</code>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
@@ -224,10 +282,11 @@ function fmt(iso: string): string {
                     variant="text"
                     prepend-icon="mdi-cancel"
                     :text="t('rules.catalog.state.disableAll')"
-                    @click="toggle(rule.meta, 'disableAll')"
+                    data-testid="rule-disable-all"
+                    @click="disableTarget = rule.meta"
                   />
                 </div>
-                <RuleCard :rule="rule" />
+                <RuleCard :rule="rule" :pack-version="pack.version" />
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
@@ -236,6 +295,20 @@ function fmt(iso: string): string {
     </v-card>
 
     <RuleEditDialog v-model="editOpen" :rule-id="editTarget" :initial-tab="editTab" />
+
+    <v-dialog :model-value="!!disableTarget" max-width="480" @update:model-value="disableTarget = null">
+      <v-card v-if="disableTarget" data-testid="rule-disable-dialog" :title="t('rules.catalog.state.disableConfirmTitle', { id: disableTarget.id })">
+        <v-card-text>
+          <p>{{ t('rules.catalog.state.disableConfirmBody', { title: disableTarget.title }) }}</p>
+          <p v-if="disableTarget.severity === 'must'" class="mt-2 font-weight-medium" data-testid="rule-disable-must">{{ t('rules.catalog.state.disableMustWarning') }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :text="t('common.cancel')" @click="disableTarget = null" />
+          <v-btn color="warning" variant="flat" :text="t('rules.catalog.state.disableConfirm')" data-testid="rule-disable-confirm" @click="confirmDisable" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -243,5 +316,8 @@ function fmt(iso: string): string {
 .search-field {
   max-width: 22rem;
   min-width: 14rem;
+}
+.rule-panel {
+  scroll-margin-top: 72px;
 }
 </style>

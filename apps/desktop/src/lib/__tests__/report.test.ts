@@ -76,7 +76,7 @@ describe('redactSecrets', () => {
 describe('buildSpikeReport', () => {
   it('produces a German markdown report with metadata, results and log', () => {
     const md = buildSpikeReport(input(), t)
-    expect(md).toContain('## co-co M0 Login-Spike – Ergebnis')
+    expect(md).toContain('## co-co Anmelde-Diagnose – Ergebnis')
     expect(md).toContain('- **Betriebssystem:** Windows 10/11')
     expect(md).toContain('- **App-Version:** 0.1.0')
     expect(md).toContain('- **Instanz:** https://app.ecamp3.ch')

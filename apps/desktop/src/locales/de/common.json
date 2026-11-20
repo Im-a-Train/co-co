@@ -2,10 +2,15 @@
   "app": {
     "name": "co-co",
     "subtitle": "Coach Cockpit",
-    "milestone": "M1–M5",
     "status": {
-      "loggedIn": "Angemeldet",
       "loggedOut": "Nicht angemeldet"
+    },
+    "account": {
+      "testInstance": "Test",
+      "expired": "Sitzung abgelaufen",
+      "settings": "Konto und Verbindungen",
+      "signOut": "Abmelden",
+      "fallbackName": "Angemeldet"
     }
   },
   "common": {
@@ -14,18 +19,9 @@
     "none": "keine",
     "unknown": "unbekannt",
     "retry": "Erneut versuchen",
-    "loading": "Lädt …",
     "save": "Speichern",
     "cancel": "Abbrechen",
-    "close": "Schliessen",
-    "delete": "Löschen",
-    "edit": "Bearbeiten",
-    "back": "Zurück",
-    "reload": "Neu laden",
-    "copy": "Kopieren",
-    "copied": "Kopiert",
-    "confirm": "Bestätigen",
-    "error": "Fehler"
+    "close": "Schliessen"
   },
   "notTauri": {
     "title": "Nur in der Desktop-App verfügbar",
@@ -57,6 +53,8 @@
   },
   "campLayout": {
     "backToList": "Zurück zu Meine Lager",
+    "reloadTooltip": "Aus eCamp neu laden",
+    "loadedAt": "Stand {time}",
     "loadFailed": "Lager konnte nicht geladen werden"
   },
   "severity": {
@@ -80,7 +78,7 @@
   },
   "reviewStatus": {
     "neu": "Neu",
-    "in_review": "In Review",
+    "in_review": "In Prüfung",
     "aenderungen_angefragt": "Änderungen angefragt",
     "bewilligt": "Bewilligt",
     "bewilligt_mit_auflagen": "Bewilligt mit Auflagen"

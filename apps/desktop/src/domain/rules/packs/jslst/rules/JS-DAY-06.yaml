@@ -7,6 +7,8 @@ description: "Die J+S-Aktivitäten eines Lagertags sind auf mindestens zwei Tage
 message: "Am {date} liegen alle J+S-Aktivitäten in der Tageszeit «{slot}». Sie müssen auf mindestens {min} Tageszeiten (Morgen, Nachmittag, Abend) verteilt sein."
 messageVariants:
   combined: "Am {first} und am {last} (als ein J+S-Tag gezählt) liegen alle J+S-Aktivitäten in der Tageszeit «{slot}». Sie müssen auf mindestens {min} Tageszeiten (Morgen, Nachmittag, Abend) verteilt sein."
+feedbackText: "An einem Tag liegen alle J+S-Aktivitäten in der Tageszeit «{slot}». Könnt ihr sie auf mindestens {min} Tageszeiten verteilen?"
+feedbackTextGroup: "An {n} Tagen ({dates}) liegen alle J+S-Aktivitäten jeweils in derselben Tageszeit. Könnt ihr sie auf mindestens {min} Tageszeiten verteilen?"
 severity: should
 confidence: verified
 scope: day

@@ -7,7 +7,7 @@
  * side yields a plan of writes (milestone first, then checklist state) that the caller runs sequentially
  * (Dexie wrapper is not atomic), so a failure on the second write never leaves the deadline stale.
  */
-import type { CampRuleConfig, CoachInputs, CustomChecklistItem, Deadline, IsoDate } from '../../types'
+import type { CampRuleConfig, CoachInputs, NdsField, CustomChecklistItem, Deadline, IsoDate } from '../../types'
 import { daysBetween, deadlineStatus, type DeadlineStatus } from './deadlines'
 import type { ChecklistItem } from './checklist'
 
@@ -66,15 +66,38 @@ export function withMilestoneDone(done: Record<string, IsoDate> | undefined, id:
   return next
 }
 
-/** CoachInputs with one deadline marked done/undone, in the storage the deadline radar and «Angaben» use. */
-export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' | 'milestoneId'>, value: boolean, today: IsoDate): CoachInputs {
+/** `ndsFields` without the given keys: a value the coach changes is no longer the NDS value (ADR 0007). */
+function withoutNdsKeys(inputs: CoachInputs, keys: NdsField[]): Pick<CoachInputs, 'ndsFields'> {
+  if (!inputs.ndsFields) return {}
+  const rest = { ...inputs.ndsFields }
+  for (const k of keys) delete rest[k]
+  return { ndsFields: rest }
+}
+
+/**
+ * CoachInputs with one deadline marked done/undone, in the storage the deadline radar and «Angaben» use.
+ * A milestone also covers its skipped twins (`alsoNamed`, from `sameAs`): an old twin tick would otherwise
+ * keep the merged row ticked after an untick.
+ */
+export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' | 'milestoneId' | 'alsoNamed'>, value: boolean, today: IsoDate): CoachInputs {
   switch (d.kind) {
-    case 'pbs-milestone':
-      return d.milestoneId ? { ...inputs, milestonesDone: withMilestoneDone(inputs.milestonesDone, d.milestoneId, value, today) } : inputs
+    case 'pbs-milestone': {
+      if (!d.milestoneId) return inputs
+      // A tick writes only the milestone itself (a twin may point to several targets). Only an untick also
+      // clears the twin ids, so an old twin tick cannot bring the row back.
+      let milestonesDone = withMilestoneDone(inputs.milestonesDone, d.milestoneId, value, today)
+      if (!value) for (const a of d.alsoNamed ?? []) milestonesDone = withMilestoneDone(milestonesDone, a.id, false, today)
+      return { ...inputs, milestonesDone }
+    }
     case 'nds-registration':
-      return { ...inputs, ndsRegistered: value, ndsRegisteredOn: value ? (inputs.ndsRegisteredOn ?? today) : null }
+      return {
+        ...inputs,
+        ndsRegistered: value,
+        ndsRegisteredOn: value ? (inputs.ndsRegisteredOn ?? today) : null,
+        ...withoutNdsKeys(inputs, ['ndsRegistered', 'ndsRegisteredOn']),
+      }
     case 'nds-closing':
-      return { ...inputs, ndsClosed: value, ndsClosedOn: value ? (inputs.ndsClosedOn ?? today) : null }
+      return { ...inputs, ndsClosed: value, ndsClosedOn: value ? (inputs.ndsClosedOn ?? today) : null, ...withoutNdsKeys(inputs, ['ndsClosed']) }
     case 'leihmaterial':
       return { ...inputs, leihmaterialOrdered: value }
     case 'landeskarten':
@@ -84,6 +107,58 @@ export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' |
     default:
       return inputs
   }
+}
+
+/**
+ * The inline date a deadline row offers in the checklist: `done` kinds (NDS) show «angemeldet am» once
+ * ticked; `delivery` kinds (Leihmaterial, Landeskarten) always show the «Lieferdatum» anchor that moves
+ * the order deadline (never prefilled, not tied to the tick); other kinds have none.
+ */
+export type DeadlineDateField = 'done' | 'delivery' | null
+
+export function deadlineDateField(kind: Deadline['kind']): DeadlineDateField {
+  if (kind === 'nds-registration' || kind === 'nds-closing') return 'done'
+  if (kind === 'leihmaterial' || kind === 'landeskarten') return 'delivery'
+  return null
+}
+
+/** Current value of the inline date of a deadline kind (null: empty or none for this kind). */
+export function deadlineDateValue(inputs: CoachInputs | null | undefined, kind: Deadline['kind']): IsoDate | null {
+  if (!inputs) return null
+  switch (kind) {
+    case 'nds-registration':
+      return inputs.ndsRegisteredOn ?? null
+    case 'nds-closing':
+      return inputs.ndsClosedOn ?? null
+    case 'leihmaterial':
+      return inputs.leihmaterialDeliveryDate ?? null
+    case 'landeskarten':
+      return inputs.landeskartenDeliveryDate ?? null
+    default:
+      return null
+  }
+}
+
+/** CoachInputs with the inline date of a deadline kind set (empty string / null clears it). Returns a new object. */
+export function withDeadlineDate(inputs: CoachInputs, kind: Deadline['kind'], date: IsoDate | null): CoachInputs {
+  const value = date && date.length > 0 ? date : null
+  switch (kind) {
+    case 'nds-registration':
+      return { ...inputs, ndsRegisteredOn: value, ...withoutNdsKeys(inputs, ['ndsRegisteredOn']) }
+    case 'nds-closing':
+      return { ...inputs, ndsClosedOn: value } // the closing date has no NDS badge of its own
+    case 'leihmaterial':
+      return { ...inputs, leihmaterialDeliveryDate: value }
+    case 'landeskarten':
+      return { ...inputs, landeskartenDeliveryDate: value }
+    default:
+      return inputs
+  }
+}
+
+/** A status chip only for soon / overdue / done; «Offen» repeats the empty checkbox and gets none. */
+export function showStatusChip(status: DeadlineStatus | null | undefined): status is Exclude<DeadlineStatus, 'open'> {
+  return status !== null && status !== undefined && status !== 'open'
 }
 
 /** Key identifying a deadline in `hiddenChecklist`: its kind, plus the milestone id for milestones. */

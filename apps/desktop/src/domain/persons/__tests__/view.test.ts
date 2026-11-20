@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { diffPersons } from '../diff'
 import type { MidataPersonRow, NdsPersonRow } from '../types'
-import { filterRows, NO_FILTERS, ndsRoleKey, summarizePersons, toViewRows } from '../view'
+import { filterRows, NO_FILTERS, ndsRoleKey, problemRank, sortByProblem, summarizePersons, toggleValue, toViewRows, type PersonViewRow } from '../view'
 
 const mp = (id: string, o: Partial<MidataPersonRow> = {}): MidataPersonRow => ({
   __red: true, id, firstName: 'Test', lastName: 'Muster', nickname: null, birthDate: '2012-03-04',
@@ -82,5 +82,37 @@ describe('Rega state and summary', () => {
     expect(s.regaMissing).toBe(2)
     expect(summarizePersons(toViewRows(diff, null, false)).compared).toBe(false)
     expect(summarizePersons([])).toMatchObject({ compared: false, differences: 0, regaKnown: false, regaMissing: 0 })
+  })
+})
+
+describe('problem sort', () => {
+  const base = toViewRows(diffPersons([mp('1')], [np('a')]), '2031-07-20', true)[0]
+  const row = (o: Partial<PersonViewRow>): PersonViewRow => ({ ...base, ...o })
+  it('ranks missing, only, ambiguous, diff, Rega, expired qualification, rest', () => {
+    const rows = [
+      row({ key: 'ok' }),
+      row({ key: 'qual', kind: 'leader', qualifications: { wasser: 'invalid' } }),
+      row({ key: 'rega', rega: false }),
+      row({ key: 'diff', state: 'field_diff' }),
+      row({ key: 'amb', state: 'ambiguous' }),
+      row({ key: 'only', state: 'only_in_nds' }),
+      row({ key: 'miss', state: 'missing_in_nds' }),
+    ]
+    expect(sortByProblem(rows).map((r) => r.key)).toEqual(['miss', 'only', 'amb', 'diff', 'rega', 'qual', 'ok'])
+    expect(problemRank(row({}))).toBe(6)
+  })
+  it('checks only the shown qualification columns when given', () => {
+    const r = row({ key: 'q', kind: 'leader', qualifications: { lagerleiter: 'valid', winter: 'invalid' } })
+    expect(problemRank(r)).toBe(5)
+    expect(problemRank(r, ['lagerleiter', 'leiterLsT'])).toBe(6)
+    expect(sortByProblem([row({ key: 'a' }), r], ['lagerleiter']).map((x) => x.key)).toEqual(['a', 'q'])
+  })
+  it('is stable inside a rank', () => {
+    const rows = [row({ key: 'a' }), row({ key: 'b' }), row({ key: 'c', state: 'ambiguous' })]
+    expect(sortByProblem(rows).map((r) => r.key)).toEqual(['c', 'a', 'b'])
+  })
+  it('toggleValue adds and removes', () => {
+    expect(toggleValue(['a'], 'b')).toEqual(['a', 'b'])
+    expect(toggleValue(['a', 'b'], 'a')).toEqual(['b'])
   })
 })

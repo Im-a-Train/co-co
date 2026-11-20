@@ -1,21 +1,25 @@
 {
   "rules": {
     "catalog": {
-      "title": "Regelkatalog",
-      "intro": "Alle Regeln der eingebauten Regelpakete mit Schweregrad, Konfidenz, Gültigkeit und Quelle. Regeln mit Konfidenz «ungeprüft» oder «widersprüchlich» sind nie ein «Muss».",
+      "title": "Regeln",
+      "intro": "Was co-co in deinen Lagern prüft – und worauf es sich stützt.",
       "search": "Regeln durchsuchen",
       "allGroups": "Alle Module",
       "kind": {
         "all": "Alle",
-        "hard": "Harte Regeln",
-        "ai": "KI-Leitfaden",
+        "hard": "Prüft co-co",
+        "ai": "Nur in der KI-Prüfung",
         "aiChip": "KI-Leitfaden",
-        "aiHint": "Leitfaden für die KI-Lagerprüfung: erzeugt keine eigenen Befunde."
+        "aiHint": "Leitfaden für die KI-Lagerprüfung: erzeugt keine eigenen Befunde.",
+        "aiOnly": "nur KI",
+        "aiOff": "KI ist ausgeschaltet – diese Punkte prüft co-co zurzeit nicht. Schau sie selbst im Detailprogramm an."
       },
       "empty": "Keine Regel passt zu deiner Suche.",
+      "hiddenAiHits": "Ein weiterer Treffer nur in der KI-Prüfung | {n} weitere Treffer nur in der KI-Prüfung",
+      "hiddenHardHits": "Ein weiterer Treffer unter «Prüft co-co» | {n} weitere Treffer unter «Prüft co-co»",
+      "showAll": "Alle anzeigen",
       "loadFailed": "Regelpakete konnten nicht geladen werden",
       "pack": {
-        "version": "Version {version}",
         "validFrom": "gültig ab {date}",
         "validTo": "gültig bis {date}",
         "count": "{count} Regeln"
@@ -46,7 +50,6 @@
         "source": "Quelle",
         "sources": "Quellen",
         "sourceBinding": "verbindlich",
-        "sourceQuote": "Zitat",
         "validity": "Gültigkeit",
         "validFrom": "ab {date}",
         "validTo": "bis {date}",
@@ -54,15 +57,23 @@
         "needs": "Benötigt",
         "scope": "Bezieht sich auf",
         "version": "Regelversion {version}",
+        "packVersion": "Regelpaket {version}",
         "tags": "Stichwörter",
-        "mustGuard": "Konfidenz begrenzt den Schweregrad: nie «Muss»"
+        "mustGuard": "Die Verlässlichkeit begrenzt den Schweregrad: nie «Muss»",
+        "example": "So sieht der Befund aus",
+        "technical": "Technische Details",
+        "severity": "Schweregrad",
+        "confidence": "Verlässlichkeit"
       },
       "state": {
         "disabledAll": "Deaktiviert (alle Lager)",
         "disabledCamps": "In {count} Lager deaktiviert | In {count} Lagern deaktiviert",
         "enable": "Wieder aktivieren",
         "disableAll": "Für alle Lager deaktivieren",
-        "disabledTag": "deaktiviert"
+        "disableConfirmTitle": "{id} in allen Lagern ausschalten?",
+        "disableConfirmBody": "co-co meldet dann in keinem Lager mehr: {title}.",
+        "disableMustWarning": "Das ist eine Muss-Regel aus einer verbindlichen Quelle.",
+        "disableConfirm": "Ausschalten"
       },
       "module": {
         "js": "J+S Lager allgemein",
@@ -78,7 +89,7 @@
     },
     "deadlines": {
       "title": "Fristen",
-      "intro": "Fristen aller deiner Lager, sortiert nach Fälligkeit. Den Stand (angemeldet, bestellt, abgeschlossen) pflegst du unter «Angaben» im jeweiligen Lager.",
+      "intro": "Fristen aller deiner Lager. Abhaken kannst du hier oder in der Checkliste des Lagers.",
       "empty": "Keine Fristen: Es sind keine Lager mit Startdatum vorhanden.",
       "loadFailed": "Lager konnten nicht geladen werden",
       "showDone": "Erledigte anzeigen",
@@ -90,11 +101,6 @@
         "allCamps": "Alle Lager",
         "kinds": "Art der Frist",
         "allKinds": "Alle Arten",
-        "statuses": "Stand",
-        "allStatuses": "Alle Stände",
-        "audience": "Zuständig",
-        "audienceCoach": "Coach",
-        "audienceLeaders": "Leitung",
         "reset": "Filter zurücksetzen",
         "noMatch": "Keine Frist passt zu den Filtern."
       },
@@ -104,14 +110,8 @@
         "leihmaterial": "Leihmaterial",
         "landeskarten": "Landeskarten",
         "lagerbewilligung": "Lagerbewilligung",
-        "pbs-milestone": "PBS-Meilenstein",
+        "pbs-milestone": "Meilenstein (J+S/PBS)",
         "nds-task": "NDS-Pendenz"
-      },
-      "columns": {
-        "due": "Fällig am",
-        "camp": "Lager",
-        "kind": "Frist",
-        "status": "Stand"
       },
       "kind": {
         "nds-registration": "NDS-Anmeldung (30 Tage vor Lagerbeginn)",
@@ -130,34 +130,16 @@
         "stand": "Stand NDS {time}: {count} Pendenzen mit Frist",
         "escalation": "(Eskalation {date})",
         "loadFailed": "NDS-Pendenzen konnten nicht geladen werden",
-        "hint": "Nur im Arbeitsspeicher: Die Pendenzen werden nicht gespeichert und verschwinden beim Verlassen der Seite."
+        "hint": "Nur im Arbeitsspeicher: Die Pendenzen werden nicht gespeichert und verschwinden beim Verlassen der Seite.",
+        "readOnly": "NDS-Pendenz: Erledigen kannst du sie nur in der NDS."
       },
-      "showMilestones": "PBS-Meilensteine anzeigen",
-      "unconfirmed": "unbestätigt",
-      "unconfirmedHint": "Richtwert aus Hering (hering.scout.ch), von der PBS noch nicht bestätigt.",
-      "sourceLink": "Quelle: {title}",
-      "markDone": "Erledigt",
-      "markUndone": "Zurücksetzen",
-      "checklistLink": "Checkliste",
-      "checklistLinkHint": "Gleicher Punkt in der Coach-Checkliste dieses Lagers",
+      "unconfirmedHint": "Richtwert aus {source}, nicht offiziell bestätigt.",
       "saveFailed": "Stand konnte nicht gespeichert werden",
       "exportIcs": "Als Kalender exportieren (.ics)",
       "exportSaved": "Kalender gespeichert: {path}",
       "exportCancelled": "Export abgebrochen.",
       "exportFailed": "Export fehlgeschlagen",
       "exportCalendarName": "co-co Fristen",
-      "radar": {
-        "title": "Radar",
-        "filterHint": "Klick auf eine Spalte filtert die Tabelle, Klick auf eine Frist springt zur Zeile.",
-        "clearFilter": "Filter aufheben",
-        "empty": "nichts fällig",
-        "bucket": {
-          "overdue": "Überfällig",
-          "week": "Diese Woche",
-          "month": "Nächste 4 Wochen",
-          "later": "Später"
-        }
-      },
       "status": {
         "done": "Erledigt",
         "overdue": "Überfällig",
@@ -171,8 +153,39 @@
         "ago": "vor {n} Tagen",
         "agoOne": "gestern"
       },
-      "openCamp": "Lager-Angaben öffnen",
-      "rule": "Regel {id}"
+      "summary": "Diese Woche fällig: {week} · Überfällig: {overdue}",
+      "kindTitle": {
+        "nds-registration": "NDS-Anmeldung",
+        "nds-closing": "NDS-Abschluss",
+        "leihmaterial": "Leihmaterial bestellen",
+        "landeskarten": "Landeskarten bestellen",
+        "lagerbewilligung": "Lagerbewilligung",
+        "pbs-milestone": "Meilenstein",
+        "nds-task": "NDS-Pendenz"
+      },
+      "groups": {
+        "title": "{bucket} · {n}",
+        "empty": "{bucket}: nichts fällig",
+        "emptyOverdue": "Nichts überfällig",
+        "overdue": "Überfällig",
+        "week": "Diese Woche",
+        "month": "Nächste 4 Wochen",
+        "later": "Später",
+        "done": "Erledigt"
+      },
+      "doneSnack": "Erledigt: {title} · {camp}",
+      "undo": "Rückgängig",
+      "scopeMine": "Meine Fristen",
+      "scopeAll": "Mit Lagerleitung",
+      "more": "Mehr",
+      "leaderChip": "Leitung",
+      "leaderDoneHint": "Von der Lagerleitung erledigt",
+      "doneAria": "Erledigt: {title} · {camp}",
+      "leaderDoneAria": "Von der Lagerleitung erledigt: {title} · {camp}",
+      "legendUnconfirmed": "* Richtwert aus einer Planungshilfe, nicht offiziell bestätigt.",
+      "alsoNamed": "Auch genannt: {source}, {date}",
+      "ruleLinkHint": "Regel {id} im Regelkatalog öffnen",
+      "openChecklist": "Checkliste dieses Lagers öffnen"
     },
     "module": {
       "state": {
@@ -183,13 +196,13 @@
       },
       "suggestedNote": "Modul {module} vorgeschlagen ({reason}) – bestätigen, um vollständig zu prüfen.",
       "reason": {
-        "keywordSet": "{count} Aktivität(en) mit {set}-Stichworten",
+        "keywordSet": "{count} Aktivität mit {set}-Stichworten | {count} Aktivitäten mit {set}-Stichworten",
         "gpxHighestPointAbove": "GPX-Route bis {meters} m ü. M. (über {threshold} m)",
         "campStartMonths": "Lagerstart im {month}",
         "campOverlapsMonths": "Lager reicht in den Monat {month} (Wintermonat)",
         "campConfigAndMonths": "Lagerkontext: {field} = {value}, Lager im Monat {month}",
         "campConfig": "Lagerkontext: {field} = {value}",
-        "activityTag": "{count} Aktivität(en) markiert als {tag}",
+        "activityTag": "{count} Aktivität markiert als {tag} | {count} Aktivitäten markiert als {tag}",
         "coachInput": "Angabe: {field} = {value}",
         "coachOn": "vom Coach eingeschaltet",
         "coachOff": "vom Coach ausgeschaltet",
@@ -236,7 +249,7 @@
       "resetConfirmTitle": "Regel zurücksetzen?",
       "resetConfirmText": "Die Änderungen an «{title}» gehen verloren, die eingebaute Regel gilt wieder. Der Verlauf wird gelöscht.",
       "dialogTitle": "Regel bearbeiten: {id}",
-      "intro": "Angepasst werden Texte, Gewichtung, Gültigkeit und Quellen. Die Prüflogik der Regel bleibt eingebaut.",
+      "intro": "Angepasst werden Texte, Schweregrad, Gültigkeit und Quellen. Die Prüflogik der Regel bleibt eingebaut.",
       "tabs": {
         "edit": "Bearbeiten",
         "changes": "Änderungen",
@@ -249,7 +262,7 @@
         "message": "Meldung",
         "feedbackText": "Feedback-Text",
         "variants": "Meldungsvarianten",
-        "severity": "Gewichtung",
+        "severity": "Schweregrad",
         "confidence": "Verlässlichkeit",
         "status": "Status",
         "validFrom": "Gültig ab",
@@ -262,7 +275,7 @@
       "hints": {
         "placeholders": "Platzhalter in geschweiften Klammern nicht verändern: sie werden beim Prüfen gefüllt.",
         "feedbackText": "Text, der beim Feedback-Entwurf zu diesem Befund vorgeschlagen wird. Dieselben Platzhalter wie in der Meldung sind möglich. Leer = automatischer Satz aus der Meldung.",
-        "date": "JJJJ-MM-TT, leer = unbegrenzt",
+        "date": "TT.MM.JJJJ, leer = unbegrenzt",
         "reason": "z. B. «Handbuch 2027 S. 21 geändert»",
         "mustNeedsVerified": "«Muss» ist nur mit Verlässlichkeit «geprüft» möglich."
       },
@@ -309,6 +322,37 @@
         "none": "Diese Regel liest keine Schwellenwerte.",
         "current": "Aktuell",
         "default": "Standard",
+        "currentMonths": "Aktuell (Monate)",
+        "from": "von",
+        "to": "bis",
+        "month": {
+          "1": "Januar",
+          "2": "Februar",
+          "3": "März",
+          "4": "April",
+          "5": "Mai",
+          "6": "Juni",
+          "7": "Juli",
+          "8": "August",
+          "9": "September",
+          "10": "Oktober",
+          "11": "November",
+          "12": "Dezember"
+        },
+        "monthShort": {
+          "1": "Jan.",
+          "2": "Feb.",
+          "3": "Mär.",
+          "4": "Apr.",
+          "5": "Mai",
+          "6": "Juni",
+          "7": "Juli",
+          "8": "Aug.",
+          "9": "Sept.",
+          "10": "Okt.",
+          "11": "Nov.",
+          "12": "Dez."
+        },
         "readonly": "Dieser Wert ist fest vorgegeben und kann nicht angepasst werden.",
         "save": "Wert speichern",
         "reset": "Auf Standard",
@@ -317,14 +361,32 @@
         "overridable": {
           "none": "fest",
           "admin": "anpassbar",
-          "coach": "anpassbar (auch pro Lager)"
+          "coach": "anpassbar"
         },
-        "changed": "angepasst"
+        "changed": "angepasst",
+        "unit": {
+          "persons": "Personen",
+          "minutes": "Minuten",
+          "days": "Tage",
+          "months": "Monate",
+          "years": "Jahre",
+          "m": "m",
+          "chars": "Zeichen",
+          "lkmPerHour": "Lkm/h",
+          "hhmm": "Uhrzeit",
+          "units": "Einheiten",
+          "windows": "Zeitfenster",
+          "window": "Zeitfenster",
+          "hm": "Hm",
+          "ratio": "Anteil",
+          "dates": "Daten",
+          "map": "h"
+        }
       },
       "ai": {
         "intro": "Die KI vergleicht die Regel mit den gewählten Hilfsmitteln und schlägt eine Änderung vor. Nichts wird automatisch übernommen: du siehst den Unterschied und entscheidest.",
         "pick": "Hilfsmittel (nur solche mit Text)",
-        "pickNone": "Keine Hilfsmittel mit Text vorhanden. Lade im Bereich «Hilfsmittel» eine Datei hoch.",
+        "pickNone": "Keine Hilfsmittel mit Text vorhanden. Lade bei den Hilfsmitteln eine Datei hoch oder füge Text ein.",
         "prepare": "Anfrage vorbereiten",
         "previewTitle": "Das wird an die KI gesendet",
         "previewHint": "Regeln und Hilfsmittel sind öffentliches Referenzmaterial (grüne Zone). Es werden keine Lager- oder Personendaten gesendet.",
@@ -336,11 +398,11 @@
         "apply": "Vorschlag übernehmen",
         "discard": "Verwerfen",
         "applied": "Vorschlag übernommen.",
-        "invalid": "Der Vorschlag kann nicht übernommen werden"
+        "invalid": "Der Vorschlag kann nicht übernommen werden",
+        "toResources": "Zu den Hilfsmitteln"
       }
     },
     "paramNote": "Parameter angepasst: {label} = {value} (Standard {default})",
-    "sourceUpdated": "Quelle aktualisiert – erneut prüfen",
     "status": {
       "retired": "ausser Kraft"
     }

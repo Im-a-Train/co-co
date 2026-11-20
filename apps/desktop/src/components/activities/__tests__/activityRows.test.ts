@@ -7,6 +7,8 @@ import {
   buildRows,
   compareNumbers,
   filterRows,
+  repeatedDuration,
+  sharedTimeRange,
   sortRows,
   stateFromQuery,
   stateToQuery,
@@ -141,5 +143,27 @@ describe('url state', () => {
       sort: 'time',
       dir: 'asc',
     })
+  })
+})
+
+describe('repeatedDuration / sharedTimeRange', () => {
+  const e = (startMin: number, endMin: number) => ({ startMin, endMin })
+  it('repeats only for >= 2 entries of equal length', () => {
+    expect(repeatedDuration([e(480, 1080), e(480, 1080), e(540, 1140), e(0, 600)])).toEqual({ count: 4, minutes: 600 })
+    expect(repeatedDuration([e(480, 1080)])).toBeNull()
+    expect(repeatedDuration([e(480, 600), e(480, 660)])).toBeNull()
+    expect(repeatedDuration([e(480, 480), e(480, 480)])).toBeNull()
+  })
+  it('shared time range needs identical start and end', () => {
+    expect(sharedTimeRange([e(480, 1080), e(480, 1080)])).toEqual({ startMin: 480, endMin: 1080 })
+    expect(sharedTimeRange([e(480, 1080), e(540, 1140)])).toBeNull()
+    expect(sharedTimeRange([])).toBeNull()
+  })
+  it('buildRows marks excluded categories and exposes the repeat', () => {
+    const cat = facts.activities[0]!.categoryIri
+    const rows = buildRows(facts, [], [], classOf, (iri) => iri === cat)
+    const r = rows.find((x) => x.iri === facts.activities[0]!.iri)!
+    expect(r.categoryExcluded).toBe(!!cat)
+    expect(rows.find((x) => x.categoryIri !== cat && x.categoryIri)?.categoryExcluded ?? false).toBe(false)
   })
 })

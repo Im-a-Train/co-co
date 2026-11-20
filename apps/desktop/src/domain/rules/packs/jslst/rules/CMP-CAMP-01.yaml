@@ -10,6 +10,7 @@ messageVariants:
   otherCoach: "Eingetragen ist «{coach}», angemeldet ist «{user}»"
   midataOther: "Im MiData-Anlass ist «{who}» als Coach eingetragen, nicht du (Quelle: MiData, Stand {stand})"
   midataUnknown: "Im MiData-Anlass ist eine andere Person als Coach eingetragen, nicht du (Quelle: MiData, Stand {stand})"
+feedbackText: "Könnt ihr mich bitte als Coach im Lager eintragen, in eCamp und im MiData-Anlass?"
 severity: hint
 confidence: unverified
 scope: camp

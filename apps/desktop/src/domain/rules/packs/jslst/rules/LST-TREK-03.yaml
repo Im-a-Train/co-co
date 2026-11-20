@@ -5,6 +5,7 @@ status: active
 title: "Wanderung für Kinder zu lang"
 description: "Mit Kindern (Biber, Wölfe oder jüngster Jahrgang unter 10) sollte die effektive Wanderzeit die empfohlene Dauer nicht überschreiten."
 message: "Geschätzte Marschzeit von «{activity}» {h} h. Mit Kindern sollte die effektive Wanderzeit {max} h nicht überschreiten."
+feedbackText: "Die Marschzeit von «{activity}» ist mit {h} Stunden lang, mit Kindern sollte die Wanderzeit höchstens {max} Stunden betragen. Könnt ihr sie kürzen?"
 severity: hint
 confidence: unverified
 scope: activity

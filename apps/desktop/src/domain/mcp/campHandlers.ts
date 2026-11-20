@@ -4,12 +4,13 @@
  * redactor, writes de-redact incoming text, documents only with `aiAllowed` and never the file path.
  */
 import { reviewProgress, isDocumentReviewed } from '../cockpit/progress'
+import { isSafetyConcept } from '../documents'
 import { GENERAL_POINTS, generalPointById } from '../feedback/defaults'
 import { tr } from '../feedback/i18n'
 import { groupFeedback } from '../feedback/structure'
 import { MANUAL_COMMENT_MAX, anchorLabel, isManualCategory, isManualFindingId, manualToFinding, newManualFinding } from '../manualFindings'
 import { aiGuidanceRules, guidanceText } from '../rules/aiGuidance'
-import { progressOf, statusesOf } from '../triage'
+import { isCoachTodo, progressOf, statusesOf } from '../triage'
 import { RED_DERIVED_MARKER } from '../zones/aiGateway'
 import { findingsForAi } from '../zones/features'
 import { redactorForFacts } from '../zones/mcpZone'
@@ -189,7 +190,7 @@ export const get_camp_progress: McpHandler = async (args, ctx) => {
   const rc = await ctx.reviewContext(campIri)
   const fb = (await ctx.listFeedback(campIri)).filter((i) => !isRedFeedback(i))
   const findings = await triageFindings(ctx, campIri, facts)
-  const tri = progressOf(statusesOf(findings, fb))
+  const tri = progressOf(statusesOf(findings.filter((f) => !isCoachTodo(f)), fb))
   const docs = await mcpDocuments(ctx, campIri)
   const manual = await mcpManualFindings(ctx, campIri)
   const manualByDoc = new Map<string, number>()
@@ -197,7 +198,10 @@ export const get_camp_progress: McpHandler = async (args, ctx) => {
   const progress = reviewProgress({
     reviewStatus: review?.status ?? null,
     mappingConfirmed: mapping?.confirmed === true,
-    coachInputsPresent: rc.coachInputsPresent,
+    missingInputs: findings.filter((f) => !f.override && f.needsInput === 'coachInputs').length,
+    suggestedModules: Object.entries(rc.moduleStates)
+      .filter(([, state]) => state === 'suggested')
+      .map(([id]) => id),
     triage: { done: tri.done, total: tri.total },
     manualFindingCount: manual.length,
     documents: { total: docs.length, reviewed: docs.filter((d) => isDocumentReviewed(d, manualByDoc.get(d.id) ?? 0)).length },
@@ -228,15 +232,21 @@ export const list_documents: McpHandler = async (args, ctx) => {
   const { r } = await factsAndRedactor(ctx, campIri)
   const docs = await mcpDocuments(ctx, campIri)
   const manual = await mcpManualFindings(ctx, campIri)
+  // The audit only exists for documents that count as safety concept; the coach's «Ist vorhanden» items are not missing.
+  const docCheckOf = (d: (typeof docs)[number]) => {
+    if (!d.docCheck || !isSafetyConcept(d)) return null
+    const confirmed = d.docCheckConfirmed ?? []
+    const missing = d.docCheck.items.filter((i) => !i.found && !confirmed.includes(i.key)).map((i) => i.key)
+    return { complete: missing.length === 0, checkedAt: d.docCheck.checkedAt, missing, confirmed }
+  }
   return docs.map((d) => ({
     id: d.id,
     name: redactText(r, d.name),
     kind: d.kind,
     size: d.size,
     activityIds: d.activityIris,
-    docCheck: d.docCheck
-      ? { complete: d.docCheck.complete, checkedAt: d.docCheck.checkedAt, missing: d.docCheck.items.filter((i) => !i.found).map((i) => i.key) }
-      : null,
+    safetyConcept: d.safetyConcept ?? null,
+    docCheck: docCheckOf(d),
     gpx: d.gpx
       ? {
           pointCount: d.gpx.pointCount,
@@ -447,7 +457,7 @@ export const confirmAddManualFinding: McpConfirmBuilder = async (args, ctx) => {
     details.push(`Dokument: ${plan.document.name}${where ? ` (${where})` : ''}`)
   }
   details.push(`Kommentar: ${plan.r.deredact(reqStr(args, 'comment'))}`)
-  return confirm('add_manual_finding', `Eigenen Befund hinzufügen (Lager «${plan.facts.camp.title}»)`, details)
+  return confirm('add_manual_finding', tr('findings.manual.mcp.add', { camp: plan.facts.camp.title }), details)
 }
 
 export const confirmUpdateManualFinding: McpConfirmBuilder = async (args, ctx) => {
@@ -458,13 +468,13 @@ export const confirmUpdateManualFinding: McpConfirmBuilder = async (args, ctx) =
   const comment = str(args, 'comment')
   if (category) details.push(`Neue Kategorie: ${CATEGORY_LABEL(category)}`)
   if (comment !== undefined) details.push(`Neuer Kommentar: ${r.deredact(comment)}`)
-  return confirm('update_manual_finding', `Eigenen Befund ändern (Lager «${facts.camp.title}»)`, details)
+  return confirm('update_manual_finding', tr('findings.manual.mcp.update', { camp: facts.camp.title }), details)
 }
 
 export const confirmDeleteManualFinding: McpConfirmBuilder = async (args, ctx) => {
   const item = await loadManual(ctx, reqStr(args, 'findingId'))
   const { facts } = await factsAndRedactor(ctx, item.campIri)
-  return confirm('delete_manual_finding', `Eigenen Befund löschen (Lager «${facts.camp.title}»)`, [
+  return confirm('delete_manual_finding', tr('findings.manual.mcp.delete', { camp: facts.camp.title }), [
     `Befund: ${CATEGORY_LABEL(item.category)}: ${item.comment}`,
     'Das Löschen kann in co-co nicht rückgängig gemacht werden',
   ])
@@ -480,7 +490,7 @@ export async function feedbackLinkDetails(links: FeedbackLinks, campIri: Iri, ct
   if (links.generalPointId) out.push(`Allgemeiner Punkt: ${tr(generalPointById(links.generalPointId)?.titleKey ?? links.generalPointId)}`)
   if (links.manualFindingId) {
     const m = await ctx.getManualFinding(links.manualFindingId)
-    out.push(`Eigener Befund: ${m ? m.comment : links.manualFindingId}`)
+    out.push(tr('findings.manual.mcp.linked', { text: m ? m.comment : links.manualFindingId }))
   }
   return out
 }

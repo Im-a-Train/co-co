@@ -3,7 +3,8 @@
  * (dev-only Tauri IPC mock, see src/dev/mockTauri.ts) in the installed Microsoft Edge, visits every route,
  * collects console errors, takes screenshots and exercises the main flows.
  *
- * Usage: npm run test:ui   (env UI_SHOTS_DIR overrides the screenshot directory)
+ * Usage: npm run test:ui   (env UI_SHOTS_DIR overrides the screenshot directory; UI_BROWSER_PATH runs
+ *        another Chromium binary instead of Edge, e.g. UI_BROWSER_PATH=/opt/pw-browsers/chromium on Linux)
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -51,14 +52,21 @@ let server = null
 function killServer() {
   if (!server) return
   if (process.platform === 'win32' && server.pid) spawnSync('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore' })
-  else server.kill()
+  else if (server.pid) {
+    // npm runs vite as a child: kill the whole process group, or vite keeps the port.
+    try {
+      process.kill(-server.pid, 'SIGTERM')
+    } catch {
+      server.kill()
+    }
+  }
   server = null
 }
 async function ensureServer() {
   if (await isUp())
     throw new Error(`Port ${PORT} already answers (probably another session's Vite server serving other code). Set UI_PORT to a free port, e.g. UI_PORT=1431.`)
   const cmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-  server = spawn(cmd, ['run', 'dev:vite', ...(PORT === 1420 ? [] : ['--', '--port', String(PORT)])], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32' })
+  server = spawn(cmd, ['run', 'dev:vite', ...(PORT === 1420 ? [] : ['--', '--port', String(PORT)])], { cwd: root, stdio: 'ignore', shell: process.platform === 'win32', detached: process.platform !== 'win32' })
   for (let i = 0; i < 120; i++) {
     if (await isUp()) return
     await new Promise((r) => setTimeout(r, 500))
@@ -106,7 +114,12 @@ async function step(name, fn) {
 
 async function main() {
   await ensureServer()
-  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  // Edge by default (Windows dev machines); UI_BROWSER_PATH points at another Chromium binary (e.g. on Linux).
+  const browser = await chromium.launch(
+    process.env.UI_BROWSER_PATH
+      ? { executablePath: process.env.UI_BROWSER_PATH, headless: true }
+      : { channel: 'msedge', headless: true },
+  )
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 }, locale: 'de-CH' })
   const page = await ctx.newPage()
   pageRef = page
@@ -159,14 +172,43 @@ async function main() {
     await page.waitForURL(/\/lager\/[^/]+\/uebersicht/, { timeout: 5000 })
   })
 
+  await step('flow: camp list switch, sorting and next-step column', async () => {
+    await page.goto(`${BASE}#/lager`)
+    await page.waitForSelector('[data-testid="camps-table"]', { timeout: 8000 })
+    await page.waitForTimeout(800)
+    const hidden = await page.locator('tbody tr').count()
+    const sw = page.getByTestId('camps-show-ended').locator('input')
+    if (!(await sw.count())) throw new Error('ended switch missing')
+    await shot(page, 'flow-camps-default')
+    await sw.check({ force: true })
+    await page.waitForTimeout(500)
+    const all = await page.locator('tbody tr').count()
+    if (all <= hidden) throw new Error(`switch did not show ended camps (${hidden} -> ${all})`)
+    if (!(await page.getByTestId('camp-next').count())) throw new Error('next-step column missing')
+    if (await page.getByTestId('camps-refresh').innerText().then((t) => /Aktualisieren/.test(t))) throw new Error('refresh still a text button')
+    await shot(page, 'flow-camps-with-ended')
+    await sw.uncheck({ force: true })
+    await page.waitForTimeout(300)
+  })
+
   await step('flow: confirm category mapping', async () => {
-    await go('raster?zuordnung=1', 'flow-mapping') // mapping lives in the GP view (collapsible panel)
-    const btn = page.getByRole('button', { name: /bestätigen/i }).first()
+    await go('raster', 'flow-mapping') // unconfirmed: the mapping is the first card of the GP view
+    const btn = page.getByTestId('mapping-confirm')
+    await btn.waitFor({ timeout: 8000 })
+    const box = await btn.boundingBox()
+    const vh = page.viewportSize()?.height ?? 860
+    if (!box || box.y + box.height > vh) throw new Error(`«Zuordnung bestätigen» not visible without scrolling (y=${box?.y})`)
+    if (await page.getByTestId('grid-mapping-link').count()) throw new Error('old mapping banner still there')
     await btn.click()
     await page.waitForTimeout(800)
     await shot(page, 'flow-mapping-confirmed')
     const txt = await page.evaluate(() => document.body.innerText)
-    if (!/Änderung bestätigen|bestätigt/i.test(txt)) throw new Error('no confirmed state visible')
+    if (!/Kategorien zugeordnet am/.test(txt)) throw new Error('no confirmed line visible')
+    if (!(await page.getByTestId('mapping-next').count())) throw new Error('«Weiter: Befunde durchgehen» missing after confirming')
+    await page.getByTestId('grid-mapping-edit').click()
+    await page.waitForTimeout(300)
+    await shot(page, 'flow-mapping-edit')
+    await page.getByTestId('grid-mapping-edit').click()
   })
 
   await step('flow: open activity drawer in grid', async () => {
@@ -177,6 +219,57 @@ async function main() {
     await shot(page, 'flow-grid-drawer')
     if (!(await page.locator('.v-navigation-drawer--right').count()))
       throw new Error('drawer not open')
+    await page.getByTestId('drawer-title').waitFor({ timeout: 5000 })
+    if (await page.locator('.v-navigation-drawer__scrim').count()) throw new Error('drawer is modal (scrim shown)')
+    if (!(await page.getByTestId('drawer-open-ecamp').count())) throw new Error('«In eCamp öffnen» missing')
+    // same-rule day findings are one row with their dates (no two identical rows)
+    const dayRows = (await page.locator('[data-testid="drawer-day-findings"] .finding-row').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim())
+    if (new Set(dayRows).size !== dayRows.length) throw new Error('day finding rows repeat: ' + dayRows.join(' | '))
+    // non-modal: another block swaps the content in place, ←/→ step, Esc closes
+    const first = await page.getByTestId('drawer-title').innerText()
+    const other = page.locator('.wg-block').filter({ hasNotText: first })
+    if (await other.count()) {
+      await other.first().click({ timeout: 5000 })
+      await page.waitForTimeout(500)
+      if ((await page.getByTestId('drawer-title').innerText()) === first) throw new Error('drawer content did not swap on block click')
+    }
+    const before = await page.getByTestId('drawer-title').innerText()
+    await page.keyboard.press('ArrowRight')
+    await page.waitForTimeout(400)
+    if ((await page.getByTestId('drawer-title').innerText()) === before) {
+      // last activity: step back instead
+      await page.keyboard.press('ArrowLeft')
+      await page.waitForTimeout(400)
+    }
+    const after = await page.getByTestId('drawer-title').innerText()
+    console.log('grid drawer step', JSON.stringify({ before, after }))
+    if (after === before) throw new Error('←/→ did not step to another activity')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('Esc did not close the drawer')
+  })
+
+  await step('flow: grid summary, day reasons, sticky head, ?tag focus', async () => {
+    await go('raster', 'flow-grid-days')
+    await page.getByTestId('grid-summary').waitFor({ timeout: 8000 })
+    if (!/\d+ von \d+ J\+S-Tagen gültig/.test(await page.getByTestId('grid-summary').innerText())) throw new Error('summary text')
+    if (!(await page.getByTestId('grid-legend').count())) throw new Error('legend missing')
+    if (!(await page.getByTestId('grid-invalid-why').count())) throw new Error('no short reason under a failing day')
+    const pos = await page.evaluate(() => getComputedStyle(document.querySelector('.wg-head')).position)
+    if (pos !== 'sticky') throw new Error(`wg-head not sticky (${pos})`)
+    await shot(page, 'flow-grid-days')
+    // ?tag=<dayIri> (from a day finding): no drawer, that day outlined as «Dieser Tag» (Tag 3 of the dev camp)
+    await go('raster?tag=/api/days/5dc6586312e0', 'flow-grid-tag')
+    await page.getByTestId('grid-focus-day').first().waitFor({ timeout: 8000 })
+    const focus = await page.getByTestId('grid-focus-day').allInnerTexts()
+    if (focus.length !== 1 || !/Dieser Tag/.test(focus[0]) || !/Tag 3/.test(focus[0])) throw new Error('focus day: ' + JSON.stringify(focus))
+    if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('?tag opened the activity drawer')
+    await shot(page, 'flow-grid-tag')
+    // a failing day's title opens its finding
+    const dayLink = page.locator('.wg-daylink').first()
+    if (!(await dayLink.count())) throw new Error('no day title links to its finding')
+    await dayLink.click()
+    await page.waitForURL(/befunde\?.*befund=/, { timeout: 5000 })
   })
 
   await step('flow: activities list filter and drawer', async () => {
@@ -193,6 +286,38 @@ async function main() {
     await page.waitForTimeout(800)
     await shot(page, 'flow-activities-drawer')
     if (!(await page.locator('.v-navigation-drawer--right').count())) throw new Error('drawer not open')
+    await page.getByTestId('drawer-title').waitFor({ timeout: 5000 })
+    // DP columns: findings right after the title, no Aktionen column
+    const heads = (await page.locator('.activities-table thead th').allInnerTexts()).map((h) => h.trim())
+    console.log('dp columns', heads.join(' | '))
+    if (heads.join('|') !== ['Nr.', 'Titel', 'Befunde', 'Tag / Zeit', 'Kategorie', 'Verantwortliche', 'Fortschritt', 'Ort', 'Dauer'].join('|'))
+      throw new Error('DP columns wrong: ' + heads.join(' | '))
+    if (await page.locator('.v-navigation-drawer__scrim').count()) throw new Error('drawer is modal (scrim shown)')
+    // non-modal: a click on another row swaps the content, ↓ steps, Esc closes
+    const first = await page.getByTestId('drawer-title').innerText()
+    const rowsAll = page.locator('.activities-table tbody tr')
+    if ((await rowsAll.count()) > 1) {
+      await rowsAll.nth(1).click({ timeout: 5000 })
+      await page.waitForTimeout(500)
+      const second = await page.getByTestId('drawer-title').innerText()
+      if (second === first) throw new Error('drawer content did not swap on row click')
+      await page.keyboard.press('ArrowDown')
+      await page.waitForTimeout(400)
+      if ((await page.getByTestId('drawer-title').innerText()) === second) {
+        await page.keyboard.press('ArrowUp')
+        await page.waitForTimeout(400)
+      }
+      if ((await page.getByTestId('drawer-title').innerText()) === second) throw new Error('↑/↓ did not step to another activity')
+    }
+    // «Dokument verknüpfen …»: Esc closes the menu first, the drawer stays open
+    await page.getByTestId('drawer-link-document').click({ timeout: 5000 })
+    await page.getByTestId('drawer-link-list').waitFor({ timeout: 3000 })
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (!(await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count())) throw new Error('Esc in the link menu closed the drawer')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(500)
+    if (await page.locator('[data-testid="activity-drawer"].v-navigation-drawer--active').count()) throw new Error('Esc did not close the drawer')
   })
 
   await triageFlows({ page, step, go, shot, BASE })
@@ -213,11 +338,27 @@ async function main() {
     await page.getByTestId('mode-list').click()
     await page.waitForTimeout(500)
     await shot(page, 'flow-findings-list')
-    await page.getByRole('button', { name: /feedback erstellen/i }).first().click({ timeout: 5000 })
+    // A single finding card without feedback yet (cards with feedback offer «Feedback ansehen»).
+    const card = page.locator('.finding-card').filter({ has: page.locator('[data-testid="finding-feedback"]:not([data-has-feedback])') }).first()
+    const findingId = await card.getAttribute('data-finding-id', { timeout: 5000 })
+    await card.getByTestId('finding-feedback').click({ timeout: 5000 })
     await page.waitForURL(/feedback/, { timeout: 5000 })
     await page.waitForTimeout(800)
     const txt = await page.evaluate(() => document.body.innerText)
     if (/Noch kein Feedback|keine Einträge/i.test(txt)) throw new Error('feedback list still empty')
+    // The same card now offers «Feedback ansehen»: it opens the existing item, no duplicate.
+    const count1 = await page.getByTestId('feedback-item').count()
+    await go('befunde', 'flow-findings')
+    await page.getByTestId('mode-list').click()
+    await page.waitForTimeout(500)
+    const again = page.locator(`.finding-card[data-finding-id="${findingId}"]`).getByTestId('finding-feedback')
+    if ((await again.getAttribute('data-has-feedback', { timeout: 5000 })) !== '1') throw new Error('card with feedback still offers «Feedback erstellen»')
+    if (!/Feedback ansehen/.test(await again.innerText())) throw new Error('card with feedback: label is not «Feedback ansehen»')
+    await again.click({ timeout: 5000 })
+    await page.waitForURL(/feedback/, { timeout: 5000 })
+    await page.waitForTimeout(800)
+    const count2 = await page.getByTestId('feedback-item').count()
+    if (count2 !== count1) throw new Error(`«Feedback ansehen» created a duplicate (${count1} -> ${count2})`)
   })
 
   await step('flow: feedback preview tabs', async () => {

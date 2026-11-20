@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /** Edit one rule in the Regelbuch (ADR 0013): texts, severity, validity, sources; diff/history; thresholds; AI update. */
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, type WritableComputedRef } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAi } from '@/composables/useAi'
 import { useResources } from '@/composables/useResources'
 import { useRuleEdits } from '@/composables/useRuleEdits'
 import { validateRuleEditPatch } from '@/domain/rules/edits'
+import { formatDateDe, parseDateInput } from '@/domain/resources'
 import { knownSourceKeys, resetRuleEdit, saveRuleEdit } from '@/domain/rules/editsStore'
 import { loadBundledPacks } from '@/domain/rules/packs'
 import { getSourceRegistry } from '@/domain/rules/packs/registry'
@@ -19,6 +21,7 @@ type Tab = 'edit' | 'changes' | 'params' | 'ai'
 const props = defineProps<{ modelValue: boolean; ruleId: string | null; initialTab?: Tab }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; changed: [] }>()
 const { t } = useI18n()
+const router = useRouter()
 const edits = useRuleEdits()
 const resources = useResources()
 const { ready: aiReady } = useAi()
@@ -73,6 +76,25 @@ const errors = computed(() => {
   void resources.version.value
   return validateRuleEditPatch(b, patch.value, 'manual', knownSourceKeys())
 })
+/** Date fields show TT.MM.JJJJ and store ISO; text that is not a valid date stays as typed (and fails validation). */
+function dateModel(field: 'validFrom' | 'validTo'): WritableComputedRef<string> {
+  return computed({
+    get: () => (/^\d{4}-\d{2}-\d{2}$/.test(form[field]) ? formatDateDe(form[field]) : form[field]),
+    set: (v: string) => {
+      form[field] = parseDateInput(v) || v
+    },
+  })
+}
+const validFromModel = dateModel('validFrom')
+const validToModel = dateModel('validTo')
+/** Domain errors name the ISO format; the form shows German dates. */
+const shownErrors = computed(() => errors.value.map((e) => e.replace('JJJJ-MM-TT', 'TT.MM.JJJJ')))
+/** AI tab without Hilfsmittel text: go to the Hilfsmittel (first source of the rule) and close the dialog. */
+function toResources() {
+  const key = effective.value?.sources?.[0]?.key
+  emit('update:modelValue', false)
+  void router.push({ name: 'resources', query: key ? { key } : {} })
+}
 const mustHint = computed(() => form.severity === 'must' && form.confidence !== 'verified')
 const bundleMoved = computed(() => !!record.value && !!bundled.value && record.value.baseVersion !== bundled.value.version)
 
@@ -151,8 +173,8 @@ const CONFIDENCES = ['verified', 'best-practice', 'heuristic', 'unverified', 'co
               <v-select v-model="form.status" :items="(['active', 'retired'] as const).map((s) => ({ value: s, title: t(`rules.edit.status.${s}`) }))" :label="t('rules.edit.fields.status')" density="compact" variant="outlined" class="flex-1-1" style="min-width: 10rem" />
             </div>
             <div class="d-flex flex-wrap ga-3">
-              <v-text-field v-model="form.validFrom" :label="t('rules.edit.fields.validFrom')" :hint="t('rules.edit.hints.date')" persistent-hint density="compact" variant="outlined" class="flex-1-1" style="min-width: 10rem" />
-              <v-text-field v-model="form.validTo" :label="t('rules.edit.fields.validTo')" :hint="t('rules.edit.hints.date')" persistent-hint density="compact" variant="outlined" class="flex-1-1" style="min-width: 10rem" />
+              <v-text-field v-model="validFromModel" :label="t('rules.edit.fields.validFrom')" :hint="t('rules.edit.hints.date')" persistent-hint density="compact" variant="outlined" class="flex-1-1" style="min-width: 10rem" />
+              <v-text-field v-model="validToModel" :label="t('rules.edit.fields.validTo')" :hint="t('rules.edit.hints.date')" persistent-hint density="compact" variant="outlined" class="flex-1-1" style="min-width: 10rem" />
             </div>
 
             <div class="text-subtitle-2 mt-4 mb-1">{{ t('rules.edit.fields.sources') }}</div>
@@ -171,7 +193,7 @@ const CONFIDENCES = ['verified', 'best-practice', 'heuristic', 'unverified', 'co
             <v-alert v-if="errors.length" type="error" variant="tonal" density="compact" class="mt-3" data-testid="rule-edit-errors">
               <strong>{{ t('rules.edit.errorsTitle') }}</strong>
               <ul class="ml-4">
-                <li v-for="e in errors" :key="e">{{ e }}</li>
+                <li v-for="e in shownErrors" :key="e">{{ e }}</li>
               </ul>
             </v-alert>
             <v-alert v-if="saveError" type="error" variant="tonal" density="compact" class="mt-3" :text="saveError" />
@@ -203,7 +225,7 @@ const CONFIDENCES = ['verified', 'best-practice', 'heuristic', 'unverified', 'co
           </v-window-item>
 
           <v-window-item v-if="aiReady" value="ai">
-            <RuleAiPanel :meta="effective" @applied="emit('changed')" />
+            <RuleAiPanel :meta="effective" @applied="emit('changed')" @to-resources="toResources" />
           </v-window-item>
         </v-window>
       </v-card-text>

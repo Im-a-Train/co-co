@@ -82,6 +82,10 @@ export interface GridBlock {
   color: string
   categoryClass: CategoryClass
   isJs: boolean
+  /** Open findings targeting the activity or one of its schedule entries (day findings excluded). */
+  findings: Record<Severity, number>
+  /** The activity's category is excluded from the rule checks (no findings, day maths unchanged). */
+  excluded: boolean
 }
 
 export interface GridGap {
@@ -103,8 +107,13 @@ export interface GridDay {
   jsUnits: number
   /** null while the J+S calculator is not available. */
   valid: boolean | null
-  /** Why the day is not valid (empty while valid or without a J+S report). */
+  /**
+   * Why the day does not count on its own (empty while it counts or without a J+S report). With a model report
+   * an end day that only counts through the arrival/departure pair is `valid` and lists its failures + `combinedOnly`.
+   */
   invalidReasons: JsDayReason[]
+  /** JS-DAY-01/04 finding whose targets include this day: an open one first, else an ignored one (null if none). */
+  findingId: string | null
   /** Entries that lie completely outside the visible hours. */
   hiddenEntries: number
 }
@@ -114,12 +123,24 @@ export interface GridModel {
   endHour: number
   hours: number[]
   days: GridDay[]
+  /** The J+S figures are an unconfirmed guess (display only, no findings). */
+  preview: boolean
+  /** «{valid} von {total} J+S-Tagen»; null while no J+S report exists. */
+  summary: { valid: number; total: number } | null
 }
 
 export interface GridOptions {
   startHour?: number
   endHour?: number
+  /** `jsDays` is the unconfirmed preview report. */
+  preview?: boolean
+  /** Findings to attach to days (JS-DAY-01/04) and blocks. */
+  findings?: readonly Finding[]
+  /** True when the category is excluded from the rule checks. */
+  isExcluded?: (activityIri: Iri, categoryIri: Iri | null) => boolean
 }
+
+const DAY_FINDING_RULES: readonly string[] = ['JS-DAY-01', 'JS-DAY-04']
 
 /** Assigns side-by-side lanes to overlapping blocks (greedy, by start time). */
 export function assignLanes(blocks: GridBlock[]): void {
@@ -186,6 +207,31 @@ export function buildGrid(
   const pct = (min: number) => ((min - from) / span) * 100
   const catColor = new Map(facts.categories.map((c) => [c.iri, c.color]))
   const actById = new Map(facts.activities.map((a) => [a.iri, a]))
+  // Day header link: an open JS-DAY-01/04 finding wins over an ignored one (the day still fails either way).
+  const findingByDay = new Map<Iri, Finding>()
+  const findingsByTarget = new Map<Iri, Finding[]>()
+  for (const f of opts.findings ?? []) {
+    if (DAY_FINDING_RULES.includes(f.ruleId)) {
+      for (const t of f.targets) {
+        const cur = findingByDay.get(t)
+        if (!cur || (cur.override && !f.override)) findingByDay.set(t, f)
+      }
+      continue
+    }
+    // Block badges: open findings only; day findings belong to the day header.
+    if (f.override || f.scope === 'day' || f.origin === 'manual') continue
+    for (const t of new Set(f.targets)) findingsByTarget.set(t, [...(findingsByTarget.get(t) ?? []), f])
+  }
+  const blockFindings = (activityIri: Iri, entryIri: Iri): Record<Severity, number> => {
+    const seen = new Set<string>()
+    const counts: Record<Severity, number> = { must: 0, should: 0, hint: 0 }
+    for (const f of [...(findingsByTarget.get(activityIri) ?? []), ...(findingsByTarget.get(entryIri) ?? [])]) {
+      if (seen.has(f.id)) continue
+      seen.add(f.id)
+      counts[f.severity]++
+    }
+    return counts
+  }
 
   const days: GridDay[] = [...facts.days]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -216,6 +262,8 @@ export function buildGrid(
           color: (act?.categoryIri && catColor.get(act.categoryIri)) || '#9e9e9e',
           categoryClass: cls,
           isJs: JS_UNIT_CLASSES.includes(cls),
+          findings: blockFindings(e.activityIri, e.iri),
+          excluded: opts.isExcluded?.(e.activityIri, act?.categoryIri ?? null) ?? false,
         })
       }
       assignLanes(blocks)
@@ -246,14 +294,22 @@ export function buildGrid(
         jsMinutes,
         jsUnits: rep ? rep.unitCount : jsBlocks.length,
         valid: rep ? rep.valid || rep.validCombined : null,
-        invalidReasons: rep && !(rep.valid || rep.validCombined) ? jsDayInvalidReasons(rep) : [],
+        invalidReasons: !rep ? [] : (rep.reasons ?? (rep.valid || rep.validCombined ? [] : jsDayInvalidReasons(rep))),
+        findingId: findingByDay.get(day.iri)?.id ?? null,
         hiddenEntries: hidden,
       }
     })
 
   const hours: number[] = []
   for (let h = startHour; h <= endHour; h++) hours.push(h)
-  return { startHour, endHour, hours, days }
+  return {
+    startHour,
+    endHour,
+    hours,
+    days,
+    preview: opts.preview ?? false,
+    summary: jsDays ? { valid: jsDays.validDayCount, total: jsDays.totalDayCount } : null,
+  }
 }
 
 /** Fill percent of a J+S meter / bar (full width = `max` minutes). */
@@ -366,6 +422,14 @@ export function severityColor(s: Severity): string {
   return s === 'must' ? 'error' : s === 'should' ? 'warning' : 'info'
 }
 
+/**
+ * Colour of an open-finding count (GP block badge, DP chips): colour = state, so Muss red, Soll orange and
+ * Hinweis neutral (null = no colour; informational counts get none).
+ */
+export function severityStateColor(s: Severity): 'error' | 'warning' | null {
+  return s === 'must' ? 'error' : s === 'should' ? 'warning' : null
+}
+
 // ---------------------------------------------------------------------------------------------
 // KPIs
 // ---------------------------------------------------------------------------------------------
@@ -376,6 +440,8 @@ export interface JsDayBar {
   minutes: number
   valid: boolean
   percent: number
+  /** Why the day does not count (empty for legacy reports without model reasons). */
+  reasons: JsDayReason[]
 }
 
 export function jsDayBars(report: JsDayReport | null): JsDayBar[] {
@@ -387,6 +453,7 @@ export function jsDayBars(report: JsDayReport | null): JsDayBar[] {
     minutes: d.jsMinutes,
     valid: d.valid || d.validCombined,
     percent: meterPercent(d.jsMinutes, max),
+    reasons: d.reasons ?? (d.valid || d.validCombined ? [] : jsDayInvalidReasons(d)),
   }))
 }
 
@@ -402,21 +469,6 @@ export function roundDeltaParams(
   if (!diff || rounds.length === 0) return null
   const n = Math.max(...rounds.map((r) => r.number))
   return { n, added: diff.counts.added, changed: diff.counts.changed, removed: diff.counts.removed }
-}
-
-export interface MappingStatus {
-  total: number
-  mapped: number
-  confirmed: boolean
-}
-
-export function mappingStatus(
-  facts: CampFacts,
-  entries: Record<Iri, CategoryClass> | null | undefined,
-  confirmed: boolean,
-): MappingStatus {
-  const mapped = facts.categories.filter((c) => entries?.[c.iri] !== undefined).length
-  return { total: facts.categories.length, mapped, confirmed }
 }
 
 /** Display label of an activity: "1.2 Postenlauf". */

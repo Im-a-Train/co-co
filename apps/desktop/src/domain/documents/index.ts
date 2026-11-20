@@ -180,6 +180,31 @@ export function compareGpxToSlot(
   }
 }
 
+export interface ActivityOption {
+  iri: Iri
+  title: string
+  dayNumber: number | null
+  /** Wall-clock start "HH:MM" of the first schedule entry (camp-local, UTC getters). */
+  time: string | null
+  start: string | null
+}
+
+/** Activities of the camp for the link picker, in programme order (first schedule entry). */
+export function activityOptions(facts: CampFacts | null): ActivityOption[] {
+  if (!facts) return []
+  const out: ActivityOption[] = facts.activities.map((a) => {
+    const entries = facts.scheduleEntries.filter((e) => e.activityIri === a.iri).sort((x, y) => x.start.localeCompare(y.start))
+    const first = entries[0]
+    let time: string | null = null
+    if (first) {
+      const d = new Date(first.start)
+      time = `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`
+    }
+    return { iri: a.iri, title: a.title, dayNumber: first?.dayNumber ?? null, time, start: first?.start ?? null }
+  })
+  return out.sort((a, b) => (a.start ?? '9').localeCompare(b.start ?? '9') || a.title.localeCompare(b.title, 'de'))
+}
+
 // ---------------------------------------------------------------------------------------------
 // Safety concept checklist
 // ---------------------------------------------------------------------------------------------
@@ -226,6 +251,30 @@ function collectSnippets(text: string, re: RegExp, max = 3): string[] {
   return out
 }
 
+/** File-name stems that mark a safety concept (mirrors keyword set DOC_SICHERHEITSKONZEPT, LST-LAGER-01). */
+const CONCEPT_NAME_STEMS = ['sicherheit', 'notfallkonzept', 'notfallblatt']
+
+/** Name-based guess: does this file name look like the camp's safety concept? */
+export function looksLikeSafetyConcept(name: string): boolean {
+  const n = normalizeText(name).replace(/ /g, '')
+  return CONCEPT_NAME_STEMS.some((s) => n.includes(s))
+}
+
+/** The guess is open: the coach has not decided yet and the name looks like a safety concept. */
+export function isConceptGuess(doc: Pick<DocumentRecord, 'safetyConcept' | 'name'>): boolean {
+  return doc.safetyConcept == null && looksLikeSafetyConcept(doc.name)
+}
+
+/** Whether the safety checklist applies: the coach said yes, or the name guess is still open. */
+export function isSafetyConcept(doc: Pick<DocumentRecord, 'safetyConcept' | 'name'>): boolean {
+  return doc.safetyConcept === true || isConceptGuess(doc)
+}
+
+/** Items present in a check result, counting the coach's «Ist vorhanden» confirmations. */
+export function checkCounts(check: DocCheckResult, confirmed: readonly SafetyCheckKey[] = []): { found: number; total: number } {
+  return { found: check.items.filter((i) => i.found || confirmed.includes(i.key)).length, total: check.items.length }
+}
+
 /** Safety-concept checklist (emergency numbers, hospital, crisis contact, ...) with snippets. */
 export function checkSafetyConcept(text: string, facts?: CampFacts | null, now: Date = new Date()): DocCheckResult {
   const items: DocCheckItem[] = []
@@ -241,7 +290,13 @@ export function checkSafetyConcept(text: string, facts?: CampFacts | null, now: 
       }
       // Required numbers (144) plus enough further numbers (minCount in total).
       const { required, minCount } = DOC_CHECK.emergencyNumbers
-      items.push({ key, found: required.every((n) => present.includes(n)) && present.length >= minCount, snippets })
+      const found = required.every((n) => present.includes(n)) && present.length >= minCount
+      items.push({
+        key,
+        found,
+        snippets,
+        ...(!found && present.length > 0 ? { partial: { present, min: minCount } } : {}),
+      })
     } else if (key === 'campAddress') {
       const snippets: string[] = []
       const a = facts?.camp.address

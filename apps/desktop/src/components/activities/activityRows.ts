@@ -24,11 +24,15 @@ export interface ActivityRow {
   /** Sortable start of the first entry (`YYYY-MM-DDTHH:MM`), '' without entries. */
   firstStart: string
   durationMinutes: number
+  /** `{count} × {minutes}` when the activity has several entries of equal length, else null. */
+  durationRepeat: { count: number; minutes: number } | null
   location: string
   categoryIri: Iri | null
   categoryShort: string
   categoryColor: string | null
   categoryClass: CategoryClass
+  /** The category is excluded from the rule checks («Kategorie nicht prüfen»). */
+  categoryExcluded: boolean
   responsibles: string[]
   progress: string
   progressPosition: number
@@ -66,11 +70,29 @@ function clock(m: number): string {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
 }
 
+/** `{count, minutes}` when there are at least two entries and all have the same positive length. */
+export function repeatedDuration(entries: readonly Pick<RowEntry, 'startMin' | 'endMin'>[]): { count: number; minutes: number } | null {
+  if (entries.length < 2) return null
+  const minutes = entries[0]!.endMin - entries[0]!.startMin
+  if (minutes <= 0 || entries.some((e) => e.endMin - e.startMin !== minutes)) return null
+  return { count: entries.length, minutes }
+}
+
+/** The common start/end when every entry has the same time of day, else null (the drawer then lists one line per entry). */
+export function sharedTimeRange(entries: readonly Pick<RowEntry, 'startMin' | 'endMin'>[]): { startMin: number; endMin: number } | null {
+  const first = entries[0]
+  if (!first) return null
+  return entries.every((e) => e.startMin === first.startMin && e.endMin === first.endMin)
+    ? { startMin: first.startMin, endMin: first.endMin }
+    : null
+}
+
 export function buildRows(
   facts: CampFacts,
   findings: Finding[],
   documents: Pick<DocumentRecord, 'activityIris'>[],
   classOf: (categoryIri: Iri | null) => CategoryClass,
+  isExcluded: (categoryIri: Iri | null) => boolean = () => false,
 ): ActivityRow[] {
   const cats = new Map(facts.categories.map((c) => [c.iri, c]))
   const progress = new Map(facts.progressLabels.map((p) => [p.iri, p]))
@@ -118,11 +140,13 @@ export function buildRows(
       entries,
       firstStart: first ? `${first.date}T${clock(first.startMin)}` : '',
       durationMinutes: entries.reduce((sum, e) => sum + Math.max(0, e.endMin - e.startMin), 0),
+      durationRepeat: repeatedDuration(entries),
       location: a.location ?? '',
       categoryIri: a.categoryIri,
       categoryShort: cat?.short ?? '',
       categoryColor: cat?.color ?? null,
       categoryClass: classOf(a.categoryIri),
+      categoryExcluded: !!a.categoryIri && isExcluded(a.categoryIri),
       responsibles: a.responsibleIris.map((i) => people.get(i) ?? '?'),
       progress: pl?.title ?? '',
       progressPosition: pl?.position ?? -1,

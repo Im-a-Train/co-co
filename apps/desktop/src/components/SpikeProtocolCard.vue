@@ -55,7 +55,7 @@ async function copyReport(): Promise<void> {
 </script>
 
 <template>
-  <v-card class="h-100">
+  <v-card>
     <v-card-item prepend-icon="mdi-clipboard-pulse-outline">
       <v-card-title>{{ t('protocol.title') }}</v-card-title>
       <v-card-subtitle>{{ t('protocol.subtitle') }}</v-card-subtitle>

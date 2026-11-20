@@ -2,7 +2,8 @@
 /**
  * Card «Regelmodule» of the coach-input view (catalog v2 §2.4): Sportart, 3-state toggles per module with
  * the effective state and reasons, Lagerkontext, Angebotskontext and the camp-level SB-Winter approval.
- * Changes are saved immediately (campRuleConfig, separate from the form's «Speichern»).
+ * Changes are saved immediately (campRuleConfig). `embedded` drops the card frame and title (used inside the
+ * collapsible panel of the Angaben view).
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -10,7 +11,7 @@ import { reasonText } from '@/components/camps/ruleConfigUi'
 import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
 import type { CampRuleConfig, Iri, ModuleCoachState, ModuleId, ModuleState, SbApprovalKind } from '@/domain/types'
 
-const props = defineProps<{ campIri: Iri }>()
+const props = defineProps<{ campIri: Iri; embedded?: boolean }>()
 const { t, te } = useI18n()
 const rc = useCampRuleConfig(() => props.campIri)
 const saveError = ref<string | null>(null)
@@ -54,9 +55,9 @@ type CampPatch = Partial<CampRuleConfig['camp']>
 </script>
 
 <template>
-  <v-card variant="outlined" class="mb-4" data-testid="rule-modules-card">
-    <v-card-title class="text-subtitle-1">{{ t('campConfig.modules.title') }}</v-card-title>
-    <v-card-text>
+  <v-card :variant="embedded ? 'flat' : 'outlined'" :class="embedded ? '' : 'mb-4'" data-testid="rule-modules-card">
+    <v-card-title v-if="!embedded" class="text-subtitle-1">{{ t('campConfig.modules.title') }}</v-card-title>
+    <v-card-text :class="embedded ? 'pa-0' : ''">
       <p class="text-body-2 text-medium-emphasis mb-3">{{ t('campConfig.modules.intro') }}</p>
       <p class="text-caption text-medium-emphasis mb-3">{{ t('campConfig.modules.jsHint') }}</p>
 
@@ -95,10 +96,11 @@ type CampPatch = Partial<CampRuleConfig['camp']>
             :color="STATE_COLOR[rc.moduleStates.value[m.id]!.state]"
             :data-testid="`module-${m.id}-effective`"
           >
-            {{ t('campConfig.modules.effective') }}: {{ t(`rules.module.state.${rc.moduleStates.value[m.id]!.state}`) }}
+            <template v-if="rc.moduleStates.value[m.id]!.state === 'suggested'">{{ t('campConfig.modules.effectiveSuggested') }}</template>
+            <template v-else>{{ t('campConfig.modules.effective') }}: {{ t(`rules.module.state.${rc.moduleStates.value[m.id]!.state}`) }}</template>
           </v-chip>
         </div>
-        <ul v-if="coachStateOf(m.id) === 'auto' && rc.moduleStates.value[m.id]?.reasons.length" class="reasons text-caption text-medium-emphasis">
+        <ul v-if="rc.moduleStates.value[m.id]?.reasons.length" class="reasons text-caption text-medium-emphasis">
           <li v-for="(r, i) in rc.moduleStates.value[m.id]!.reasons" :key="i">{{ reasonText(t, te, r) }}</li>
         </ul>
       </div>

@@ -2,7 +2,7 @@
 /** Edit dialog for the metadata of one Hilfsmittel, or (without `resource`) for a new custom one. */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RESOURCE_WEIGHTS, validateResource, type NewResourceInput, type ResourcePatch } from '@/domain/resources'
+import { RESOURCE_WEIGHTS, formatDateDe, parseDateInput, validateResource, type NewResourceInput, type ResourcePatch } from '@/domain/resources'
 import type { ResourceRecord, SourceWeight } from '@/domain/types'
 
 const props = defineProps<{ modelValue: boolean; resource: ResourceRecord | null }>()
@@ -36,11 +36,11 @@ watch(
     form.title = r?.title ?? ''
     form.publisher = r?.publisher ?? ''
     form.edition = r?.edition ?? ''
-    form.date = r?.date ?? ''
+    form.date = formatDateDe(r?.date)
     form.url = r?.url ?? ''
     form.summary = r?.summary ?? ''
     form.notes = r?.notes ?? ''
-    form.checkedOn = r?.checkedOn ?? ''
+    form.checkedOn = formatDateDe(r?.checkedOn)
     form.weight = r?.weight ?? 'info'
     errors.value = []
   },
@@ -48,18 +48,23 @@ watch(
 )
 
 function save() {
+  const dateErrors: string[] = []
+  const date = parseDateInput(form.date)
+  const checkedOn = parseDateInput(form.checkedOn)
+  if (date === null) dateErrors.push(t('resources.dialog.dateInvalid', { field: t('resources.field.date') }))
+  if (checkedOn === null) dateErrors.push(t('resources.dialog.dateInvalid', { field: t('resources.field.checkedOn') }))
   const patch: ResourcePatch = {
     title: form.title.trim(),
     publisher: form.publisher.trim(),
     edition: form.edition.trim(),
-    date: form.date.trim(),
+    date: date ?? '',
     url: form.url.trim(),
     summary: form.summary.trim(),
     notes: form.notes.trim(),
-    checkedOn: form.checkedOn.trim(),
+    checkedOn: checkedOn ?? '',
     weight: form.weight,
   }
-  errors.value = validateResource({ ...(isNew.value ? { key: form.key.trim() } : {}), ...patch })
+  errors.value = [...dateErrors, ...validateResource({ ...(isNew.value ? { key: form.key.trim() } : {}), ...patch })]
   if (isNew.value && !form.key.trim()) errors.value.push(t('resources.keyHint'))
   if (errors.value.length) return
   if (isNew.value) emit('save', { key: null, input: { key: form.key.trim(), ...patch, title: patch.title ?? '' } })

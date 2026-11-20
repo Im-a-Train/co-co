@@ -24,6 +24,7 @@ milestones:
     description: Das Grobprogramm ist erstellt und dem Coach zur Besprechung zugestellt.
     anchor: start
     offsetDays: -75
+    sameAs: [M-LST-GROBPROGRAMM]
     module: pbs
     confidence: unverified
     source: { title: Hering, url: "https://hering.scout.ch/de" }
@@ -60,6 +61,7 @@ milestones:
     description: Detailprogramm und Lagerdossier sind dem Coach zugestellt.
     anchor: start
     offsetDays: -14
+    sameAs: [M-LST-DETAILPROGRAMM, M-LST-LAGERDOSSIER]
     module: pbs
     confidence: unverified
     source: { title: Hering, url: "https://hering.scout.ch/de" }

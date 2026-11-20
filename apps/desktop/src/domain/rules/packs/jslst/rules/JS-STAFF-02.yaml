@@ -7,6 +7,7 @@ description: "Ein J+S-Lager Lagersport/Trekking braucht mindestens zwei J+S-Leit
 message: "Es sind {count} J+S-Leitende Lagersport/Trekking mit gültiger Anerkennung erfasst – nötig sind mindestens {min}."
 messageVariants:
   missing: "Anzahl J+S-Leitende unbekannt – MiData verbinden oder Anzahl erfassen."
+feedbackText: "Für J+S braucht das Lager mindestens {min} J+S-Leitende mit gültiger Anerkennung. Wie viele habt ihr aktuell?"
 severity: must
 confidence: verified
 scope: camp

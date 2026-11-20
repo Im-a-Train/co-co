@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   RoundsError,
   applyStatusChange,
+  approvalBlockers,
+  reviewStepMarks,
   canTransition,
   diffEntities,
   diffIsEmpty,
@@ -13,7 +15,7 @@ import {
   snapshotEntities,
   stableStringify,
 } from '../index'
-import type { Round } from '../../types'
+import type { FeedbackItem, Finding, Round } from '../../types'
 import { makeFacts } from './factsFixture'
 
 describe('hashing', () => {
@@ -144,5 +146,97 @@ describe('review + rounds planning', () => {
     expect(exportReminderDue({ remindAfterRound: false }, [r])).toBe(false)
     expect(exportReminderDue({ remindAfterRound: true }, [{ ...r, exportedAt: 'x' }])).toBe(false)
     expect(exportReminderDue({ remindAfterRound: true }, [])).toBe(false)
+  })
+})
+
+describe('approvalBlockers', () => {
+  const f = (id: string, over: Partial<Finding> = {}): Finding =>
+    ({ id, ruleId: id, severity: 'should', scope: 'camp', targets: [], evidence: [], override: null, ...over }) as unknown as Finding
+  const fb = (over: Partial<FeedbackItem>): FeedbackItem =>
+    ({ id: 'i', campIri: 'c', scope: 'camp', kind: 'suggestion', text: 't', status: 'draft', createdAt: '', updatedAt: '', ...over }) as FeedbackItem
+  const base = { findings: [], feedback: [], jsDays: null, mappingConfirmed: true }
+
+  it('has no blockers for an empty, confirmed camp', () => {
+    expect(approvalBlockers(base)).toEqual({
+      openMust: 0, untriaged: 0, unsentMust: 0, unsentDrafts: 0, jsDays: null, mappingUnconfirmed: false, any: false,
+    })
+  })
+  it('counts open Muss and untriaged findings; ignored ones are not open', () => {
+    const b = approvalBlockers({
+      ...base,
+      findings: [
+        f('A', { severity: 'must' }),
+        f('B', { severity: 'must', override: { reason: 'x' } as Finding['override'] }),
+        f('C'),
+        f('D', { override: { reason: 'x' } as Finding['override'] }),
+      ],
+    })
+    expect(b).toMatchObject({ openMust: 1, untriaged: 2, any: true })
+  })
+  it('findings covered by feedback are triaged; coach todos are not untriaged but a todo Muss is open', () => {
+    const b = approvalBlockers({
+      ...base,
+      findings: [f('A'), f('T', { needsInput: 'coachInputs' }), f('M', { severity: 'must', needsInput: 'mapping' })],
+      feedback: [fb({ findingId: 'A', status: 'sent' })],
+    })
+    expect(b.untriaged).toBe(0)
+    expect(b.openMust).toBe(1)
+  })
+  it('a grouped feedback item covers all its findings', () => {
+    const b = approvalBlockers({
+      ...base,
+      findings: [f('A:1'), f('A:2')],
+      feedback: [fb({ findingId: 'A:1', findingIds: ['A:1', 'A:2'], status: 'sent' })],
+    })
+    expect(b.untriaged).toBe(0)
+  })
+  it('splits unsent drafts into must and others; posted/sent are fine', () => {
+    const b = approvalBlockers({
+      ...base,
+      feedback: [fb({ kind: 'must' }), fb({}), fb({ kind: 'kudos' }), fb({ status: 'sent', kind: 'must' }), fb({ status: 'posted' })],
+    })
+    expect(b).toMatchObject({ unsentMust: 1, unsentDrafts: 2, any: true })
+  })
+  it('jsDays only when below the minimum', () => {
+    expect(approvalBlockers({ ...base, jsDays: { valid: 5, required: 6 } }).jsDays).toEqual({ valid: 5, required: 6 })
+    expect(approvalBlockers({ ...base, jsDays: { valid: 6, required: 6 } }).jsDays).toBeNull()
+    expect(approvalBlockers({ ...base, jsDays: { valid: 6, required: 6 } }).any).toBe(false)
+  })
+  it('unconfirmed mapping blocks', () => {
+    expect(approvalBlockers({ ...base, mappingConfirmed: false })).toMatchObject({ mappingUnconfirmed: true, any: true })
+  })
+})
+
+describe('reviewStepMarks', () => {
+  const h = (...s: Parameters<typeof reviewStepMarks>[0][number]['status'][]) => s.map((status) => ({ status, at: '2026-01-01T00:00:00Z', note: null }))
+  it('no history, neu is current', () => {
+    expect(reviewStepMarks([], 'neu')).toEqual({
+      neu: 'current', in_review: 'future', aenderungen_angefragt: 'future', bewilligt: 'future', bewilligt_mit_auflagen: 'future',
+    })
+  })
+  it('only statuses in history are done; skipped steps are marked skipped', () => {
+    expect(reviewStepMarks(h('in_review', 'bewilligt'), 'bewilligt')).toEqual({
+      neu: 'done', in_review: 'done', aenderungen_angefragt: 'skipped', bewilligt: 'current', bewilligt_mit_auflagen: 'future',
+    })
+  })
+  it('jumping straight to approved skips in_review without history', () => {
+    const m = reviewStepMarks([], 'bewilligt_mit_auflagen')
+    expect(m.in_review).toBe('skipped')
+    expect(m.aenderungen_angefragt).toBe('skipped')
+    expect(m.bewilligt).toBe('future')
+  })
+  it('a revoked approval (camp reopened) is no longer done, and nothing ahead counts as skipped', () => {
+    expect(reviewStepMarks(h('in_review', 'bewilligt', 'in_review'), 'in_review')).toEqual({
+      neu: 'done', in_review: 'current', aenderungen_angefragt: 'future', bewilligt: 'future', bewilligt_mit_auflagen: 'future',
+    })
+  })
+  it('the other approval variant is never skipped or done', () => {
+    expect(reviewStepMarks(h('in_review', 'bewilligt', 'in_review', 'bewilligt_mit_auflagen'), 'bewilligt_mit_auflagen')).toMatchObject({
+      aenderungen_angefragt: 'skipped', bewilligt: 'future', bewilligt_mit_auflagen: 'current',
+    })
+  })
+  it('after a round trip the earlier steps are done', () => {
+    const m = reviewStepMarks(h('in_review', 'aenderungen_angefragt', 'in_review'), 'in_review')
+    expect(m).toMatchObject({ neu: 'done', in_review: 'current', aenderungen_angefragt: 'done', bewilligt: 'future' })
   })
 })

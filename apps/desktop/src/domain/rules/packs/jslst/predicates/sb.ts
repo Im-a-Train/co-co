@@ -154,7 +154,7 @@ export const lstSb03: RulePredicate = (ctx) => {
   const overrides = ctx.settings.midata?.qualMapping ?? {}
   // Aggregates stored before rule set v2 carry no v2 key anywhere: unknown, not «nobody qualified».
   if (!md || md.qualificationsReadable === false || !hasV2Data(md, overrides)) {
-    return [{ targets: [ctx.facts.camp.iri], variant: 'unknown', severity: 'hint', evidence: [campEvidence(ctx.facts)] }]
+    return [{ targets: [ctx.facts.camp.iri], variant: 'unknown', severity: 'hint', needsInput: 'midata', evidence: [campEvidence(ctx.facts)] }]
   }
   const stand = formatStand(md.fetchedAt)
   const valid = (area: Area): number | null => distinctLeadersWithKey(md, AREA_QUAL[area], overrides)

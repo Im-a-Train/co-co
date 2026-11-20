@@ -99,6 +99,9 @@ export async function ingestDocument(
     zone: existing?.zone ?? 'yellow',
     aiAllowed: existing?.aiAllowed ?? false,
     aiSummary: null,
+    // The coach's decisions survive a re-ingest of a changed file.
+    safetyConcept: existing?.safetyConcept ?? null,
+    ...(existing?.docCheckConfirmed ? { docCheckConfirmed: existing.docCheckConfirmed } : {}),
   }
   return { record, changed: true }
 }

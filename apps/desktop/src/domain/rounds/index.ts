@@ -9,14 +9,18 @@ import type {
   Diff,
   DiffChange,
   DiffEntry,
+  FeedbackItem,
+  Finding,
   Iri,
   ReviewState,
   ReviewStatus,
+  ReviewStatusChange,
   Round,
   Snapshot,
   SnapshotEntity,
   SnapshotEntityType,
 } from '../types'
+import { findingStatus, isCoachTodo } from '../triage'
 
 /** Allowed transitions: neu -> in_review -> aenderungen_angefragt <-> in_review -> bewilligt | bewilligt_mit_auflagen. */
 export const REVIEW_TRANSITIONS: Record<ReviewStatus, readonly ReviewStatus[]> = {
@@ -393,4 +397,78 @@ export function planNewRound(
 /** True when a backup should be suggested: reminder enabled and some round was never exported. */
 export function exportReminderDue(settings: { remindAfterRound: boolean }, rounds: Round[]): boolean {
   return settings.remindAfterRound && rounds.some((r) => !r.exportedAt)
+}
+
+// ---- Approval check and stepper marks ---------------------------------------------------------------
+
+export interface ApprovalBlockers {
+  /** Open (not ignored) Muss findings, coach todos included. */
+  openMust: number
+  /** Open findings that are neither ignored nor covered by feedback (coach todos excluded). */
+  untriaged: number
+  /** Muss feedback items (Auflagen) that are still drafts. */
+  unsentMust: number
+  /** Other feedback items that are still drafts. */
+  unsentDrafts: number
+  /** Set only when fewer valid J+S days than required. */
+  jsDays: { valid: number; required: number } | null
+  mappingUnconfirmed: boolean
+  any: boolean
+}
+
+/** What still speaks against approving the camp. Pure; the UI shows the dialog when `any`. */
+export function approvalBlockers(input: {
+  findings: readonly Finding[]
+  feedback: readonly FeedbackItem[]
+  jsDays: { valid: number; required: number } | null
+  mappingConfirmed: boolean
+}): ApprovalBlockers {
+  const open = input.findings.filter((f) => !f.override)
+  const openMust = open.filter((f) => f.severity === 'must').length
+  const untriaged = open.filter((f) => !isCoachTodo(f) && findingStatus(f, input.feedback) === 'open').length
+  const drafts = input.feedback.filter((i) => i.status === 'draft')
+  const unsentMust = drafts.filter((i) => i.kind === 'must').length
+  const unsentDrafts = drafts.length - unsentMust
+  const js = input.jsDays && input.jsDays.valid < input.jsDays.required ? { ...input.jsDays } : null
+  const mappingUnconfirmed = !input.mappingConfirmed
+  return {
+    openMust,
+    untriaged,
+    unsentMust,
+    unsentDrafts,
+    jsDays: js,
+    mappingUnconfirmed,
+    any: openMust > 0 || untriaged > 0 || unsentMust > 0 || unsentDrafts > 0 || js !== null || mappingUnconfirmed,
+  }
+}
+
+export type ReviewStepMark = 'done' | 'skipped' | 'current' | 'future'
+
+const isFinalStatus = (s: ReviewStatus): boolean => s === 'bewilligt' || s === 'bewilligt_mit_auflagen'
+
+/**
+ * Stepper marks: `done` only for statuses that were really set (in `history`), `skipped` for earlier
+ * steps that were passed without ever being set. The two final statuses are alternatives and never
+ * skip each other; an approval that is no longer current was revoked (camp reopened) and shows as
+ * `future` again. «neu» is the start state and counts as done once the camp moved on.
+ */
+export function reviewStepMarks(
+  history: readonly ReviewStatusChange[],
+  current: ReviewStatus,
+): Record<ReviewStatus, ReviewStepMark> {
+  const seen = new Set<ReviewStatus>(history.map((h) => h.status))
+  const reached = Math.max(
+    REVIEW_STATUSES.indexOf(current),
+    ...[...seen].filter((s) => !isFinalStatus(s)).map((s) => REVIEW_STATUSES.indexOf(s)),
+  )
+  const marks = {} as Record<ReviewStatus, ReviewStepMark>
+  REVIEW_STATUSES.forEach((st, idx) => {
+    if (st === current) marks[st] = 'current'
+    else if (isFinalStatus(st)) marks[st] = 'future'
+    else if (seen.has(st)) marks[st] = 'done'
+    else if (st === 'neu' && reached > 0) marks[st] = 'done'
+    else if (idx < reached) marks[st] = 'skipped'
+    else marks[st] = 'future'
+  })
+  return marks
 }

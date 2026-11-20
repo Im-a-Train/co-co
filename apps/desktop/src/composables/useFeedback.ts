@@ -22,6 +22,8 @@ export interface NewFeedback {
   documentAnchor?: DocumentAnchor
   generalPointId?: string
   manualFindingId?: string
+  /** All findings of a grouped item (includes `findingId`). */
+  findingIds?: string[]
   /** Text derives from red (MiData/NDS) data: the AI gateway and MCP refuse the item. */
   redDerived?: boolean
 }
@@ -39,6 +41,8 @@ export interface FeedbackHandle {
   /** Posts an activity item as eCamp comment(s). Rejects with a readable message on failure. */
   postAsComment(id: string): Promise<void>
   markSent(id: string, sent: boolean): Promise<void>
+  /** Marks several drafts as sent (bulk action after copying the preview). Posted items are left alone. */
+  markSentMany(ids: readonly string[]): Promise<number>
   /** Reads resolved/answered eCamp comments back into posted items (persists changed items). */
   syncComments(facts: CampFacts): Promise<CommentSyncSummary>
   /** Marks all current replies of an item as seen. */
@@ -82,6 +86,8 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
   async function persist(item: FeedbackItem): Promise<void> {
     // Items read from `items` carry reactive proxies in nested arrays, which IndexedDB cannot clone.
     await saveFeedback(JSON.parse(JSON.stringify(item)) as FeedbackItem)
+    // A write that finishes after the camp switched must not leak into the new camp's list.
+    if (item.campIri !== toValue(campIri)) return
     const idx = items.value.findIndex((i) => i.id === item.id)
     if (idx >= 0) items.value.splice(idx, 1, item)
     else items.value.push(item)
@@ -102,6 +108,7 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     if (input.scope === 'activity' && input.activityIri) item.activityIri = input.activityIri
     if (input.ruleId) item.ruleId = input.ruleId
     if (input.findingId) item.findingId = input.findingId
+    if (input.findingIds?.length) item.findingIds = [...input.findingIds]
     if (input.roundId) item.roundId = input.roundId
     if (input.documentId) item.documentId = input.documentId
     if (input.documentAnchor) item.documentAnchor = JSON.parse(JSON.stringify(input.documentAnchor)) as DocumentAnchor
@@ -155,6 +162,17 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     await update(id, { status: sent ? 'sent' : 'draft' })
   }
 
+  async function markSentMany(ids: readonly string[]): Promise<number> {
+    let n = 0
+    for (const id of ids) {
+      const item = items.value.find((i) => i.id === id)
+      if (!item || item.status !== 'draft') continue
+      await update(id, { status: 'sent' })
+      n++
+    }
+    return n
+  }
+
   async function syncComments(facts: CampFacts): Promise<CommentSyncSummary> {
     // Comments are fetched best-effort and facts carry no failure flag: an empty list is treated as
     // "not loaded" so a failed fetch never marks every posted item as deleted in eCamp.
@@ -187,6 +205,7 @@ export function useFeedback(campIri: MaybeRefOrGetter<Iri>): FeedbackHandle {
     remove,
     postAsComment,
     markSent,
+    markSentMany,
     syncComments,
     markRepliesSeen,
   }

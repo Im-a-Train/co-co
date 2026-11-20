@@ -183,7 +183,11 @@ export function resolveModuleStates(input: ModuleStateInput): Partial<Record<Mod
     if (w.sport && !w.sport.includes(input.config.sport)) return off(reason('sport', { sport: input.config.sport }))
     if (w.module && resolve(w.module).state === 'off') return off(reason('moduleOff', { module: w.module }))
     if (w.organizer === 'pbs' && !isPbsOrganizer(input.facts) && coachState !== 'on') return off(reason('organizer'))
-    if (coachState === 'on') return { state: 'on', coachState, reasons: [reason('coachOn')] }
+    if (coachState === 'on') {
+      // Keep the evidence the coach saw when accepting (keywords, months) next to «vom Coach eingeschaltet».
+      const fired = [...m.onWhen, ...m.suggestWhen].map((t) => evaluateTrigger(t, input)).filter((r): r is ModuleReason => r !== null)
+      return { state: 'on', coachState, reasons: [reason('coachOn'), ...fired] }
+    }
     if (coachState === 'off') return { state: 'off', coachState, reasons: [reason('coachOff')] }
     if (m.default === 'on') return { state: 'on', coachState, reasons: [reason('default')] }
     const onReasons = m.onWhen.map((t) => evaluateTrigger(t, input)).filter((r): r is ModuleReason => r !== null)

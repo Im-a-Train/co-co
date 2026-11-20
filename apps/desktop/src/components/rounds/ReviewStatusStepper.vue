@@ -2,10 +2,11 @@
 /** Review status workflow: stepper over the happy path + buttons for allowed transitions. */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { REVIEW_TRANSITIONS } from '@/domain/rounds'
+import { isApprovalStatus } from '@/composables/useApprovalGuard'
+import { REVIEW_TRANSITIONS, reviewStepMarks } from '@/domain/rounds'
 import type { ReviewState, ReviewStatus } from '@/domain/types'
 
-const props = defineProps<{ review: ReviewState | null }>()
+const props = withDefaults(defineProps<{ review: ReviewState | null; approvalReady?: boolean }>(), { approvalReady: true })
 const emit = defineEmits<{ (e: 'set', status: ReviewStatus, note: string | null): void }>()
 const { t, d } = useI18n()
 
@@ -24,6 +25,8 @@ const activeIndex = computed(() => {
   const i = steps.value.indexOf(current.value)
   return i < 0 ? 0 : i
 })
+/** Check mark only for statuses that were really set; passed-over steps get a minus. */
+const marks = computed(() => reviewStepMarks(props.review?.history ?? [], current.value))
 
 function color(s: ReviewStatus): string {
   if (s === 'bewilligt') return 'success'
@@ -47,7 +50,8 @@ function setTo(s: ReviewStatus) {
           <v-chip
             :color="i === activeIndex ? color(s) : undefined"
             :variant="i === activeIndex ? 'flat' : 'outlined'"
-            :prepend-icon="i < activeIndex ? 'mdi-check' : undefined"
+            :prepend-icon="marks[s] === 'done' ? 'mdi-check' : marks[s] === 'skipped' ? 'mdi-minus' : undefined"
+            :data-mark="marks[s]"
             size="small"
           >
             {{ t(`reviewStatus.${s}`) }}
@@ -63,12 +67,16 @@ function setTo(s: ReviewStatus) {
           size="small"
           variant="tonal"
           :color="color(s)"
+          :disabled="isApprovalStatus(s) && !approvalReady"
           @click="setTo(s)"
         >
           {{ t(`reviewStatus.${s}`) }}
         </v-btn>
       </div>
       <div v-else class="text-body-2 mb-2">{{ t('rounds.status.noTransitions') }}</div>
+      <div v-if="!approvalReady && allowed.some(isApprovalStatus)" class="text-caption text-medium-emphasis mb-2" data-testid="approval-not-ready">
+        {{ t('rounds.status.notReady') }}
+      </div>
       <v-text-field v-model="note" :label="t('rounds.status.noteLabel')" density="compact" hide-details variant="outlined" />
 
       <template v-if="review && review.history.length">

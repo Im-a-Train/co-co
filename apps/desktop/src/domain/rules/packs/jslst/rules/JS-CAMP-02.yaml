@@ -8,6 +8,7 @@ message: "Teilnehmende ({ageMin}–{ageMax} Jahre): nur {count} angegeben, nöti
 messageVariants:
   missing: "Teilnehmende ({ageMin}–{ageMax} Jahre): Angabe fehlt (bitte unter «Angaben» erfassen)"
   ageUnknown: "Teilnehmende: nur {count} angegeben, nötig sind mindestens {min} im J+S-Alter ({ageMin}–{ageMax} Jahre). Das Alter ist nicht bekannt, die Gesamtzahl wird geprüft{src}. Tage unter der Mindestzahl sind nicht beitragsberechtigt."
+feedbackText: "Für J+S braucht das Lager mindestens {min} Teilnehmende im J+S-Alter. Wie viele Teilnehmende erwartet ihr aktuell?"
 severity: must
 confidence: verified
 scope: camp
