@@ -31,5 +31,5 @@ export function campJsReport(packs: readonly RulePack[], input: RuleContextInput
   if (model.status !== 'ok') return null
   const t = thresholdsFromParams(ctx.params)
   const legacy = computeJsDays(input.facts, input.mapping, t)
-  return { report: reportFromJsModel(model, legacy, t, bwzRequiredMinutes(ctx.params)), model, lastJsDate: lastModelJsDate(model) }
+  return { report: reportFromJsModel(model, legacy, t, ctx.campConfig.sport !== 'lst' ? null : bwzRequiredMinutes(ctx.params)), model, lastJsDate: lastModelJsDate(model) }
 }

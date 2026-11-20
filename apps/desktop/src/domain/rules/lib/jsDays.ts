@@ -11,6 +11,7 @@
  * Without a mapping (null) no entry counts as J+S unit.
  */
 import type {
+  CampSport,
   CampFacts,
   CategoryClass,
   CategoryMapping,
@@ -369,6 +370,8 @@ export interface JsModelInput {
   mapping: CategoryMapping | null
   tagsOf: (activityIri: Iri) => readonly ActivityTag[]
   params: ParamReader
+  /** Camp sport; the 2027 Bewegungszeit-per-day criterion is LS/T only (ignored for other sports). */
+  sport?: CampSport
 }
 
 interface DateSlot {
@@ -382,9 +385,9 @@ interface DateSlot {
 }
 
 /** Builds the J+S day model of a camp (§3.9). Times are wall clock; entries crossing midnight are split. */
-export function buildJsDayModel({ facts, mapping, tagsOf, params }: JsModelInput): JsDayModel {
+export function buildJsDayModel({ facts, mapping, tagsOf, params, sport }: JsModelInput): JsDayModel {
   const t = thresholdsFromParams(params)
-  const minBwzDay = params.get<number | null>('js.minBwzDayMinutes')
+  const minBwzDay = sport && sport !== 'lst' ? null : params.get<number | null>('js.minBwzDayMinutes')
   const minBwzActivity = params.get<number | null>('js.minBwzActivityMinutes')
   const windows = parseTimeWindows(params.get('js.timeWindows'))
   const minOverlap = params.get<number>('js.timeWindowMinOverlap')

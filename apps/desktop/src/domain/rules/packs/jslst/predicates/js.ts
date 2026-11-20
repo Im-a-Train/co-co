@@ -46,7 +46,7 @@ function jsAgeParticipants(ctx: RuleContext): { n: number; source: CountSource; 
 /** Valid J+S leaders (MiData kind leiterLsT, else coach input). */
 function jsLeaders(ctx: RuleContext): { n: number; fromMidata: boolean; stand: string | null } | null {
   const md = ctx.midata
-  if (md && md.qualificationsReadable !== false && (md.qualificationKinds || md.leaders.length > 0)) {
+  if (ctx.campConfig.sport === 'lst' && md && md.qualificationsReadable !== false && (md.qualificationKinds || md.leaders.length > 0)) {
     const n = distinctLeadersWithKey(md, 'leiterLsT', ctx.settings.midata?.qualMapping ?? {})
     if (n !== null) return { n, fromMidata: true, stand: formatStand(md.fetchedAt) }
   }
@@ -123,7 +123,7 @@ export const jsStaff02: RulePredicate = (ctx) => {
 }
 
 export const jsStaff03: RulePredicate = (ctx) => {
-  if (!jsApplies(ctx)) return []
+  if (!jsApplies(ctx) || ctx.campConfig.sport !== 'lst') return []
   const perLeader = ctx.params.get<number>('js.subsidyGroupSizePerLeader')
   const leaders = jsLeaders(ctx)
   const participants = jsAgeParticipants(ctx)

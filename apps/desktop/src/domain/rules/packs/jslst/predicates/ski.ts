@@ -1,4 +1,4 @@
-/** Module `lst-ski` (LST-SKI-01…03): skiing and snowboarding. Pure predicates; all texts live in the rule YAMLs. */
+/** Module `ski` (SKI-01, SKI-02): sport skiing (and snowboarding). Pure predicates; all texts live in the rule YAMLs. */
 import type { ActivityFact, MessageFragment, RuleContext, RuleHit, RulePredicate } from '@/domain/types'
 import { ALL_ACTIVITY_FIELDS } from '../../../lib/keywords'
 import { activityEvidence } from '../../../lib/util'
@@ -15,20 +15,7 @@ function skiTerm(ctx: RuleContext, a: ActivityFact): string | null {
   return ctx.keywords.matchActivity('SKI', a, FIELDS)[0]?.term ?? null
 }
 
-// LST-SKI-01 ---------------------------------------------------------------------------------
-
-export const lstSki01: RulePredicate = (ctx) => {
-  const hits: RuleHit[] = []
-  for (const a of ctx.facts.activities) {
-    const term = skiTerm(ctx, a)
-    if (term === null) continue
-    if (ctx.keywords.matchActivity('SKI_LEAD', a, ALL_ACTIVITY_FIELDS).length > 0) continue
-    hits.push({ targets: [a.iri], params: { activity: a.title, term }, evidence: [activityEvidence(a)] })
-  }
-  return hits
-}
-
-// LST-SKI-02 ---------------------------------------------------------------------------------
+// SKI-01 ---------------------------------------------------------------------------------
 
 const GROUPS: { set: string; variant: string }[] = [
   { set: 'SKI_HELM', variant: 'ski_helm' },
@@ -37,7 +24,7 @@ const GROUPS: { set: string; variant: string }[] = [
   { set: 'SKI_MATERIAL', variant: 'ski_material' },
 ]
 
-export const lstSki02: RulePredicate = (ctx) => {
+export const ski01: RulePredicate = (ctx) => {
   const hits: RuleHit[] = []
   for (const a of ctx.facts.activities) {
     if (skiTerm(ctx, a) === null) continue
@@ -53,9 +40,9 @@ export const lstSki02: RulePredicate = (ctx) => {
   return hits
 }
 
-// LST-SKI-03 ---------------------------------------------------------------------------------
+// SKI-02 ---------------------------------------------------------------------------------
 
-export const lstSki03: RulePredicate = (ctx) => {
+export const ski02: RulePredicate = (ctx) => {
   const hits: RuleHit[] = []
   const max = ctx.params.get<number>('ski.offPisteMaxSlope')
   const maxFreeride = ctx.params.get<number>('ski.freerideMaxSlope')
@@ -70,7 +57,6 @@ export const lstSki03: RulePredicate = (ctx) => {
 }
 
 export const predicates: Record<string, RulePredicate> = {
-  'LST-SKI-01': lstSki01,
-  'LST-SKI-02': lstSki02,
-  'LST-SKI-03': lstSki03,
+  'SKI-01': ski01,
+  'SKI-02': ski02,
 }

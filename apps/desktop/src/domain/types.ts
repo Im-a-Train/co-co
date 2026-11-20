@@ -592,8 +592,8 @@ export type Severity = 'must' | 'should' | 'hint'
 export type Confidence = 'verified' | 'conflict' | 'unverified' | 'best-practice' | 'heuristic'
 export type FindingScope = 'camp' | 'day' | 'activity' | 'scheduleEntry' | 'document'
 /** Rule modules of the bundled packs (catalog v2 §2.2). */
-export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'lst-ski' | 'pbs'
-export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'lst-ski', 'pbs']
+export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'js-lager' | 'ski' | 'pbs'
+export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'js-lager', 'ski', 'pbs']
 /** @deprecated Rules v2: the group is the rule's module (`RuleMeta.group === RuleMeta.module`). */
 export type RuleGroup = ModuleId
 export type FindingOrigin = 'rule' | 'ai' | 'manual'
@@ -909,9 +909,13 @@ export interface ModuleTrigger {
   coachInput?: Record<string, ParamValue>
 }
 
+/** J+S sport of the camp as registered in the NDS: Lagersport/Trekking, Skifahren or another sport. */
+export type CampSport = 'lst' | 'ski' | 'other'
+export const CAMP_SPORTS: readonly CampSport[] = ['lst', 'ski', 'other']
+
 export interface ModuleAppliesWhen {
   jsCamp?: boolean
-  sport?: Array<'lst' | 'other'>
+  sport?: Array<CampSport>
   organizer?: 'pbs'
   module?: ModuleId
 }
@@ -959,7 +963,7 @@ export interface CampRuleConfig {
   campIri: Iri
   zone: 'green'
   /** null = default lst */
-  sport: 'lst' | 'other' | null
+  sport: CampSport | null
   modules: Partial<Record<ModuleId, ModuleCoachState>>
   activityTags: Record<Iri, ActivityTag[]>
   sbApprovals: Record<Iri | 'camp', { approvedOn: IsoDate | null; kind: SbApprovalKind }>
@@ -986,7 +990,7 @@ export interface CampRuleConfig {
 
 /** CampRuleConfig with defaults applied and the effective module states (engine input, §2.3). */
 export interface ResolvedCampRuleConfig extends Omit<CampRuleConfig, 'sport'> {
-  sport: 'lst' | 'other'
+  sport: CampSport
   /** true when no record was stored (all defaults). */
   isDefault: boolean
   moduleStates: Partial<Record<ModuleId, ModuleResolution>>

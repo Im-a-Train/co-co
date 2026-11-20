@@ -1,5 +1,5 @@
 /** Per-camp rule configuration defaults (catalog v2 §3.8). Pure; persistence in ../campRuleConfigStore.ts. */
-import type { CampRuleConfig, CustomChecklistItem, Iri } from '../../types'
+import { CAMP_SPORTS, type CampRuleConfig, type CampSport, type CustomChecklistItem, type Iri } from '../../types'
 
 export function defaultCampRuleConfig(campIri: Iri, updatedAt: string = new Date(0).toISOString()): CampRuleConfig {
   return {
@@ -31,7 +31,7 @@ export function normalizeCampRuleConfig(raw: unknown, campIri: Iri): CampRuleCon
   return {
     campIri,
     zone: 'green',
-    sport: raw.sport === 'lst' || raw.sport === 'other' ? raw.sport : null,
+    sport: (CAMP_SPORTS as readonly unknown[]).includes(raw.sport) ? (raw.sport as CampSport) : null,
     modules: obj(raw.modules, base.modules),
     activityTags: obj(raw.activityTags, base.activityTags),
     sbApprovals: obj(raw.sbApprovals, base.sbApprovals),

@@ -1,6 +1,6 @@
-id: LST-SKI-03
+id: SKI-02
 version: 1.0.0
-module: lst-ski
+module: ski
 status: active
 kind: ai
 title: "Skifahren im freien Gelände"

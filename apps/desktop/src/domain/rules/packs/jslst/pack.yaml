@@ -1,7 +1,7 @@
 id: coco-js-lst
 name: "co-co J+S Lagersport/Trekking 2026.2"
 version: 2026.2.0
-description: "J+S-Lagerregeln (allgemein + LS/T Nutzergruppe 3), Sicherheit LS/T, Datenkonsistenz."
+description: "J+S-Lagerregeln (allgemein, Lagertage für LS/T und Skifahren, LS/T Nutzergruppe 3, Sportart Skifahren), Sicherheit, Datenkonsistenz."
 validFrom: 2026-01-01
 aliases: [coco-basis]
 modules:
@@ -11,9 +11,15 @@ modules:
     appliesWhen: { jsCamp: true }
     default: on
     toggleable: false
+  - id: js-lager
+    title: "J+S-Lagertage"
+    description: "J+S-Lagerregeln aller Lager-Sportarten (Lagersport/Trekking, Skifahren): mindestens 4 Tage, gültige Lagertage (2 Einheiten, 4 Stunden, Sozialzeit, Einstimmen), An- und Abreisetag, trainingsfreie Tage, vollständige J+S-Aktivitäten."
+    appliesWhen: { jsCamp: true, sport: [lst, ski] }
+    default: on
+    toggleable: false
   - id: lst
     title: "Lagersport/Trekking – Kern"
-    description: "Kernregeln der Sportart Lagersport/Trekking (Nutzergruppe 3, MAN S. 21 Abb. 4): J+S-Tage, Aktivitäten, Programm."
+    description: "Kernregeln der Sportart Lagersport/Trekking (Nutzergruppe 3, MAN S. 21 Abb. 4): Zusatz Lagerleiter, Bewegungszeit, Aktivitäten, Erscheinungsformen, Sicherheitsbereiche."
     appliesWhen: { jsCamp: true, sport: [lst] }
     default: on
     toggleable: false
@@ -74,11 +80,9 @@ modules:
       - { keywordSet: EBB_B, minActivities: 1 }
     onWhen:
       - { activityTag: [ebb-a, ebb-b] }
-  - id: lst-ski
+  - id: ski
     title: "Skifahren"
-    description: "Skifahren und Snowboarden als ergänzender Bewegungsblock (EBB A): Leitung mit J+S-Anerkennung, Helm, FIS-Regeln, Erste Hilfe, freies Gelände."
-    appliesWhen: { module: lst }
-    default: auto
-    toggleable: true
-    suggestWhen:
-      - { keywordSet: SKI, minActivities: 1 }
+    description: "Sportart Skifahren (Nutzergruppe Kinder- und Jugendsport): Helm, FIS-Regeln und SKUS-Richtlinien, Erste Hilfe, Materialkontrolle, Fahren im freien Gelände (Zusatz Freeride)."
+    appliesWhen: { jsCamp: true, sport: [ski] }
+    default: on
+    toggleable: false

@@ -96,7 +96,7 @@ export function completeContext(packs: readonly RulePack[], input: RuleContextIn
       enumerable: true,
       configurable: true,
       get: () =>
-        (model ??= buildJsDayModel({ facts: input.facts, mapping: input.mapping, tagsOf: campConfig.tagsOf, params })),
+        (model ??= buildJsDayModel({ facts: input.facts, mapping: input.mapping, tagsOf: campConfig.tagsOf, params, sport: campConfig.sport })),
     })
   }
   return ctx as RuleContext

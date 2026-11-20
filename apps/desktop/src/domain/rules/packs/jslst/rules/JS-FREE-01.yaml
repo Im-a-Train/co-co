@@ -1,6 +1,6 @@
 id: JS-FREE-01
-version: 2.0.0
-module: lst
+version: 2.1.0
+module: js-lager
 status: active
 title: "Trainingsfreie Tage"
 description: "Obergrenze für trainingsfreie Tage (Tage ohne J+S-Tag-Kriterien im Lagerinneren). Leitfaden-Text und Beispieltabelle widersprechen sich; ab 2027 erlauben die J+S-Vorgaben Tage ohne J+S-Aktivitäten, solange die Mindestzahl J+S-Tage erreicht ist."

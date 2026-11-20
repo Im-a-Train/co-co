@@ -1,6 +1,6 @@
 id: JS-DAY-01
-version: 2.0.0
-module: lst
+version: 2.1.0
+module: js-lager
 status: active
 title: "Gültiger J+S-Lagertag"
 description: "Ein Lagertag zählt für J+S, wenn mindestens zwei J+S-Einheiten mit zusammen mindestens 240 Minuten stattfinden (ab 2027 zusätzlich mit ausreichend Bewegungszeit). Ein Tag, der die Kriterien nicht erfüllt, gilt als trainingsfreier Tag. Anreise- und Abreisetag beurteilt JS-DAY-04."

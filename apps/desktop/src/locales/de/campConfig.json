@@ -8,6 +8,7 @@
       "sport": {
         "label": "Sportart",
         "lst": "Lagersport/Trekking",
+        "ski": "Skifahren",
         "other": "andere Sportart"
       },
       "effective": "Aktuell",

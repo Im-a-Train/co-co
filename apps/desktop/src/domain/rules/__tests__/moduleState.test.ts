@@ -12,6 +12,7 @@ describe('resolveModuleStates', () => {
     b.activity('Geländespiel', CAT_LS)
     expect(states(makeCtx(b.facts))).toEqual({
       js: 'on',
+      'js-lager': 'on',
       lst: 'on',
       'lst-lager': 'on',
       'lst-trekking': 'on',
@@ -19,7 +20,7 @@ describe('resolveModuleStates', () => {
       'lst-wasser': 'off',
       'lst-winter': 'off',
       'lst-ebb': 'off',
-      'lst-ski': 'off',
+      ski: 'off',
       pbs: 'on',
     })
   })

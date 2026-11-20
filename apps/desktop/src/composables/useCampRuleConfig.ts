@@ -30,7 +30,7 @@ import { createParamReader } from '@/domain/rules/lib/params'
 import { modulesOf, selectPacks } from '@/domain/rules/packs'
 import { loadEffectivePacks } from '@/domain/rules/editsStore'
 import { useRuleEdits } from '@/composables/useRuleEdits'
-import { DEFAULT_APP_SETTINGS } from '@/domain/types'
+import { DEFAULT_APP_SETTINGS, type CampSport } from '@/domain/types'
 import type {
   ActivityTag,
   AppSettings,
@@ -48,7 +48,7 @@ export interface CampRuleConfigHandle {
   /** Stored config with defaults applied (never null). */
   config: ComputedRef<CampRuleConfig>
   /** Sport with the default (lst) applied. */
-  sport: ComputedRef<'lst' | 'other'>
+  sport: ComputedRef<CampSport>
   /** Modules of the enabled packs. */
   modules: ComputedRef<ModuleDef[]>
   /** Effective state + reasons per module for this camp (empty until the facts are loaded). */
@@ -61,7 +61,7 @@ export interface CampRuleConfigHandle {
   error: ComputedRef<string | null>
   /** Read-modify-write of the stored record. */
   update(fn: (c: CampRuleConfig) => CampRuleConfig): Promise<void>
-  setSport(sport: 'lst' | 'other'): Promise<void>
+  setSport(sport: CampSport): Promise<void>
   setModule(id: ModuleId, state: ModuleCoachState): Promise<void>
   setCamp(patch: Partial<CampRuleConfig['camp']>): Promise<void>
   setAngebot(patch: Partial<CampRuleConfig['angebot']>): Promise<void>

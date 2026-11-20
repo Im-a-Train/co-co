@@ -12,33 +12,22 @@ const build = (title: string, opts: { safety?: string; tags?: ActivityTag[] } = 
 
 const noPlaceholder = (m: string) => expect(m).not.toMatch(/\{[A-Za-z]+\}/)
 
-describe('LST-SKI-01', () => {
-  it('Skinachmittag without leader -> hit', () => {
-    const hits = p['LST-SKI-01'](build('Skinachmittag'))
-    expect(hits).toHaveLength(1)
-    expect(msg(hits[0])).toContain('Skifahren/Snowboarden')
-    noPlaceholder(msg(hits[0]))
-  })
-  it('leader named in safety text -> none', () => {
-    expect(p['LST-SKI-01'](build('Skinachmittag', { safety: 'Leitung: Anna, J+S-Leiterin Skifahren' }))).toEqual([])
-  })
-  it('Skischule, Skitour, kein-ebb -> none', () => {
-    expect(p['LST-SKI-01'](build('Skischule Arosa'))).toEqual([])
-    expect(p['LST-SKI-01'](build('Skitour'))).toEqual([])
-    expect(p['LST-SKI-01'](build('Skinachmittag', { tags: ['kein-ebb'] }))).toEqual([])
+describe('ski detection', () => {
+  it('«Skigruppe Rot» is detected as ski (SKI-01 hit)', () => {
+    expect(p['SKI-01'](build('Skigruppe Rot'))).toHaveLength(1)
   })
 })
 
-describe('LST-SKI-02', () => {
+describe('SKI-01', () => {
   it('empty safety text lists all four items', () => {
-    const hits = p['LST-SKI-02'](build('Skinachmittag'))
+    const hits = p['SKI-01'](build('Skinachmittag'))
     expect(hits).toHaveLength(1)
     const m = msg(hits[0])
     for (const t of ['Helm', 'FIS-Regeln', 'Erste Hilfe', 'Material- und Bindungskontrolle']) expect(m).toContain(t)
     noPlaceholder(m)
   })
   it('lists exactly the missing items', () => {
-    const hits = p['LST-SKI-02'](build('Skinachmittag', { safety: 'Alle tragen einen Helm. FIS-Regeln besprochen. Rettungsdecke dabei.' }))
+    const hits = p['SKI-01'](build('Skinachmittag', { safety: 'Alle tragen einen Helm. FIS-Regeln besprochen. Rettungsdecke dabei.' }))
     const m = msg(hits[0])
     expect(m).toContain('Material- und Bindungskontrolle')
     expect(m).not.toContain('Helm')
@@ -47,15 +36,15 @@ describe('LST-SKI-02', () => {
   })
   it('complete safety text, non-ski, kein-ebb -> none', () => {
     const full = 'Helm Pflicht, FIS-Regeln, Rettungsdecke, Bindungen kontrollieren'
-    expect(p['LST-SKI-02'](build('Skinachmittag', { safety: full }))).toEqual([])
-    expect(p['LST-SKI-02'](build('Geländespiel'))).toEqual([])
-    expect(p['LST-SKI-02'](build('Skinachmittag', { tags: ['kein-ebb'] }))).toEqual([])
+    expect(p['SKI-01'](build('Skinachmittag', { safety: full }))).toEqual([])
+    expect(p['SKI-01'](build('Geländespiel'))).toEqual([])
+    expect(p['SKI-01'](build('Skinachmittag', { tags: ['kein-ebb'] }))).toEqual([])
   })
 })
 
-describe('LST-SKI-03', () => {
+describe('SKI-02', () => {
   it('Freeride without plan -> hit with both slopes', () => {
-    const hits = p['LST-SKI-03'](build('Freeride am Nachmittag'))
+    const hits = p['SKI-02'](build('Freeride am Nachmittag'))
     expect(hits).toHaveLength(1)
     const m = msg(hits[0])
     expect(m).toContain('30°')
@@ -63,8 +52,8 @@ describe('LST-SKI-03', () => {
     noPlaceholder(m)
   })
   it('plan in safety text, kein-ebb, plain ski -> none', () => {
-    expect(p['LST-SKI-03'](build('Freeride am Nachmittag', { safety: 'pistennah, Absprache Pisten- und Rettungsdienst' }))).toEqual([])
-    expect(p['LST-SKI-03'](build('Freeride am Nachmittag', { tags: ['kein-ebb'] }))).toEqual([])
-    expect(p['LST-SKI-03'](build('Skinachmittag'))).toEqual([])
+    expect(p['SKI-02'](build('Freeride am Nachmittag', { safety: 'pistennah, Absprache Pisten- und Rettungsdienst' }))).toEqual([])
+    expect(p['SKI-02'](build('Freeride am Nachmittag', { tags: ['kein-ebb'] }))).toEqual([])
+    expect(p['SKI-02'](build('Skinachmittag'))).toEqual([])
   })
 })

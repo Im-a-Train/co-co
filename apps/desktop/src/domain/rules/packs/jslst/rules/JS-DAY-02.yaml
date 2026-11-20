@@ -1,6 +1,6 @@
 id: JS-DAY-02
-version: 1.0.0
-module: lst
+version: 1.1.0
+module: js-lager
 status: active
 title: "J+S-Einheit mindestens 30 Minuten"
 description: "Jede J+S-Einheit dauert mindestens 30 Minuten. Eine kürzere Einheit zählt nicht und darf im Programm nicht als J+S-Aktivität ausgewiesen sein."

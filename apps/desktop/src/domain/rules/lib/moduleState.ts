@@ -28,7 +28,7 @@ import type {
   ParamReader,
   ParamValue,
 } from '../../types'
-import type { ActivityTextField } from '../../types'
+import type { ActivityTextField, CampSport } from '../../types'
 
 /** Fields searched by module triggers: the safety text is deliberately excluded (it talks about hazards, not activities). */
 const TRIGGER_FIELDS: readonly ActivityTextField[] = ['title', 'location', 'storyboard']
@@ -46,7 +46,7 @@ export interface ModuleStateInput {
   coachInputs: CoachInputs | null
   documents: readonly DocumentRecord[]
   /** Stored config with defaults applied (sport resolved). */
-  config: Omit<CampRuleConfig, 'sport'> & { sport: 'lst' | 'other' }
+  config: Omit<CampRuleConfig, 'sport'> & { sport: CampSport }
   keywords: KeywordMatcher
   params: ParamReader
 }

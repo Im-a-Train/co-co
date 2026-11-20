@@ -1,6 +1,6 @@
 id: JS-CAMP-01
-version: 2.0.0
-module: lst
+version: 2.1.0
+module: js-lager
 status: active
 title: "Lager mit mindestens 4 aufeinanderfolgenden Tagen"
 description: "Ein J+S-Lager dauert mindestens 4 aufeinanderfolgende Tage (mit Angebotspartner 3). Ab 2027 zählen nur J+S-Tage: Tage ohne J+S-Aktivitäten und Tage, welche die J+S-Tag-Kriterien nicht erfüllen, werden übersprungen."

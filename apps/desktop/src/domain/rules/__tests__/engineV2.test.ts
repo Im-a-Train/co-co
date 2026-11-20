@@ -93,6 +93,7 @@ describe('campRuleConfig defaults', () => {
     const c = normalizeCampRuleConfig({ sport: 'other', modules: { pbs: 'off' }, junk: 1 }, camp)
     expect(c).toMatchObject({ campIri: camp, zone: 'green', sport: 'other', modules: { pbs: 'off' }, activityTags: {}, params: {} })
     expect('junk' in c).toBe(false)
+    expect(normalizeCampRuleConfig({ sport: 'ski' }, camp).sport).toBe('ski')
     expect(normalizeCampRuleConfig(null, camp).sport).toBeNull()
   })
 })
