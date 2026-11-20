@@ -8,8 +8,11 @@ import { useCampNds, useNds } from '@/composables/useNds'
 import { ndsFieldDiffs, ndsStateLabel } from '@/domain/nds'
 import type { CoachInputs, Iri, NdsAggregate, NdsCampSummary, NdsField } from '@/domain/types'
 import NdsAdoptDialog from './NdsAdoptDialog.vue'
+import NdsAttendanceSection from './NdsAttendanceSection.vue'
 import NdsCampPicker from './NdsCampPicker.vue'
-import { countEntries, ndsLinkLabel } from './format'
+import NdsDetailsSection from './NdsDetailsSection.vue'
+import NdsProtocolSection from './NdsProtocolSection.vue'
+import { countEntries, hasCampDetails, ndsLinkLabel } from './format'
 
 const props = defineProps<{ campIri: Iri; inputs: CoachInputs }>()
 const emit = defineEmits<{ adopt: [fields: NdsField[], agg: NdsAggregate] }>()
@@ -34,6 +37,16 @@ watch(
 const agg = computed(() => camp.record.value?.aggregate ?? null)
 const diffs = computed(() => (agg.value ? ndsFieldDiffs(agg.value, props.inputs) : []))
 const ready = computed(() => nds.enabled.value && nds.connected.value)
+/** Picker ranking input: the eCamp camp and (when the coach profile was loaded) the coach's organisations. */
+const rankCamp = computed(() => facts.value?.camp ?? undefined)
+const orgNames = computed(() => (nds.coachProfile.value?.organisations ?? []).map((o) => o.name))
+/** Set when the suggested «angemeldet am» is the submission date from the NDS-Verlauf (not the approval date). */
+const protocolSubmittedOn = computed(() => {
+  const on = agg.value?.protocol?.submittedOn ?? null
+  const d = diffs.value.find((x) => x.field === 'ndsRegisteredOn')
+  return on && d && d.ndsValue === on ? on : null
+})
+const showDetails = computed(() => !!agg.value?.campDetails && hasCampDetails(agg.value.campDetails))
 
 const counts = computed(() => {
   const s = agg.value?.statistics
@@ -184,6 +197,10 @@ function apply(fields: NdsField[]): void {
                 <template v-if="o.returnDate"> · {{ t('nds.summary.return', { date: formatDate(o.returnDate) }) }}</template>
               </div>
             </div>
+
+            <NdsAttendanceSection v-if="agg.attendance" :attendance="agg.attendance" />
+            <NdsDetailsSection v-if="agg.campDetails && showDetails" :details="agg.campDetails" />
+            <NdsProtocolSection v-if="agg.protocol" :protocol="agg.protocol" />
           </div>
         </template>
       </v-card-text>
@@ -194,9 +211,11 @@ function apply(fields: NdsField[]): void {
       :camps="camp.camps.value ?? []"
       :loading="camp.campsLoading.value ?? false"
       :error="camp.campsError.value ?? null"
+      :rank-camp="rankCamp"
+      :org-names="orgNames"
       @pick="pick"
     />
-    <NdsAdoptDialog v-model="adoptOpen" :diffs="diffs" @apply="apply" />
+    <NdsAdoptDialog v-model="adoptOpen" :diffs="diffs" :protocol-submitted-on="protocolSubmittedOn" @apply="apply" />
   </div>
 </template>
 

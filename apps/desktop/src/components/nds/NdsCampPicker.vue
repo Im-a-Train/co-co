@@ -1,13 +1,31 @@
 <script setup lang="ts">
-/** «Lager wählen»: NDS camps within the eCamp camp dates. */
+/**
+ * «Lager wählen»: NDS camps within the eCamp camp dates. With `rankCamp` the candidates are sorted by match
+ * (reason chips, «Vorschlag» badge on the suggested one); the coach still has to click.
+ */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDate } from '@/components/midata/format'
 import { ndsStateLabel } from '@/domain/nds'
+import { rankNdsCamps, type NdsMatchCamp } from '@/domain/nds/match'
 import type { NdsCampSummary } from '@/domain/types'
 
-defineProps<{ modelValue: boolean; camps: NdsCampSummary[]; loading: boolean; error: string | null }>()
+const props = defineProps<{
+  modelValue: boolean
+  camps: NdsCampSummary[]
+  loading: boolean
+  error: string | null
+  rankCamp?: NdsMatchCamp
+  orgNames?: string[]
+}>()
 defineEmits<{ 'update:modelValue': [value: boolean]; pick: [camp: NdsCampSummary] }>()
 const { t } = useI18n()
+
+/** Display order: ranked when the eCamp camp is known, else as delivered. */
+const items = computed(() => {
+  if (!props.rankCamp) return props.camps.map((camp) => ({ camp, reasons: [] as string[], suggested: false }))
+  return rankNdsCamps(props.rankCamp, props.camps, props.orgNames ?? []).map((r) => ({ camp: r.camp, reasons: r.reasons as string[], suggested: r.suggested }))
+})
 
 function title(c: NdsCampSummary): string {
   return [c.offerNumber, c.offerItemNumber, c.groupName].filter(Boolean).join(' · ') || c.campBusinessId
@@ -15,7 +33,7 @@ function title(c: NdsCampSummary): string {
 function subtitle(c: NdsCampSummary): string {
   const dates = c.start ? (c.end && c.end !== c.start ? `${formatDate(c.start)} – ${formatDate(c.end)}` : formatDate(c.start)) : t('nds.picker.noDates')
   const state = c.offerItemState ?? c.offerState
-  return [dates, state ? ndsStateLabel(state) : ''].filter(Boolean).join(' · ')
+  return [dates, c.organisationName, state ? ndsStateLabel(state) : ''].filter(Boolean).join(' · ')
 }
 </script>
 
@@ -32,13 +50,20 @@ function subtitle(c: NdsCampSummary): string {
         <div v-else-if="camps.length === 0" class="text-medium-emphasis">{{ t('nds.picker.empty') }}</div>
         <v-list v-else density="compact" lines="two">
           <v-list-item
-            v-for="c in camps"
-            :key="c.campBusinessId"
-            :title="title(c)"
-            :subtitle="subtitle(c)"
-            :data-testid="`nds-camp-${c.campBusinessId}`"
-            @click="$emit('pick', c)"
-          />
+            v-for="it in items"
+            :key="it.camp.campBusinessId"
+            :title="title(it.camp)"
+            :subtitle="subtitle(it.camp)"
+            :data-testid="`nds-camp-${it.camp.campBusinessId}`"
+            @click="$emit('pick', it.camp)"
+          >
+            <template v-if="it.suggested || it.reasons.length" #append>
+              <div class="d-flex flex-wrap justify-end ga-1 ml-2">
+                <v-chip v-if="it.suggested" size="x-small" color="primary" variant="flat" label data-testid="nds-suggested">{{ t('nds.picker.suggested') }}</v-chip>
+                <v-chip v-for="r in it.reasons" :key="r" size="x-small" variant="tonal" label data-testid="nds-reason">{{ t(`nds.picker.reason.${r}`) }}</v-chip>
+              </div>
+            </template>
+          </v-list-item>
         </v-list>
       </v-card-text>
       <v-card-actions>

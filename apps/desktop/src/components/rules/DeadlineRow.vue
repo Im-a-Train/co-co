@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One deadline row of /fristen: checkbox (not for NDS-Pendenzen), title (rule-backed ones link to the
+ * One deadline row of /fristen: checkbox (not for NDS-Pendenzen and -Anerkennungen), title (rule-backed ones link to the
  * rule), camp link, date with relative, colour-coded text. Unconfirmed milestones carry an asterisk after
  * the date; the real source sits in its title attribute.
  */
@@ -26,7 +26,9 @@ const emit = defineEmits<{ toggle: [row: Row, done: boolean] }>()
 const { t } = useI18n()
 
 const isLeader = computed(() => props.row.audience === 'leaders')
-const hasCheckbox = computed(() => props.row.kind !== 'nds-task')
+const isNds = computed(() => props.row.kind === 'nds-task' || props.row.kind === 'nds-recognition')
+const hasCheckbox = computed(() => !isNds.value)
+const lockText = computed(() => t(props.row.kind === 'nds-recognition' ? 'rules.deadlines.ndsRecognitions.readOnly' : 'rules.deadlines.ndsTasks.readOnly'))
 const unconfirmed = computed(() => props.row.kind === 'pbs-milestone' && props.row.confidence === 'unverified')
 
 function fmt(iso: string): string {
@@ -89,8 +91,8 @@ const ruleLinkTitle = computed(() => {
       icon="mdi-shield-lock-outline"
       size="small"
       class="mt-2 mx-1 text-medium-emphasis"
-      :title="t('rules.deadlines.ndsTasks.readOnly')"
-      :aria-label="t('rules.deadlines.ndsTasks.readOnly')"
+      :title="lockText"
+      :aria-label="lockText"
       data-testid="nds-task-lock"
     />
 
@@ -109,7 +111,7 @@ const ruleLinkTitle = computed(() => {
         <v-chip v-if="row.archived" size="x-small" label variant="tonal" data-testid="archived-badge">{{ t('rules.deadlines.archivedBadge') }}</v-chip>
       </div>
       <div class="text-caption text-truncate">
-        <span v-if="row.kind === 'nds-task'" class="text-medium-emphasis">{{ row.campTitle }}</span>
+        <span v-if="isNds" class="text-medium-emphasis">{{ row.campTitle }}</span>
         <RouterLink v-else :to="`/lager/${row.campId}/checkliste`" :title="t('rules.deadlines.openChecklist')" data-testid="deadline-camp-link">{{ row.campTitle }}</RouterLink>
       </div>
     </div>

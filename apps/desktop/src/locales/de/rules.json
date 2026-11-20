@@ -111,7 +111,8 @@
         "landeskarten": "Landeskarten",
         "lagerbewilligung": "Lagerbewilligung",
         "pbs-milestone": "Meilenstein (J+S/PBS)",
-        "nds-task": "NDS-Pendenz"
+        "nds-task": "NDS-Pendenz",
+        "nds-recognition": "J+S-Anerkennung"
       },
       "kind": {
         "nds-registration": "NDS-Anmeldung (30 Tage vor Lagerbeginn)",
@@ -120,7 +121,20 @@
         "landeskarten": "Landeskarten bestellen (3 Wochen vorher, Juni bis August 5 Wochen)",
         "lagerbewilligung": "Lagerbewilligung (21 Tage vorher)",
         "pbs-milestone": "PBS-Meilenstein",
-        "nds-task": "NDS-Pendenz"
+        "nds-task": "NDS-Pendenz",
+        "nds-recognition": "J+S-Anerkennung (läuft ab)"
+      },
+      "ndsRecognitions": {
+        "load": "Anerkennungen laden",
+        "reload": "Anerkennungen neu laden",
+        "needsPerson": "Anerkennungen: zuerst die eigene NDS-Person eintragen (Einstellungen, NDS).",
+        "stand": "Anerkennungen geladen: {count} mit Ablaufdatum",
+        "expires": "{title}: Anerkennung läuft ab",
+        "omitted": "{title}: Anerkennung sistiert",
+        "omittedSince": "{title}: Anerkennung sistiert seit {date}",
+        "loadFailed": "Anerkennungen konnten nicht geladen werden",
+        "hint": "Nur im Arbeitsspeicher: Die Anerkennungen werden nicht gespeichert und verschwinden beim Trennen der NDS, beim Sperren und beim Schliessen von co-co.",
+        "readOnly": "J+S-Anerkennung aus der NDS: nur lesbar, hier nicht abhakbar."
       },
       "ndsTasks": {
         "load": "NDS-Pendenzen laden",
@@ -161,7 +175,8 @@
         "landeskarten": "Landeskarten bestellen",
         "lagerbewilligung": "Lagerbewilligung",
         "pbs-milestone": "Meilenstein",
-        "nds-task": "NDS-Pendenz"
+        "nds-task": "NDS-Pendenz",
+        "nds-recognition": "J+S-Anerkennung"
       },
       "groups": {
         "title": "{bucket} · {n}",

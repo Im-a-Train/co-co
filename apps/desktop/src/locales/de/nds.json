@@ -20,6 +20,56 @@
       "YOUTH_TRAINING": "J+S-Kinder und -Jugendsport"
     },
     "redZone": "Rote Zone · nur Zahlen",
+    "tri": { "yes": "Ja", "no": "Nein", "unknown": "–" },
+    "attendance": {
+      "title": "Anwesenheit",
+      "read": "{read} von {total} Aktivitäten gelesen, {checked} mit erledigter Präsenzkontrolle",
+      "persons": "{participants} Teilnehmende, {supervisors} Leitende",
+      "neverPresent": "Nie anwesend: {n} Teilnehmende",
+      "notEligible": "Nicht beitragsberechtigt: {n} Teilnehmende",
+      "mountainGuides": "Bergführende: {n}",
+      "overlaps": "Doppelbuchungen: {participants} Teilnehmende und {supervisors} Leitende in {activities} Aktivitäten sind gleichzeitig in einem anderen J+S-Angebot eingetragen.",
+      "overlapOffers": "Andere Angebote: {list}",
+      "overlapDates": "Daten: {list}",
+      "truncated": "Nicht alle Aktivitäten konnten gelesen werden; die Zahlen sind unvollständig.",
+      "byDate": "Pro Tag ({n} Tage)",
+      "date": "Datum",
+      "presentParticipants": "TN anwesend",
+      "presentSupervisors": "Leitende anwesend"
+    },
+    "details": {
+      "title": "Lagerdetails",
+      "flag": {
+        "riskActivitiesPlanned": "Risikoaktivitäten geplant",
+        "supervisorExpertise": "Fachkompetenz der Leitenden vorhanden",
+        "overnightStay": "Übernachtung",
+        "lateSubmission": "Verspätete Anmeldung",
+        "approvalWithReservation": "Bewilligung mit Vorbehalt",
+        "itemsInCorrection": "Angebot in Korrektur",
+        "lateSubmittedItems": "Verspätet eingereichte Lager",
+        "handicapRegistration": "Anmeldung Sport für Menschen mit Behinderung"
+      },
+      "riskAnswer": "Risikoaktivitäten, Antwort {n}",
+      "campDays": "J+S-Lagertage: {with} mit Aktivitäten, {without} ohne Aktivitäten",
+      "present": "Anwesend: {mc} Knaben und {fc} Mädchen (Kinder), {ma} männliche und {fa} weibliche Jugendliche, total {total} Teilnehmende; {supervisors} Leitende",
+      "subsidies": "Beiträge: geplant {planned}, effektiv {actual}, total {total}",
+      "minimalRequirements": "Mindestanforderungen laut NDS"
+    },
+    "protocol": {
+      "title": "NDS-Verlauf",
+      "submittedOn": "eingereicht am {date}",
+      "approvedOn": "bewilligt am {date}",
+      "closedOn": "abgeschlossen am {date}",
+      "truncated": "Der Verlauf ist unvollständig (zu viele Einträge).",
+      "kind": {
+        "submitted": "Eingereicht",
+        "approved": "Bewilligt",
+        "assessment": "Abrechnung",
+        "closed": "Abgeschlossen",
+        "paid": "Ausbezahlt",
+        "other": "Sonstiges"
+      }
+    },
     "settings": {
       "title": "NDS (Nationale Datenbank Sport)",
       "intro": "Die NDS des Bundesamts für Sport wird nur lesend angefragt, nur auf deinen Wunsch und nur über die App, nie über den Browser.",
@@ -38,6 +88,28 @@
       "loginHint": "Öffnet ein Anmeldefenster (AGOV). Das Passwort sieht nur AGOV.",
       "logout": "Abmelden",
       "notInApp": "Nur in der Desktop-App verfügbar.",
+      "person": {
+        "title": "Eigene NDS-Person",
+        "explain": "Die numerische NDS-Personen-ID wird nur gebraucht, um deine eigenen Anerkennungen und Organisationen zu lesen. Sie wird einmal aus deinen sichtbaren Angeboten erkannt oder von dir eingetragen; ein eigener Eintrag wird nie überschrieben. Rote Zone: Anerkennungen und Profil bleiben im Arbeitsspeicher.",
+        "label": "NDS-Personen-ID",
+        "invalid": "Nur Ziffern erlaubt.",
+        "save": "Speichern",
+        "detect": "Aus meinen Angeboten erkennen",
+        "detected": "Erkannt: Du bist Coach in {matched} von {seen} sichtbaren Angeboten (Vermutung, bitte prüfen).",
+        "notDetected": "Keine eindeutige Person erkannt ({seen} Angebote gesehen). Du kannst die ID von Hand eintragen."
+      },
+      "profile": {
+        "title": "Coach-Profil",
+        "load": "Coach-Profil laden",
+        "reload": "Coach-Profil neu laden",
+        "needsPerson": "Zuerst die eigene NDS-Person eintragen.",
+        "memoryOnly": "Rote Zone: wird nur im Arbeitsspeicher gehalten und beim Abmelden verworfen.",
+        "organisations": "Organisationen",
+        "noOrganisations": "Keine Organisationen gefunden.",
+        "since": "seit {date}",
+        "offers": "Abgeschlossene Angebote: {n}",
+        "offerList": "Angebote anzeigen"
+      },
       "diag": {
         "intro": "Prüft, was die NDS für ein Lager preisgibt. Es werden nur Statuscodes und Feldnamen angezeigt.",
         "campId": "NDS-Lager-ID",
@@ -77,7 +149,14 @@
       "loading": "NDS wird abgefragt …",
       "failed": "Abfrage fehlgeschlagen",
       "empty": "Keine passenden Lager gefunden.",
-      "noDates": "ohne Datum"
+      "noDates": "ohne Datum",
+      "suggested": "Vorschlag",
+      "reason": {
+        "sameDates": "gleiche Daten",
+        "overlapDates": "überschneidende Daten",
+        "nameMatch": "Name",
+        "organisation": "Organisation"
+      }
     },
     "summary": {
       "rega": {
@@ -124,6 +203,8 @@
       "empty": "leer",
       "same": "gleich",
       "registeredOnHint": "bewilligt am",
+      "registeredOnHintProtocol": "eingereicht am {date} (laut NDS-Verlauf)",
+      "closedOnHint": "laut NDS-Verlauf",
       "apply": "{n} übernehmen",
       "values": { "yes": "Ja", "no": "Nein" }
     }

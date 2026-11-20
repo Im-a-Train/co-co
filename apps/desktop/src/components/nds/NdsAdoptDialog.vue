@@ -7,7 +7,7 @@ import type { NdsFieldDiff, NdsFieldValue } from '@/domain/nds'
 import type { NdsField } from '@/domain/types'
 import { ndsPreChecked, ndsValueKey } from './format'
 
-const props = defineProps<{ modelValue: boolean; diffs: NdsFieldDiff[] }>()
+const props = defineProps<{ modelValue: boolean; diffs: NdsFieldDiff[]; protocolSubmittedOn?: string | null }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; apply: [fields: NdsField[]] }>()
 const { t } = useI18n()
 
@@ -54,7 +54,10 @@ const selectable = (d: NdsFieldDiff): boolean => d.ndsValue !== null && !d.same
             <tr v-for="d in diffs" :key="d.field" :data-testid="`nds-adopt-row-${d.field}`">
               <td>
                 {{ t(`camps.inputs.fields.${d.field}`) }}
-                <div v-if="d.field === 'ndsRegisteredOn'" class="text-caption text-medium-emphasis">{{ t('nds.adopt.registeredOnHint') }}</div>
+                <div v-if="d.field === 'ndsRegisteredOn'" class="text-caption text-medium-emphasis">
+                  {{ props.protocolSubmittedOn ? t('nds.adopt.registeredOnHintProtocol', { date: formatDate(props.protocolSubmittedOn) }) : t('nds.adopt.registeredOnHint') }}
+                </div>
+                <div v-else-if="d.field === 'ndsClosedOn'" class="text-caption text-medium-emphasis">{{ t('nds.adopt.closedOnHint') }}</div>
               </td>
               <td>
                 <span v-if="ndsValueKey(d.currentValue)">{{ show(d.currentValue) }}</span>

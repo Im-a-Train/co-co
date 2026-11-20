@@ -242,6 +242,56 @@ function ndsAggregate(offerBusinessId: string, campBusinessId: string) {
     campAgendaUploaded: true,
     rentalOrders: [{ orderState: 'FINISHED', dispatchmentDate: '2026-07-08', returnDate: '2026-07-20' }],
     rega: { participantsTotal: 6, participantsTransmitted: 4, supervisorsTotal: 2, supervisorsTransmitted: 2 },
+    // M21 (ADR 0016): attendance counts, camp details and offer protocol (invented numbers).
+    attendance: {
+      activitiesTotal: 14,
+      activitiesRead: 14,
+      activitiesChecked: 12,
+      participants: 24,
+      supervisors: 5,
+      participantsNeverPresent: 1,
+      participantsNotEligible: 2,
+      overlapParticipants: 2,
+      overlapSupervisors: 0,
+      overlapActivities: 4,
+      overlapOfferNumbers: ['999123'],
+      overlapDates: ['2026-07-14', '2026-07-15'],
+      mountainGuides: 0,
+      byDate: [
+        { date: '2026-07-12', activities: 2, participantsPresent: 24, supervisorsPresent: 4 },
+        { date: '2026-07-13', activities: 2, participantsPresent: 23, supervisorsPresent: 0 },
+        { date: '2026-07-14', activities: 2, participantsPresent: 24, supervisorsPresent: 5 },
+      ],
+      truncated: false,
+    },
+    campDetails: {
+      riskActivitiesPlanned: false,
+      riskActivityAnswers: [false, null, null],
+      supervisorExpertisePresent: true,
+      overnightStay: true,
+      lateSubmission: false,
+      approvalWithReservation: true,
+      campDaysWithActivities: 6,
+      campDaysWithoutActivities: 1,
+      activityDurationFirstDay: 'PT3H',
+      activityDurationLastDay: 'PT2H',
+      present: { maleChildren: 9, femaleChildren: 9, maleAdolescents: 3, femaleAdolescents: 3, supervisors: 5 },
+      subsidies: { planned: 1520, actual: 1432.5, total: 1432.5 },
+      minimalRequirementsMessages: ['Mindestens ein Leitender muss die Anerkennung J+S-Leiter haben.'],
+      offerFlags: { lateSubmittedItems: false, lateSubmittedItemsUnapproved: false, itemsInCorrection: false, handicapRegistration: false, evaluationState: null },
+    },
+    protocol: {
+      events: [
+        { at: '2026-04-20T08:15:00', date: '2026-04-20', kind: 'submitted', label: 'Angebot eingereicht' },
+        { at: '2026-05-03T10:00:00', date: '2026-05-03', kind: 'approved', label: 'Angebot bewilligt' },
+        { at: '2026-07-25T09:30:00', date: '2026-07-25', kind: 'assessment', label: 'Abrechnung eingereicht' },
+        { at: '2026-07-26T14:00:00', date: '2026-07-26', kind: 'assessment', label: 'Abrechnung in Prüfung' },
+      ],
+      submittedOn: '2026-04-20',
+      approvedOn: '2026-05-03',
+      closedOn: null,
+      truncated: false,
+    },
     fetchedAt: new Date().toISOString(),
   }
 }
@@ -553,6 +603,7 @@ export function installMockTauri(): void {
               end: String(a.to),
               offerState: 'WAITING_FOR_ASSESSMENT',
               offerItemState: 'WAITING_FOR_ASSESSMENT',
+              organisationName: 'Pfadi Musterhausen',
             },
             {
               offerBusinessId: 'offer-9002',
@@ -564,8 +615,57 @@ export function installMockTauri(): void {
               end: String(a.from),
               offerState: 'SOME_NEW_STATE',
               offerItemState: null,
+              organisationName: 'Jungwacht Beispieldorf',
             },
           ]
+        case 'nds_detect_person':
+          return { personId: '424242', offersSeen: 3, offersMatched: 3 }
+        case 'nds_fetch_recognitions':
+          return {
+            recognitions: [
+              {
+                businessId: 'R-5001',
+                title: 'J+S-Coach Lagersport/Trekking',
+                educationField: 'COACH',
+                state: 'VALID',
+                validFrom: '2025-10-01',
+                validUntil: '2027-09-30',
+                omittedSince: null,
+                invalidSince: null,
+                archivedSince: null,
+                targetAudienceGroup: null,
+                sport: 'Lagersport/Trekking',
+                supplements: [],
+              },
+              {
+                businessId: 'R-5002',
+                title: 'J+S-Leiter Lagersport/Trekking',
+                educationField: 'LEADER',
+                state: 'OMITTED',
+                validFrom: '2020-03-01',
+                validUntil: '2026-12-31',
+                omittedSince: '2026-01-01',
+                invalidSince: null,
+                archivedSince: null,
+                targetAudienceGroup: null,
+                sport: 'Lagersport/Trekking',
+                supplements: [],
+              },
+            ],
+            personSupplements: [],
+            failedFields: [],
+            fetchedAt: new Date().toISOString(),
+          }
+        case 'nds_fetch_coach_profile':
+          return {
+            organisations: [{ businessId: 'ORG-1', name: 'Pfadi Musterhausen', relationType: 'Coach', offerGroups: ['Lagersport/Trekking'], since: '2019-02-01' }],
+            finishedOffers: [
+              { offerBusinessId: 'off-1', offerNumber: '998001', organisationName: 'Pfadi Musterhausen', start: '2026-07-12', end: '2026-07-18', campCount: 1, courseCount: 0, sports: ['Lagersport/Trekking'] },
+              { offerBusinessId: 'off-2', offerNumber: '997002', organisationName: 'Pfadi Musterhausen', start: '2025-07-13', end: '2025-07-19', campCount: 1, courseCount: 0, sports: ['Lagersport/Trekking'] },
+              { offerBusinessId: 'off-3', offerNumber: '996003', organisationName: 'Pfadi Musterhausen', start: '2024-10-05', end: '2024-10-06', campCount: 1, courseCount: 0, sports: ['Lagersport/Trekking'] },
+            ],
+            fetchedAt: new Date().toISOString(),
+          }
         case 'persons_load_midata':
           return mockMidataPersons(String(a.eventId))
         case 'persons_load_nds':

@@ -4,6 +4,7 @@ import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNds } from '@/composables/useNds'
 import { isTauri } from '@/lib/tauri'
+import NdsCoachProfile from './NdsCoachProfile.vue'
 
 const { t } = useI18n()
 const nds = useNds()
@@ -59,6 +60,8 @@ onMounted(() => void nds.init())
               </v-btn>
             </div>
             <div class="text-caption mt-1">{{ inTauri ? t('nds.settings.loginHint') : t('nds.settings.notInApp') }}</div>
+
+            <NdsCoachProfile />
           </template>
           <div v-else-if="nds.status.value.connected" class="d-flex align-center flex-wrap ga-2" data-testid="nds-stale-session">
             <span>{{ t('nds.settings.staleSession') }}</span>
