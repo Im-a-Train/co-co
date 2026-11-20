@@ -19,6 +19,6 @@
     "version:check": "node scripts/version.mjs check",
     "version:next": "node scripts/version.mjs next",
     "version:bump": "node scripts/version.mjs bump",
-    "test:scripts": "node --test scripts/version.test.mjs"
+    "test:scripts": "node --test scripts/version.test.mjs scripts/updater-manifest.test.mjs"
   }
 }

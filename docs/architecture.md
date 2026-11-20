@@ -299,3 +299,19 @@ Decision: [adr/0014-coach-findings-ai-guidance-and-viewer.md](adr/0014-coach-fin
 - **Viewer:** `DocumentViewer` picks `PdfViewer`, `DocxViewer`, `XlsxViewer` or `GpxViewer`; bytes are re-read
   through the file commands and never stored; anchors flow into `ManualFindingDialog`.
 - **MCP:** `McpChangeKind` includes `manualFinding`; tool definitions are in `domain/mcp/catalog.ts`.
+
+## ADR 0017: in-app updates
+
+Decision: [adr/0017-in-app-updates.md](adr/0017-in-app-updates.md).
+
+- **Rust:** `src/updater.rs` wraps `tauri-plugin-updater` in our own commands `app_update_check`,
+  `app_update_auto_check_allowed`, `app_update_install` (emits `app-update://progress`, then restarts) and
+  `app_update_open_release`. The plugin's JS permissions are not granted; only github.com is contacted.
+  Pure decisions (portable detection, release URL, notes truncation, version validation, auto-check policy)
+  live in `coco-core::update`.
+- **Webview:** `composables/useAppUpdate.ts` (state, start-up check after the data store is unlocked, at most
+  once per 24 h), `domain/update/policy.ts` (pure), `components/update/UpdateDialog.vue` (mounted in `App.vue`),
+  `components/settings/UpdateSection.vue`. Settings section `update` (`autoCheck`, `lastCheckAt`, `skippedVersion`).
+- **Installer:** `src-tauri/windows/installer-hooks.nsh` unticks the desktop-shortcut option on the finish page.
+- **CI:** releases are built with `createUpdaterArtifacts` when the secret exists; `scripts/updater-manifest.mjs`
+  builds `latest.json`, uploaded to the rolling release `updater`.
