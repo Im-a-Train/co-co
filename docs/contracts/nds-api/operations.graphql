@@ -376,6 +376,32 @@ fragment bankAccountAdditionalReceiversNameFields on BankAccountAdditionalReceiv
   __typename
 }
 
+query CurrentYouthTrainingOrganisationRelationsList($person: ID!) {
+  currentYouthTrainingOrganisationRelationsList(person: $person) {
+    content {
+      relationType
+      organisation {
+        businessId
+        name {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      offerGroups
+      relationStartDate
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
 query FinancialTransactionList($personBusinessId: ID, $organisationBusinessId: ID, $chunk: Chunk, $filter: FinancialTransactionFilter) {
   financialTransactionList(
     personBusinessId: $personBusinessId
@@ -486,6 +512,150 @@ fragment personNameFields on Person {
   firstName
   lastName
   __typename
+}
+
+query FinishedYouthTrainingOfferRelationsAsCoachBiographyList($person: ID!, $chunk: Chunk) {
+  finishedYouthTrainingOfferRelationsAsCoachBiographyList(
+    person: $person
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      offerNumber
+      sports {
+        title {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      targetAudienceGroups
+      offerGroup
+      duration {
+        first
+        last
+        __typename
+      }
+      organisation {
+        businessId
+        name {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      association {
+        businessId
+        name {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      courseCount
+      campCount
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query list($participant: ID!, $chunk: Chunk) {
+  jsInstructorAsParticipantBiographyCourseList(
+    participant: $participant
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      name {
+        de
+        __typename
+      }
+      sports {
+        title {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      targetAudienceGroup
+      firstCoursePartDuration {
+        first
+        last
+        __typename
+      }
+      secondCoursePartDuration {
+        first
+        last
+        __typename
+      }
+      thirdCoursePartDuration {
+        first
+        last
+        __typename
+      }
+      fourthCoursePartDuration {
+        first
+        last
+        __typename
+      }
+      fifthCoursePartDuration {
+        first
+        last
+        __typename
+      }
+      sixthCoursePartDuration {
+        first
+        last
+        __typename
+      }
+      courseNumber
+      organisingOrganisation {
+        name {
+          de
+          __typename
+        }
+        __typename
+      }
+      participationProfile
+      coursePassed
+      competenceTheory {
+        passed
+        grade
+        __typename
+      }
+      competencePractice {
+        passed
+        grade
+        __typename
+      }
+      competenceMethod {
+        passed
+        grade
+        __typename
+      }
+      recommendationExpert
+      attendedDays
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
 }
 
 query List($organisation: ID!, $activityField: ActivityField!, $chunk: Chunk) {
@@ -767,6 +937,220 @@ fragment localizedStringFields on LocalizedString {
   __typename
 }
 
+query PersonGrantedRecognitionList($personBusinessId: ID!, $chunk: Chunk, $filter: GrantedRecognitionFilter!) {
+  grantedRecognitionList(
+    personBusinessId: $personBusinessId
+    chunk: $chunk
+    filter: $filter
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      person {
+        businessId
+        __typename
+      }
+      recognitionState
+      activeDateRange {
+        ...dateRangeClosedEndFields
+        __typename
+      }
+      omittedSince
+      omittedUntil
+      archivedSince
+      invalidSince
+      reason
+      cadre {
+        name {
+          ...localizedStringFields
+          __typename
+        }
+        educationField
+        __typename
+      }
+      disciplines {
+        title {
+          ...localizedStringFields
+          __typename
+        }
+        __typename
+      }
+      targetAudienceGroup
+      sport {
+        title {
+          ...localizedStringFields
+          __typename
+        }
+        __typename
+      }
+      grantedRecognitionSupplements {
+        stateDateRange {
+          ...dateRangeFields
+          __typename
+        }
+        recognitionSupplement {
+          businessId
+          name {
+            ...localizedStringFields
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+      _availableOptions {
+        update
+        delete
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment dateRangeClosedEndFields on DateRangeClosedEnd {
+  first
+  last
+  __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+fragment dateRangeFields on DateRange {
+  first
+  last
+  __typename
+}
+
+query PersonSupplementList($personBusinessId: ID!, $chunk: Chunk, $filter: PersonSupplementFilter) {
+  personSupplementList(
+    personBusinessId: $personBusinessId
+    filter: $filter
+    chunk: $chunk
+  ) {
+    content {
+      businessId
+      rowTitle {
+        de
+        fr
+        it
+        __typename
+      }
+      educationSupplement {
+        name {
+          de
+          fr
+          it
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
+query SpecificProtocolEntityList($chunk: Chunk, $filter: SpecificProtocolEntityFilter, $primaryEntityClassName: String!, $primaryEntityId: ID!) {
+  specificProtocolEntityList(
+    chunk: $chunk
+    filter: $filter
+    primaryEntityClassName: $primaryEntityClassName
+    primaryEntityId: $primaryEntityId
+  ) {
+    content {
+      protocolId
+      createdTimestamp
+      protocolType {
+        ...localizedStringFields
+        __typename
+      }
+      protocolContent {
+        ...localizedStringFields
+        __typename
+      }
+      triggeringPerson
+      triggeringProcess
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+query UserAccountPersonPageList($personBusinessId: ID, $chunk: Chunk, $filter: UserAccountPersonPageFilter) {
+  userAccountPersonPageList(
+    personBusinessId: $personBusinessId
+    chunk: $chunk
+    filter: $filter
+  ) {
+    content {
+      businessId
+      userAccountType
+      emailAddress
+      userGroupName {
+        ...localizedStringFields
+        __typename
+      }
+      organisationName {
+        ...optionalLocalizedStringFields
+        __typename
+      }
+      lastLogin
+      userAccountStatus
+      createdOn
+      modifiedOn
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+fragment optionalLocalizedStringFields on OptionalLocalizedString {
+  de
+  fr
+  it
+  resolvedLocalizedString {
+    ...localizedStringFields
+    __typename
+  }
+  __typename
+}
+
 query userRequestOrganisationDetailsList($organisationBusinessId: ID, $chunk: Chunk) {
   userRequestOrganisationDetailsList(
     organisationBusinessId: $organisationBusinessId
@@ -1040,6 +1424,31 @@ fragment mandatoryDateRangeFields on MandatoryDateRange {
   __typename
 }
 
+query HandicapRegistrationList($offerBusinessId: ID!, $chunk: Chunk) {
+  handicapRegistrationList(offerBusinessId: $offerBusinessId, chunk: $chunk) {
+    content {
+      businessId
+      registrationNumber
+      lastName
+      firstName
+      creationDate
+      lastChangeDate
+      state
+      suspicious
+      _availableOptions {
+        edit
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+
 query MyOfferItemsInExecution($chunk: Chunk) {
   myOfferItemsInExecution(chunk: $chunk) {
     content {
@@ -1127,6 +1536,76 @@ fragment coachNameFields on Person {
   firstName
   lastName
   __typename
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+query ParticipantAttendances($activityBusinessId: ID!) {
+  participantAttendances(activityBusinessId: $activityBusinessId) {
+    content {
+      businessId
+      participantTargetAudienceGroup
+      eligibleForSubsidies
+      wasPresent
+      overlaps {
+        time
+        duration
+        groupName
+        activityType
+        location
+        offerNumber
+        offerState
+        organisation {
+          name {
+            resolvedLocalizedString {
+              ...localizedStringFields
+              __typename
+            }
+            __typename
+          }
+          __typename
+        }
+        sports {
+          title {
+            ...localizedStringFields
+            __typename
+          }
+          __typename
+        }
+        involvementType
+        __typename
+      }
+      person {
+        businessId
+        personNumber
+        firstName
+        lastName
+        birthDate
+        privateAddress {
+          businessId
+          streetHouseNumber
+          zipCode
+          town
+          __typename
+        }
+        __typename
+      }
+      _availableOptions {
+        displayPersonDetails
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
 }
 fragment localizedStringFields on LocalizedString {
   de
@@ -1242,6 +1721,112 @@ fragment regaSupervisorInvolvementFields on RegaSupervisorInvolvement {
     __typename
   }
   transmittedToRega
+  __typename
+}
+
+query SpecificProtocolEntityList($chunk: Chunk, $filter: SpecificProtocolEntityFilter, $primaryEntityClassName: String!, $primaryEntityId: ID!) {
+  specificProtocolEntityList(
+    chunk: $chunk
+    filter: $filter
+    primaryEntityClassName: $primaryEntityClassName
+    primaryEntityId: $primaryEntityId
+  ) {
+    content {
+      protocolId
+      createdTimestamp
+      protocolType {
+        ...localizedStringFields
+        __typename
+      }
+      protocolContent {
+        ...localizedStringFields
+        __typename
+      }
+      triggeringPerson
+      triggeringProcess
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
+  __typename
+}
+
+query SupervisorAttendances($activityBusinessId: ID!) {
+  supervisorAttendances(activityBusinessId: $activityBusinessId) {
+    content {
+      businessId
+      involvementType
+      wasPresent
+      mountainGuide
+      overlaps {
+        time
+        duration
+        groupName
+        activityType
+        location
+        offerNumber
+        offerState
+        organisation {
+          name {
+            resolvedLocalizedString {
+              ...localizedStringFields
+              __typename
+            }
+            __typename
+          }
+          __typename
+        }
+        sports {
+          title {
+            ...localizedStringFields
+            __typename
+          }
+          __typename
+        }
+        involvementType
+        __typename
+      }
+      person {
+        businessId
+        personNumber
+        firstName
+        lastName
+        birthDate
+        privateAddress {
+          businessId
+          streetHouseNumber
+          zipCode
+          town
+          __typename
+        }
+        __typename
+      }
+      _availableOptions {
+        displayPersonDetails
+        __typename
+      }
+      __typename
+    }
+    totalElements
+    totalPages
+    number
+    size
+    __typename
+  }
+}
+fragment localizedStringFields on LocalizedString {
+  de
+  fr
+  it
   __typename
 }
 
