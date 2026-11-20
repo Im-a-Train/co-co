@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { reasonText } from '@/components/camps/ruleConfigUi'
 import { useCampRuleConfig } from '@/composables/useCampRuleConfig'
-import type { CampRuleConfig, Iri, ModuleCoachState, ModuleId, ModuleState, SbApprovalKind } from '@/domain/types'
+import { CAMP_SPORTS, type CampRuleConfig, type CampSport, type Iri, type ModuleCoachState, type ModuleId, type ModuleState, type SbApprovalKind } from '@/domain/types'
 
 const props = defineProps<{ campIri: Iri; embedded?: boolean }>()
 const { t, te } = useI18n()
@@ -38,7 +38,7 @@ const triItems = (['unset', 'yes', 'no'] as Tri[]).map((v) => ({ value: v, title
 
 const regionItems = (['mittelland', 'jura', 'voralpen', 'alpen', 'ausland'] as const).map((v) => ({ value: v, title: t(`campConfig.context.region.${v}`) }))
 const formItems = (['haus', 'zelt', 'gemischt'] as const).map((v) => ({ value: v, title: t(`campConfig.context.campForm.${v}`) }))
-const sportItems = (['lst', 'other'] as const).map((v) => ({ value: v, title: t(`campConfig.modules.sport.${v}`) }))
+const sportItems = CAMP_SPORTS.map((v) => ({ value: v, title: t(`campConfig.modules.sport.${v}`) }))
 const kindItems = (['experte', 'bergfuehrer'] as const).map((v) => ({ value: v, title: t(`campConfig.sb.kind.${v}`) }))
 
 const angebotTri = ['other4DayCamp', 'unternehmungElsewhere', 'efCoveredElsewhere'] as const
@@ -69,7 +69,7 @@ type CampPatch = Partial<CampRuleConfig['camp']>
         density="comfortable"
         class="mb-4"
         data-testid="config-sport"
-        @update:model-value="(v: 'lst' | 'other') => run(rc.setSport(v))"
+        @update:model-value="(v: CampSport) => run(rc.setSport(v))"
       />
 
       <div v-for="m in toggleable" :key="m.id" class="module-row py-2" :data-testid="`module-${m.id}`">

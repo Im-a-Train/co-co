@@ -108,13 +108,13 @@ pub struct NdsAggregate {
     /// Rega registration counts (participants / supervisors); `None` if the Rega lists were not readable.
     #[serde(default)]
     pub rega: Option<RegaCounts>,
-    /// M21: attendance counts per activity; `None` if no attendance list was readable.
+    /// M22: attendance counts per activity; `None` if no attendance list was readable.
     #[serde(default)]
     pub attendance: Option<crate::nds_sync::NdsAttendance>,
-    /// M21: camp details (risk answers, flags, subsidies, NDS minimum-requirement messages).
+    /// M22: camp details (risk answers, flags, subsidies, NDS minimum-requirement messages).
     #[serde(default)]
     pub camp_details: Option<crate::nds_sync::NdsCampDetails>,
-    /// M21: offer protocol (status history with dates); `None` if not readable.
+    /// M22: offer protocol (status history with dates); `None` if not readable.
     #[serde(default)]
     pub protocol: Option<crate::nds_sync::NdsProtocol>,
     /// ISO date-time «Stand NDS».
@@ -144,7 +144,7 @@ pub struct NdsCampSummary {
     pub end: Option<String>,
     pub offer_state: Option<String>,
     pub offer_item_state: Option<String>,
-    /// M21: organisation name of the offer (German), for camp matching.
+    /// M22: organisation name of the offer (German), for camp matching.
     #[serde(default)]
     pub organisation_name: Option<String>,
 }

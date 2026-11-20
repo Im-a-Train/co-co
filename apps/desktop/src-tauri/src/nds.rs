@@ -435,7 +435,7 @@ async fn graphql_list_paged(
     }
 }
 
-// ------------------------------------------- tolerant (optional) calls, M21
+// ------------------------------------------- tolerant (optional) calls, M22
 
 /// Why an optional call produced nothing. Never converted to «session expired» by itself.
 #[derive(Debug)]
@@ -518,7 +518,7 @@ async fn fetch_activity_attendance(ctx: &Ctx, activity_id: &str) -> Option<(Valu
     Some((p, s))
 }
 
-/// M21 extras of the aggregate (attendance, camp details, protocol). Fully tolerant.
+/// M22 extras of the aggregate (attendance, camp details, protocol). Fully tolerant.
 async fn fetch_sync_extras(
     ctx: &Ctx,
     offer_id: &str,
@@ -942,7 +942,7 @@ pub async fn probe_impl(state: &NdsState, camp_id: &str) -> AppResult<NdsProbe> 
     Ok(NdsProbe { connected, endpoints })
 }
 
-/// M21 probe rows. Fully tolerant (never changes `connected`); field names only.
+/// M22 probe rows. Fully tolerant (never changes `connected`); field names only.
 async fn probe_sync_rows(ctx: &Ctx, camp_id: &str, offer_id: Option<&str>, endpoints: &mut Vec<NdsProbeEndpoint>) {
     let first_activity = match soft_list(
         ctx,

@@ -147,6 +147,21 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Runners are ephemeral containers: a job can land on a fresh one, so it cannot rely on packages the
+      # check job installed (cargo-xwin's build scripts need the host linker `cc` from build-essential).
+      - name: Ensure system packages
+        shell: bash
+        run: |
+          missing=$(for p in $APT_PACKAGES; do dpkg -s "$p" >/dev/null 2>&1 || echo "$p"; done | xargs)
+          if [ -z "$missing" ]; then echo "All system packages present."; exit 0; fi
+          echo "Missing: $missing"
+          if sudo -n true 2>/dev/null; then
+            sudo apt-get update && sudo apt-get install -y $missing
+          else
+            echo "::error::Runner lacks packages and passwordless sudo. Install once on the runner host: sudo apt-get install -y $missing"
+            exit 1
+          fi
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -308,6 +323,18 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v7
+      - name: Ensure system packages
+        shell: bash
+        run: |
+          missing=$(for p in $APT_PACKAGES; do dpkg -s "$p" >/dev/null 2>&1 || echo "$p"; done | xargs)
+          if [ -z "$missing" ]; then echo "All system packages present."; exit 0; fi
+          echo "Missing: $missing"
+          if sudo -n true 2>/dev/null; then
+            sudo apt-get update && sudo apt-get install -y $missing
+          else
+            echo "::error::Runner lacks packages and passwordless sudo. Install once on the runner host: sudo apt-get install -y $missing"
+            exit 1
+          fi
       - uses: actions/setup-node@v7
         with:
           node-version: 22

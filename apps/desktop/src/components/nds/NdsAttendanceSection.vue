@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** M21: attendance counts per activity (NDS), incl. double bookings. Counts only, no persons. */
+/** M22: attendance counts per activity (NDS), incl. double bookings. Counts only, no persons. */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDate } from '@/components/midata/format'

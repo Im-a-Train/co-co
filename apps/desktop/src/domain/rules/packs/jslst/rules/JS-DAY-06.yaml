@@ -1,6 +1,6 @@
 id: JS-DAY-06
-version: 1.0.0
-module: lst
+version: 1.1.0
+module: js-lager
 status: active
 title: "J+S-Aktivitäten auf mindestens zwei Tageszeiten"
 description: "Die J+S-Aktivitäten eines Lagertags sind auf mindestens zwei Tageszeiten (Morgen, Nachmittag, Abend) verteilt. Die Grenzen der Tageszeiten sind in keiner Quelle definiert (co-co Auslegung, Parameter js.timeWindows)."

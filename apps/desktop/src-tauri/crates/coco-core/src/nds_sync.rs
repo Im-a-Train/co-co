@@ -1,4 +1,4 @@
-//! NDS sync v2 (M21, ADR 0016, red zone, read-only): attendance per activity, camp details,
+//! NDS sync v2 (M22, ADR 0017, red zone, read-only): attendance per activity, camp details,
 //! offer protocol, the coach's own recognitions and coach profile. Pure parsing and reduction only;
 //! the HTTP side lives in `src-tauri/src/nds.rs`.
 //!
@@ -10,7 +10,7 @@
 //! - The coach's own recognitions and profile ([`NdsRecognitionsResult`], [`NdsCoachProfile`]) are the
 //!   coach's own data; they are returned to the UI but kept in memory only (never persisted).
 //!
-//! CONTRACT (M21): the serialized shapes below are mirrored in `apps/desktop/src/domain/types.ts`
+//! CONTRACT (M22): the serialized shapes below are mirrored in `apps/desktop/src/domain/types.ts`
 //! (`NdsAttendance`, `NdsCampDetails`, `NdsProtocol`, `NdsRecognition*`, `NdsCoachProfile`,
 //! `NdsPersonDetection`). Change both sides together.
 

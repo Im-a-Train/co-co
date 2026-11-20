@@ -13,40 +13,65 @@ pub const MAX_ZOOM: u32 = 18;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MapLayer {
     Base,
+    Grey,
+    Winter,
+    Aerial,
     Hiking,
     Slope,
+    Skitour,
+    Snowshoe,
+    Mtb,
+    Bike,
+    Transit,
+    Wildlife,
+    Gamereserve,
 }
 
+/// Single source of truth: (layer, UI id, WMTS layer id, file extension).
+/// The content type follows from the extension (`jpeg` or `png`).
+const LAYERS: &[(MapLayer, &str, &str, &str)] = &[
+    (MapLayer::Base, "base", "ch.swisstopo.pixelkarte-farbe", "jpeg"),
+    (MapLayer::Grey, "grey", "ch.swisstopo.pixelkarte-grau", "jpeg"),
+    (MapLayer::Winter, "winter", "ch.swisstopo.pixelkarte-farbe-winter", "jpeg"),
+    (MapLayer::Aerial, "aerial", "ch.swisstopo.swissimage", "jpeg"),
+    (MapLayer::Hiking, "hiking", "ch.swisstopo.swisstlm3d-wanderwege", "png"),
+    (MapLayer::Slope, "slope", "ch.swisstopo.hangneigung-ueber_30", "png"),
+    (MapLayer::Skitour, "skitour", "ch.swisstopo-karto.skitouren", "png"),
+    (MapLayer::Snowshoe, "snowshoe", "ch.swisstopo-karto.schneeschuhrouten", "png"),
+    (MapLayer::Mtb, "mtb", "ch.astra.mountainbikeland", "png"),
+    (MapLayer::Bike, "bike", "ch.astra.veloland", "png"),
+    (MapLayer::Transit, "transit", "ch.bav.haltestellen-oev", "png"),
+    (MapLayer::Wildlife, "wildlife", "ch.bafu.wrz-wildruhezonen_portal", "png"),
+    (MapLayer::Gamereserve, "gamereserve", "ch.bafu.bundesinventare-jagdbanngebiete", "png"),
+];
+
 impl MapLayer {
+    fn row(self) -> &'static (MapLayer, &'static str, &'static str, &'static str) {
+        LAYERS.iter().find(|r| r.0 == self).expect("every MapLayer has a LAYERS row")
+    }
+
     pub fn parse(s: &str) -> Result<Self, CoreError> {
-        match s {
-            "base" => Ok(Self::Base),
-            "hiking" => Ok(Self::Hiking),
-            "slope" => Ok(Self::Slope),
-            other => Err(CoreError::Invalid(format!("unbekannte Kartenebene: {other}"))),
-        }
+        LAYERS
+            .iter()
+            .find(|r| r.1 == s)
+            .map(|r| r.0)
+            .ok_or_else(|| CoreError::Invalid(format!("unbekannte Kartenebene: {s}")))
     }
 
     fn layer_id(self) -> &'static str {
-        match self {
-            Self::Base => "ch.swisstopo.pixelkarte-farbe",
-            Self::Hiking => "ch.swisstopo.swisstlm3d-wanderwege",
-            Self::Slope => "ch.swisstopo.hangneigung-ueber_30",
-        }
+        self.row().2
     }
 
     fn extension(self) -> &'static str {
-        match self {
-            Self::Base => "jpeg",
-            Self::Hiking | Self::Slope => "png",
-        }
+        self.row().3
     }
 
     /// Content type the layer is expected to return.
     pub fn content_type(self) -> &'static str {
-        match self {
-            Self::Base => "image/jpeg",
-            Self::Hiking | Self::Slope => "image/png",
+        if self.extension() == "jpeg" {
+            "image/jpeg"
+        } else {
+            "image/png"
         }
     }
 }
@@ -80,9 +105,39 @@ mod tests {
 
     #[test]
     fn parses_layers() {
-        assert_eq!(MapLayer::parse("base").unwrap(), MapLayer::Base);
-        assert_eq!(MapLayer::parse("hiking").unwrap(), MapLayer::Hiking);
-        assert_eq!(MapLayer::parse("slope").unwrap(), MapLayer::Slope);
+        assert_eq!(LAYERS.len(), 13);
+        for (layer, id, _, _) in LAYERS {
+            assert_eq!(MapLayer::parse(id).unwrap(), *layer);
+        }
+    }
+
+    #[test]
+    fn every_layer_builds_exact_url() {
+        let expected = [
+            ("base", "ch.swisstopo.pixelkarte-farbe", "jpeg"),
+            ("grey", "ch.swisstopo.pixelkarte-grau", "jpeg"),
+            ("winter", "ch.swisstopo.pixelkarte-farbe-winter", "jpeg"),
+            ("aerial", "ch.swisstopo.swissimage", "jpeg"),
+            ("hiking", "ch.swisstopo.swisstlm3d-wanderwege", "png"),
+            ("slope", "ch.swisstopo.hangneigung-ueber_30", "png"),
+            ("skitour", "ch.swisstopo-karto.skitouren", "png"),
+            ("snowshoe", "ch.swisstopo-karto.schneeschuhrouten", "png"),
+            ("mtb", "ch.astra.mountainbikeland", "png"),
+            ("bike", "ch.astra.veloland", "png"),
+            ("transit", "ch.bav.haltestellen-oev", "png"),
+            ("wildlife", "ch.bafu.wrz-wildruhezonen_portal", "png"),
+            ("gamereserve", "ch.bafu.bundesinventare-jagdbanngebiete", "png"),
+        ];
+        assert_eq!(expected.len(), LAYERS.len());
+        for (id, wmts, ext) in expected {
+            let layer = MapLayer::parse(id).unwrap();
+            assert_eq!(
+                tile_url(layer, 13, 4290, 2870).unwrap().as_str(),
+                format!("https://wmts.geo.admin.ch/1.0.0/{wmts}/default/current/3857/13/4290/2870.{ext}")
+            );
+            let ct = if ext == "jpeg" { "image/jpeg" } else { "image/png" };
+            assert_eq!(layer.content_type(), ct);
+        }
     }
 
     #[test]
@@ -91,22 +146,6 @@ mod tests {
         assert!(MapLayer::parse("").is_err());
         assert!(MapLayer::parse("Base").is_err());
         assert!(MapLayer::parse("../base").is_err());
-    }
-
-    #[test]
-    fn urls_are_exact() {
-        assert_eq!(
-            tile_url(MapLayer::Base, 12, 2144, 1435).unwrap().as_str(),
-            "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/12/2144/1435.jpeg"
-        );
-        assert_eq!(
-            tile_url(MapLayer::Hiking, 14, 8500, 5700).unwrap().as_str(),
-            "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swisstlm3d-wanderwege/default/current/3857/14/8500/5700.png"
-        );
-        assert_eq!(
-            tile_url(MapLayer::Slope, 0, 0, 0).unwrap().as_str(),
-            "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.hangneigung-ueber_30/default/current/3857/0/0/0.png"
-        );
     }
 
     #[test]

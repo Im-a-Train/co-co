@@ -1,4 +1,4 @@
-// M21 (ADR 0016): rank NDS camps (from nds_find_camps) against the eCamp camp, so the picker can
+// M22 (ADR 0017): rank NDS camps (from nds_find_camps) against the eCamp camp, so the picker can
 // pre-sort and mark one suggestion. Pure; the coach still confirms the pick (no automatic link).
 import type { IsoDate, NdsCampSummary } from '@/domain/types'
 

@@ -43,7 +43,7 @@ All read-only (`ensure_query_only`), field selections reduced to what is needed,
   fails the aggregate. Persons path: `transmittedToRega` is attached to each NDS person row as `regaTransmitted` (match by
   person `businessId`, then `personNumber`); an unreadable list leaves it `null`. The probe checks both operations.
 
-M21 additions (ADR 0016, `coco-core/src/nds_sync.rs`, red zone, memory or counts only):
+M22 additions (ADR 0017, `coco-core/src/nds_sync.rs`, red zone, memory or counts only):
 
 - `ParticipantAttendances` / `SupervisorAttendances` (service `youthtraining`, `participantAttendances` /
   `supervisorAttendances`, argument `activityBusinessId`, no chunk): `content { businessId

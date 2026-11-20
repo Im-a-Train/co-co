@@ -1,10 +1,10 @@
-# ADR 0016: NDS sync v2: attendance, camp details, protocol, coach data
+# ADR 0017: NDS sync v2: attendance, camp details, protocol, coach data
 
 - Status: accepted
 - Date: 2026-11-20
 - Builds on: [ADR 0007](0007-nds-red-zone.md) (NDS red zone), [ADR 0009](0009-personal-data-in-ui.md)
   (personal data in the UI), [ADR 0011](0011-rule-set-v2.md) (rule set), [ADR 0012](0012-openai-compatible-and-mcp.md) (MCP)
-- Milestone: M21. Contract: `crates/coco-core/src/nds_sync.rs`, `domain/types.ts`, `lib/tauri.ts`
+- Milestone: M22. Contract: `crates/coco-core/src/nds_sync.rs`, `domain/types.ts`, `lib/tauri.ts`
 
 ## Context
 

@@ -28,7 +28,7 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     await shot(page, 'flow-nds-probe')
   })
 
-  await step('flow: settings detects the own NDS person and loads the coach profile (M21)', async () => {
+  await step('flow: settings detects the own NDS person and loads the coach profile (M22)', async () => {
     await page.goto(`${BASE}#/einstellungen`)
     await page.waitForSelector('[data-testid="nds-person"]', { timeout: 8000 })
     await page.getByTestId('nds-personid-detect').click()
@@ -50,7 +50,7 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     await page.waitForTimeout(500)
     await page.getByTestId('nds-pick').click({ timeout: 5000 })
     await page.getByTestId('nds-camp-camp-9001').waitFor({ timeout: 5000 })
-    // M21: the ranked picker marks exactly one candidate as «Vorschlag» (the coach still clicks).
+    // M22: the ranked picker marks exactly one candidate as «Vorschlag» (the coach still clicks).
     if ((await page.getByTestId('nds-suggested').count()) !== 1) throw new Error('picker should show exactly one «Vorschlag» badge')
     await shot(page, 'flow-nds-picker')
     await page.getByTestId('nds-camp-camp-9001').click({ timeout: 5000 })
@@ -68,7 +68,7 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     if (!/offener Anwesenheitskontrolle/.test(t)) throw new Error('AWK summary missing')
     await shot(page, 'flow-nds-loaded')
 
-    // M21: attendance, camp details and protocol sections
+    // M22: attendance, camp details and protocol sections
     for (const id of ['nds-attendance', 'nds-details', 'nds-protocol']) {
       await page.waitForSelector(`[data-testid="${id}"]`, { timeout: 5000 })
     }
@@ -107,7 +107,7 @@ export async function ndsFlows({ page, step, go, shot, BASE }) {
     await page.getByTestId('camp-deadlines-card').scrollIntoViewIfNeeded()
     await shot(page, 'flow-nds-checklist')
   })
-  await step('flow: Fristen loads the own recognitions into the radar (M21, memory only)', async () => {
+  await step('flow: Fristen loads the own recognitions into the radar (M22, memory only)', async () => {
     await page.goto(`${BASE}#/fristen`)
     await page.waitForSelector('[data-testid="deadlines-summary"]', { timeout: 8000 })
     const load = page.getByTestId('nds-recognitions-load')

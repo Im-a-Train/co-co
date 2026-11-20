@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** M21: «NDS-Verlauf»: protocol events (status history) and the submission/approval/closing dates derived from it. */
+/** M22: «NDS-Verlauf»: protocol events (status history) and the submission/approval/closing dates derived from it. */
 import { useI18n } from 'vue-i18n'
 import { formatDate } from '@/components/midata/format'
 import type { NdsProtocol } from '@/domain/types'

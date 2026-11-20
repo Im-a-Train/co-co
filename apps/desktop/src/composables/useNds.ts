@@ -32,7 +32,7 @@ const status = ref<NdsStatus>({ ...NO_STATUS })
 const busy = ref(false)
 const error = ref<string | null>(null)
 let started: Promise<void> | null = null
-/** M21: the coach's own NDS person id (settings nds.personId) and the red-zone data derived from it. Memory only. */
+/** M22: the coach's own NDS person id (settings nds.personId) and the red-zone data derived from it. Memory only. */
 const personId = ref<string | null>(null)
 const coachProfile = shallowRef<NdsCoachProfile | null>(null)
 const recognitions = shallowRef<NdsRecognitionsResult | null>(null)
@@ -124,7 +124,7 @@ export interface NdsHandle {
   connectWithLogin(): Promise<void>
   logout(): Promise<void>
   probe(campBusinessId: string): Promise<NdsProbe | null>
-  /** M21: own NDS person id (numeric string) or null. */
+  /** M22: own NDS person id (numeric string) or null. */
   personId: typeof personId
   coachProfile: typeof coachProfile
   recognitions: typeof recognitions

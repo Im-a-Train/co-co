@@ -255,3 +255,98 @@
   partlyRead: []
   notes: "Wird für den Abgleich der Teilnehmenden und Qualifikationen gelesen."
   checkedOn: 2026-11-08
+- key: WEB-SKI
+  title: "Webseite «Skifahren»"
+  publisher: BASPO
+  edition: "13.08.2026"
+  date: 2026-08-13
+  url: https://www.jugendundsport.ch/de/skifahren
+  weight: binding
+  pageConvention: section
+  partlyRead: []
+  notes: "Sportartseite Skifahren mit allen Hilfsmitteln (Sicherheit, Leiterausbildung, Planung). Fahren im freien Gelände zwischen 30 und 35° nur mit der Zusatzanerkennung Sicherheit «Freeride»."
+  checkedOn: 2026-11-20
+- key: MB-SKI
+  title: "Unfallprävention Skifahren und Snowboarden"
+  publisher: BASPO
+  docId: "30.671/711.110 d"
+  edition: "Ausgabe 10/2022"
+  date: 2022-12-16
+  url: https://www.jugendundsport.ch/dam/de/sd-web/e5vvuONssHkV/mb_Skifahren_Snowboarden_DE.pdf
+  weight: binding
+  pageConvention: printed
+  partlyRead: []
+  notes: "Merkblatt (1 Seite): Aufsicht, FIS-Regeln und SKUS-Richtlinien, Rettungsdecke/Druckverband/Mobiltelefon, Helm, Materialkontrolle, Pisten und freies Gelände nach J+S-Vorgaben, Kinder unter 1,25 m am Sessellift nur mit Erwachsenen."
+  checkedOn: 2026-11-20
+- key: SKI-FR
+  title: "J+S-Sicherheitszusatz Freeride für Skifahren und Snowboard"
+  publisher: BASPO
+  edition: "2025"
+  url: https://www.jugendundsport.ch/dam/de/sd-web/F3W9zjiKRWKa/J%2BS_Skifahren_%26_Snowboard_Zusatz_Freeride_de.pdf
+  weight: binding
+  pageConvention: slide
+  partlyRead: []
+  notes: "Freies Gelände bis 30° (grüner Bereich) ohne Notfallausrüstung mit gültiger Anerkennung Skifahren/Snowboard; bis 35° nur mit Notfallausrüstung und Sicherheitszusatz Freeride (Modul 3–4 Tage, Verlängerung alle 4 Jahre)."
+  checkedOn: 2026-11-20
+- key: SKI-FG
+  title: "Fahren im freien Gelände – Skifahren (Roll-up)"
+  publisher: BASPO
+  edition: "2023"
+  url: https://www.jugendundsport.ch/dam/de/sd-web/h0U5MhLaQpCc/Rollup_Schneesport_Ski_DE.pdf
+  weight: binding
+  pageConvention: section
+  partlyRead: ["Grafiken des Roll-ups"]
+  notes: "Klären – Planen – Absprechen – Verantworten: niveau- und verhältnisangepasstes, pistennahes und mässig steiles (< 30°) Gelände; Planung mit dem Pisten- und Rettungsdienst besprechen."
+  checkedOn: 2026-11-20
+- key: SKI-FGV
+  title: "Vertiefende Informationen zum Fahren im freien Gelände in der J+S-Kaderbildung"
+  publisher: BASPO
+  edition: "17.02.2025"
+  date: 2025-02-17
+  url: "https://www.jugendundsport.ch/dam/de/sd-web/xp-TtLnj92n0/Vertiefende%20Informationen%20zum%20Fahren%20im%20freien%20Gela%CC%88nde_d.pdf"
+  weight: info
+  pageConvention: printed
+  partlyRead: ["ganzes Dokument (Text nicht extrahiert)"]
+  notes: "Hintergrund für Leitende Skifahren/Snowboard zum Fahren im freien Gelände."
+  checkedOn: 2026-11-20
+- key: SKI-SF
+  title: "Sicherheitsfragen Skifahren und Snowboarden (Leiterkurs)"
+  publisher: BASPO
+  edition: "2025"
+  url: https://www.jugendundsport.ch/dam/de/sd-web/QjY6rfakrwNZ/JS_Sicherheitsfragen_Skifahren_Snowboarden_Leiterkurs_de.pdf
+  weight: didactic
+  pageConvention: printed
+  partlyRead: []
+  notes: "Fragen, die J+S-Leitende Skifahren/Snowboard laut Merkblatt beantworten können."
+  checkedOn: 2026-11-20
+- key: MB-UP-ALLG
+  title: "Allgemeines Merkblatt Unfallprävention"
+  publisher: BASPO
+  edition: "15.12.2025"
+  date: 2025-12-15
+  url: https://www.jugendundsport.ch/dam/de/sd-web/c3jJCOyPyhTw/2025-0374_mb-unfallpraevention-allg_DE.pdf
+  weight: binding
+  pageConvention: printed
+  partlyRead: ["ganzes Dokument (Text nicht extrahiert)"]
+  notes: "Sportartübergreifende Grundsätze der Unfallprävention bei J+S."
+  checkedOn: 2026-11-20
+- key: SKUS
+  title: "SKUS-Richtlinien Skifahren und Snowboarden"
+  publisher: SKUS
+  edition: aktuell
+  url: https://www.skus.ch/de/skifahren-und-snowboarden-9.html
+  weight: info
+  pageConvention: section
+  partlyRead: []
+  notes: "Das Merkblatt Unfallprävention verlangt, dass J+S-Leitende die FIS-Regeln und SKUS-Richtlinien vermitteln."
+  checkedOn: 2026-11-20
+- key: SKI-LAGER
+  title: "Schneesportlager leiten – Merkblätter"
+  publisher: BASPO
+  edition: "aktuell"
+  url: https://www.jugendundsport.ch/dam/de/sd-web/Q3kWb16r2411/schneesportlager_leiten_merkblaetter_DE.pdf
+  weight: didactic
+  pageConvention: printed
+  partlyRead: ["ganzes Dokument (Text nicht extrahiert)"]
+  notes: "Planungshilfe der Sportart Skifahren für Schneesportlager."
+  checkedOn: 2026-11-20

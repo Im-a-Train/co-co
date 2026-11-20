@@ -1,0 +1,26 @@
+id: SKI-02
+version: 1.0.0
+module: ski
+status: active
+kind: ai
+title: "Skifahren im freien Gelände"
+description: "Fahren im freien Gelände ist im Rahmen von J+S nur pistennah, niveau- und verhältnisangepasst und mässig steil erlaubt, nach Absprache mit dem Pisten- und Rettungsdienst. Steileres Gelände braucht Notfallausrüstung und den J+S-Sicherheitszusatz Freeride. Erkennung über Stichwörter (Heuristik)."
+message: "«{activity}» enthält «{term}» (freies Gelände), die Sicherheitsüberlegungen nennen aber weder Steilheit noch Absprache mit dem Pisten- und Rettungsdienst. Ohne Notfallausrüstung nur pistennahes, mässig steiles Gelände unter {max}°; bis {maxFreeride}° nur mit Notfallausrüstung (LVS, Schaufel, Sonde) und J+S-Sicherheitszusatz Freeride."
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords, params]
+params: [ski.offPisteMaxSlope, ski.freerideMaxSlope]
+keywords: [SKI_OFFPISTE, SKI_OFFPISTE_PLAN]
+tags: [sicherheit, winter, ski, lawine]
+sources:
+  - key: SKI-FR
+    page: "Folie 3"
+    quote: "Fahren im freien Gelände bis 35° (Teile des gelben Bereichs) – Mit Notfallausrüstung – Gültige J+S-Leiteranerkennung Skifahren oder Snowboard und Sicherheitszusatz Freeride"
+    binding: true
+  - key: SKI-FG
+  - key: WEB-SKI
+  - key: MB-SKI
+    page: "S. 1"
+  - key: SKI-FGV

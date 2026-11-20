@@ -1,6 +1,6 @@
 id: JS-DAY-03
-version: 1.0.0
-module: lst
+version: 1.1.0
+module: js-lager
 status: active
 title: "Sozialzeit zwischen J+S-Einheiten"
 description: "Zwischen zwei aufeinanderfolgenden J+S-Einheiten eines Tages liegen mindestens 30 Minuten Sozialzeit."

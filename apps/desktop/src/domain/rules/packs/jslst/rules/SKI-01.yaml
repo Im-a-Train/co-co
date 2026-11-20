@@ -1,0 +1,28 @@
+id: SKI-01
+version: 1.0.0
+module: ski
+status: active
+kind: ai
+title: "Skifahren: Helm, FIS-Regeln, Erste Hilfe, Material"
+description: "Die Sicherheitsüberlegungen zum Skifahren nehmen das Merkblatt Unfallprävention Skifahren und Snowboarden auf: Helm, FIS-Regeln/SKUS-Richtlinien, Rettungsdecke, Druckverband und Mobiltelefon, Kontrolle von Material und Bindungen. Erkennung über Stichwörter (Heuristik)."
+message: "In den Sicherheitsüberlegungen zu «{activity}» fehlen: {missing} (Merkblatt Unfallprävention Skifahren und Snowboarden)."
+messageVariants:
+  ski_helm: "Helm"
+  ski_fis: "FIS-Regeln/SKUS-Richtlinien"
+  ski_firstaid: "Erste Hilfe (Rettungsdecke, Druckverband, Mobiltelefon)"
+  ski_material: "Material- und Bindungskontrolle"
+  missingJoin: ", "
+severity: should
+confidence: heuristic
+scope: activity
+validFrom: 2026-01-01
+inputs: [keywords]
+keywords: [SKI, SKI_HELM, SKI_FIS, SKI_FIRSTAID, SKI_MATERIAL]
+tags: [sicherheit, winter, ski]
+sources:
+  - key: MB-SKI
+    page: "S. 1"
+    quote: "sorgen dafür, dass ein Helm getragen wird"
+    binding: true
+  - key: SKUS
+  - key: SKI-SF

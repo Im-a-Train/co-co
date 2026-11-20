@@ -422,3 +422,17 @@
     - { value: 2, validFrom: 2026-01-01 }
   sources: [{ key: MAN, page: "S. 38" }]
   overridable: admin
+- key: ski.offPisteMaxSlope
+  label: "Skifahren im freien Gelände ohne Notfallausrüstung: maximale Steilheit (°)"
+  unit: degrees
+  values:
+    - { value: 30, validFrom: 2026-01-01 }
+  sources: [{ key: SKI-FR, page: "Folie 3" }, { key: SKI-FG }]
+  overridable: none
+- key: ski.freerideMaxSlope
+  label: "Skifahren im freien Gelände mit Zusatz Freeride: maximale Steilheit (°)"
+  unit: degrees
+  values:
+    - { value: 35, validFrom: 2026-01-01 }
+  sources: [{ key: SKI-FR, page: "Folie 3" }, { key: WEB-SKI }]
+  overridable: none

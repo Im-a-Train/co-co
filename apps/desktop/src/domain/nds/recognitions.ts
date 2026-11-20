@@ -1,4 +1,4 @@
-// M21 (ADR 0016): the coach's own NDS recognitions as Fristen-radar deadlines (kind 'nds-recognition').
+// M22 (ADR 0017): the coach's own NDS recognitions as Fristen-radar deadlines (kind 'nds-recognition').
 // Red zone: built from in-memory data in the deadline view only; never stored, never sent to MCP/AI.
 import type { Deadline, NdsRecognition, NdsRecognitionsResult } from '@/domain/types'
 

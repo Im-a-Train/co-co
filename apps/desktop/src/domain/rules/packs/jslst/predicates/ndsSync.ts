@@ -1,4 +1,4 @@
-/** Module `js`, NDS sync v2 (M21, ADR 0016): CMP-NDS-05..11. Counts and codes of the NDS aggregate only (red zone), silent without data. */
+/** Module `js`, NDS sync v2 (M22, ADR 0017): CMP-NDS-05..11. Counts and codes of the NDS aggregate only (red zone), silent without data. */
 import type { RuleContext, RuleHit, RulePredicate } from '@/domain/types'
 import { formatDateDe, formatStand, ndsEvidence } from '../../../lib/util'
 import { isRiskActivity } from './lst'

@@ -84,6 +84,8 @@
         "lst-wasser": "Wasser",
         "lst-winter": "Winter",
         "lst-ebb": "Ergänzende Bewegungsblöcke",
+        "js-lager": "J+S-Lagertage",
+        "ski": "Skifahren",
         "pbs": "PBS Best Practice"
       }
     },
@@ -224,7 +226,7 @@
         "default": "standardmässig an",
         "noTrigger": "keine Hinweise im Lager gefunden",
         "notJsCamp": "kein J+S-Lager",
-        "sport": "Sportart ist nicht Lagersport/Trekking",
+        "sport": "gilt nicht für die Sportart dieses Lagers",
         "moduleOff": "Modul {module} ist aus",
         "organizer": "kein PBS-Lager",
         "notApplicable": "Modul {module} ist nicht geladen"

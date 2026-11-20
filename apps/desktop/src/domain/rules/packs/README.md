@@ -103,7 +103,9 @@ the old id in the new rule's `formerIds` so overrides and disabled states carry 
 - **Module in an existing pack:** add it to `pack.yaml` (`appliesWhen`, `default`, triggers), put rules in
   `rules/` with `module: <id>`, add `predicates/<module>.ts` and register it in `predicates/index.ts`, add
   keyword sets and params, add i18n for the module title in the coach «Regelmodule» card if it is toggleable.
-- **New J+S sport:** new pack folder (or new modules with `appliesWhen: { sport: [<id>] }`), add the sport to
-  `campRuleConfig.sport` and the coach UI, register the pack in `packs/index.ts`. General J+S rules stay in
-  module `js`. Known gap: JS-CAMP-01/JS-DAY/JS-FREE/JS-BWZ sit in `lst`, so another sport needs them moved or
-  duplicated.
+- **New J+S sport:** add it to `CampSport`/`CAMP_SPORTS` (`types.ts`, picked in the «Regelmodule» card, i18n
+  `campConfig.modules.sport.<id>`), add the sport to `appliesWhen.sport` of module `js-lager` if it is a camp sport, and
+  add a module with `appliesWhen: { jsCamp: true, sport: [<id>] }` for its own rules (example: module `ski`, ADR 0016).
+  General J+S rules stay in module `js`; the camp-day rules (JS-CAMP-01, JS-DAY-*, JS-FREE-01, CMP-ACT-01…03) live in
+  `js-lager`. LS/T-only rules (JS-LL-01, JS-BWZ-*, Erscheinungsformen, Sicherheitsbereiche) stay in `lst`; the 2027
+  Bewegungszeit day minimum only applies to sport `lst` (`buildJsDayModel` gets the sport).

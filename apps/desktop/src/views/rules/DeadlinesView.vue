@@ -142,7 +142,7 @@ watch(ndsReady, (ready) => {
     ndsLoadedAt.value = null
   }
 })
-// M21: the coach's own recognitions (red zone): the shared in-memory refs of useNds, cleared when NDS disconnects.
+// M22: the coach's own recognitions (red zone): the shared in-memory refs of useNds, cleared when NDS disconnects.
 const recognitionsLoadable = computed(() => ndsReady.value && !!nds.personId.value)
 /** Hint only when NDS is ready but no own person id is known yet. */
 const recognitionsHintVisible = computed(() => ndsReady.value && !nds.personId.value)

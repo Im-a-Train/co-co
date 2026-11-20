@@ -71,7 +71,7 @@ type NdsSuggestions = Partial<Pick<CoachInputs, 'ndsRegistered' | 'ndsRegistered
 
 /**
  * Suggestions for coach inputs from an aggregate. Unknown codes yield no suggestion.
- * ndsRegisteredOn is the submission date from the offer protocol («eingereicht am», M21) when known,
+ * ndsRegisteredOn is the submission date from the offer protocol («eingereicht am», M22) when known,
  * else the approval date («bewilligt am»): the registration happened on or before it.
  * ndsClosedOn is the protocol's closing date (only when present).
  */

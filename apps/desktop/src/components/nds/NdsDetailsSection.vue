@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** M21: camp details from the NDS (risk answers, flags, subsidies, present counts, minimum-requirement messages). */
+/** M22: camp details from the NDS (risk answers, flags, subsidies, present counts, minimum-requirement messages). */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { NdsCampDetails } from '@/domain/types'

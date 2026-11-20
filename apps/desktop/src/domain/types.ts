@@ -506,17 +506,17 @@ export interface NdsAggregate {
    * Counts only. null/absent when the lists could not be read (forbidden, not offered for this camp).
    */
   rega?: NdsRegaCounts | null
-  /** M21 (ADR 0016): attendance counts per activity. null/absent when no list was readable or the record is older. */
+  /** M22 (ADR 0017): attendance counts per activity. null/absent when no list was readable or the record is older. */
   attendance?: NdsAttendance | null
-  /** M21: camp details (risk answers, flags, subsidies, NDS minimum-requirement messages). */
+  /** M22: camp details (risk answers, flags, subsidies, NDS minimum-requirement messages). */
   campDetails?: NdsCampDetails | null
-  /** M21: offer protocol (status history with dates). */
+  /** M22: offer protocol (status history with dates). */
   protocol?: NdsProtocol | null
   /** «Stand NDS» */
   fetchedAt: IsoDateTime
 }
 
-// ---- M21 (ADR 0016): NDS sync v2. Mirrors coco-core/src/nds_sync.rs (serde camelCase). Counts and codes only.
+// ---- M22 (ADR 0017): NDS sync v2. Mirrors coco-core/src/nds_sync.rs (serde camelCase). Counts and codes only.
 
 /** Checked activities of one date. */
 export interface NdsDateAttendance {
@@ -698,7 +698,7 @@ export interface NdsCampSummary {
   end: IsoDate | null
   offerState: string | null
   offerItemState: string | null
-  /** M21: organisation name of the offer (German), for camp matching. */
+  /** M22: organisation name of the offer (German), for camp matching. */
   organisationName?: string | null
 }
 
@@ -765,8 +765,8 @@ export type Severity = 'must' | 'should' | 'hint'
 export type Confidence = 'verified' | 'conflict' | 'unverified' | 'best-practice' | 'heuristic'
 export type FindingScope = 'camp' | 'day' | 'activity' | 'scheduleEntry' | 'document'
 /** Rule modules of the bundled packs (catalog v2 §2.2). */
-export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'pbs'
-export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'pbs']
+export type ModuleId = 'js' | 'lst' | 'lst-lager' | 'lst-trekking' | 'lst-berg' | 'lst-wasser' | 'lst-winter' | 'lst-ebb' | 'js-lager' | 'ski' | 'pbs'
+export const MODULE_IDS: readonly ModuleId[] = ['js', 'lst', 'lst-lager', 'lst-trekking', 'lst-berg', 'lst-wasser', 'lst-winter', 'lst-ebb', 'js-lager', 'ski', 'pbs']
 /** @deprecated Rules v2: the group is the rule's module (`RuleMeta.group === RuleMeta.module`). */
 export type RuleGroup = ModuleId
 export type FindingOrigin = 'rule' | 'ai' | 'manual'
@@ -1082,9 +1082,13 @@ export interface ModuleTrigger {
   coachInput?: Record<string, ParamValue>
 }
 
+/** J+S sport of the camp as registered in the NDS: Lagersport/Trekking, Skifahren or another sport. */
+export type CampSport = 'lst' | 'ski' | 'other'
+export const CAMP_SPORTS: readonly CampSport[] = ['lst', 'ski', 'other']
+
 export interface ModuleAppliesWhen {
   jsCamp?: boolean
-  sport?: Array<'lst' | 'other'>
+  sport?: Array<CampSport>
   organizer?: 'pbs'
   module?: ModuleId
 }
@@ -1132,7 +1136,7 @@ export interface CampRuleConfig {
   campIri: Iri
   zone: 'green'
   /** null = default lst */
-  sport: 'lst' | 'other' | null
+  sport: CampSport | null
   modules: Partial<Record<ModuleId, ModuleCoachState>>
   activityTags: Record<Iri, ActivityTag[]>
   sbApprovals: Record<Iri | 'camp', { approvedOn: IsoDate | null; kind: SbApprovalKind }>
@@ -1159,7 +1163,7 @@ export interface CampRuleConfig {
 
 /** CampRuleConfig with defaults applied and the effective module states (engine input, §2.3). */
 export interface ResolvedCampRuleConfig extends Omit<CampRuleConfig, 'sport'> {
-  sport: 'lst' | 'other'
+  sport: CampSport
   /** true when no record was stored (all defaults). */
   isDefault: boolean
   moduleStates: Partial<Record<ModuleId, ModuleResolution>>
@@ -1407,7 +1411,7 @@ export type DeadlineKind =
   | 'pbs-milestone'
   /** NDS «Pendenz» (red zone): built in the deadline view from in-memory tasks, never stored, never sent to MCP. */
   | 'nds-task'
-  /** M21: expiry of the coach's own J+S recognition (red zone): in-memory only, never stored, never sent to MCP. */
+  /** M22: expiry of the coach's own J+S recognition (red zone): in-memory only, never stored, never sent to MCP. */
   | 'nds-recognition'
 
 export interface Deadline {
@@ -1865,7 +1869,7 @@ export interface AppSettings {
   nds: {
     enabled: boolean
     /**
-     * M21: the coach's own NDS person id (numeric) for recognitions and coach profile. Detected
+     * M22: the coach's own NDS person id (numeric) for recognitions and coach profile. Detected
      * once (nds_detect_person) or entered manually; a manual value is never overwritten.
      * Optional because older stored settings lack it. Red-derived: stripped from backups with omitRedDerived.
      */

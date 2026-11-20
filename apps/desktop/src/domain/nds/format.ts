@@ -1,4 +1,4 @@
-// M21: pure display helpers for NDS numbers (no i18n, counts only).
+// M22: pure display helpers for NDS numbers (no i18n, counts only).
 import type { NdsPresentCounts } from '../types'
 
 /** «1'234.50» (Swiss apostrophe thousands, 2 decimals); null/NaN -> null. */

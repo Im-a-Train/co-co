@@ -65,7 +65,7 @@ const emptyDetails = (): NdsCampDetails => ({
   offerFlags: { lateSubmittedItems: null, lateSubmittedItemsUnapproved: null, itemsInCorrection: null, handicapRegistration: null, evaluationState: null },
 })
 
-describe('M21 display helpers', () => {
+describe('M22 display helpers', () => {
   it('triKey maps booleans and null', () => {
     expect([triKey(true), triKey(false), triKey(null), triKey(undefined)]).toEqual(['yes', 'no', 'unknown', 'unknown'])
   })
@@ -95,7 +95,7 @@ describe('M21 display helpers', () => {
   })
 })
 
-describe('M21 locale keys', () => {
+describe('M22 locale keys', () => {
   const at = (obj: unknown, path: string): unknown => path.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], obj)
   it('nds.* keys used by the new sections exist', () => {
     for (const k of [

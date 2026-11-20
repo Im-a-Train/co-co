@@ -125,7 +125,7 @@ function stripNdsFields(row: unknown): unknown {
   return out
 }
 
-/** Removes the red-derived NDS person id (M21) from a settings row (`app`). */
+/** Removes the red-derived NDS person id (M22) from a settings row (`app`). */
 function stripSettingsRed(row: unknown): unknown {
   const r = row as { key?: string; value?: { nds?: Record<string, unknown> } }
   if (r?.key !== 'app' || !r.value || typeof r.value !== 'object' || !r.value.nds || typeof r.value.nds !== 'object') return row

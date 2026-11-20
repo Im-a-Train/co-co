@@ -177,19 +177,19 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 
 - **Rust:** `src-tauri/src/nds.rs` has its own reqwest client, cookie jar, login window (`nds-login`,
   no capability) and keychain session store (service `co-co-nds`), separate from eCamp and MiData.
-  Nine `nds_*` commands (six from M8, plus `nds_detect_person`, `nds_fetch_recognitions`, `nds_fetch_coach_profile` from M21; [contract](contracts/commands.md)). Event `nds://status`.
+  Nine `nds_*` commands (six from M8, plus `nds_detect_person`, `nds_fetch_recognitions`, `nds_fetch_coach_profile` from M22; [contract](contracts/commands.md)). Event `nds://status`.
 - **Pure logic:** `coco-core::nds` (GraphQL body/response handling, query-only guard, chunk paging,
   `reduce_aggregate`). Raw person data is dropped there; only counts cross to the UI.
-  `coco-core::nds_sync` (M21) holds the attendance, camp-detail, protocol, recognition and coach-profile
+  `coco-core::nds_sync` (M22) holds the attendance, camp-detail, protocol, recognition and coach-profile
   queries and reducers.
-- **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table; M21: `match.ts` camp ranking, `recognitions.ts` recognition deadlines, `format.ts` display formatting of the new data).
+- **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table; M22: `match.ts` camp ranking, `recognitions.ts` recognition deadlines, `format.ts` display formatting of the new data).
 - **Pendenzen as deadlines:** `nds_fetch_tasks` (`coco-core::nds::parse_person_tasks`, no assignee data) feeds `domain/nds/tasks.ts` (`ndsTasksToDeadlines`), which maps tasks to `nds-task` deadlines inside `DeadlinesView` only. Memory only (no table), filtered out of the MCP deadline list; the ICS export includes them (ADR 0007 addendum).
 - **Storage:** Dexie v3 table `nds` (key `campIri`), tagged `red-derived`. `CoachInputs.ndsFields`
-  records which fields the coach accepted from NDS. `AppSettings.nds = { enabled, personId? }` (M21: own NDS person id, detected or entered; stripped from red-free backups).
+  records which fields the coach accepted from NDS. `AppSettings.nds = { enabled, personId? }` (M22: own NDS person id, detected or entered; stripped from red-free backups).
 
-## M21: NDS sync v2 (attendance, camp details, protocol, coach data)
+## M22: NDS sync v2 (attendance, camp details, protocol, coach data)
 
-Decision: [ADR 0016](adr/0016-nds-sync-v2.md). Same red-zone rules as M8; read-only, only on click.
+Decision: [ADR 0017](adr/0017-nds-sync-v2.md). Same red-zone rules as M8; read-only, only on click.
 
 - **Rust:** `coco-core/src/nds_sync.rs` (pure: `Q_*` documents, `reduce_attendances`, `reduce_camp_details`,
   `reduce_protocol`, `classify_protocol_label`, `reduce_recognitions`, `reduce_coach_profile`, `detect_person`);
@@ -255,8 +255,8 @@ packs/
   pbs/                    pack coco-pbs: same shape, module pbs
 ```
 
-- **Rules per module** (108 active + JS-STAFF-01 retired): js 29, lst 28, lst-lager 11, lst-wasser 10,
-  lst-trekking 9, lst-winter 8, pbs 6, lst-berg 4, lst-ebb 4.
+- **Rules per module** (110 active + JS-STAFF-01 retired): js 29, lst 17, js-lager 11, lst-lager 11, lst-wasser 10,
+  lst-trekking 9, lst-winter 8, pbs 6, lst-berg 4, lst-ebb 4, ski 2. Camp sport (`campRuleConfig.sport`): `lst` | `ski` | `other`.
 - **Module state resolution** (`lib/moduleState.ts`): `appliesWhen` (jsCamp, sport, organizer, parent
   module) -> coach state (`campConfig.modules[id]`, default `auto`) -> module default -> tag triggers (`on`)
   -> suggest triggers (`suggested`, reasons as i18n keys). `suggested` caps hits at `hint` and adds
