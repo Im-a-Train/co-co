@@ -25,8 +25,11 @@ Kaderbildung only, partner contract required).
 - Only what was observed: required/optional unknown, fields only seen as `null` have unknown type, enums contain
   observed values only.
 - Read operations only (`POST /personal/tableConfig`, a UI-preference write, is left out).
-- Not yet captured: J+S courses inside an offer (only camps), person search/detail, activity/attendance
-  details, login flow.
+- Captures so far: 2026-11-07 (offers/camps, cadre education, organisation, finance) and 2026-11-15
+  (person expand, granted recognitions incl. documents, user accounts, protocol, activity timeline,
+  `ParticipantAttendances`/`SupervisorAttendances`, offer detail and create-form lookups). The recognition
+  create endpoints only returned 403 for the capturing account, so their success shape is unknown.
+- Not yet captured: J+S courses inside an offer (only camps), person search, login flow.
 
 ## Queries used by co-co
 
@@ -44,15 +47,29 @@ All read-only (`ensure_query_only`), field selections reduced to what is needed,
 
 Raw `.har` files never enter the repo or the assistant's context. `tools/nds/har-redact.mjs` reduces them to
 structure: values are replaced by types, IDs in paths templated, cookies/tokens dropped. Only enum codes listed
-with `--keep` survive. `captures/` and `*.har` are git-ignored.
+with `--keep` survive, and only if they look like codes: numeric strings, UUIDs, e-mails, URLs, dates and AHV
+numbers are dropped even for kept fields (`selected` holds an enum code in some filters and a person ID in
+others). `redacted-to-openapi.mjs` applies the same filter again. `captures/` and `*.har` are git-ignored.
+
+Before committing, scan the generated files, e.g.
+`grep -nEi '@[a-z0-9-]+\.[a-z]{2,}|756\.?[0-9]{4}|[0-9]{6,}' docs/contracts/nds-api/*` must be empty.
 
 ## Regenerate
 
+Raw HARs are deleted after redaction, so captures are combined at the redacted level:
+
 ```sh
-node tools/nds/har-redact.mjs <capture1.har> [capture2.har ...] --out=captures/redacted --keep=<enum fields>
-node tools/nds/redacted-to-openapi.mjs captures/redacted/endpoints-<timestamp>.json --out=docs/contracts/nds-api
-npx @redocly/cli@1.25.11 lint docs/contracts/nds-api/openapi.yaml   # 7 trailing-slash findings are real backend paths
+# 1. redact a new capture; reuse the field list of the previous run (keptValuesFor in its JSON)
+node tools/nds/har-redact.mjs <capture.har> [more.har ...] --out=captures/redacted --keep=<enum fields>
+# 2. merge with earlier redacted captures (endpoints, schemas and enums are unioned)
+node tools/nds/merge-redacted.mjs captures/redacted/endpoints-<old>.json captures/redacted/endpoints-<new>.json \
+  --out=captures/redacted/endpoints-merged-<date>.json
+# 3. generate spec + GraphQL documents
+node tools/nds/redacted-to-openapi.mjs captures/redacted/endpoints-merged-<date>.json --out=docs/contracts/nds-api
+npx @redocly/cli@1.25.11 lint docs/contracts/nds-api/openapi.yaml   # 12 trailing-slash findings are real backend paths
 ```
+
+The merged file is the input for the next merge; keep it in `captures/redacted/`.
 
 ## Caveats
 

@@ -4,7 +4,7 @@
 // No values from the capture are written, except for fields explicitly
 // whitelisted with --keep=fieldA,fieldB (e.g. enum codes like courseStatus).
 //
-// Usage: node tools/har-redact.mjs <input.har> [--out=captures/redacted] [--keep=courseStatus,status]
+// Usage: node tools/nds/har-redact.mjs <input.har> [--out=captures/redacted] [--keep=courseStatus,status]
 //
 // Console output is limited to counts and file paths, so running this never
 // echoes captured data (parse errors are reported generically on purpose).
@@ -22,7 +22,7 @@ const outDir = opt('out', 'captures/redacted');
 const keep = new Set(opt('keep', '').split(',').map((s) => s.trim()).filter(Boolean));
 
 if (!input) {
-  console.error('usage: node tools/har-redact.mjs <input.har> [--out=dir] [--keep=field1,field2]');
+  console.error('usage: node tools/nds/har-redact.mjs <input.har> [--out=dir] [--keep=field1,field2]');
   process.exit(2);
 }
 
@@ -72,6 +72,9 @@ function stringFormat(s) {
   return null;
 }
 
+// string formats that identify a record or a person; never kept as enum values
+const ID_LIKE_FORMATS = new Set(['numeric-string', 'uuid', 'hash', 'ahv-number', 'email', 'uri', 'jwt', 'date', 'date-time']);
+
 // ---------- schema inference (internal: { variants: { type: V } }) ----------
 const newS = () => ({ variants: {} });
 
@@ -90,7 +93,9 @@ function addValue(S, v, keyName) {
     V.formats[f] = (V.formats[f] || 0) + 1;
     V.maxLen = Math.max(V.maxLen || 0, v.length);
   }
-  if (keyName && keep.has(keyName) && ['string', 'integer', 'number', 'boolean'].includes(t)) {
+  // Kept fields may still carry identifiers (e.g. `selected` holds an enum code in one
+  // form and a person ID in another), so only code-like values survive.
+  if (keyName && keep.has(keyName) && ['string', 'boolean'].includes(t) && !ID_LIKE_FORMATS.has(stringFormat(String(v)))) {
     V.values ??= new Set();
     if (V.values.size < 50 && String(v).length <= 60) V.values.add(v);
   }

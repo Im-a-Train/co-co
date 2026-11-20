@@ -3,7 +3,7 @@
 // from the redacted capture produced by har-redact.mjs. Input contains no
 // personal data (structure + whitelisted enum codes only).
 //
-// Usage: node tools/redacted-to-openapi.mjs <endpoints.json> [--out=docs/nds-api]
+// Usage: node tools/nds/redacted-to-openapi.mjs <endpoints.json> [--out=docs/contracts/nds-api]
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,9 +35,10 @@ function clean(s) {
     if (f.length === 1 && FORMAT_MAP[f[0]]) o.format = FORMAT_MAP[f[0]];
     else if (f.length === 1 && f[0] === 'numeric-string') o.pattern = '^-?\\d+$';
     else if (f.length === 1 && f[0] === 'ahv-number') { o.pattern = '^756\\.?\\d{4}\\.?\\d{4}\\.?\\d{2}$'; o.description = 'AHV/AVS number (AHVN13). Sensitive: systematic use restricted by AHVG Art. 153c ff.'; }
-    if (s.enum) o.enum = s.enum;
+    // defence in depth: values that look like IDs or personal data never become enum members
+    const codes = (s.enum || []).filter((v) => /^([A-Za-z][A-Za-z0-9_./+-]*)?$/.test(String(v)));
+    if (codes.length) o.enum = codes;
   }
-  if (['integer', 'number', 'boolean'].includes(s.type) && s.enum && s.type !== 'boolean') o.enum = s.enum;
   if (s.type === 'array') o.items = clean(s.items);
   if (s.type === 'object') {
     if (s.properties) {
