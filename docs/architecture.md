@@ -177,13 +177,38 @@ Decision: [ADR 0007](adr/0007-nds-red-zone.md). Unofficial, reverse-engineered w
 
 - **Rust:** `src-tauri/src/nds.rs` has its own reqwest client, cookie jar, login window (`nds-login`,
   no capability) and keychain session store (service `co-co-nds`), separate from eCamp and MiData.
-  Six `nds_*` commands ([contract](contracts/commands.md)). Event `nds://status`.
+  Nine `nds_*` commands (six from M8, plus `nds_detect_person`, `nds_fetch_recognitions`, `nds_fetch_coach_profile` from M21; [contract](contracts/commands.md)). Event `nds://status`.
 - **Pure logic:** `coco-core::nds` (GraphQL body/response handling, query-only guard, chunk paging,
   `reduce_aggregate`). Raw person data is dropped there; only counts cross to the UI.
-- **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table).
+  `coco-core::nds_sync` (M21) holds the attendance, camp-detail, protocol, recognition and coach-profile
+  queries and reducers.
+- **UI layer:** `domain/nds/` (suggestions, state labels, field diffs, store for the `nds` table; M21: `match.ts` camp ranking, `recognitions.ts` recognition deadlines, `format.ts` display formatting of the new data).
 - **Pendenzen as deadlines:** `nds_fetch_tasks` (`coco-core::nds::parse_person_tasks`, no assignee data) feeds `domain/nds/tasks.ts` (`ndsTasksToDeadlines`), which maps tasks to `nds-task` deadlines inside `DeadlinesView` only. Memory only (no table), filtered out of the MCP deadline list; the ICS export includes them (ADR 0007 addendum).
 - **Storage:** Dexie v3 table `nds` (key `campIri`), tagged `red-derived`. `CoachInputs.ndsFields`
-  records which fields the coach accepted from NDS. `AppSettings.nds = { enabled }`.
+  records which fields the coach accepted from NDS. `AppSettings.nds = { enabled, personId? }` (M21: own NDS person id, detected or entered; stripped from red-free backups).
+
+## M21: NDS sync v2 (attendance, camp details, protocol, coach data)
+
+Decision: [ADR 0016](adr/0016-nds-sync-v2.md). Same red-zone rules as M8; read-only, only on click.
+
+- **Rust:** `coco-core/src/nds_sync.rs` (pure: `Q_*` documents, `reduce_attendances`, `reduce_camp_details`,
+  `reduce_protocol`, `classify_protocol_label`, `reduce_recognitions`, `reduce_coach_profile`, `detect_person`);
+  `src-tauri/src/nds.rs` does the calls. `nds_fetch_aggregate` adds up to 60 activities x 2 attendance calls,
+  camp details, timeline element, offer detail and protocol. Person ids exist only inside the attendance
+  reducer to count distinct persons.
+- **Aggregate:** `NdsAggregate.attendance` / `campDetails` / `protocol` are optional (`serde(default)`), stored
+  in the existing `nds` table (no schema change, no new Dexie version). A failing optional call gives `null`;
+  403 never disconnects NDS.
+- **Suggestions:** `protocol.submittedOn` -> `ndsRegisteredOn` (and JS-DL-01 lateness), `protocol.closedOn` ->
+  `ndsClosed` / `ndsClosedOn` (`NdsField` gained `ndsClosedOn`; `CoachInputs.ndsClosedOn`).
+- **Rules:** `CMP-NDS-05..11` in pack `jslst` (coco-js-lst, next to CMP-NDS-01..04), never `must`.
+- **Coach data (memory only, like Pendenzen):** `nds_fetch_recognitions` / `nds_fetch_coach_profile` ->
+  `domain/nds/recognitions.ts` -> deadline kind `nds-recognition` inside `DeadlinesView`. Filtered out of the
+  MCP deadline list, never to the AI, ICS export by explicit action. Own person id from `nds_detect_person`
+  (majority coach of visible offers, unverified live) or manual entry, stored in `AppSettings.nds.personId`.
+- **Camp picker:** `NdsCampSummary.organisationName` + `domain/nds/match.ts` (`rankNdsCamps`) sort and mark one
+  suggestion; the coach still picks.
+- **Guards:** `ndsGuard`, `mcpGuard`, `aiGuard` tests cover the new files; no new data to MCP/AI.
 
 ## M10: feedback loop + transparency
 
