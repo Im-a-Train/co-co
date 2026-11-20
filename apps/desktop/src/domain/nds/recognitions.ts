@@ -19,8 +19,7 @@ export const DEFAULT_RECOGNITION_LABELS: NdsRecognitionLabels = {
 
 /** True for recognitions that no longer matter for the radar (archived or invalid). */
 export function isRecognitionInactive(r: NdsRecognition): boolean {
-  void r
-  return false
+  return !!r.archivedSince || !!r.invalidSince || r.state === 'ARCHIVED' || r.state === 'INVALID'
 }
 
 /**
@@ -33,7 +32,21 @@ export function ndsRecognitionsToDeadlines(
   result: NdsRecognitionsResult | null,
   labels: NdsRecognitionLabels = DEFAULT_RECOGNITION_LABELS,
 ): Deadline[] {
-  void result
-  void labels
-  return []
+  const out: Deadline[] = []
+  for (const r of result?.recognitions ?? []) {
+    if (!r.validUntil || isRecognitionInactive(r)) continue
+    const omitted = r.state === 'OMITTED' || r.omittedSince != null
+    out.push({
+      campIri: `nds:recognition:${r.businessId}`,
+      campTitle: 'NDS',
+      kind: 'nds-recognition',
+      due: r.validUntil,
+      done: false,
+      ruleId: null,
+      source: null,
+      title: omitted ? labels.omitted(r.title, r.omittedSince) : labels.expires(r.title),
+      audience: 'coach',
+    })
+  }
+  return out.sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.title!.localeCompare(b.title!)))
 }

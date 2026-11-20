@@ -1,0 +1,18 @@
+id: CMP-NDS-05
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "Doppelbelegung in der NDS"
+description: "Personen, die in der NDS im selben Zeitraum in einem anderen J+S-Angebot erfasst sind (Doppelbelegung). Die NDS zeigt die Details in der Anwesenheitskontrolle; co-co zählt nur."
+message: "NDS: {participants} Teilnehmende und {supervisors} Leitende sind gleichzeitig in einem anderen J+S-Angebot erfasst (Angebote: {offers}; Daten: {dates}) (Quelle: NDS, Stand {stand})"
+feedbackText: "In der NDS sind {participants} Teilnehmende und {supervisors} Leitende gleichzeitig in einem anderen J+S-Angebot erfasst. Könnt ihr prüfen, ob die Anmeldungen stimmen, und sie bei Bedarf korrigieren?"
+severity: should
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-C
+    page: "«3. Schritt»"

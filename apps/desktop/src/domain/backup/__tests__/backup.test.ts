@@ -219,6 +219,29 @@ describe('backup', () => {
     expect('ndsFields' in row).toBe(false)
   })
 
+  it('omitRedDerived resets an NDS-adopted ndsClosedOn but keeps a manual one', async () => {
+    const s = makeStore()
+    await s.coachInputs!.bulkPut([
+      { campIri: '/c/1', ndsClosed: true, ndsClosedOn: '2031-09-01', ndsFields: { ndsClosedOn: 'x' } },
+      { campIri: '/c/2', ndsClosed: true, ndsClosedOn: '2031-09-02' },
+    ])
+    const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
+    const rows = lean.tables.coachInputs as Array<Record<string, unknown>>
+    expect(rows.find((r) => r.campIri === '/c/1')!.ndsClosedOn).toBeNull()
+    expect(rows.find((r) => r.campIri === '/c/2')!.ndsClosedOn).toBe('2031-09-02')
+  })
+
+  it('omitRedDerived nulls nds.personId in the settings row, default keeps it', async () => {
+    const s = makeStore()
+    await s.settings!.bulkPut([{ key: 'app', value: { nds: { enabled: true, personId: '123' }, midata: { personId: 'm' } } }])
+    const all = await exportFromStore(s)
+    expect((all.tables.settings![0] as { value: { nds: { personId: string } } }).value.nds.personId).toBe('123')
+    const lean = await exportFromStore(s, new Date(), { omitRedDerived: true })
+    const v = (lean.tables.settings![0] as { value: { nds: Record<string, unknown>; midata: Record<string, unknown> } }).value
+    expect(v.nds).toEqual({ enabled: true, personId: null })
+    expect(v.midata.personId).toBe('m')
+  })
+
   it('omitRedDerived strips red-derived findings from selfChecks, default keeps them', async () => {
     const s = makeStore()
     const f = (id: string, redDerived: boolean) => ({ id, ruleId: 'r', severity: 'must', title: 't', message: 'm', targets: [], redDerived })

@@ -108,8 +108,11 @@ function stripMidataFields(row: unknown): unknown {
   return out
 }
 
-/** Reset values (false/null) of NDS-adopted fields. */
-const NDS_EMPTY: Record<string, unknown> = { ndsRegistered: false, ndsRegisteredOn: null, ndsClosed: false }
+/**
+ * Reset values (false/null) of NDS-adopted fields. Like the others, ndsClosedOn is reset only when its
+ * badge is present (i.e. the value was adopted from NDS); a coach-entered closing date is kept.
+ */
+const NDS_EMPTY: Record<string, unknown> = { ndsRegistered: false, ndsRegisteredOn: null, ndsClosed: false, ndsClosedOn: null }
 
 /** Removes values adopted from NDS (red-derived) from a coachInputs row, plus the badge map. */
 function stripNdsFields(row: unknown): unknown {
@@ -120,6 +123,13 @@ function stripNdsFields(row: unknown): unknown {
   for (const f of NDS_FIELDS) if (f in badges) out[f] = NDS_EMPTY[f]
   delete out.ndsFields
   return out
+}
+
+/** Removes the red-derived NDS person id (M21) from a settings row (`app`). */
+function stripSettingsRed(row: unknown): unknown {
+  const r = row as { key?: string; value?: { nds?: Record<string, unknown> } }
+  if (r?.key !== 'app' || !r.value || typeof r.value !== 'object' || !r.value.nds || typeof r.value.nds !== 'object') return row
+  return { ...r, value: { ...r.value, nds: { ...r.value.nds, personId: null } } }
 }
 
 /** Drops red-derived findings (quoting MiData/NDS) from a selfChecks row. */
@@ -142,7 +152,9 @@ export async function exportFromStore(store: BackupStore, now: Date = new Date()
         ? rows.map(stripRedFields)
         : options.omitRedDerived && name === 'selfChecks'
           ? rows.map(stripSelfCheckRed)
-          : rows
+          : options.omitRedDerived && name === 'settings'
+            ? rows.map(stripSettingsRed)
+            : rows
   }
   return {
     format: EXPORT_FORMAT,

@@ -1,0 +1,19 @@
+id: CMP-NDS-08
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "Risikoaktivität nicht in der NDS angegeben"
+description: "In der NDS ist angegeben, dass keine Risikoaktivitäten geplant sind, in eCamp gibt es aber J+S-Aktivitäten mit Risikobezug (Stichwörter: draussen, Wasser, Berg, Seil, Nacht, Winter, Feuer; oder Sicherheitsbereich-Tag). Heuristik."
+message: "NDS: keine Risikoaktivität angegeben, in eCamp aber {count} mit Risikobezug: {activities} (Quelle: NDS, Stand {stand})"
+feedbackText: "In der NDS ist keine Risikoaktivität angegeben, im Programm gibt es aber {count} mit Risikobezug: {activities}. Könnt ihr die Angabe in der NDS prüfen und anpassen?"
+severity: should
+confidence: heuristic
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds, mapping, activityTags, keywords]
+keywords: [OUTDOOR, WATER, MOUNTAIN, ROPE, NIGHT, WINTER, FIRE]
+tags: [vollstaendigkeit, nds, sicherheit]
+sources:
+  - key: MB-UP
+    page: "S. 1"

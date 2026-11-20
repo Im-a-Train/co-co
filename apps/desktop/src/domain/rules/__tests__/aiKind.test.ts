@@ -8,6 +8,8 @@ import { FactsBuilder, makeCtx, CAT_LS } from './factory'
 /** Keyword rules that stay hard: they feed J+S day counting, Sicherheitsbereich detection or a binding requirement. */
 const HARD_KEYWORD_RULES = new Set([
   'CMP-ACT-03',
+  // Cross-checks the NDS risk-activity answer with the same risk detection as CMP-ACT-03 (needs the keyword hits, not AI judgement).
+  'CMP-NDS-08',
   'JS-DAY-05',
   'JS-EXCL-01',
   'JS-PROG-02',

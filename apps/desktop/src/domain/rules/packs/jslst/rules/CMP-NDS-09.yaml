@@ -1,0 +1,18 @@
+id: CMP-NDS-09
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "Mindestanforderungen laut NDS nicht erfüllt"
+description: "Die NDS meldet selbst, dass Mindestanforderungen an das Angebot nicht erfüllt sind. co-co zeigt die Meldungen der NDS an."
+message: "NDS: {count} Meldung(en) zu Mindestanforderungen: {messages} (Quelle: NDS, Stand {stand})"
+feedbackText: "Die NDS meldet, dass Mindestanforderungen nicht erfüllt sind: {messages}. Könnt ihr das prüfen und die Angaben in der NDS anpassen?"
+severity: should
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-C
+    page: ""

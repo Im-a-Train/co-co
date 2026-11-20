@@ -373,7 +373,7 @@ export function isOutdoorActivity(ctx: RuleContext, a: ActivityFact): boolean {
 }
 
 /** Risk activity: risk keyword hit or a `sb-*` / `ebb-*` tag. */
-function isRiskActivity(ctx: RuleContext, a: ActivityFact): boolean {
+export function isRiskActivity(ctx: RuleContext, a: ActivityFact): boolean {
   if (ctx.campConfig.tagsOf(a.iri).some((t) => t.startsWith('sb-') || t.startsWith('ebb-'))) return true
   return RISK_SETS.some((set) => ctx.keywords.matchActivity(set, a, ['title', 'location', 'storyboard']).length > 0)
 }

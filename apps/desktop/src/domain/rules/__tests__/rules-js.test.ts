@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { allPredicates as p } from './predicates'
 import { evaluate } from '../engine'
 import { loadBundledPacks } from '../packs'
-import { FactsBuilder, makeCoachInputs, makeCtx, msg } from './factory'
+import { FactsBuilder, makeCoachInputs, makeCtx, makeNds, msg } from './factory'
 
 
 
@@ -52,6 +52,19 @@ describe('JS-DL-01/02 NDS source', () => {
   it('JS-DL-01 does not conclude lateness from an NDS approval date (bewilligt am)', () => {
     const inputs = makeCoachInputs({ ndsRegistered: true, ndsRegisteredOn: '2031-06-13', ndsFields: { ndsRegistered: '2031-06-14T10:00:00.000Z', ndsRegisteredOn: '2031-06-14T10:00:00.000Z' } })
     expect(p['JS-DL-01'](at('2031-06-20T00:00:00Z', inputs))).toEqual([])
+  })
+  it('JS-DL-01 concludes lateness when the adopted date equals the NDS protocol submission date', () => {
+    const inputs = makeCoachInputs({ ndsRegistered: true, ndsRegisteredOn: '2031-06-13', ndsFields: { ndsRegistered: '2031-06-14T10:00:00.000Z', ndsRegisteredOn: '2031-06-14T10:00:00.000Z' } })
+    const protocol = { events: [], submittedOn: '2031-06-13', approvedOn: '2031-06-14', closedOn: null, truncated: false }
+    const hits = p['JS-DL-01'](makeCtx(b.facts, { now: new Date('2031-06-20T00:00:00Z'), coachInputs: inputs, nds: makeNds({ protocol }) }))
+    expect(hits).toHaveLength(1)
+    expect(hits[0].variant).toBe('late')
+    // an approval date that differs from the protocol submission date still proves nothing
+    const other = makeNds({ protocol: { ...protocol, submittedOn: '2031-06-01' } })
+    expect(p['JS-DL-01'](makeCtx(b.facts, { now: new Date('2031-06-20T00:00:00Z'), coachInputs: inputs, nds: other }))).toEqual([])
+    // protocol without submission date
+    const none = makeNds({ protocol: { ...protocol, submittedOn: null } })
+    expect(p['JS-DL-01'](makeCtx(b.facts, { now: new Date('2031-06-20T00:00:00Z'), coachInputs: inputs, nds: none }))).toEqual([])
   })
   it('JS-DL-01 cites Quelle: NDS when the NDS-derived input is overdue, and the engine tags it', () => {
     const inputs = makeCoachInputs({ ndsRegistered: false, ndsFields: { ndsRegistered: '2031-06-14T10:00:00.000Z' } })

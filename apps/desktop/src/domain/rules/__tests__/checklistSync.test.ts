@@ -135,6 +135,9 @@ describe('withDeadlineDone', () => {
     expect(withDeadlineDone(nds, { kind: 'nds-closing' }, false, 'd').ndsFields).toEqual({ ndsRegistered: 'x', ndsRegisteredOn: 'x' })
     expect(withDeadlineDate(nds, 'nds-registration', '2031-01-09').ndsFields).toEqual({ ndsRegistered: 'x', ndsClosed: 'x' })
     expect(withDeadlineDate(nds, 'nds-closing', null).ndsFields).toEqual({ ndsRegistered: 'x', ndsRegisteredOn: 'x', ndsClosed: 'x' })
+    const withOn = { ...nds, ndsClosedOn: '2031-09-01', ndsFields: { ...nds.ndsFields, ndsClosedOn: 'x' } }
+    expect(withDeadlineDone(withOn, { kind: 'nds-closing' }, false, 'd').ndsFields).toEqual({ ndsRegistered: 'x', ndsRegisteredOn: 'x' })
+    expect(withDeadlineDate(withOn, 'nds-closing', '2031-09-05').ndsFields).not.toHaveProperty('ndsClosedOn')
     expect(withDeadlineDone(base, { kind: 'nds-registration' }, true, 'd').ndsFields).toBeUndefined()
   })
   it('unticking a de-duplicated bundled milestone sticks after recomputing the deadlines', () => {
