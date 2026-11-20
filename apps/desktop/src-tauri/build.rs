@@ -56,6 +56,9 @@ const COMMANDS: &[&str] = &[
     "persons_clear",
     "unlock_data_store",
     "lock_data_store",
+    "app_update_check",
+    "app_update_auto_check_allowed",
+    "app_update_install",
 ];
 
 fn main() {
