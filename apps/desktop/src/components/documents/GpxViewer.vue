@@ -1,10 +1,9 @@
 <script setup lang="ts">
 /**
- * GPX viewer: track polyline and elevation profile as inline SVG. The track sits on swisstopo Web-Mercator
- * tiles (base map plus optional hiking-trail and slope overlays) that Rust fetches via the map_tile command
- * (ADR 0015); the webview itself never loads tiles from the network. Tiles that fail stay empty.
+ * GPX viewer: interactive swisstopo map (SwisstopoMap.vue, Leaflet) plus elevation profile as inline SVG.
+ * Tiles come from Rust via the map_tile command (ADR 0015); the webview never loads them from the network.
  */
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { decodeUtf8, parseGpx } from '@/domain/documents/extract'
 import type { GpxPoint } from '@/domain/documents'
@@ -12,16 +11,11 @@ import {
   cumulativeKm,
   elevationProfile,
   nearestIndexByKm,
-  nearestIndexByXY,
   scaleProfile,
-  segmentPaths,
 } from '@/domain/documents/gpxView'
-import { fitView, projectToView, tilesForView, TILE_SIZE } from '@/domain/documents/mapTiles'
+import SwisstopoMap from './SwisstopoMap.vue'
 import type { DocumentAnchor } from '@/domain/types'
-import { base64ToBytes, commands, type MapLayer } from '@/lib/tauri'
 
-const MAP_W = 600
-const MAP_H = 340
 const PROF_W = 600
 const PROF_H = 150
 
@@ -35,9 +29,6 @@ const selectedIdx = ref<number | null>(null)
 const hoverIdx = ref<number | null>(null)
 
 const cum = computed(() => cumulativeKm(points.value))
-const view = computed(() => fitView(points.value, MAP_W, MAP_H))
-const projected = computed(() => ({ points: projectToView(points.value, view.value) }))
-const paths = computed(() => segmentPaths(projected.value.points, points.value))
 const profile = computed(() => elevationProfile(points.value))
 const scaled = computed(() => scaleProfile(profile.value, PROF_W, PROF_H))
 const profilePath = computed(() => scaled.value.xy.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '))
@@ -51,7 +42,6 @@ const totalKm = computed(() => (cum.value.length ? cum.value[cum.value.length - 
 
 const activeIdx = computed(() => hoverIdx.value ?? selectedIdx.value)
 const activePoint = computed(() => (activeIdx.value !== null ? points.value[activeIdx.value] ?? null : null))
-const activeMap = computed(() => (activeIdx.value !== null ? projected.value.points[activeIdx.value] ?? null : null))
 /** Profile x of the active point (nearest profile entry by km). */
 const activeProfileX = computed(() => {
   if (activeIdx.value === null || !profile.value.length) return null
@@ -92,10 +82,6 @@ function profileIndexAt(ev: MouseEvent): number {
   })
   return profile.value[best]!.index
 }
-function onMapClick(ev: MouseEvent) {
-  const { x, y } = svgPos(ev, MAP_W, MAP_H)
-  select(nearestIndexByXY(projected.value.points, x, y))
-}
 function onProfileMove(ev: MouseEvent) {
   const i = profileIndexAt(ev)
   hoverIdx.value = i >= 0 ? i : null
@@ -128,100 +114,7 @@ watch(
   },
 )
 
-// --- map tiles ---------------------------------------------------------------------------------------
-const PREF_KEY = 'co-co.gpxMap.v2'
-const MAX_PARALLEL = 6
-const LAYER_ORDER: MapLayer[] = ['base', 'slope', 'hiking']
-type Toggles = Record<MapLayer, boolean>
-const DEFAULT_TOGGLES: Toggles = { base: true, hiking: false, slope: false }
-
-/** Layer toggles are a device preference (no user ids in localStorage). */
-const toggles = reactive<Toggles>({ ...DEFAULT_TOGGLES })
-
-function loadToggles() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(PREF_KEY) ?? '{}') as Partial<Toggles>
-    for (const l of LAYER_ORDER) toggles[l] = typeof saved[l] === 'boolean' ? (saved[l] as boolean) : DEFAULT_TOGGLES[l]
-  } catch {
-    /* storage unavailable: keep defaults */
-  }
-}
-function saveToggles() {
-  try {
-    localStorage.setItem(PREF_KEY, JSON.stringify({ base: toggles.base, hiking: toggles.hiking, slope: toggles.slope }))
-  } catch {
-    /* storage unavailable: toggles just are not remembered */
-  }
-}
-
-/** Object URL per tile key, null = failed, absent = unknown. Per-component cache, revoked on unmount. */
-const tileUrls = reactive(new Map<string, string | null>())
-const tileRefs = computed(() => tilesForView(view.value))
-const loading = ref(false)
-let generation = 0
-const tileKey = (l: MapLayer, t: { z: number; x: number; y: number }) => `${l}/${t.z}/${t.x}/${t.y}`
-
-async function fetchTile(l: MapLayer, t: { z: number; x: number; y: number }) {
-  const key = tileKey(l, t)
-  try {
-    const r = await commands.mapTile(l, t.z, t.x, t.y)
-    const bytes = base64ToBytes(r.bytesBase64)
-    tileUrls.set(key, URL.createObjectURL(new Blob([bytes as BlobPart], { type: r.contentType })))
-  } catch {
-    tileUrls.set(key, null)
-  }
-}
-
-async function loadTiles() {
-  const gen = ++generation
-  const queue: Array<[MapLayer, { z: number; x: number; y: number }]> = []
-  for (const l of LAYER_ORDER) {
-    if (!toggles[l]) continue
-    for (const t of tileRefs.value) if (!tileUrls.has(tileKey(l, t))) queue.push([l, t])
-  }
-  if (!queue.length) {
-    loading.value = false
-    return
-  }
-  loading.value = true
-  const worker = async () => {
-    for (;;) {
-      if (gen !== generation) return // stale view or toggles: stop pulling work
-      const next = queue.shift()
-      if (!next) return
-      await fetchTile(next[0], next[1])
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL, queue.length) }, worker))
-  if (gen === generation) loading.value = false
-}
-
-const tileImages = computed(() =>
-  LAYER_ORDER.filter((l) => toggles[l]).flatMap((l) =>
-    tileRefs.value.flatMap((t) => {
-      const href = tileUrls.get(tileKey(l, t))
-      return href ? [{ key: `${tileKey(l, t)}@${t.px},${t.py}`, href, x: t.px, y: t.py }] : []
-    }),
-  ),
-)
-const baseUnavailable = computed(
-  () => toggles.base && !loading.value && tileRefs.value.length > 0 && tileRefs.value.every((t) => tileUrls.get(tileKey('base', t)) === null),
-)
-
-watch([tileRefs, () => toggles.base, () => toggles.hiking, () => toggles.slope], () => {
-  if (points.value.length) void loadTiles()
-})
-function onToggle() {
-  saveToggles()
-}
-onBeforeUnmount(() => {
-  generation++
-  for (const u of tileUrls.values()) if (u) URL.revokeObjectURL(u)
-  tileUrls.clear()
-})
-
 onMounted(() => {
-  loadToggles()
   try {
     points.value = parseGpx(decodeUtf8(props.bytes)).points
     if (props.target?.km !== undefined && points.value.length) select(nearestIndexByKm(cum.value, props.target.km))
@@ -236,38 +129,7 @@ onMounted(() => {
     <v-alert v-if="error" type="error" variant="tonal" density="compact" :text="t('documents.viewer.error', { msg: error })" />
     <v-alert v-else-if="!points.length" type="info" variant="tonal" density="compact" :text="t('documents.viewer.gpxEmpty')" />
     <template v-else>
-      <svg
-        class="map"
-        :viewBox="`0 0 ${MAP_W} ${MAP_H}`"
-        role="img"
-        :aria-label="t('documents.viewer.gpxTrack')"
-        data-testid="gpx-track"
-        @click="onMapClick"
-      >
-        <rect :width="MAP_W" :height="MAP_H" class="bg" />
-        <image
-          v-for="img in tileImages"
-          :key="img.key"
-          :href="img.href"
-          :x="img.x"
-          :y="img.y"
-          :width="TILE_SIZE"
-          :height="TILE_SIZE"
-          class="tile"
-        />
-        <path v-for="(d, i) in paths" :key="'h' + i" :d="d" class="track-halo" />
-        <path v-for="(d, i) in paths" :key="i" :d="d" class="track" />
-        <circle :cx="projected.points[0]!.x" :cy="projected.points[0]!.y" r="6" class="start" />
-        <circle :cx="projected.points[projected.points.length - 1]!.x" :cy="projected.points[projected.points.length - 1]!.y" r="6" class="end" />
-        <circle v-if="activeMap" :cx="activeMap.x" :cy="activeMap.y" r="7" class="sel" />
-        <text v-if="toggles.base && !baseUnavailable" :x="MAP_W - 4" :y="MAP_H - 4" text-anchor="end" class="attribution">{{ t('documents.viewer.gpxAttribution') }}</text>
-        <text v-if="baseUnavailable" :x="MAP_W / 2" :y="MAP_H - 8" text-anchor="middle" class="attribution" data-testid="gpx-map-unavailable">{{ t('documents.viewer.gpxMapUnavailable') }}</text>
-      </svg>
-      <div class="d-flex flex-wrap align-center ga-4" role="group" :aria-label="t('documents.viewer.gpxMapLayers')" data-testid="gpx-layers">
-        <v-switch v-model="toggles.base" :label="t('documents.viewer.gpxLayerBase')" density="compact" hide-details color="primary" @update:model-value="onToggle" />
-        <v-checkbox v-model="toggles.hiking" :label="t('documents.viewer.gpxLayerHiking')" density="compact" hide-details @update:model-value="onToggle" />
-        <v-checkbox v-model="toggles.slope" :label="t('documents.viewer.gpxLayerSlope')" density="compact" hide-details @update:model-value="onToggle" />
-      </div>
+      <SwisstopoMap :points="points" :active-idx="activeIdx" :selected-idx="selectedIdx" @select="select" />
       <div class="text-caption text-medium-emphasis">{{ t('documents.viewer.gpxLegend') }}</div>
 
       <svg
@@ -311,55 +173,11 @@ svg {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 4px;
 }
-.map {
-  cursor: crosshair;
-}
 .profile {
   cursor: col-resize;
 }
 .bg {
   fill: rgba(var(--v-theme-on-surface), 0.04);
-}
-.tile {
-  pointer-events: none;
-}
-.attribution {
-  font-size: 10px;
-  fill: #333;
-  paint-order: stroke;
-  stroke: rgba(255, 255, 255, 0.8);
-  stroke-width: 3px;
-  pointer-events: none;
-}
-.track-halo {
-  fill: none;
-  stroke: #fff;
-  stroke-opacity: 0.9;
-  stroke-width: 6;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-.track {
-  fill: none;
-  stroke: rgb(var(--v-theme-primary));
-  stroke-width: 3;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-.start {
-  fill: rgb(var(--v-theme-success));
-  stroke: #fff;
-  stroke-width: 2;
-}
-.end {
-  fill: rgb(var(--v-theme-error));
-  stroke: #fff;
-  stroke-width: 2;
-}
-.sel {
-  fill: rgb(var(--v-theme-warning));
-  stroke: #fff;
-  stroke-width: 2;
 }
 .area {
   fill: rgba(var(--v-theme-primary), 0.18);
