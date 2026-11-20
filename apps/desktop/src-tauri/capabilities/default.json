@@ -58,6 +58,10 @@
     "allow-persons-load-nds",
     "allow-persons-clear",
     "allow-unlock-data-store",
-    "allow-lock-data-store"
+    "allow-lock-data-store",
+    "allow-app-update-check",
+    "allow-app-update-auto-check-allowed",
+    "allow-app-update-install",
+    "allow-app-update-open-release"
   ]
 }

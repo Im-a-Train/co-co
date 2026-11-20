@@ -187,5 +187,14 @@ window only. Nothing runs in the background. Unknown state codes are kept as raw
 | `unlock_data_store` | none | `{ key: string, created: boolean }` | Needs a logged-in eCamp session verified by one authenticated `GET profile` (refresh-and-retry on 401); otherwise rejects with `Nicht angemeldet`. Returns the base64 of the 32-byte data key from the OS keychain (service `ch.imatrain.coco`, user `data-key`), generated with the OS RNG on first use (`created: true`). Also loads (and, if legacy plaintext, migrates) the AES-256-GCM encrypted `allowed-paths.json`. The key is never logged; the UI must keep it in memory only. |
 | `lock_data_store` | none | `void` | Drops Rust-side key copies and the loaded file scope (keychain entry stays). Also done by `logout`. Person lists are unaffected (`persons_clear`). |
 
+### In-app updates (ADR 0018)
+
+| Command | Args | Returns | Notes |
+| --- | --- | --- | --- |
+| `app_update_check` | none | `AppUpdateInfo { currentVersion, available, version?, notes? (max 2000 chars), date?, canInstall, portable, releaseUrl }` | Reads the signed `latest.json` of the GitHub release `updater`. Errors are short German texts without URLs (offline, unreadable feed, bad signature). `portable` = no `uninstall.exe` next to the exe; then `canInstall` is false. |
+| `app_update_auto_check_allowed` | none | `boolean` | False for debug builds and unstamped versions without pre-release (exactly `MAJOR.MINOR.PATCH`). |
+| `app_update_install` | none | `void` | Re-checks, downloads, installs (NSIS `/P /UPDATE /R`) and restarts. Refused when portable or not on Windows. Emits `app-update://progress` `{ downloaded, total? }` to `main`. |
+| `app_update_open_release` | `version: string \| null` | `void` | Opens `https://github.com/Im-a-Train/co-co/releases/tag/v<version>` (validated in Rust; overview page for invalid input). |
+
 Event: `nds://status` payload `NdsStatus`, emitted to `main` after login and logout. The frontend also
 reads `nds_status` at start-up.

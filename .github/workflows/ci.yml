@@ -15,6 +15,8 @@ name: CI
 # Releases (ADR 0008): every push to main (= every merged PR) gets the next SemVer pre-release version
 # `<base>-<channel>.<n>` (scripts/version.mjs next), the Windows build is stamped with it, and the
 # `release` job publishes a GitHub pre-release + tag `v<version>` with the NSIS installer and the portable exe.
+# In-app updates (ADR 0018): with the secret TAURI_SIGNING_PRIVATE_KEY the Windows release build is signed and the
+# release job refreshes latest.json on the rolling pre-release `updater`.
 #
 # Public repo safety: self-hosted runners must never run code from forks. Every self-hosted job therefore
 # skips pull requests whose head lives outside this repository (`github.event.pull_request.head.repo.full_name
@@ -188,15 +190,30 @@ jobs:
         if: needs.version.outputs.release == 'true'
         run: node scripts/version.mjs set ${{ needs.version.outputs.version }}
 
+      # ADR 0018: releases are signed for the in-app updater when the secret exists; PR/other builds stay unsigned.
       - name: Build NSIS installer (x86_64-pc-windows-msvc)
-        run: npm run tauri -w apps/desktop -- build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          extra=()
+          if [ "${{ needs.version.outputs.release }}" = "true" ]; then
+            if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+              extra=(--config '{"bundle":{"createUpdaterArtifacts":true}}')
+            else
+              echo "::warning::Secret TAURI_SIGNING_PRIVATE_KEY is not set: building an unsigned release, no in-app update feed."
+            fi
+          fi
+          npm run tauri -w apps/desktop -- build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis "${extra[@]}"
 
       - name: Collect installer + portable exe
         shell: bash
         run: |
           out=release-files; rm -rf "$out"; mkdir -p "$out"
           rel=apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release
-          cp "$rel"/bundle/nsis/*.exe "$out"/
+          cp "$rel/bundle/nsis/co-co_${{ needs.version.outputs.version }}_x64-setup.exe" "$out"/
+          cp "$rel/bundle/nsis/co-co_${{ needs.version.outputs.version }}_x64-setup.exe.sig" "$out"/ 2>/dev/null || true # updater signature (releases with signing key only)
           cp "$rel"/co-co.exe "$out/co-co_${{ needs.version.outputs.version }}_x64-portable.exe"
           ls -l "$out"
 
@@ -238,15 +255,30 @@ jobs:
         run: node scripts/version.mjs set ${{ needs.version.outputs.version }}
 
       # MSI (WiX) rejects non-numeric pre-release versions such as 0.1.0-alpha.3, so releases ship NSIS only.
+      # ADR 0018: releases are signed for the in-app updater when the secret exists; PR/other builds stay unsigned.
       - name: Build Windows installers
-        run: npm run tauri -w apps/desktop -- build --bundles ${{ needs.version.outputs.release == 'true' && 'nsis' || 'nsis,msi' }}
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          extra=()
+          if [ "${{ needs.version.outputs.release }}" = "true" ]; then
+            if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+              extra=(--config '{"bundle":{"createUpdaterArtifacts":true}}')
+            else
+              echo "::warning::Secret TAURI_SIGNING_PRIVATE_KEY is not set: building an unsigned release, no in-app update feed."
+            fi
+          fi
+          npm run tauri -w apps/desktop -- build --bundles ${{ needs.version.outputs.release == 'true' && 'nsis' || 'nsis,msi' }} "${extra[@]}"
 
       - name: Collect installers + portable exe
         shell: bash
         run: |
           out=release-files; rm -rf "$out"; mkdir -p "$out"
           rel=apps/desktop/src-tauri/target/release
-          cp "$rel"/bundle/nsis/*.exe "$out"/
+          cp "$rel/bundle/nsis/co-co_${{ needs.version.outputs.version }}_x64-setup.exe" "$out"/
+          cp "$rel/bundle/nsis/co-co_${{ needs.version.outputs.version }}_x64-setup.exe.sig" "$out"/ 2>/dev/null || true # updater signature (releases with signing key only)
           cp "$rel"/bundle/msi/*.msi "$out"/ 2>/dev/null || true
           cp "$rel"/co-co.exe "$out/co-co_${{ needs.version.outputs.version }}_x64-portable.exe"
           ls -l "$out"
@@ -271,6 +303,12 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7 # scripts/updater-manifest.mjs
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
       # Self-hosted runners keep their workspace between runs: use a fresh, per-run directory so no
       # files from earlier builds end up in the release.
       - name: Prepare clean download directory
@@ -306,15 +344,48 @@ jobs:
             **Alpha-Version** – nur für Tests, Daten können sich zwischen Versionen ändern.
 
             **Download (Windows 10/11, x64):**
-            - `co-co_${{ needs.version.outputs.version }}_x64-setup.exe` – Installer (empfohlen, Startmenü + Deinstallation)
+            - `co-co_${{ needs.version.outputs.version }}_x64-setup.exe` – Installer (empfohlen, Startmenü + Deinstallation; das Desktop-Symbol ist optional und standardmässig nicht angehakt)
             - `co-co_${{ needs.version.outputs.version }}_x64-portable.exe` – direkt startbar ohne Installation (benötigt WebView2, bei Windows 10/11 vorinstalliert)
 
             **Download (macOS 11+, Apple Silicon und Intel):**
             - `co-co_${{ needs.version.outputs.version }}_universal.dmg` – öffnen und co-co in «Programme» ziehen
 
+            **Update:** Mit dem Installer installierte Versionen suchen selbst nach neuen Versionen und fragen, ob aktualisiert werden soll («In-App-Update», Einstellungen → Updates). Die portable Version und macOS aktualisieren sich nicht selbst.
+
             Die Dateien sind nicht signiert bzw. nur ad-hoc signiert (macOS) und nicht notarisiert.
             - Windows: SmartScreen zeigt beim ersten Start eine Warnung („Weitere Informationen“ → „Trotzdem ausführen“).
             - macOS: beim ersten Start Rechtsklick auf co-co → „Öffnen“ (oder Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“).
+
+      # ADR 0018: update feed. latest.json lives on a rolling pre-release tagged `updater` (all real releases are
+      # pre-releases, so /releases/latest cannot be used). Skipped with a warning when the build was not signed.
+      - name: Build update feed (latest.json)
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          sig="$RELEASE_DIR/co-co_${VERSION}_x64-setup.exe.sig"
+          if [ ! -f "$sig" ]; then
+            echo "::warning::No updater signature (.sig) for $VERSION in the build: secret TAURI_SIGNING_PRIVATE_KEY missing? Update feed not refreshed."
+            echo "FEED_READY=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          feed="${{ runner.temp }}/feed-${{ github.run_id }}"
+          rm -rf "$feed" && mkdir -p "$feed"
+          node scripts/updater-manifest.mjs --version "$VERSION" --sig "$sig" --out "$feed/latest.json"             --notes "co-co $VERSION – Details: https://github.com/${{ github.repository }}/releases/tag/v$VERSION"
+          echo "FEED_READY=true" >> "$GITHUB_ENV"
+          echo "FEED_DIR=$feed" >> "$GITHUB_ENV"
+
+      - name: Publish update feed (release `updater`)
+        if: env.FEED_READY == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: updater
+          name: co-co Update-Kanal (nicht herunterladen)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          body: "Technischer Release: enthält nur latest.json für die automatische Update-Prüfung von co-co. Bitte nicht herunterladen, die Versionen stehen unter den anderen Releases."
+          files: ${{ env.FEED_DIR }}/latest.json
 
   linux:
     name: Linux bundles (opt-in)

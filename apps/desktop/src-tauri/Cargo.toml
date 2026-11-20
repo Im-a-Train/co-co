@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "co-co (Coach Cockpit) – desktop app for J+S camp coaches on top of eCamp v3"
 authors = ["co-co contributors"]
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.90"
 publish = false
 
 [lib]
@@ -46,6 +46,12 @@ dunce = "1"
 tiny_http = { version = "0.12", default-features = false }
 # ADR 0012: random MCP bearer token (already in the lockfile via other crates).
 getrandom = "0.3"
+
+# ADR 0018: in-app updates (desktop only). No JS permissions exposed; our own commands wrap the plugin.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+# RFC 3339 formatting of the release date (already in the lockfile via the updater).
+time = { version = "0.3", features = ["formatting"] }
 
 [target.'cfg(windows)'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }

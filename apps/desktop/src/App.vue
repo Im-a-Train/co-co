@@ -10,6 +10,8 @@ import { isTauri } from '@/lib/tauri'
 import { installMcpBridge } from '@/composables/mcpBridge'
 import { useMcp } from '@/composables/useMcp'
 import McpConfirmDialog from '@/components/mcp/McpConfirmDialog.vue'
+import UpdateDialog from '@/components/update/UpdateDialog.vue'
+import { useAppUpdate } from '@/composables/useAppUpdate'
 import { initResources } from '@/composables/useResources'
 import { initRuleEdits } from '@/composables/useRuleEdits'
 
@@ -49,6 +51,8 @@ onMounted(() => {
     void init()
     // ADR 0012: MCP tool calls run in this window; the server starts only if AI + MCP are enabled.
     void installMcpBridge().then(() => useMcp().init())
+    // ADR 0018: update check, non-blocking, once the data store is unlocked (settings live there).
+    useAppUpdate().startAuto()
   }
 })
 
@@ -148,6 +152,7 @@ watch(isLoggedIn, (loggedIn) => {
     </v-main>
 
     <McpConfirmDialog />
+    <UpdateDialog />
 
   </v-app>
 </template>

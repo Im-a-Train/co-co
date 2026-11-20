@@ -23,5 +23,6 @@ pub mod refresh;
 pub mod savefile;
 pub mod scope;
 pub mod types;
+pub mod update;
 
 pub use error::CoreError;

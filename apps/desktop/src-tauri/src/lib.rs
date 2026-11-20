@@ -18,6 +18,7 @@ mod midata;
 mod nds;
 mod persons;
 mod session;
+mod updater;
 
 #[cfg(test)]
 mod live_tests;
@@ -35,6 +36,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(state)
         .manage(midata::MidataState::new().expect("MiData-HTTP-Client konnte nicht erstellt werden"))
         .manage(persons::PersonsState::default())
@@ -109,6 +111,10 @@ pub fn run() {
             persons::persons_clear,
             commands::unlock_data_store,
             commands::lock_data_store,
+            updater::app_update_check,
+            updater::app_update_auto_check_allowed,
+            updater::app_update_install,
+            updater::app_update_open_release,
         ])
         .run(tauri::generate_context!())
         .expect("error while running co-co");

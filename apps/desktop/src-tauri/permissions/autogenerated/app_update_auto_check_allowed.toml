@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-app-update-auto-check-allowed"
+description = "Enables the app_update_auto_check_allowed command without any pre-configured scope."
+commands.allow = ["app_update_auto_check_allowed"]
+
+[[permission]]
+identifier = "deny-app-update-auto-check-allowed"
+description = "Denies the app_update_auto_check_allowed command without any pre-configured scope."
+commands.deny = ["app_update_auto_check_allowed"]

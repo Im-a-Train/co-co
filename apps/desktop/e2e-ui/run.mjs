@@ -19,6 +19,7 @@ import { explainFlows } from './explain-flows.mjs'
 import { selfCheckFlows } from './selfcheck-flows.mjs'
 import { radarFlows } from './radar-flows.mjs'
 import { mcpFlows } from './mcp-flows.mjs'
+import { updateFlows } from './update-flows.mjs'
 import { campConfigFlows } from './campconfig-flows.mjs'
 import { exclusionFlows } from './exclusion-flows.mjs'
 import { personsFlows } from './persons-flows.mjs'
@@ -332,6 +333,7 @@ async function main() {
   await exclusionFlows({ page, step, go, shot, BASE })
   await personsFlows({ page, step, go, shot, BASE })
   await dataZonesFlows({ page, step, go, shot, BASE })
+  await updateFlows({ page, step, shot, BASE })
 
   await step('flow: list mode "Feedback erstellen" still works', async () => {
     await go('befunde', 'flow-findings')

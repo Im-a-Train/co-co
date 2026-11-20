@@ -599,6 +599,23 @@ export function installMockTauri(): void {
         }
         case 'lock_data_store':
           return null
+        // ADR 0018: in-app updates. The automatic check is off in the mock so other flows see no dialog.
+        case 'app_update_auto_check_allowed':
+          return false
+        case 'app_update_check':
+          return {
+            currentVersion: '0.1.0-alpha.14',
+            available: true,
+            version: '0.1.0-alpha.99',
+            notes: '- Neu: Updates direkt in co-co\n- Der Installer legt kein Desktop-Icon mehr an\n- Kleine Korrekturen',
+            date: '2026-11-20T10:00:00Z',
+            canInstall: true,
+            portable: false,
+            releaseUrl: 'https://github.com/Im-a-Train/co-co/releases/tag/v0.1.0-alpha.99',
+          }
+        case 'app_update_install':
+        case 'app_update_open_release':
+          return null
         case 'ai_openai_set_key':
           openaiKeyOrigin = originOf(String(a.baseUrl))
           return null
