@@ -27,6 +27,7 @@ import { planMilestoneToggle, withDeadlineDone } from '@/domain/rules/lib/checkl
 import type { Audience, CampRuleConfig, CoachInputs, Deadline, DeadlineKind, Iri } from '@/domain/types'
 import { useCampList } from '@/composables/useCampList'
 import { ndsTasksToDeadlines } from '@/domain/nds/tasks'
+import { ndsRecognitionsToDeadlines } from '@/domain/nds/recognitions'
 import { useNds } from '@/composables/useNds'
 import { commands, errorMessage, type NdsTask } from '@/lib/tauri'
 
@@ -40,7 +41,7 @@ const lastJsByCamp = ref<Record<Iri, string | null>>({})
 const ruleConfigByCamp = ref<Record<Iri, CampRuleConfig>>({})
 
 const FILTERS_KEY = 'co-co.deadlines.filters'
-const KIND_OPTIONS: DeadlineKind[] = ['nds-registration', 'nds-closing', 'leihmaterial', 'landeskarten', 'lagerbewilligung', 'pbs-milestone', 'nds-task']
+const KIND_OPTIONS: DeadlineKind[] = ['nds-registration', 'nds-closing', 'leihmaterial', 'landeskarten', 'lagerbewilligung', 'pbs-milestone', 'nds-task', 'nds-recognition']
 interface StoredFilters {
   campIris: Iri[]
   kinds: DeadlineKind[]
@@ -141,14 +142,30 @@ watch(ndsReady, (ready) => {
     ndsLoadedAt.value = null
   }
 })
-const ndsDeadlines = computed<Deadline[]>(() =>
+// M22: the coach's own recognitions (red zone): the shared in-memory refs of useNds, cleared when NDS disconnects.
+const recognitionsLoadable = computed(() => ndsReady.value && !!nds.personId.value)
+/** Hint only when NDS is ready but no own person id is known yet. */
+const recognitionsHintVisible = computed(() => ndsReady.value && !nds.personId.value)
+const recognitionDeadlines = computed<Deadline[]>(() =>
+  ndsRecognitionsToDeadlines(nds.recognitions.value, {
+    expires: (title) => t('rules.deadlines.ndsRecognitions.expires', { title }),
+    omitted: (title, since) =>
+      since ? t('rules.deadlines.ndsRecognitions.omittedSince', { title, date: fmt(since) }) : t('rules.deadlines.ndsRecognitions.omitted', { title }),
+  }),
+)
+const recognitionsStand = computed(() =>
+  nds.recognitions.value ? t('rules.deadlines.ndsRecognitions.stand', { count: recognitionDeadlines.value.length }) : null,
+)
+const taskDeadlines = computed<Deadline[]>(() =>
   ndsTasksToDeadlines(ndsTasks.value, today.value, { escalation: (date) => t('rules.deadlines.ndsTasks.escalation', { date: fmt(date) }) }),
 )
+const ndsDeadlines = computed<Deadline[]>(() => [...taskDeadlines.value, ...recognitionDeadlines.value])
 const ndsStand = computed(() =>
   ndsLoadedAt.value
     ? t('rules.deadlines.ndsTasks.stand', {
         time: ndsLoadedAt.value.toLocaleString('de-CH', { dateStyle: 'short', timeStyle: 'short' }),
-        count: ndsDeadlines.value.length,
+        // Pendenzen only; recognitions have their own stand line.
+        count: taskDeadlines.value.length,
       })
     : null,
 )
@@ -205,8 +222,13 @@ const deadlines = computed<Deadline[]>(() =>
   ),
 )
 
+/** Kinds whose title comes with the deadline itself (everything but the built-in camp deadlines). */
+const isOwnTitleKind = (k: DeadlineKind): boolean => k === 'pbs-milestone' || k === 'nds-task' || k === 'nds-recognition'
+/** Red-zone kinds built from in-memory NDS data: read-only, no checkbox. */
+const isNdsKind = (k: DeadlineKind): boolean => k === 'nds-task' || k === 'nds-recognition'
+
 function titleOf(d: Deadline): string {
-  return d.kind === 'pbs-milestone' || d.kind === 'nds-task' ? (d.title ?? d.milestoneId ?? '') : t(`rules.deadlines.kind.${d.kind}`)
+  return isOwnTitleKind(d.kind) ? (d.title ?? d.milestoneId ?? '') : t(`rules.deadlines.kind.${d.kind}`)
 }
 
 function rowKey(d: Deadline): string {
@@ -215,7 +237,7 @@ function rowKey(d: Deadline): string {
 
 const allRows = computed(() =>
   deadlines.value.map((d) => {
-    const builtIn = d.kind !== 'pbs-milestone' && d.kind !== 'nds-task'
+    const builtIn = !isOwnTitleKind(d.kind)
     return {
       ...d,
       key: rowKey(d),
@@ -256,7 +278,7 @@ const saveError = ref<string | null>(null)
 
 /** Writes the done state of any deadline (same storage as the camp checklist); milestones also sync their checklist twins. */
 async function toggleDone(row: DeadlineRowData, done: boolean): Promise<boolean> {
-  if (row.kind === 'nds-task') return false
+  if (isNdsKind(row.kind)) return false
   try {
     // Plain copy: IndexedDB cannot clone Vue reactive proxies.
     const stored = inputsByCamp.value[row.campIri]
@@ -372,6 +394,17 @@ function fmt(iso: string): string {
         {{ ndsLoadedAt ? t('rules.deadlines.ndsTasks.reload') : t('rules.deadlines.ndsTasks.load') }}
       </v-btn>
       <v-btn
+        v-if="recognitionsLoadable"
+        size="small"
+        variant="text"
+        prepend-icon="mdi-shield-lock-outline"
+        :loading="nds.recognitionsLoading.value"
+        data-testid="nds-recognitions-load"
+        @click="nds.loadRecognitions()"
+      >
+        {{ nds.recognitions.value ? t('rules.deadlines.ndsRecognitions.reload') : t('rules.deadlines.ndsRecognitions.load') }}
+      </v-btn>
+      <v-btn
         size="small"
         variant="tonal"
         prepend-icon="mdi-calendar-export"
@@ -424,6 +457,16 @@ function fmt(iso: string): string {
     <div v-else-if="ndsReady && ndsStand" class="text-caption text-medium-emphasis mb-2" data-testid="nds-tasks-stand">
       {{ ndsStand }}. {{ t('rules.deadlines.ndsTasks.hint') }}
     </div>
+    <div v-if="recognitionsHintVisible" class="text-caption text-medium-emphasis mb-2" data-testid="nds-recognitions-hint">
+      {{ t('rules.deadlines.ndsRecognitions.needsPerson') }}
+      <RouterLink to="/einstellungen">{{ t('rules.deadlines.ndsTasks.toSettings') }}</RouterLink>
+    </div>
+    <div v-else-if="ndsReady && recognitionsStand" class="text-caption text-medium-emphasis mb-2" data-testid="nds-recognitions-stand">
+      {{ recognitionsStand }}. {{ t('rules.deadlines.ndsRecognitions.hint') }}
+    </div>
+    <v-alert v-if="nds.recognitionsError.value" type="error" variant="tonal" density="compact" class="mb-2" data-testid="nds-recognitions-error">
+      {{ t('rules.deadlines.ndsRecognitions.loadFailed') }}: {{ nds.recognitionsError.value }}
+    </v-alert>
     <v-alert v-if="ndsError" type="error" variant="tonal" density="compact" class="mb-2" data-testid="nds-tasks-error">
       {{ t('rules.deadlines.ndsTasks.loadFailed') }}: {{ ndsError }}
     </v-alert>

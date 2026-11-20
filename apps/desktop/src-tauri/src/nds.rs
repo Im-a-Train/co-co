@@ -29,6 +29,13 @@ use coco_core::nds::{
     Q_CAMP_LIST, Q_OFFER_LIST, Q_PARTICIPANTS_LIST, Q_PERSONS_PARTICIPANTS, Q_PERSONS_SUPERVISORS, Q_REGA_PARTICIPANTS, Q_REGA_SUPERVISORS, Q_RENTAL_ORDERS, Q_SUPERVISORS_LIST, SESSION_COOKIE,
     SESSION_EXPIRED_MSG,
 };
+use coco_core::nds_sync::{
+    self, NdsActivityRef, NdsCoachProfile, NdsPersonDetection, NdsRecognitionsResult, RawActivityAttendance,
+    MAX_ATTENDANCE_ACTIVITIES, OP_COACH_BIOGRAPHY, OP_OFFER_COACHES, OP_ORG_RELATIONS, OP_PARTICIPANT_ATTENDANCES,
+    OP_PERSON_SUPPLEMENTS, OP_PROTOCOL, OP_RECOGNITIONS, OP_SUPERVISOR_ATTENDANCES, PROTOCOL_OFFER_CLASS,
+    Q_COACH_BIOGRAPHY, Q_OFFER_COACHES, Q_ORG_RELATIONS, Q_PARTICIPANT_ATTENDANCES, Q_PERSON_SUPPLEMENTS, Q_PROTOCOL,
+    Q_RECOGNITIONS, Q_SUPERVISOR_ATTENDANCES, RECOGNITION_EDUCATION_FIELDS,
+};
 use coco_core::persons::{attach_rega, reduce_nds_persons, NdsKind, NdsPersonsResult};
 use coco_core::types::AuthLog;
 use coco_core::CoreError;
@@ -281,6 +288,14 @@ fn offer_details_path(offer_id: &str) -> String {
     format!("/youthtraining/offer/offer/{offer_id}/details")
 }
 
+fn offer_path(offer_id: &str) -> String {
+    format!("/youthtraining/offer/offer/{offer_id}")
+}
+
+fn timeline_element_path(activity_id: &str) -> String {
+    format!("/youthtraining/admin/offer/activity/{activity_id}/timelineElement")
+}
+
 /// RFC 3339 UTC timestamp from unix seconds (no chrono).
 fn rfc3339_from_unix(secs: u64) -> String {
     let days = (secs / 86_400) as i64;
@@ -420,6 +435,227 @@ async fn graphql_list_paged(
     }
 }
 
+// ------------------------------------------- tolerant (optional) calls, M22
+
+/// Why an optional call produced nothing. Never converted to «session expired» by itself.
+#[derive(Debug)]
+enum SoftFail {
+    Status(u16),
+    Transport(AppError),
+    /// 2xx without a readable JSON body or without the expected list.
+    Body,
+    /// The server answered with GraphQL errors (e.g. field not allowed).
+    GraphQl,
+}
+
+impl SoftFail {
+    /// Only 401 and redirects mean a dead session; 403 means «no permission for this optional data».
+    fn is_dead_session(&self) -> bool {
+        matches!(self, SoftFail::Status(s) if *s == 401 || (300..400).contains(s))
+    }
+}
+
+/// POST one GraphQL query and return `data.<field>`; every problem is a [`SoftFail`].
+async fn soft_graphql(ctx: &Ctx, service: &str, op: &str, query: &str, variables: Value, field: &str) -> Result<Value, SoftFail> {
+    let f = fetch_graphql(ctx, service, op, query, variables).await.map_err(SoftFail::Transport)?;
+    if !(200..300).contains(&f.status) {
+        return Err(SoftFail::Status(f.status));
+    }
+    let body = f.body.ok_or(SoftFail::Body)?;
+    let data = graphql_data(&body).map_err(|_| SoftFail::GraphQl)?;
+    data.get(field).cloned().ok_or(SoftFail::Body)
+}
+
+/// Paged GraphQL list that never fails the caller's session. Returns the items read and whether
+/// more pages existed than `max_pages`.
+#[allow(clippy::too_many_arguments)]
+async fn soft_list(
+    ctx: &Ctx,
+    service: &str,
+    op: &str,
+    query: &str,
+    field: &str,
+    extra: Value,
+    page_size: u32,
+    max_pages: u32,
+) -> Result<(Vec<Value>, bool), SoftFail> {
+    let mut items = Vec::new();
+    let mut page = 0u32;
+    loop {
+        let list = soft_graphql(ctx, service, op, query, chunk_variables(extra.clone(), page_size, page), field).await?;
+        let (chunk, total_pages) = parse_chunk(&list).map_err(|_| SoftFail::Body)?;
+        let empty = chunk.is_empty();
+        items.extend(chunk);
+        page += 1;
+        if page >= total_pages || empty {
+            return Ok((items, false));
+        }
+        if page >= max_pages {
+            return Ok((items, true));
+        }
+    }
+}
+
+/// GET that yields the JSON body or `None` (any status, transport or parse problem).
+async fn soft_get(ctx: &Ctx, path: &str) -> Option<Value> {
+    let f = fetch(ctx, path).await.ok()?;
+    if (200..300).contains(&f.status) {
+        f.body
+    } else {
+        None
+    }
+}
+
+/// Both attendance lists of one activity (no chunk: one call each). `None` if either fails.
+async fn fetch_activity_attendance(ctx: &Ctx, activity_id: &str) -> Option<(Value, Value)> {
+    let vars = json!({ "activityBusinessId": activity_id });
+    let p = soft_graphql(ctx, "youthtraining", OP_PARTICIPANT_ATTENDANCES, Q_PARTICIPANT_ATTENDANCES, vars.clone(), "participantAttendances")
+        .await
+        .ok()?;
+    let s = soft_graphql(ctx, "youthtraining", OP_SUPERVISOR_ATTENDANCES, Q_SUPERVISOR_ATTENDANCES, vars, "supervisorAttendances")
+        .await
+        .ok()?;
+    Some((p, s))
+}
+
+/// M22 extras of the aggregate (attendance, camp details, protocol). Fully tolerant.
+async fn fetch_sync_extras(
+    ctx: &Ctx,
+    offer_id: &str,
+    camp_details: &Value,
+    activities_doc: &Value,
+    aggregate: &mut NdsAggregate,
+) {
+    let refs: Vec<NdsActivityRef> = nds_sync::activity_refs(activities_doc);
+
+    // attendance per activity, sequential
+    let mut docs: Vec<(usize, Value, Value)> = Vec::new();
+    let mut truncated = refs.len() > MAX_ATTENDANCE_ACTIVITIES;
+    for (i, a) in refs.iter().take(MAX_ATTENDANCE_ACTIVITIES).enumerate() {
+        match fetch_activity_attendance(ctx, &a.business_id).await {
+            Some((p, s)) => docs.push((i, p, s)),
+            None => truncated = true,
+        }
+    }
+    if !docs.is_empty() {
+        let read: Vec<RawActivityAttendance<'_>> = docs
+            .iter()
+            .map(|(i, p, s)| RawActivityAttendance { activity: &refs[*i], participants: p, supervisors: s })
+            .collect();
+        aggregate.attendance = Some(nds_sync::reduce_attendances(refs.len() as u32, &read, truncated));
+    }
+
+    // timeline element of the first activity + offer flags
+    let timeline = match refs.first() {
+        Some(a) if validate_id(&a.business_id).is_ok() => {
+            soft_get(ctx, &timeline_element_path(&a.business_id)).await.unwrap_or(Value::Null)
+        }
+        _ => Value::Null,
+    };
+    let offer = soft_get(ctx, &offer_path(offer_id)).await.unwrap_or(Value::Null);
+    aggregate.camp_details = nds_sync::reduce_camp_details(camp_details, &timeline, &offer);
+
+    // protocol
+    let extra = json!({ "primaryEntityClassName": PROTOCOL_OFFER_CLASS, "primaryEntityId": offer_id, "filter": {} });
+    if let Ok((items, more)) =
+        soft_list(ctx, "youthtraining", OP_PROTOCOL, Q_PROTOCOL, "specificProtocolEntityList", extra, 50, 4).await
+    {
+        aggregate.protocol = Some(nds_sync::reduce_protocol(&items, more));
+    }
+}
+
+/// Own-person detection: majority coach of the visible offers. GraphQL errors (selection not
+/// allowed) yield an empty detection instead of an error.
+pub async fn detect_person_impl(state: &NdsState) -> AppResult<NdsPersonDetection> {
+    let ctx = state.ctx().await?;
+    match soft_list(&ctx, "youthtraining", OP_OFFER_COACHES, Q_OFFER_COACHES, "offerList", json!({}), 50, 20).await {
+        Ok((items, _)) => Ok(nds_sync::detect_person(&items)),
+        Err(SoftFail::GraphQl) => Ok(NdsPersonDetection { person_id: None, offers_seen: 0, offers_matched: 0 }),
+        // Optional data: only 401/3xx mean a dead session; 403 (no permission) must not disconnect.
+        Err(SoftFail::Status(s)) if SoftFail::Status(s).is_dead_session() => Err(session_expired()),
+        Err(SoftFail::Status(_)) => Ok(NdsPersonDetection { person_id: None, offers_seen: 0, offers_matched: 0 }),
+        Err(SoftFail::Transport(e)) => Err(e),
+        Err(SoftFail::Body) => Err(AppError::Http("NDS-Antwort nicht lesbar".into())),
+    }
+}
+
+/// The coach's own recognitions (perorgfin). Partial results are returned; only «every query failed
+/// with 401/3xx» is reported as an expired session.
+pub async fn fetch_recognitions_impl(state: &NdsState, person_id: &str) -> AppResult<NdsRecognitionsResult> {
+    validate_id(person_id)?;
+    let ctx = state.ctx().await?;
+    let mut items: Vec<Value> = Vec::new();
+    let mut failed: Vec<String> = Vec::new();
+    let mut first_failure: Option<SoftFail> = None;
+    for field in RECOGNITION_EDUCATION_FIELDS {
+        let extra = json!({ "personBusinessId": person_id, "filter": nds_sync::recognition_filter(person_id, field) });
+        match soft_list(&ctx, "perorgfin", OP_RECOGNITIONS, Q_RECOGNITIONS, "grantedRecognitionList", extra, 50, 10).await {
+            Ok((mut chunk, _)) => items.append(&mut chunk),
+            Err(e) => {
+                failed.push(field.to_string());
+                first_failure.get_or_insert(e);
+            }
+        }
+    }
+    if failed.len() == RECOGNITION_EDUCATION_FIELDS.len() && first_failure.as_ref().is_some_and(SoftFail::is_dead_session) {
+        return Err(session_expired());
+    }
+    let supplements = soft_list(
+        &ctx,
+        "perorgfin",
+        OP_PERSON_SUPPLEMENTS,
+        Q_PERSON_SUPPLEMENTS,
+        "personSupplementList",
+        json!({ "personBusinessId": person_id }),
+        50,
+        10,
+    )
+    .await
+    .map(|(v, _)| v)
+    .unwrap_or_default();
+    Ok(nds_sync::reduce_recognitions(&items, &supplements, failed, &now_rfc3339()))
+}
+
+/// The coach's organisations and finished offers (perorgfin), tolerant like the recognitions.
+pub async fn fetch_coach_profile_impl(state: &NdsState, person_id: &str) -> AppResult<NdsCoachProfile> {
+    validate_id(person_id)?;
+    let ctx = state.ctx().await?;
+    let vars = json!({ "person": person_id });
+    let relations = match soft_graphql(
+        &ctx,
+        "perorgfin",
+        OP_ORG_RELATIONS,
+        Q_ORG_RELATIONS,
+        vars.clone(),
+        "currentYouthTrainingOrganisationRelationsList",
+    )
+    .await
+    {
+        Ok(list) => parse_chunk(&list).map(|(v, _)| v).map_err(|_| SoftFail::Body),
+        Err(e) => Err(e),
+    };
+    let biography = soft_list(
+        &ctx,
+        "perorgfin",
+        OP_COACH_BIOGRAPHY,
+        Q_COACH_BIOGRAPHY,
+        "finishedYouthTrainingOfferRelationsAsCoachBiographyList",
+        vars,
+        50,
+        10,
+    )
+    .await
+    .map(|(v, _)| v);
+    if let (Err(a), Err(_)) = (&relations, &biography) {
+        if a.is_dead_session() {
+            return Err(session_expired());
+        }
+    }
+    let rel = relations.unwrap_or_default();
+    let bio = biography.unwrap_or_default();
+    Ok(nds_sync::reduce_coach_profile(&rel, &bio, &now_rfc3339()))
+}
+
 /// Coach tasks («Pendenzen») with deadlines (red zone, memory only). No assignee names requested.
 pub async fn fetch_tasks_impl(state: &NdsState) -> AppResult<Vec<NdsTask>> {
     let ctx = state.ctx().await?;
@@ -432,6 +668,7 @@ pub async fn find_camps_impl(state: &NdsState, from: &str, to: &str) -> AppResul
     validate_date(to)?;
     let ctx = state.ctx().await?;
     let offers = graphql_list(&ctx, "youthtraining", OP_OFFER_LIST, Q_OFFER_LIST, "offerList", json!({})).await?;
+    let org_names = nds_sync::offer_organisation_names(&offers);
     let mut out = Vec::new();
     for (offer_id, number, state_code) in parse_offers_overlapping(&offers, from, to)? {
         let camps = graphql_list(
@@ -443,7 +680,11 @@ pub async fn find_camps_impl(state: &NdsState, from: &str, to: &str) -> AppResul
             json!({ "offerBusinessId": offer_id }),
         )
         .await?;
-        out.extend(parse_camps_overlapping(&offer_id, number.as_deref(), state_code.as_deref(), &camps, from, to)?);
+        let mut found = parse_camps_overlapping(&offer_id, number.as_deref(), state_code.as_deref(), &camps, from, to)?;
+        for c in &mut found {
+            c.organisation_name = org_names.get(&offer_id).cloned();
+        }
+        out.extend(found);
     }
     Ok(out)
 }
@@ -513,6 +754,7 @@ pub async fn fetch_aggregate_impl(state: &NdsState, offer_id: &str, camp_id: &st
         fetched_at: &fetched_at,
     })?;
     aggregate.rega = rega;
+    fetch_sync_extras(&ctx, offer_id, &camp_details, &activities, &mut aggregate).await;
     Ok(aggregate)
 }
 
@@ -696,7 +938,110 @@ pub async fn probe_impl(state: &NdsState, camp_id: &str) -> AppResult<NdsProbe> 
     ] {
         endpoints.push(probe_list(&ctx, "youthtraining", op, q, field, camp_vars.clone(), &["transmittedToRega"]).await?);
     }
+    probe_sync_rows(&ctx, camp_id, offer_id.as_deref(), &mut endpoints).await;
     Ok(NdsProbe { connected, endpoints })
+}
+
+/// M22 probe rows. Fully tolerant (never changes `connected`); field names only.
+async fn probe_sync_rows(ctx: &Ctx, camp_id: &str, offer_id: Option<&str>, endpoints: &mut Vec<NdsProbeEndpoint>) {
+    let first_activity = match soft_list(
+        ctx,
+        "youthtraining",
+        OP_ACTIVITY_LIST,
+        Q_ACTIVITY_LIST,
+        "activityListForCamp",
+        json!({ "campBusinessId": camp_id }),
+        1,
+        1,
+    )
+    .await
+    {
+        Ok((items, _)) => nds_sync::activity_refs(&list_document(items)).into_iter().next().map(|a| a.business_id),
+        Err(_) => None,
+    }
+    .filter(|id| validate_id(id).is_ok());
+
+    const TIMELINE_FIELDS: [&str; 4] = [
+        "offerItem.lateSubmission",
+        "offerItem.campDaysWithActivitiesCount",
+        "offerItem.plannedCampSubsidies",
+        "offerItem.presentSupervisorsCount",
+    ];
+    const OFFER_FIELDS: [&str; 3] = ["hasOfferItemsInCorrection", "hasLateSubmittedOfferItems", "offerState"];
+    match &first_activity {
+        Some(id) => {
+            let f = fetch(ctx, &timeline_element_path(id)).await.ok();
+            let (status, body) = (f.as_ref().map(|f| f.status), f.as_ref().and_then(|f| f.body.as_ref()));
+            endpoints.push(endpoint("rest/timelineElement", status, body, &TIMELINE_FIELDS));
+        }
+        None => endpoints.push(endpoint("rest/timelineElement", None, None, &TIMELINE_FIELDS)),
+    }
+    match offer_id {
+        Some(id) => {
+            let f = fetch(ctx, &offer_path(id)).await.ok();
+            let (status, body) = (f.as_ref().map(|f| f.status), f.as_ref().and_then(|f| f.body.as_ref()));
+            endpoints.push(endpoint("rest/offer", status, body, &OFFER_FIELDS));
+        }
+        None => endpoints.push(endpoint("rest/offer", None, None, &OFFER_FIELDS)),
+    }
+
+    for (op, q, field) in [
+        (OP_PARTICIPANT_ATTENDANCES, Q_PARTICIPANT_ATTENDANCES, "participantAttendances"),
+        (OP_SUPERVISOR_ATTENDANCES, Q_SUPERVISOR_ATTENDANCES, "supervisorAttendances"),
+    ] {
+        let expected = ["totalPages", "content[].wasPresent", "content[].overlaps", "content[].person.businessId"];
+        let name = format!("graphql/{op}");
+        let Some(id) = &first_activity else {
+            endpoints.push(endpoint(&name, None, None, &expected));
+            continue;
+        };
+        // No chunk parameter on these operations.
+        match fetch_graphql(ctx, "youthtraining", op, q, json!({ "activityBusinessId": id })).await {
+            Ok(f) => {
+                let list = f.body.as_ref().and_then(|b| graphql_data(b).ok()).and_then(|d| d.get(field));
+                endpoints.push(endpoint(&name, Some(f.status), list, &expected));
+            }
+            Err(_) => endpoints.push(endpoint(&name, None, None, &expected)),
+        }
+    }
+
+    let protocol_name = format!("graphql/{OP_PROTOCOL}");
+    match offer_id {
+        Some(id) => {
+            let extra = json!({ "primaryEntityClassName": PROTOCOL_OFFER_CLASS, "primaryEntityId": id, "filter": {} });
+            let fields = ["createdTimestamp", "protocolType"];
+            endpoints.push(
+                soft_probe_list(ctx, "youthtraining", OP_PROTOCOL, Q_PROTOCOL, "specificProtocolEntityList", extra, &fields, &protocol_name)
+                    .await,
+            );
+        }
+        None => endpoints.push(endpoint(&protocol_name, None, None, &["totalPages"])),
+    }
+    endpoints.push(
+        soft_probe_list(ctx, "youthtraining", OP_OFFER_COACHES, Q_OFFER_COACHES, "offerList", json!({}), &["coach.businessId"], "graphql/OfferList(coach)")
+            .await,
+    );
+}
+
+/// `probe_list` that never fails and reports under `name`.
+#[allow(clippy::too_many_arguments)]
+async fn soft_probe_list(
+    ctx: &Ctx,
+    service: &str,
+    op: &str,
+    query: &str,
+    field: &str,
+    extra: Value,
+    item_fields: &[&str],
+    name: &str,
+) -> NdsProbeEndpoint {
+    match probe_list(ctx, service, op, query, field, extra, item_fields).await {
+        Ok(mut e) => {
+            e.name = name.to_string();
+            e
+        }
+        Err(_) => endpoint(name, None, None, &["totalPages"]),
+    }
 }
 
 // --------------------------------------------------------------- commands
@@ -896,6 +1241,38 @@ pub async fn nds_fetch_aggregate<R: Runtime>(
 }
 
 #[tauri::command]
+pub async fn nds_detect_person<R: Runtime>(webview: Webview<R>, state: State<'_, NdsState>) -> AppResult<NdsPersonDetection> {
+    ensure_main(&webview)?;
+    let result = detect_person_impl(&state).await;
+    drop_expired_session(webview.app_handle(), &state, &result).await;
+    result
+}
+
+#[tauri::command]
+pub async fn nds_fetch_recognitions<R: Runtime>(
+    webview: Webview<R>,
+    state: State<'_, NdsState>,
+    person_id: String,
+) -> AppResult<NdsRecognitionsResult> {
+    ensure_main(&webview)?;
+    let result = fetch_recognitions_impl(&state, &person_id).await;
+    drop_expired_session(webview.app_handle(), &state, &result).await;
+    result
+}
+
+#[tauri::command]
+pub async fn nds_fetch_coach_profile<R: Runtime>(
+    webview: Webview<R>,
+    state: State<'_, NdsState>,
+    person_id: String,
+) -> AppResult<NdsCoachProfile> {
+    ensure_main(&webview)?;
+    let result = fetch_coach_profile_impl(&state, &person_id).await;
+    drop_expired_session(webview.app_handle(), &state, &result).await;
+    result
+}
+
+#[tauri::command]
 pub async fn persons_load_nds<R: Runtime>(
     webview: Webview<R>,
     state: State<'_, NdsState>,
@@ -941,6 +1318,19 @@ mod tests {
         for bad in ["2026-13-01", "2026-7-18", "x", "2026-07-18T00"] {
             assert!(validate_date(bad).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn m21_paths_and_soft_fail() {
+        assert_eq!(offer_path("12"), "/youthtraining/offer/offer/12");
+        assert_eq!(timeline_element_path("34"), "/youthtraining/admin/offer/activity/34/timelineElement");
+        let base = base_url();
+        assert!(api_url(&base, &timeline_element_path("34")).unwrap().as_str().ends_with("/activity/34/timelineElement"));
+        assert!(validate_id("../x").is_err() && validate_id("").is_err());
+        assert!(SoftFail::Status(401).is_dead_session());
+        assert!(SoftFail::Status(302).is_dead_session());
+        assert!(!SoftFail::Status(403).is_dead_session());
+        assert!(!SoftFail::GraphQl.is_dead_session() && !SoftFail::Body.is_dead_session());
     }
 
     #[test]

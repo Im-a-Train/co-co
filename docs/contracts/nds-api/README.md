@@ -43,6 +43,31 @@ All read-only (`ensure_query_only`), field selections reduced to what is needed,
   fails the aggregate. Persons path: `transmittedToRega` is attached to each NDS person row as `regaTransmitted` (match by
   person `businessId`, then `personNumber`); an unreadable list leaves it `null`. The probe checks both operations.
 
+M22 additions (ADR 0017, `coco-core/src/nds_sync.rs`, red zone, memory or counts only):
+
+- `ParticipantAttendances` / `SupervisorAttendances` (service `youthtraining`, `participantAttendances` /
+  `supervisorAttendances`, argument `activityBusinessId`, no chunk): `content { businessId
+  participantTargetAudienceGroup eligibleForSubsidies wasPresent overlaps { offerNumber activityType } person {
+  businessId } }` (supervisors: `involvementType wasPresent mountainGuide overlaps person { businessId }`). Person
+  fields are limited to `businessId`, used in Rust only to count distinct persons; only counts leave Rust. Up to
+  60 activities, 2 calls each. The element shape of `overlaps` beyond `offerNumber`/`activityType` is unverified.
+  `ActivityListForCamp` additionally selects `overlapCount`.
+- `GET /youthtraining/offer/camp/{id}/details` (extended read: risk answers, flags, subsidies,
+  `minimalRequirementsCheckResultMessages`, only null observed), `GET .../activity/{id}/timelineElement`
+  (`offerItem` of the first activity: present counts) and `GET /youthtraining/offer/offer/{id}` (flags).
+- `SpecificProtocolEntityList` (`youthtraining`, `primaryEntityClassName`
+  `com.queomedia.nds.youthtraining.offer.domain.Offer`): `content { protocolId createdTimestamp protocolType { de fr it } }`.
+  **`protocolContent` and `triggeringPerson` are deliberately NOT requested.** Labels are classified by keywords
+  (unverified); only dates and short labels are kept.
+- `PersonGrantedRecognitionList` (`perorgfin`, required filter `{educationField:{selected}, person:{selected}}`,
+  fields `JS_COACH`, `JS_LEADER_AND_EXPERT`) and `PersonSupplementList`: titles, state, validity dates, supplements.
+  `reason` is NOT requested. The coach's own data, memory only.
+- `CurrentYouthTrainingOrganisationRelationsList` and `FinishedYouthTrainingOfferRelationsAsCoachBiographyList`
+  (`perorgfin`): organisation names, relation type, offer groups, finished offers with camp/course counts. Own
+  data, memory only.
+- `OfferList` with `coach { businessId }` only (own-person detection, selection unverified live) and
+  `organisation name` (camp ranking). No coach names are requested.
+
 ## Privacy
 
 Raw `.har` files never enter the repo or the assistant's context. `tools/nds/har-redact.mjs` reduces them to

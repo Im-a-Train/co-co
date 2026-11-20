@@ -200,8 +200,9 @@ export const jsDl01: RulePredicate = (ctx) => {
   const q = stand ? ` (${ndsSourceText(stand)})` : ''
   const due = formatDateDe(dl.due)
   if (dl.done) {
-    // An NDS-adopted date is only the approval date («bewilligt am»); registration happened on or before it, so lateness cannot be concluded.
-    const fromNds = !!ctx.coachInputs?.ndsFields?.ndsRegisteredOn
+    // An NDS-adopted date is normally only the approval date («bewilligt am»), so lateness cannot be concluded from it,
+    // unless it equals the submission date of the NDS offer protocol (the real «eingereicht am»).
+    const fromNds = !!ctx.coachInputs?.ndsFields?.ndsRegisteredOn && !(on !== null && ctx.nds?.protocol?.submittedOn === on)
     if (on && on > dl.due && !fromNds) return [{ ...campHit(ctx, { on: formatDateDe(on), due, src: q }, src), variant: 'late' }]
     return []
   }

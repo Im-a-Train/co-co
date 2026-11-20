@@ -506,8 +506,179 @@ export interface NdsAggregate {
    * Counts only. null/absent when the lists could not be read (forbidden, not offered for this camp).
    */
   rega?: NdsRegaCounts | null
+  /** M22 (ADR 0017): attendance counts per activity. null/absent when no list was readable or the record is older. */
+  attendance?: NdsAttendance | null
+  /** M22: camp details (risk answers, flags, subsidies, NDS minimum-requirement messages). */
+  campDetails?: NdsCampDetails | null
+  /** M22: offer protocol (status history with dates). */
+  protocol?: NdsProtocol | null
   /** «Stand NDS» */
   fetchedAt: IsoDateTime
+}
+
+// ---- M22 (ADR 0017): NDS sync v2. Mirrors coco-core/src/nds_sync.rs (serde camelCase). Counts and codes only.
+
+/** Checked activities of one date. */
+export interface NdsDateAttendance {
+  date: IsoDate
+  activities: number
+  /** Max over the date's checked activities of present participants / supervisors. */
+  participantsPresent: number
+  supervisorsPresent: number
+}
+
+/** Attendance summary (ParticipantAttendances / SupervisorAttendances per activity). Counts only. */
+export interface NdsAttendance {
+  activitiesTotal: number
+  activitiesRead: number
+  /** Activities in state ATTENDANCE_CHECKED. */
+  activitiesChecked: number
+  /** Distinct persons over all read activities. */
+  participants: number
+  supervisors: number
+  /** Distinct participants never present in a checked activity they appear in. */
+  participantsNeverPresent: number
+  /** Distinct participants with eligibleForSubsidies false. */
+  participantsNotEligible: number
+  /** Distinct persons double-booked in another J+S offer (non-empty `overlaps`). */
+  overlapParticipants: number
+  overlapSupervisors: number
+  overlapActivities: number
+  /** Other offers' numbers (not personal data), sorted, max 20. */
+  overlapOfferNumbers: string[]
+  overlapDates: IsoDate[]
+  mountainGuides: number
+  byDate: NdsDateAttendance[]
+  /** Not all activities were read (cap or errors). */
+  truncated: boolean
+}
+
+export interface NdsPresentCounts {
+  maleChildren: number | null
+  femaleChildren: number | null
+  maleAdolescents: number | null
+  femaleAdolescents: number | null
+  supervisors: number | null
+}
+
+/** CHF, may be fractional. */
+export interface NdsSubsidies {
+  planned: number | null
+  actual: number | null
+  total: number | null
+}
+
+export interface NdsOfferFlags {
+  lateSubmittedItems: boolean | null
+  lateSubmittedItemsUnapproved: boolean | null
+  itemsInCorrection: boolean | null
+  handicapRegistration: boolean | null
+  evaluationState: string | null
+}
+
+export interface NdsCampDetails {
+  riskActivitiesPlanned: boolean | null
+  /** riskActivityAnswer1..3 */
+  riskActivityAnswers: [boolean | null, boolean | null, boolean | null]
+  supervisorExpertisePresent: boolean | null
+  overnightStay: boolean | null
+  lateSubmission: boolean | null
+  approvalWithReservation: boolean | null
+  campDaysWithActivities: number | null
+  campDaysWithoutActivities: number | null
+  /** Raw strings (format unverified). */
+  activityDurationFirstDay: string | null
+  activityDurationLastDay: string | null
+  present: NdsPresentCounts
+  subsidies: NdsSubsidies
+  /** NDS minimum-requirement check messages (German); null = not reported. */
+  minimalRequirementsMessages: string[] | null
+  offerFlags: NdsOfferFlags
+}
+
+export type NdsProtocolKind = 'submitted' | 'approved' | 'assessment' | 'closed' | 'paid' | 'other'
+
+export interface NdsProtocolEvent {
+  /** createdTimestamp as delivered (wall clock). */
+  at: string
+  date: IsoDate
+  kind: NdsProtocolKind
+  /** German protocolType label. */
+  label: string
+}
+
+export interface NdsProtocol {
+  /** Ascending by `at`. */
+  events: NdsProtocolEvent[]
+  submittedOn: IsoDate | null
+  approvedOn: IsoDate | null
+  closedOn: IsoDate | null
+  truncated: boolean
+}
+
+export interface NdsRecognitionSupplement {
+  title: string
+  validFrom: IsoDate | null
+  validUntil: IsoDate | null
+}
+
+/** One granted recognition of the coach (own data, red zone, memory only). */
+export interface NdsRecognition {
+  businessId: string
+  title: string
+  educationField: string | null
+  /** Raw code (observed VALID, OMITTED). */
+  state: string | null
+  validFrom: IsoDate | null
+  validUntil: IsoDate | null
+  omittedSince: IsoDate | null
+  invalidSince: IsoDate | null
+  archivedSince: IsoDate | null
+  targetAudienceGroup: string | null
+  sport: string | null
+  supplements: NdsRecognitionSupplement[]
+}
+
+export interface NdsRecognitionsResult {
+  recognitions: NdsRecognition[]
+  personSupplements: string[]
+  /** Education fields whose query failed (e.g. not permitted). */
+  failedFields: string[]
+  fetchedAt: IsoDateTime
+}
+
+export interface NdsCoachOrganisation {
+  businessId: string
+  name: string
+  relationType: string | null
+  offerGroups: string[]
+  since: IsoDate | null
+}
+
+export interface NdsFinishedOffer {
+  offerBusinessId: string
+  offerNumber: string | null
+  organisationName: string | null
+  start: IsoDate | null
+  end: IsoDate | null
+  campCount: number | null
+  courseCount: number | null
+  sports: string[]
+}
+
+/** The coach's organisations and finished offers (own data, red zone, memory only). */
+export interface NdsCoachProfile {
+  organisations: NdsCoachOrganisation[]
+  /** Newest first. */
+  finishedOffers: NdsFinishedOffer[]
+  fetchedAt: IsoDateTime
+}
+
+/** Own NDS person id detected as majority coach of the visible offers (unverified heuristic). */
+export interface NdsPersonDetection {
+  personId: string | null
+  offersSeen: number
+  offersMatched: number
 }
 
 export interface NdsRegaCounts {
@@ -527,6 +698,8 @@ export interface NdsCampSummary {
   end: IsoDate | null
   offerState: string | null
   offerItemState: string | null
+  /** M22: organisation name of the offer (German), for camp matching. */
+  organisationName?: string | null
 }
 
 export interface NdsProbeEndpoint {
@@ -549,7 +722,7 @@ export interface NdsStatus {
 }
 
 /** Coach inputs that «Aus NDS übernehmen» can fill. */
-export type NdsField = 'ndsRegistered' | 'ndsRegisteredOn' | 'ndsClosed'
+export type NdsField = 'ndsRegistered' | 'ndsRegisteredOn' | 'ndsClosed' | 'ndsClosedOn'
 
 /** NDS ids the camp is linked to plus display extras copied from the picked camp (optional: older links have none). */
 export interface NdsLink {
@@ -1238,6 +1411,8 @@ export type DeadlineKind =
   | 'pbs-milestone'
   /** NDS «Pendenz» (red zone): built in the deadline view from in-memory tasks, never stored, never sent to MCP. */
   | 'nds-task'
+  /** M22: expiry of the coach's own J+S recognition (red zone): in-memory only, never stored, never sent to MCP. */
+  | 'nds-recognition'
 
 export interface Deadline {
   campIri: Iri
@@ -1693,6 +1868,12 @@ export interface AppSettings {
   /** M8: NDS connection settings (no secrets; the session cookie lives in Rust/keychain). */
   nds: {
     enabled: boolean
+    /**
+     * M22: the coach's own NDS person id (numeric) for recognitions and coach profile. Detected
+     * once (nds_detect_person) or entered manually; a manual value is never overwritten.
+     * Optional because older stored settings lack it. Red-derived: stripped from backups with omitRedDerived.
+     */
+    personId?: string | null
   }
   /** ADR 0012: local MCP server (runs only while ai.enabled AND mcp.enabled). The token lives in the OS keychain. */
   mcp: McpSettings
@@ -1729,7 +1910,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   backup: { remindAfterRound: true, lastExportAt: null },
   rulePacks: [],
   midata: { baseUrl: 'https://db.scout.ch', personId: null, qualMapping: {} },
-  nds: { enabled: false },
+  nds: { enabled: false, personId: null },
   mcp: { enabled: false, port: MCP_DEFAULT_PORT, tools: {}, confirmWrites: true, confirmReads: false },
 }
 

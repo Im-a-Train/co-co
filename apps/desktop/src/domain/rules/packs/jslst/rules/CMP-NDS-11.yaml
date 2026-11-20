@@ -1,0 +1,17 @@
+id: CMP-NDS-11
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "J+S-Lagertage in NDS und eCamp abgleichen"
+description: "Die Anzahl Lagertage mit Aktivitäten in der NDS weicht von der Anzahl J+S-Tage ab, die co-co aus eCamp berechnet."
+message: "NDS: {nds} Lagertage mit Aktivitäten, in eCamp berechnet {ecamp} J+S-Tage (Quelle: NDS, Stand {stand})"
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-C
+    page: ""

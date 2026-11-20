@@ -1,0 +1,21 @@
+id: CMP-NDS-10
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "NDS-Status prüfen"
+description: "Die NDS markiert das Angebot mit einem Hinweis: Positionen in Korrektur, Bewilligung mit Vorbehalt oder verspätete Eingabe. Hinweis für den Coach."
+message: "NDS: Das Angebot hat mehrere Statushinweise (Korrektur, Vorbehalt oder verspätet), bitte in der NDS prüfen (Quelle: NDS, Stand {stand})"
+messageVariants:
+  correction: "NDS: Positionen des Angebots sind in Korrektur, bitte in der NDS prüfen (Quelle: NDS, Stand {stand})"
+  reservation: "NDS: Das Angebot wurde mit Vorbehalt bewilligt, bitte in der NDS prüfen (Quelle: NDS, Stand {stand})"
+  late: "NDS: Das Angebot oder Positionen wurden verspätet eingegeben, bitte in der NDS prüfen (Quelle: NDS, Stand {stand})"
+severity: hint
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-C
+    page: ""

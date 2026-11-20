@@ -97,7 +97,7 @@ export function withDeadlineDone(inputs: CoachInputs, d: Pick<Deadline, 'kind' |
         ...withoutNdsKeys(inputs, ['ndsRegistered', 'ndsRegisteredOn']),
       }
     case 'nds-closing':
-      return { ...inputs, ndsClosed: value, ndsClosedOn: value ? (inputs.ndsClosedOn ?? today) : null, ...withoutNdsKeys(inputs, ['ndsClosed']) }
+      return { ...inputs, ndsClosed: value, ndsClosedOn: value ? (inputs.ndsClosedOn ?? today) : null, ...withoutNdsKeys(inputs, ['ndsClosed', 'ndsClosedOn']) }
     case 'leihmaterial':
       return { ...inputs, leihmaterialOrdered: value }
     case 'landeskarten':
@@ -146,7 +146,7 @@ export function withDeadlineDate(inputs: CoachInputs, kind: Deadline['kind'], da
     case 'nds-registration':
       return { ...inputs, ndsRegisteredOn: value, ...withoutNdsKeys(inputs, ['ndsRegisteredOn']) }
     case 'nds-closing':
-      return { ...inputs, ndsClosedOn: value } // the closing date has no NDS badge of its own
+      return { ...inputs, ndsClosedOn: value, ...withoutNdsKeys(inputs, ['ndsClosedOn']) } // an edited date is no longer the NDS value
     case 'leihmaterial':
       return { ...inputs, leihmaterialDeliveryDate: value }
     case 'landeskarten':

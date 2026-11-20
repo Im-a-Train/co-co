@@ -1,0 +1,18 @@
+id: CMP-NDS-07
+version: 1.0.0
+module: js
+status: active
+kind: hard
+title: "Tag ohne anwesende Leitende in der NDS"
+description: "An Tagen, an denen in der NDS Teilnehmende als anwesend erfasst sind, aber keine Leitenden: Die Anwesenheit der Leitenden fehlt vermutlich."
+message: "NDS: An {count} Tag(en) ({dates}) sind Teilnehmende, aber keine Leitenden als anwesend erfasst (Quelle: NDS, Stand {stand})"
+feedbackText: "In der NDS sind an {dates} Teilnehmende, aber keine Leitenden als anwesend erfasst. Könnt ihr die Anwesenheit der Leitenden prüfen und nachtragen?"
+severity: should
+confidence: unverified
+scope: camp
+validFrom: 2026-01-01
+inputs: [nds]
+tags: [vollstaendigkeit, nds]
+sources:
+  - key: WEB-C
+    page: "«3. Schritt»"

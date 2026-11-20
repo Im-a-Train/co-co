@@ -177,6 +177,9 @@ export const EVENT_MIDATA_STATUS = 'midata://status'
 // M8: NDS (red zone). Only aggregates / summaries / names + status codes cross the IPC boundary.
 export type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
 import type { NdsAggregate, NdsCampSummary, NdsProbe, NdsStatus } from '@/domain/types'
+// M22 (ADR 0017): coach-own NDS data (memory only).
+export type { NdsCoachProfile, NdsPersonDetection, NdsRecognitionsResult } from '@/domain/types'
+import type { NdsCoachProfile, NdsPersonDetection, NdsRecognitionsResult } from '@/domain/types'
 export const EVENT_NDS_STATUS = 'nds://status'
 
 // ADR 0012: local MCP server. Types live in domain/mcp/types.ts.
@@ -301,6 +304,12 @@ export const commands = {
    * held in memory only (never persisted, backed up, sent to AI or MCP). No assignee names.
    */
   ndsFetchTasks: () => call<NdsTask[]>('nds_fetch_tasks'),
+  /** M22: own NDS person id as majority coach of the visible offers (heuristic; ids only, no names). */
+  ndsDetectPerson: () => call<NdsPersonDetection>('nds_detect_person'),
+  /** M22: the coach's own J+S recognitions + education supplements. Memory only (never persisted, AI or MCP). */
+  ndsFetchRecognitions: (personId: string) => call<NdsRecognitionsResult>('nds_fetch_recognitions', { personId }),
+  /** M22: the coach's organisations and finished offers (for camp matching). Memory only. */
+  ndsFetchCoachProfile: (personId: string) => call<NdsCoachProfile>('nds_fetch_coach_profile', { personId }),
   // «Personen» tab (ADR 0009, RED ZONE): individual people, held in Rust memory only, never persisted.
   personsLoadMidata: (eventId: string, campStart: IsoDate, campEnd: IsoDate) =>
     call<MidataPersonsResult>('persons_load_midata', { eventId, campStart, campEnd }),

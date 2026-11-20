@@ -12,6 +12,13 @@ import type { CoachInputs, IsoDateTime, NdsAggregate, NdsField } from '../types'
 
 export type {
   NdsActivities,
+  NdsAttendance,
+  NdsCampDetails,
+  NdsCoachProfile,
+  NdsPersonDetection,
+  NdsProtocol,
+  NdsRecognition,
+  NdsRecognitionsResult,
   NdsAggregate,
   NdsCampSummary,
   NdsCounts,
@@ -25,7 +32,7 @@ export type {
 } from '../types'
 
 /** Fields «Aus NDS übernehmen» offers, in display order. */
-export const NDS_FIELDS: readonly NdsField[] = ['ndsRegistered', 'ndsRegisteredOn', 'ndsClosed']
+export const NDS_FIELDS: readonly NdsField[] = ['ndsRegistered', 'ndsRegisteredOn', 'ndsClosed', 'ndsClosedOn']
 
 /** Observed states that count as «closed» (ndsClosed suggestion). Other/unknown codes never do. */
 export const NDS_KNOWN_CLOSED_STATES: readonly string[] = ['WAITING_FOR_ASSESSMENT', 'PAYED_CH', 'PARTIALLY_PAYED']
@@ -60,20 +67,36 @@ export function isKnownClosedState(code: string | null | undefined): boolean {
   return !!code && NDS_KNOWN_CLOSED_STATES.includes(code)
 }
 
-type NdsSuggestions = Partial<Pick<CoachInputs, 'ndsRegistered' | 'ndsRegisteredOn' | 'ndsClosed'>>
+type NdsSuggestions = Partial<Pick<CoachInputs, 'ndsRegistered' | 'ndsRegisteredOn' | 'ndsClosed' | 'ndsClosedOn'>>
 
 /**
  * Suggestions for coach inputs from an aggregate. Unknown codes yield no suggestion.
- * ndsRegisteredOn is the approval date («bewilligt am»): the registration happened on or before it.
+ * ndsRegisteredOn is the submission date from the offer protocol («eingereicht am», M22) when known,
+ * else the approval date («bewilligt am»): the registration happened on or before it.
+ * ndsClosedOn is the protocol's closing date (only when present).
  */
 export function ndsSuggestions(aggregate: NdsAggregate): NdsSuggestions {
   const out: NdsSuggestions = {}
-  if (aggregate.approvedOn) {
+  const registeredOn = aggregate.protocol?.submittedOn ?? aggregate.approvedOn
+  if (registeredOn) {
     out.ndsRegistered = true
-    out.ndsRegisteredOn = aggregate.approvedOn.slice(0, 10)
+    out.ndsRegisteredOn = registeredOn.slice(0, 10)
   }
-  if (isKnownClosedState(aggregate.offerItemState) || isKnownClosedState(aggregate.offerState)) out.ndsClosed = true
+  const closedOn = aggregate.protocol?.closedOn
+  if (closedOn) out.ndsClosedOn = closedOn.slice(0, 10)
+  if (closedOn || isKnownClosedState(aggregate.offerItemState) || isKnownClosedState(aggregate.offerState)) out.ndsClosed = true
   return out
+}
+
+/**
+ * True when the adopted «angemeldet am» (inputs.ndsFields.ndsRegisteredOn set) equals the protocol's
+ * submission date, i.e. it is the real submission date and not just the approval date. Used by JS-DL-01 and the UI hint.
+ */
+export function ndsRegisteredOnIsSubmission(agg: NdsAggregate | null | undefined, inputs: CoachInputs | null | undefined): boolean {
+  const on = inputs?.ndsRegisteredOn
+  if (!inputs?.ndsFields?.ndsRegisteredOn || !on) return false
+  const sub = agg?.protocol?.submittedOn
+  return !!sub && sub.slice(0, 10) === on
 }
 
 const nvl = (v: unknown): NdsFieldValue => (v === undefined ? null : (v as NdsFieldValue))

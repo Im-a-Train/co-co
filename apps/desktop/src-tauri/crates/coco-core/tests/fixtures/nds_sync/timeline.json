@@ -1,0 +1,5 @@
+{"offerItem":{"supervisorExpertisePresent":true,"lateSubmission":false,"approvalWithReservation":true,
+"campDaysWithActivitiesCount":5,"campDaysWithoutActivitiesCount":"x","activityDurationOnFirstDay":"PT4H","activityDurationOnLastDay":3.5,
+"presentMaleChildrenCount":4,"presentFemaleChildrenCount":5,"presentMaleAdolescentsCount":0,"presentSupervisorsCount":3,
+"plannedCampSubsidies":{"total":1200.5},"actualCampSubsidies":{"total":"n/a"},"totalCampSubsidies":900,
+"riskActivitiesPlanned":false,"overnightStay":false,"riskActivityAnswer3":true}}

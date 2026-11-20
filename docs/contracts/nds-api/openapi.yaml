@@ -2404,6 +2404,8 @@ components:
       properties:
         relationType:
           type: "string"
+          enum:
+            - "JS_COACH"
         organisation:
           type: "object"
           properties:
@@ -3061,6 +3063,9 @@ components:
               pattern: "^-?\\d+$"
         recognitionState:
           type: "string"
+          enum:
+            - "OMITTED"
+            - "VALID"
         activeDateRange:
           $ref: "#/components/schemas/DateRange"
         omittedSince:
@@ -5077,6 +5082,8 @@ components:
           items: {}
         recognitionState:
           type: "string"
+          enum:
+            - "VALID"
         activeDateRange:
           $ref: "#/components/schemas/DateRange"
         omittedSince:
@@ -6191,6 +6198,9 @@ components:
           properties: {}
         primaryEntityClassName:
           type: "string"
+          enum:
+            - "com.queomedia.nds.perorgfin.organisation.domain.Organisation"
+            - "com.queomedia.nds.youthtraining.offer.domain.Offer"
         primaryEntityId:
           type: "string"
           pattern: "^-?\\d+$"
