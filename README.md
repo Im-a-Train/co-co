@@ -96,7 +96,7 @@ publishes a **GitHub pre-release** `v0.1.0-alpha.<n>` under
 [Releases](https://github.com/Im-a-Train/co-co/releases) with
 `co-co_<version>_x64-setup.exe` (installer) and `co-co_<version>_x64-portable.exe` (runs without install).
 Installed versions check for updates themselves and ask before updating in place (Einstellungen → Updates,
-[ADR 0017](docs/adr/0017-in-app-updates.md)); the desktop shortcut is an unticked option in the installer.
+[ADR 0018](docs/adr/0018-in-app-updates.md)); the desktop shortcut is an unticked option in the installer.
 To update by hand without losing anything, run the new setup and choose «nicht deinstallieren» (app data survives an
 uninstall too, unless «Daten löschen» is ticked). The portable exe never updates itself.
 Release signing needs the repository secret `TAURI_SIGNING_PRIVATE_KEY` (see the ADR).

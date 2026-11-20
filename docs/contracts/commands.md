@@ -187,7 +187,7 @@ window only. Nothing runs in the background. Unknown state codes are kept as raw
 | `unlock_data_store` | none | `{ key: string, created: boolean }` | Needs a logged-in eCamp session verified by one authenticated `GET profile` (refresh-and-retry on 401); otherwise rejects with `Nicht angemeldet`. Returns the base64 of the 32-byte data key from the OS keychain (service `ch.imatrain.coco`, user `data-key`), generated with the OS RNG on first use (`created: true`). Also loads (and, if legacy plaintext, migrates) the AES-256-GCM encrypted `allowed-paths.json`. The key is never logged; the UI must keep it in memory only. |
 | `lock_data_store` | none | `void` | Drops Rust-side key copies and the loaded file scope (keychain entry stays). Also done by `logout`. Person lists are unaffected (`persons_clear`). |
 
-### In-app updates (ADR 0017)
+### In-app updates (ADR 0018)
 
 | Command | Args | Returns | Notes |
 | --- | --- | --- | --- |

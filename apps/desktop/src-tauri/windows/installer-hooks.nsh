@@ -1,4 +1,4 @@
-; co-co NSIS installer hooks (bundle.windows.nsis.installerHooks, ADR 0017).
+; co-co NSIS installer hooks (bundle.windows.nsis.installerHooks, ADR 0018).
 ;
 ; The Tauri NSIS template shows a "create desktop shortcut" checkbox on the finish page (the SHOWREADME
 ; button) and checks it by default. co-co is started from the Start menu; the desktop icon is optional, so

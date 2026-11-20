@@ -300,9 +300,9 @@ Decision: [adr/0014-coach-findings-ai-guidance-and-viewer.md](adr/0014-coach-fin
   through the file commands and never stored; anchors flow into `ManualFindingDialog`.
 - **MCP:** `McpChangeKind` includes `manualFinding`; tool definitions are in `domain/mcp/catalog.ts`.
 
-## ADR 0017: in-app updates
+## ADR 0018: in-app updates
 
-Decision: [adr/0017-in-app-updates.md](adr/0017-in-app-updates.md).
+Decision: [adr/0018-in-app-updates.md](adr/0018-in-app-updates.md).
 
 - **Rust:** `src/updater.rs` wraps `tauri-plugin-updater` in our own commands `app_update_check`,
   `app_update_auto_check_allowed`, `app_update_install` (emits `app-update://progress`, then restarts) and

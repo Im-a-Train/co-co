@@ -1,4 +1,4 @@
-//! Pure decisions of the in-app updater (ADR 0017): portable detection, release URL, notes truncation,
+//! Pure decisions of the in-app updater (ADR 0018): portable detection, release URL, notes truncation,
 //! version validation and the "automatic check" policy. No I/O, no Tauri.
 
 use serde::{Deserialize, Serialize};

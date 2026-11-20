@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Settings > Updates (ADR 0017): installed version, auto-check toggle, manual check. */
+/** Settings > Updates (ADR 0018): installed version, auto-check toggle, manual check. */
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppUpdate } from '@/composables/useAppUpdate'

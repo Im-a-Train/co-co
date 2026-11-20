@@ -599,7 +599,7 @@ export function installMockTauri(): void {
         }
         case 'lock_data_store':
           return null
-        // ADR 0017: in-app updates. The automatic check is off in the mock so other flows see no dialog.
+        // ADR 0018: in-app updates. The automatic check is off in the mock so other flows see no dialog.
         case 'app_update_auto_check_allowed':
           return false
         case 'app_update_check':

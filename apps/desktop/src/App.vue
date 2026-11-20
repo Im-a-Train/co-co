@@ -51,7 +51,7 @@ onMounted(() => {
     void init()
     // ADR 0012: MCP tool calls run in this window; the server starts only if AI + MCP are enabled.
     void installMcpBridge().then(() => useMcp().init())
-    // ADR 0017: update check, non-blocking, once the data store is unlocked (settings live there).
+    // ADR 0018: update check, non-blocking, once the data store is unlocked (settings live there).
     useAppUpdate().startAuto()
   }
 })

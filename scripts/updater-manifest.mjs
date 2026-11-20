@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds the Tauri updater manifest `latest.json` (ADR 0017).
+// Builds the Tauri updater manifest `latest.json` (ADR 0018).
 //
 // Usage:
 //   node scripts/updater-manifest.mjs --version <v> --sig <setup.exe.sig> --out <latest.json> [--notes <text>] [--notes-file <file>] [--date <RFC3339>]

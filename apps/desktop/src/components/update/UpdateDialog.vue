@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Update dialog (ADR 0017), mounted once in App.vue. Release notes are plain text (no v-html). */
+/** Update dialog (ADR 0018), mounted once in App.vue. Release notes are plain text (no v-html). */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppUpdate } from '@/composables/useAppUpdate'

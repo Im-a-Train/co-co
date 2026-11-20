@@ -1,5 +1,5 @@
 /**
- * In-app updates (ADR 0017). State of the update check, the update dialog and the installation.
+ * In-app updates (ADR 0018). State of the update check, the update dialog and the installation.
  * Network access is Rust-only (`app_update_*` commands). The automatic check waits for the unlocked data
  * store because its settings (autoCheck, lastCheckAt, skippedVersion) live there; it runs at most once per 24 h
  * and never blocks the UI. Manual checks always run and show their result (also errors).

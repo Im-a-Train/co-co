@@ -1,4 +1,4 @@
-# ADR 0017: In-app updates and installer defaults
+# ADR 0018: In-app updates and installer defaults
 
 - Status: accepted
 - Date: 2026-11-20

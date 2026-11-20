@@ -1,4 +1,4 @@
-//! In-app updates (ADR 0017). Wraps tauri-plugin-updater in our own commands; the plugin's JS API
+//! In-app updates (ADR 0018). Wraps tauri-plugin-updater in our own commands; the plugin's JS API
 //! and permissions are not exposed. The only host contacted is github.com (static `latest.json`
 //! of the rolling `updater` release); no personal data is sent. Errors are short German texts
 //! without URLs.

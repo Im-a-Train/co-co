@@ -270,7 +270,7 @@ export const commands = {
   unlockDataStore: () => call<{ key: string; created: boolean }>('unlock_data_store'),
   lockDataStore: () => call<void>('lock_data_store'),
 
-  // ADR 0017: in-app updates (GitHub releases only; Rust does the network access).
+  // ADR 0018: in-app updates (GitHub releases only; Rust does the network access).
   /** Checks for a newer version. Rejects with a short German message when offline or the feed is unreadable. */
   appUpdateCheck: () => call<AppUpdateInfo>('app_update_check'),
   /** False for unstamped dev builds and debug builds (no automatic check there). */

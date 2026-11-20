@@ -1,4 +1,4 @@
-/** Pure policy of the in-app update check (ADR 0017). */
+/** Pure policy of the in-app update check (ADR 0018). */
 import type { UpdateSettings } from '../types'
 
 export const AUTO_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000

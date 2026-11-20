@@ -1696,7 +1696,7 @@ export interface AppSettings {
   }
   /** ADR 0012: local MCP server (runs only while ai.enabled AND mcp.enabled). The token lives in the OS keychain. */
   mcp: McpSettings
-  /** ADR 0017: in-app update check (plain data, no secrets). */
+  /** ADR 0018: in-app update check (plain data, no secrets). */
   update: UpdateSettings
 }
 

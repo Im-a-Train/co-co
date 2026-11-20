@@ -1,4 +1,4 @@
-/** In-app update flows of the UI harness (imported by run.mjs): Settings > Updates, update dialog (ADR 0017). */
+/** In-app update flows of the UI harness (imported by run.mjs): Settings > Updates, update dialog (ADR 0018). */
 
 export async function updateFlows({ page, step, shot, BASE }) {
   const tid = (id) => page.getByTestId(id)

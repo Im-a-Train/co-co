@@ -47,7 +47,7 @@ tiny_http = { version = "0.12", default-features = false }
 # ADR 0012: random MCP bearer token (already in the lockfile via other crates).
 getrandom = "0.3"
 
-# ADR 0017: in-app updates (desktop only). No JS permissions exposed; our own commands wrap the plugin.
+# ADR 0018: in-app updates (desktop only). No JS permissions exposed; our own commands wrap the plugin.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
 
